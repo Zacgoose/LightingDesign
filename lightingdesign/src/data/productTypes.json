@@ -1,0 +1,106 @@
+{
+  "pendant": {
+    "shapeType": "pendant",
+    "width": 50,
+    "height": 50,
+    "fill": "#FFF59D",
+    "stroke": "#F57C00",
+    "strokeWidth": 2
+  },
+  "downlight": {
+    "shapeType": "downlight",
+    "width": 40,
+    "height": 40,
+    "fill": "#FFFFFF",
+    "stroke": "#424242",
+    "strokeWidth": 2
+  },
+  "spotlight": {
+    "shapeType": "spotlight",
+    "width": 40,
+    "height": 40,
+    "fill": "#E3F2FD",
+    "stroke": "#1976D2",
+    "strokeWidth": 2
+  },
+  "wall": {
+    "shapeType": "wall",
+    "width": 30,
+    "height": 40,
+    "fill": "#B3E5FC",
+    "stroke": "#0277BD",
+    "strokeWidth": 2
+  },
+  "ceiling": {
+    "shapeType": "ceiling",
+    "width": 60,
+    "height": 60,
+    "fill": "#EEEEEE",
+    "stroke": "#616161",
+    "strokeWidth": 2
+  },
+  "floor": {
+    "shapeType": "lamp",
+    "width": 25,
+    "height": 50,
+    "fill": "#D7CCC8",
+    "stroke": "#5D4037",
+    "strokeWidth": 2
+  },
+  "table": {
+    "shapeType": "lamp",
+    "width": 22,
+    "height": 45,
+    "fill": "#BCAAA4",
+    "stroke": "#4E342E",
+    "strokeWidth": 2
+  },
+  "lamp": {
+    "shapeType": "lamp",
+    "width": 25,
+    "height": 50,
+    "fill": "#D7CCC8",
+    "stroke": "#5D4037",
+    "strokeWidth": 2
+  },
+  "strip": {
+    "shapeType": "strip",
+    "width": 60,
+    "height": 10,
+    "fill": "#C8E6C9",
+    "stroke": "#388E3C",
+    "strokeWidth": 2
+  },
+  "fan": {
+    "shapeType": "fan",
+    "width": 40,
+    "height": 40,
+    "fill": "#B2EBF2",
+    "stroke": "#00838F",
+    "strokeWidth": 2
+  },
+  "track": {
+    "shapeType": "strip",
+    "width": 80,
+    "height": 12,
+    "fill": "#CFD8DC",
+    "stroke": "#455A64",
+    "strokeWidth": 2
+  },
+  "chandelier": {
+    "shapeType": "pendant",
+    "width": 70,
+    "height": 70,
+    "fill": "#FFF9C4",
+    "stroke": "#F9A825",
+    "strokeWidth": 2
+  },
+  "default": {
+    "shapeType": "rect",
+    "width": 30,
+    "height": 30,
+    "fill": "#BDBDBD",
+    "stroke": "#424242",
+    "strokeWidth": 2
+  }
+}

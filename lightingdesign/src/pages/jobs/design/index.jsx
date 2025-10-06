@@ -205,20 +205,6 @@ const Page = () => {
     }
   }, [selectedIds, groupKey]);
 
-  const handleIndividualProductDragEnd = (e, productId) => {
-    const newProducts = products.map(p => {
-      if (p.id === productId) {
-        return {
-          ...p,
-          x: e.target.x(),
-          y: e.target.y(),
-        };
-      }
-      return p;
-    });
-    updateHistory(newProducts);
-  };
-
   // Apply group transform to actual product data
   const applyGroupTransform = () => {
     if (!selectedIds.length || !selectionGroupRef.current || !selectionSnapshot.products?.length) return;

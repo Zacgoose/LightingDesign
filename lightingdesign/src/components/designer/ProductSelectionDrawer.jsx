@@ -55,14 +55,6 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
   
   return (
     <>
-      <Button
-        onClick={onOpen}
-        startIcon={<Add />}
-        variant="outlined"
-        size="small"
-      >
-        Add Product
-      </Button>
       <CippOffCanvas
         title="Product Catalog - Use row actions menu to add to canvas"
         visible={visible}

@@ -1,5 +1,5 @@
 import { Menu, MenuItem, ListItemIcon, ListItemText, Box } from "@mui/material";
-import { Delete, ContentCopy, Link as LinkIcon, SettingsBackupRestore, Add } from "@mui/icons-material";
+import { Delete, ContentCopy, Link as LinkIcon, SettingsBackupRestore, Add, SwapHoriz } from "@mui/icons-material";
 
 export const ContextMenus = ({
   contextMenu,
@@ -10,6 +10,7 @@ export const ContextMenus = ({
   onResetScale,
   onDelete,
   onInsertProduct,
+  onSwapPlacementProduct,
 }) => {
   return (
     <Menu
@@ -80,6 +81,15 @@ export const ContextMenus = ({
             <Add fontSize="small" />
           </ListItemIcon>
           <ListItemText>Add Product...</ListItemText>
+        </MenuItem>
+      )}
+
+      {contextMenu?.type === 'placement' && (
+        <MenuItem onClick={onSwapPlacementProduct}>
+          <ListItemIcon>
+            <SwapHoriz fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Swap Product...</ListItemText>
         </MenuItem>
       )}
     </Menu>

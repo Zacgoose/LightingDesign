@@ -13,6 +13,7 @@ export const ProductShape = ({
   theme,
   draggable = false,
   opacity = 1,
+  listening,
 }) => {
   const shapeFunction = getShapeFunction(config.shapeType);
   const maxDimension = Math.max(config.width || 30, config.height || 30);
@@ -28,6 +29,7 @@ export const ProductShape = ({
       scaleY={product.scaleY || 1}
       draggable={draggable}
       opacity={opacity}
+      listening={listening}
       onDragStart={onDragStart}
       onMouseDown={onMouseDown}
       onTap={onMouseDown}
@@ -41,6 +43,7 @@ export const ProductShape = ({
         strokeWidth={config.strokeWidth + 1}
         width={config.width}
         height={config.height}
+        listening={listening}
       />
       
       {product.sku && (
@@ -53,6 +56,7 @@ export const ProductShape = ({
           y={skuYOffset}
           x={-60}
           width={120}
+          listening={listening}
         />
       )}
       
@@ -64,6 +68,7 @@ export const ProductShape = ({
         y={textYOffset}
         x={-60}
         width={120}
+        listening={listening}
       />
       
       {product.quantity > 1 && (
@@ -77,6 +82,7 @@ export const ProductShape = ({
             fill={theme.palette.error.main}
             stroke={theme.palette.background.paper}
             strokeWidth={2}
+            listening={listening}
           />
           <Text
             text={`${product.quantity}`}
@@ -87,6 +93,7 @@ export const ProductShape = ({
             x={maxDimension * 0.6 - 6}
             y={-maxDimension * 0.4 - 5}
             width={12}
+            listening={listening}
           />
         </>
       )}

@@ -17,7 +17,8 @@ export const DesignerCanvas = ({
   draggable = true,
   stageRef,
   backgroundImage = null, // URL or Image object
-  children
+  children,
+  onMouseMove
 }) => {
   const theme = useTheme();
   const [bgImage, setBgImage] = useState(null);
@@ -122,6 +123,7 @@ export const DesignerCanvas = ({
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}
         onContextMenu={onContextMenu}
+        onMouseMove={onMouseMove}
       >
         {/* Grid Layer */}
         {showGrid && (

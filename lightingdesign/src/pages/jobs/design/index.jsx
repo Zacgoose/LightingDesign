@@ -279,8 +279,15 @@ const Page = () => {
   const handleStageContextMenu = (e) => {
     e.evt.preventDefault();
     
-    // Don't show context menu in placement mode
-    if (placementMode) return;
+    if (placementMode) {
+      // Show placement context menu at mouse position
+      setContextMenu({
+        x: e.evt.clientX,
+        y: e.evt.clientY,
+        type: 'placement',
+      });
+      return;
+    }
     
     if (selectedIds.length > 0) {
       setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, type: 'product' });
@@ -343,6 +350,11 @@ const Page = () => {
 
   const handleCloseContextMenu = () => {
     setContextMenu(null);
+  };
+
+  const handleSwapPlacementProduct = () => {
+    setProductDrawerVisible(true);
+    handleCloseContextMenu();
   };
 
   const handleDeleteSelected = () => {
@@ -476,8 +488,8 @@ const Page = () => {
     if (pointerPosition) {
       // Convert screen position to canvas position
       const canvasPos = {
-        x: (pointerPosition.x - stage.x()) / stage.scaleX(),
-        y: (pointerPosition.y - stage.y()) / stage.scaleY(),
+        x: (pointerPosition.x - stagePosition.x) / stageScale,
+        y: (pointerPosition.y - stagePosition.y) / stageScale,
       };
       setCursorPosition(canvasPos);
     }
@@ -771,6 +783,7 @@ const Page = () => {
                     customStroke="#2196f3"
                     theme={theme}
                     opacity={0.6}
+                    listening={false}
                     onMouseDown={() => {}}
                     onContextMenu={() => {}}
                   />
@@ -790,6 +803,7 @@ const Page = () => {
         onResetScale={handleResetScale}
         onDelete={handleDeleteSelected}
         onInsertProduct={handleInsertProductAtPosition}
+        onSwapPlacementProduct={handleSwapPlacementProduct}
       />
 
       <ColorPickerPopover

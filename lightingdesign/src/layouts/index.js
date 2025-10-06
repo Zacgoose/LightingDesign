@@ -303,25 +303,7 @@ export const Layout = (props) => {
               <Page />
             </DialogContent>
           </Dialog>
-          {(currentTenant === "AllTenants" || !currentTenant) && !allTenantsSupport ? (
-            <Box sx={{ flexGrow: 1, py: 4 }}>
-              <Container maxWidth={false}>
-                <Grid container spacing={3}>
-                  <Grid size={6}>
-                    <CippImageCard
-                      title="Not supported"
-                      imageUrl="/assets/illustrations/undraw_website_ij0l.svg"
-                      text={
-                        "The page does not support all Tenants, please select a different tenant using the tenant selector."
-                      }
-                    />
-                  </Grid>
-                </Grid>
-              </Container>
-            </Box>
-          ) : (
-            <>{children}</>
-          )}
+          {children}
           <Footer />
         </LayoutContainer>
       </LayoutRoot>

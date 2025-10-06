@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import PropTypes from "prop-types";
-import { Box, Divider, Drawer, Stack, Typography } from "@mui/material";
+import { Box, Divider, Drawer, Stack, IconButton, Tooltip } from "@mui/material";
+import Bars3Icon from "@heroicons/react/24/outline/Bars3Icon";
 import { Scrollbar } from "../components/scrollbar";
 import { SideNavItem } from "./side-nav-item";
-import { useSettings } from "../hooks/use-settings";
 import { ApiGetCall } from "../api/ApiCall.jsx";
 
 const SIDE_NAV_WIDTH = 150;
-const SIDE_NAV_COLLAPSED_WIDTH = 73; // icon size + padding + border right
+const SIDE_NAV_COLLAPSED_WIDTH = 56;
 const TOP_NAV_HEIGHT = 64;
 
 const markOpenItems = (items, pathname) => {
@@ -23,9 +23,9 @@ const markOpenItems = (items, pathname) => {
     if (newItems.length > 0) {
       newItems = markOpenItems(newItems, pathname);
       const childOpen = newItems.some((child) => child.openImmediately);
-      openImmediately = openImmediately || childOpen || exactMatch; // Ensure parent opens if child is open
+      openImmediately = openImmediately || childOpen || exactMatch;
     } else {
-      openImmediately = openImmediately || partialMatch; // Leaf items open on partial match
+      openImmediately = openImmediately || partialMatch;
     }
 
     return {
@@ -101,11 +101,32 @@ export const SideNav = (props) => {
   const { items, onPin, pinned = false } = props;
   const pathname = usePathname();
   const [hovered, setHovered] = useState(false);
-  const collapse = !(pinned || hovered);
+  const [localPinned, setLocalPinned] = useState(pinned);
+  
+  // Update local state when prop changes
+  useEffect(() => {
+    setLocalPinned(pinned);
+  }, [pinned]);
+  
+  // Simple collapse logic: collapse only when NOT pinned AND NOT hovered
+  const collapse = !localPinned && !hovered;
   const { data: profile } = ApiGetCall({ url: "/api/me", queryKey: "authmecipp" });
 
   // Preprocess items to mark which should be open
   const processedItems = markOpenItems(items, pathname);
+
+  const handleTogglePin = () => {
+    const newPinned = !localPinned;
+    setLocalPinned(newPinned);
+    
+    if (onPin) {
+      onPin();
+    }
+  };
+  
+  const handleMouseLeave = () => {
+    setHovered(false);
+  };
 
   return (
     <>
@@ -117,9 +138,7 @@ export const SideNav = (props) => {
             onMouseEnter: () => {
               setHovered(true);
             },
-            onMouseLeave: () => {
-              setHovered(false);
-            },
+            onMouseLeave: handleMouseLeave,
             sx: {
               backgroundColor: "background.default",
               height: `calc(100% - ${TOP_NAV_HEIGHT}px)`,
@@ -128,6 +147,8 @@ export const SideNav = (props) => {
               transition: "width 250ms ease-in-out",
               width: collapse ? SIDE_NAV_COLLAPSED_WIDTH : SIDE_NAV_WIDTH,
               zIndex: (theme) => theme.zIndex.appBar - 100,
+              borderRight: "1px solid",
+              borderColor: "divider",
             },
           }}
         >
@@ -146,9 +167,42 @@ export const SideNav = (props) => {
                 display: "flex",
                 flexDirection: "column",
                 height: "100%",
-                p: 2,
+                p: 0, // Remove padding for tighter spacing
               }}
             >
+              {/* Hamburger Button */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  alignItems: "center",
+                  mb: 1,
+                  mt: 1, // Add top margin
+                  px: "16px", // Match icon positioning - always 16px
+                }}
+              >
+                <Tooltip title={localPinned ? "Unpin sidebar" : "Pin sidebar"} placement="right" arrow>
+                  <IconButton
+                    onClick={handleTogglePin}
+                    size="small"
+                    sx={{
+                      color: "neutral.500",
+                      transition: "opacity 250ms ease-in-out",
+                      "&:hover": {
+                        backgroundColor: "action.hover",
+                      },
+                      p: 0,
+                      width: 24,
+                      height: 24,
+                    }}
+                  >
+                    <Bars3Icon style={{ width: 24, height: 24 }} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+
+              <Divider sx={{ mb: 2, mx: 1 }} />
+
               <Box
                 component="ul"
                 sx={{
@@ -164,10 +218,8 @@ export const SideNav = (props) => {
                   items: processedItems,
                   pathname,
                 })}
-              </Box>{" "}
-              {/* Add this closing tag */}
-            </Box>{" "}
-            {/* Closing tag for the parent Box */}
+              </Box>
+            </Box>
           </Scrollbar>
         </Drawer>
       )}

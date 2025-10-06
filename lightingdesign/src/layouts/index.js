@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { Alert, Button, Dialog, DialogContent, DialogTitle, useMediaQuery } from "@mui/material";
+import { Dialog, DialogContent, DialogTitle, useMediaQuery } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useSettings } from "../hooks/use-settings";
 import { Footer } from "./footer";
@@ -10,14 +10,12 @@ import { TopNav } from "./top-nav";
 import { ApiGetCall } from "../api/ApiCall";
 import { useDispatch } from "react-redux";
 import { showToast } from "../store/toasts";
-import { Box, Container, Grid } from "@mui/system";
-import { CippImageCard } from "../components/CippCards/CippImageCard";
 import Page from "../pages/onboardingv2";
 import { useDialog } from "../hooks/use-dialog";
 import { nativeMenuItems } from "/src/layouts/config";
 
 const SIDE_NAV_WIDTH = 150;
-const SIDE_NAV_PINNED_WIDTH = 50;
+const SIDE_NAV_COLLAPSED_WIDTH = 56;
 const TOP_NAV_HEIGHT = 64;
 
 const useMobileNav = () => {
@@ -55,9 +53,6 @@ const LayoutRoot = styled("div")(({ theme }) => ({
   flex: "1 1 auto",
   maxWidth: "100%",
   paddingTop: TOP_NAV_HEIGHT,
-  [theme.breakpoints.up("lg")]: {
-    paddingLeft: SIDE_NAV_WIDTH,
-  },
 }));
 
 const LayoutContainer = styled("div")({
@@ -68,7 +63,7 @@ const LayoutContainer = styled("div")({
 });
 
 export const Layout = (props) => {
-  const { children, allTenantsSupport = true } = props;
+  const { children } = props;
   const mdDown = useMediaQuery((theme) => theme.breakpoints.down("md"));
   const settings = useSettings();
   const mobileNav = useMobileNav();
@@ -76,7 +71,6 @@ export const Layout = (props) => {
   const [fetchingVisible, setFetchingVisible] = useState([]);
   const [menuItems, setMenuItems] = useState(nativeMenuItems);
   const lastUserSettingsUpdate = useRef(null);
-  const currentTenant = settings?.currentTenant;
   const [hideSidebar, setHideSidebar] = useState(false);
 
   const swaStatus = ApiGetCall({
@@ -175,7 +169,8 @@ export const Layout = (props) => {
     });
   }, [settings]);
 
-  const offset = settings.pinNav ? SIDE_NAV_WIDTH : SIDE_NAV_PINNED_WIDTH;
+  // Calculate offset based on pinned state - pinned = expanded, not pinned = collapsed
+  const offset = settings.pinNav ? SIDE_NAV_WIDTH : SIDE_NAV_COLLAPSED_WIDTH;
 
   const userSettingsAPI = ApiGetCall({
     url: "/api/ListUserSettings",
@@ -287,8 +282,9 @@ export const Layout = (props) => {
       <LayoutRoot
         sx={{
           pl: {
-            md: (hideSidebar ? "0" : offset) + "px",
+            lg: hideSidebar ? "0px" : `${offset}px`,
           },
+          transition: "padding-left 250ms ease-in-out", // Smooth transition
         }}
       >
         <LayoutContainer>

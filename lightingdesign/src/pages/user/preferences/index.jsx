@@ -40,7 +40,6 @@ const Page = () => {
     measurementUnits: { value: "metric", label: "Metric (Meters/Centimeters/Millimeters)" },
     tablePageSize: { value: "25", label: "25" },
     persistFilters: false,
-    defaultScale: { value: "1:100", label: "1:100" },
     gridSize: { value: "20", label: "20 units" },
     showGrid: true,
     snapToGrid: true,
@@ -71,7 +70,6 @@ const Page = () => {
       measurementUnits: formValues.measurementUnits,
       tablePageSize: formValues.tablePageSize,
       persistFilters: formValues.persistFilters,
-      defaultScale: formValues.defaultScale,
       gridSize: formValues.gridSize,
       showGrid: formValues.showGrid,
       snapToGrid: formValues.snapToGrid,
@@ -94,12 +92,6 @@ const Page = () => {
   const unitOptions = [
     { value: "metric", label: "Metric (Meters/Centimeters/Millimeters)" },
     { value: "imperial", label: "Imperial (Feet/Inches)" },
-  ];
-
-  const scaleOptions = [
-    { value: "1:50", label: "1:50" },
-    { value: "1:100", label: "1:100" },
-    { value: "1:200", label: "1:200" },
   ];
 
   const gridSizeOptions = [
@@ -190,20 +182,6 @@ const Page = () => {
                     showDivider={false}
                     title="Canvas Settings"
                     propertyItems={[
-                      {
-                        label: "Default Scale",
-                        value: (
-                          <CippFormComponent
-                            type="autoComplete"
-                            creatable={false}
-                            disableClearable={true}
-                            name="defaultScale"
-                            formControl={formcontrol}
-                            multiple={false}
-                            options={scaleOptions}
-                          />
-                        ),
-                      },
                       {
                         label: "Grid Size",
                         value: (

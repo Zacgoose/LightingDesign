@@ -1,11 +1,8 @@
-import Head from "next/head";
 import { useRouter } from "next/router";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Box, Container, Card, CardContent, useTheme } from "@mui/material";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
-import { DesignerMainToolbar } from "/src/components/designer/DesignerMainToolbar";
-import { DesignerViewToolbar } from "/src/components/designer/DesignerViewToolbar";
-import { DesignerToolsToolbar } from "/src/components/designer/DesignerToolsToolbar";
+import { DesignerToolbarRow } from "/src/components/designer/DesignerToolbarRow";
 import { DesignerCanvas } from "/src/components/designer/DesignerCanvas";
 import { ProductSelectionDrawer } from "/src/components/designer/ProductSelectionDrawer";
 import { ContextMenus } from "/src/components/designer/ContextMenus";
@@ -25,8 +22,8 @@ const Page = () => {
 
   // Canvas state
   const [stageScale, setStageScale] = useState(1);
-  const canvasWidth = typeof window !== 'undefined' ? window.innerWidth - 100 : 1200;
-  const canvasHeight = typeof window !== 'undefined' ? window.innerHeight - 300 : 700;
+  const [canvasWidth, setCanvasWidth] = useState(4200);
+  const [canvasHeight, setCanvasHeight] = useState(2970);
   const [stagePosition, setStagePosition] = useState({ 
     x: canvasWidth / 2, 
     y: canvasHeight / 2 
@@ -74,6 +71,15 @@ const Page = () => {
   const transformerRef = useRef();
   const selectionGroupRef = useRef();
   const pendingInsertPosition = useRef(null);
+  const canvasContainerRef = useRef();
+
+  // Background and Scale
+  const [backgroundImage, setBackgroundImage] = useState(null);
+  const [scaleFactor, setScaleFactor] = useState(100); // 100px per meter
+  const [measureMode, setMeasureMode] = useState(false);
+  const [measurePoints, setMeasurePoints] = useState([]);
+  const [objectScaleFactor, setObjectScaleFactor] = useState(1); // For future use
+  const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(null);
 
   // Selection snapshot for group transformations
   const selectionSnapshot = useMemo(() => {
@@ -116,6 +122,23 @@ const Page = () => {
       }
     }
   }, [selectedIds, groupKey]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasContainerRef.current) {
+        const rect = canvasContainerRef.current.getBoundingClientRect();
+        setCanvasWidth(rect.width);
+        setCanvasHeight(rect.height);
+        setStagePosition({
+          x: rect.width / 2,
+          y: rect.height / 2,
+        });
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Apply group transform to actual product data
   const applyGroupTransform = () => {
@@ -237,6 +260,61 @@ const Page = () => {
       setGroupKey(k => k + 1);
     },
   });
+
+  const handleUploadFloorPlan = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new window.Image();
+          img.onload = () => {
+            setBackgroundImage(ev.target.result);
+            setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  };
+
+  const handleMeasure = () => {
+    setMeasureMode(true);
+    setMeasurePoints([]);
+  };
+
+  const handleCanvasMeasureClick = (e) => {
+    if (!measureMode) return;
+    const stage = e.target.getStage();
+    const pointerPosition = stage.getPointerPosition();
+    const canvasPos = {
+      x: (pointerPosition.x - stagePosition.x) / stageScale,
+      y: (pointerPosition.y - stagePosition.y) / stageScale,
+    };
+    setMeasurePoints(points => {
+      const newPoints = [...points, canvasPos];
+      if (newPoints.length === 2) {
+        // Prompt for real-world distance
+        const pixelDistance = Math.sqrt(
+          Math.pow(newPoints[1].x - newPoints[0].x, 2) +
+          Math.pow(newPoints[1].y - newPoints[0].y, 2)
+        );
+        const input = window.prompt("Enter real-world distance between points (meters):", "1");
+        const realDistance = parseFloat(input);
+        if (realDistance > 0 && pixelDistance > 0) {
+          setScaleFactor(pixelDistance / realDistance);
+        }
+        setMeasureMode(false);
+        return [];
+      }
+      return newPoints;
+    });
+  };
 
   // Context menu handlers
   const handleOpenColorPicker = (e) => {
@@ -646,8 +724,8 @@ const Page = () => {
   };
 
   // Toolbar handlers
-  const handleZoomIn = () => setStageScale(stageScale * 1.2);
-  const handleZoomOut = () => setStageScale(stageScale / 1.2);
+  const handleZoomIn = () => setStageScale(stageScale * 1.5);
+  const handleZoomOut = () => setStageScale(stageScale / 1.5);
   const handleResetView = () => {
     setStageScale(1);
     setStagePosition({ x: canvasWidth / 2, y: canvasHeight / 2 });
@@ -665,42 +743,44 @@ const Page = () => {
 
   return (
     <>
-      <Head>
-        <title>Designer - Job {id} - Lighting Design</title>
-      </Head>
-      <Box sx={{ flexGrow: 1, py: 2 }}>
-        <Container maxWidth={false}>
-          <DesignerMainToolbar
-            onUploadFloorPlan={() => console.log("Upload floor plan")}
-            onSave={handleSave}
-            onExport={handleExport}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={canUndo}
-            canRedo={canRedo}
+      <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", minHeight: 0 }}>
+        <Container maxWidth={false} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+
+          <div style={{ height: 4 }} />
+
+
+          <DesignerToolbarRow
+            mainProps={{
+              onUploadFloorPlan: handleUploadFloorPlan,
+              onSave: handleSave,
+              onExport: handleExport,
+              onUndo: handleUndo,
+              onRedo: handleRedo,
+              canUndo: canUndo,
+              canRedo: canRedo,
+              onMeasure: handleMeasure,
+            }}
+            viewProps={{
+              showGrid: showGrid,
+              onToggleGrid: () => setShowGrid(!showGrid),
+              showMeasurements: showMeasurements,
+              onToggleMeasurements: () => setShowMeasurements(!showMeasurements),
+              onZoomIn: handleZoomIn,
+              onZoomOut: handleZoomOut,
+              onResetView: handleResetView,
+              zoomLevel: stageScale,
+              rotationSnaps: rotationSnaps,
+              onRotationSnapsChange: setRotationSnaps,
+            }}
+            toolsProps={{
+              selectedTool: selectedTool,
+              onToolChange: setSelectedTool,
+              placementMode: placementMode,
+              onStopPlacement: handleStopPlacement,
+            }}
           />
 
-          <DesignerViewToolbar
-            showGrid={showGrid}
-            onToggleGrid={() => setShowGrid(!showGrid)}
-            showMeasurements={showMeasurements}
-            onToggleMeasurements={() => setShowMeasurements(!showMeasurements)}
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            onResetView={handleResetView}
-            zoomLevel={stageScale}
-            rotationSnaps={rotationSnaps}
-            onRotationSnapsChange={setRotationSnaps}
-          />
-
-          <DesignerToolsToolbar
-            selectedTool={selectedTool}
-            onToolChange={setSelectedTool}
-            placementMode={placementMode}
-            onStopPlacement={handleStopPlacement}
-          />
-
-          <Box sx={{ mb: 2 }}>
+          <Box sx={{ mb: 1 }}>
             <ProductSelectionDrawer 
               onProductSelect={handleProductAdd}
               visible={productDrawerVisible}
@@ -714,81 +794,96 @@ const Page = () => {
 
           <ConnectionModeBanner connectMode={connectMode} />
 
-          <Card>
-            <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-              <DesignerCanvas
-                width={canvasWidth}
-                height={canvasHeight}
-                stageScale={stageScale}
-                stagePosition={stagePosition}
-                showGrid={showGrid}
-                onWheel={handleWheel}
-                onDragEnd={handleStageDragEnd}
-                draggable={selectedTool === "pan" && !placementMode}
-                onMouseDown={checkDeselect}
-                onTouchStart={checkDeselect}
-                onMouseMove={handleCanvasMouseMove}
-                onContextMenu={handleStageContextMenu}
-                selectedCount={selectedIds.length}
+          <Card sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+            <CardContent sx={{ p: 0, "&:last-child": { pb: 0 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+              <Box
+                ref={canvasContainerRef}
+                sx={{
+                  flex: 1,
+                  width: "100%",
+                  height: "100%",
+                  position: "relative",
+                  overflow: "hidden", // prevents scrollbars
+                  minHeight: 0,
+                }}
               >
-                <ConnectorsLayer
-                  connectors={connectors}
-                  products={products}
-                  selectedConnectorId={selectedConnectorId}
-                  selectedTool={selectedTool}
-                  theme={theme}
-                  onConnectorSelect={(e) => {
-                    e.cancelBubble = true;
-                    applyGroupTransform();
-                    setSelectedConnectorId(e.target.id());
-                    setSelectedIds([]);
-                    setGroupKey(k => k + 1);
-                  }}
-                  onConnectorChange={setConnectors}
-                  onConnectorContextMenu={handleConnectorContextMenu}
-                />
-
-                <ProductsLayer
-                  products={products}
-                  selectedIds={selectedIds}
-                  selectedTool={selectedTool}
-                  selectionSnapshot={selectionSnapshot}
-                  selectionGroupRef={selectionGroupRef}
-                  transformerRef={transformerRef}
-                  rotationSnaps={rotationSnaps}
-                  theme={theme}
-                  groupKey={groupKey}
-                  placementMode={placementMode}
-                  onProductClick={handleProductClick}
-                  onProductDragStart={handleProductDragStart}
-                  onProductDragEnd={handleProductDragEnd}
-                  onContextMenu={handleContextMenu}
-                  onGroupDragEnd={handleGroupDragEnd}
-                />
-
-                {/* Ghost product preview in placement mode */}
-                {placementMode && (
-                  <ProductShape
-                    product={{
-                      ...createProductFromTemplate(placementMode.template, cursorPosition.x, cursorPosition.y),
-                      x: cursorPosition.x,
-                      y: cursorPosition.y,
-                    }}
-                    config={(() => {
-                      const productType = placementMode.template.product_type_unigram?.toLowerCase() || "default";
-                      return productTypesConfig[productType] || productTypesConfig.default;
-                    })()}
-                    isSelected={false}
-                    draggable={false}
-                    customStroke="#2196f3"
+                <DesignerCanvas
+                  width={canvasWidth}
+                  height={canvasHeight}
+                  stageScale={stageScale}
+                  stagePosition={stagePosition}
+                  showGrid={showGrid}
+                  onWheel={handleWheel}
+                  onDragEnd={handleStageDragEnd}
+                  draggable={selectedTool === "pan" && !placementMode}
+                  onMouseDown={measureMode ? handleCanvasMeasureClick : checkDeselect}
+                  onTouchStart={checkDeselect}
+                  onMouseMove={handleCanvasMouseMove}
+                  onContextMenu={handleStageContextMenu}
+                  selectedCount={selectedIds.length}
+                  backgroundImage={backgroundImage}
+                  backgroundImageNaturalSize={backgroundImageNaturalSize}
+                  scaleFactor={scaleFactor}
+                >
+                  <ConnectorsLayer
+                    connectors={connectors}
+                    products={products}
+                    selectedConnectorId={selectedConnectorId}
+                    selectedTool={selectedTool}
                     theme={theme}
-                    opacity={0.6}
-                    listening={false}
-                    onMouseDown={() => {}}
-                    onContextMenu={() => {}}
+                    onConnectorSelect={(e) => {
+                      e.cancelBubble = true;
+                      applyGroupTransform();
+                      setSelectedConnectorId(e.target.id());
+                      setSelectedIds([]);
+                      setGroupKey(k => k + 1);
+                    }}
+                    onConnectorChange={setConnectors}
+                    onConnectorContextMenu={handleConnectorContextMenu}
                   />
-                )}
-              </DesignerCanvas>
+
+                  <ProductsLayer
+                    products={products}
+                    selectedIds={selectedIds}
+                    selectedTool={selectedTool}
+                    selectionSnapshot={selectionSnapshot}
+                    selectionGroupRef={selectionGroupRef}
+                    transformerRef={transformerRef}
+                    rotationSnaps={rotationSnaps}
+                    theme={theme}
+                    groupKey={groupKey}
+                    placementMode={placementMode}
+                    onProductClick={handleProductClick}
+                    onProductDragStart={handleProductDragStart}
+                    onProductDragEnd={handleProductDragEnd}
+                    onContextMenu={handleContextMenu}
+                    onGroupDragEnd={handleGroupDragEnd}
+                  />
+
+                  {/* Ghost product preview in placement mode */}
+                  {placementMode && (
+                    <ProductShape
+                      product={{
+                        ...createProductFromTemplate(placementMode.template, cursorPosition.x, cursorPosition.y),
+                        x: cursorPosition.x,
+                        y: cursorPosition.y,
+                      }}
+                      config={(() => {
+                        const productType = placementMode.template.product_type_unigram?.toLowerCase() || "default";
+                        return productTypesConfig[productType] || productTypesConfig.default;
+                      })()}
+                      isSelected={false}
+                      draggable={false}
+                      customStroke="#2196f3"
+                      theme={theme}
+                      opacity={0.6}
+                      listening={false}
+                      onMouseDown={() => {}}
+                      onContextMenu={() => {}}
+                    />
+                  )}
+                </DesignerCanvas>
+              </Box>
             </CardContent>
           </Card>
         </Container>

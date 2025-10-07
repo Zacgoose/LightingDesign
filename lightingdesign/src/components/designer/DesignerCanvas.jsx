@@ -3,12 +3,13 @@ import { Stage, Layer, Line, Image as KonvaImage } from "react-konva";
 import { useState, useEffect } from "react";
 
 export const DesignerCanvas = ({
-  width,
-  height,
-  stageScale,
+  width = 4200,
+  height = 2970,
+  stageScale = 1,
   stagePosition,
   showGrid,
-  gridSize = 20,
+  gridSize = 100,
+  scaleFactor = 100,
   onWheel,
   onDragEnd,
   onMouseDown,
@@ -16,66 +17,75 @@ export const DesignerCanvas = ({
   onContextMenu,
   draggable = true,
   stageRef,
-  backgroundImage = null, // URL or Image object
+  backgroundImage = null,
+  backgroundImageNaturalSize = null,
   children,
   onMouseMove
 }) => {
   const theme = useTheme();
   const [bgImage, setBgImage] = useState(null);
-  
+
   // Load background image
   useEffect(() => {
     if (!backgroundImage) {
       setBgImage(null);
       return;
     }
-    
+
     const img = new window.Image();
     img.onload = () => {
       setBgImage(img);
     };
-    
+
     if (typeof backgroundImage === 'string') {
       img.src = backgroundImage;
     } else if (backgroundImage instanceof window.Image) {
       setBgImage(backgroundImage);
     }
   }, [backgroundImage]);
-  
+
   // Theme-aware colors
-  const backgroundColor = theme.palette.mode === 'dark' 
-    ? theme.palette.background.default 
+  const backgroundColor = theme.palette.mode === 'dark'
+    ? theme.palette.background.default
     : '#f5f5f5';
-  
+
   const gridColor = theme.palette.mode === 'dark'
     ? 'rgba(255, 255, 255, 0.1)'
     : 'rgba(0, 0, 0, 0.1)';
-  
-  const indicatorBg = theme.palette.mode === 'dark'
-    ? theme.palette.background.paper
-    : 'white';
-  
-  const indicatorColor = theme.palette.mode === 'dark'
-    ? theme.palette.text.primary
-    : theme.palette.text.primary;
 
-  // Generate grid lines
+  // Calculate image scale to fit canvas
+  const getImageScale = () => {
+    if (!bgImage || !backgroundImageNaturalSize) return 1;
+    const scaleX = width / backgroundImageNaturalSize.width;
+    const scaleY = height / backgroundImageNaturalSize.height;
+    return Math.min(scaleX, scaleY);
+  };
+
+  const imageScale = getImageScale();
+
+  // Generate grid lines to match scaled image bounds if image is present
   const generateGrid = () => {
     const lines = [];
-    const gridWidth = width * 2;
-    const gridHeight = height * 2;
-    
-    const startX = -gridWidth / 2;
-    const endX = gridWidth / 2;
-    const startY = -gridHeight / 2;
-    const endY = gridHeight / 2;
+    let gridWidth = width;
+    let gridHeight = height;
+    let offsetX = -width / 2;
+    let offsetY = -height / 2;
+
+    if (bgImage && backgroundImageNaturalSize) {
+      gridWidth = backgroundImageNaturalSize.width * imageScale;
+      gridHeight = backgroundImageNaturalSize.height * imageScale;
+      offsetX = -gridWidth / 2;
+      offsetY = -gridHeight / 2;
+    }
+
+    const scaledGridSize = scaleFactor > 0 ? scaleFactor : gridSize;
 
     // Vertical lines
-    for (let x = startX; x <= endX; x += gridSize) {
+    for (let x = offsetX; x <= offsetX + gridWidth; x += scaledGridSize) {
       lines.push(
         <Line
           key={`v-${x}`}
-          points={[x, startY, x, endY]}
+          points={[x, offsetY, x, offsetY + gridHeight]}
           stroke={gridColor}
           strokeWidth={0.5}
           listening={false}
@@ -84,11 +94,11 @@ export const DesignerCanvas = ({
     }
 
     // Horizontal lines
-    for (let y = startY; y <= endY; y += gridSize) {
+    for (let y = offsetY; y <= offsetY + gridHeight; y += scaledGridSize) {
       lines.push(
         <Line
           key={`h-${y}`}
-          points={[startX, y, endX, y]}
+          points={[offsetX, y, offsetX + gridWidth, y]}
           stroke={gridColor}
           strokeWidth={0.5}
           listening={false}
@@ -133,12 +143,14 @@ export const DesignerCanvas = ({
         )}
 
         {/* Background Image Layer */}
-        {bgImage && (
+        {bgImage && backgroundImageNaturalSize && (
           <Layer>
             <KonvaImage
               image={bgImage}
-              x={-bgImage.width / 2}
-              y={-bgImage.height / 2}
+              x={-backgroundImageNaturalSize.width * imageScale / 2}
+              y={-backgroundImageNaturalSize.height * imageScale / 2}
+              width={backgroundImageNaturalSize.width * imageScale}
+              height={backgroundImageNaturalSize.height * imageScale}
               opacity={0.5}
               listening={false}
             />
@@ -150,7 +162,6 @@ export const DesignerCanvas = ({
           {children}
         </Layer>
       </Stage>
-
     </Box>
   );
 };

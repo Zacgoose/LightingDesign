@@ -24,6 +24,8 @@ export default function CippButtonCard({
   component = "card",
   accordionExpanded = false,
   onAccordionChange,
+  cardActionsAlign = "right",
+  cardHeaderActionsAlign = "right",
 }) {
   const [cardExpanded, setCardExpanded] = useState(accordionExpanded);
   useEffect(() => {
@@ -38,17 +40,35 @@ export default function CippButtonCard({
     }
   }, [cardExpanded]);
 
+  const hasContent = !!children || isFetching;
   return (
     <Card variant={variant} sx={cardSx}>
       {component === "card" && (
         <>
-          <CardHeader action={cardActions} title={title} />
-          <Divider />
-          <CardContent style={{ marginBottom: "auto" }}>
-            {isFetching ? <Skeleton /> : children}
-          </CardContent>
-          <Divider />
-          {CardButton && <CardActions>{CardButton}</CardActions>}
+          <CardHeader
+            action={cardActions}
+            title={title}
+            sx={{
+              width: "100%",
+              '& .MuiCardHeader-action': {
+                justifyContent: cardHeaderActionsAlign === "left" ? "flex-start" : "flex-end",
+                display: "flex",
+                width: "100%",
+              },
+            }}
+          />
+          {hasContent && (
+            <CardContent sx={{ p: 0, m: 0, minHeight: 0, height: 0 }}>
+              {isFetching ? <Skeleton /> : children}
+            </CardContent>
+          )}
+          {CardButton && (
+            <CardActions
+              sx={cardActionsAlign === "left" ? { justifyContent: "flex-start" } : {}}
+            >
+              {CardButton}
+            </CardActions>
+          )}
         </>
       )}
       {component === "accordion" && (
@@ -57,14 +77,35 @@ export default function CippButtonCard({
             expandIcon={<ExpandMoreIcon />}
             onClick={() => setCardExpanded(!cardExpanded)}
           >
-            <CardHeader action={cardActions} title={title} sx={{ pl: 1, py: 0 }} />
+            <CardHeader
+              action={cardActions}
+              title={title}
+              sx={{
+                pl: 1,
+                py: 0,
+                width: "100%",
+                '& .MuiCardHeader-action': {
+                  justifyContent: cardHeaderActionsAlign === "left" ? "flex-start" : "flex-end",
+                  display: "flex",
+                  width: "100%",
+                },
+              }}
+            />
           </AccordionSummary>
           <Divider />
           <AccordionDetails sx={{ p: 0 }}>
-            <CardContent style={{ marginBottom: "auto" }}>
-              {isFetching ? <Skeleton /> : children}
-            </CardContent>
-            {CardButton && <CardActions>{CardButton}</CardActions>}
+            {hasContent && (
+              <CardContent sx={{ p: 0, m: 0, minHeight: 0, height: 0 }}>
+                {isFetching ? <Skeleton /> : children}
+              </CardContent>
+            )}
+            {CardButton && (
+              <CardActions
+                sx={cardActionsAlign === "left" ? { justifyContent: "flex-start" } : {}}
+              >
+                {CardButton}
+              </CardActions>
+            )}
           </AccordionDetails>
         </Accordion>
       )}

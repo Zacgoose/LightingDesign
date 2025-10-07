@@ -34,7 +34,7 @@ const Page = () => {
         queryKey="AddJob"
         title="New Job"
         backButtonTitle="Jobs"
-        postUrl="/api/AddJob"
+        postUrl="/api/ExecNewJob"
         customDataformatter={(values) => {
           return {
             jobNumber: values.jobNumber,

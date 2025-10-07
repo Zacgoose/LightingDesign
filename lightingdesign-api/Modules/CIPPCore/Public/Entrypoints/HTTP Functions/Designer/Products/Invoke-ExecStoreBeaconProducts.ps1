@@ -1,88 +1,74 @@
 using namespace System.Net
 
-Function Invoke-ExecGetBeaconProducts {
+Function Invoke-ExecStoreBeaconProducts {
     <#
     .FUNCTIONALITY
         Entrypoint
     .ROLE
-        LightingDesigner.Products.Read
+        LightingDesigner.Products.ReadWrite
     #>
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
     try {
-        # Base API configuration
+        # Fetch all products from Searchspring API
         $BaseUrl = 'https://nhbtv0.a.searchspring.io/api/search/search.json'
         $SiteId = 'nhbtv0'
         $Domain = 'https://www.beaconlighting.com.au'
         $ResultsPerPage = 100
         $ResultsFormat = 'native'
-
-        # Initialize variables for pagination
         $AllProducts = [System.Collections.Generic.List[object]]::new()
         $CurrentPage = 1
         $TotalPages = 1
         $TotalResults = 0
-
-        Write-Host "Starting product fetch from Searchspring API..."
-
-        # Pagination loop
         do {
-            # Build the API URL for current page
             $ApiUrl = "$BaseUrl`?siteId=$SiteId&domain=$Domain&resultsPerPage=$ResultsPerPage&page=$CurrentPage&resultsFormat=$ResultsFormat"
-
-            Write-Host "Fetching page $CurrentPage of $TotalPages..."
-
-            # Make the API call
             $Response = Invoke-RestMethod -Uri $ApiUrl -Method Get -ContentType 'application/json'
-
-            # On first page, determine total pages
             if ($CurrentPage -eq 1) {
                 $TotalResults = $Response.pagination.totalResults
                 $TotalPages = $Response.pagination.totalPages
-
-                Write-Host "Total products to fetch: $TotalResults across $TotalPages pages"
             }
-
-            # Add products from current page to collection
             if ($Response.results) {
                 foreach ($Product in $Response.results) {
                     $AllProducts.Add($Product)
                 }
             }
-
-            Write-Host "Fetched $($Response.results.Count) products from page $CurrentPage. Total so far: $($AllProducts.Count)"
-
-            # Move to next page
             $CurrentPage++
-
         } while ($CurrentPage -le $TotalPages)
 
-        # Structure the final response
-        $Body = @($AllProducts)
+        $Table = Get-CIPPTable -TableName 'Products'
 
-        $StatusCode = [HttpStatusCode]::OK
+        # Remove all existing products from Products table
+        Remove-AzDataTable @Table
 
-        Write-Host "Successfully fetched $($AllProducts.Count) products"
+        # Store each product as a separate entity in Products table
+        foreach ($Product in $AllProducts) {
+            $Product = $Product | ConvertTo-Json -Depth 10 -Compress
+            $entity = @{
+                PartitionKey = 'Products'
+                RowKey       = [guid]::NewGuid().ToString()
+                ProductJson  = [string]$Product
+            }
+            Add-AzDataTableEntity @Table -Entity $entity -Force -CreateTableIfNotExists
+        }
 
+        $StatusCode = [HttpStatusCode]::Created
+        $Body = [PSCustomObject]@{
+            Success = $true
+            Message = "All products stored successfully"
+            Count   = $AllProducts.Count
+        }
     } catch {
         $ErrorMessage = $_.Exception.Message
         $StatusCode = [HttpStatusCode]::BadRequest
-
-        Write-Warning "Error in ExecGetBeaconProducts: $ErrorMessage"
-        Write-Information $_.InvocationInfo.PositionMessage
-
         $Body = [PSCustomObject]@{
             Success = $false
-            Message = "Failed to fetch products"
+            Message = "Failed to store products"
             Error   = $ErrorMessage
-            Results = @()
         }
     }
-
-    # Return the HTTP response
     return ([HttpResponseContext]@{
-            StatusCode = $StatusCode
-            Body       = $Body
-        })
+        StatusCode = $StatusCode
+        Body       = $Body
+    })
 }

@@ -63,7 +63,7 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
       >
         <CippTablePage
           title="Products"
-          apiUrl="/api/ExecGetBeaconProducts"
+          apiUrl="/api/ExecListBeaconProducts"
           simpleColumns={simpleColumns}
           filters={filterList}
           cardButton={null}

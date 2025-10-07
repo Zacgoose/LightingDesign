@@ -50,8 +50,8 @@ export const DesignerCanvas = ({
     : '#f5f5f5';
 
   const gridColor = theme.palette.mode === 'dark'
-    ? 'rgba(255, 255, 255, 0.1)'
-    : 'rgba(0, 0, 0, 0.1)';
+    ? 'rgba(255, 255, 255, 0.5)'
+    : 'rgba(0, 0, 0, 0.5)';
 
   // Calculate image scale to fit canvas
   const getImageScale = () => {
@@ -151,7 +151,7 @@ export const DesignerCanvas = ({
               y={-backgroundImageNaturalSize.height * imageScale / 2}
               width={backgroundImageNaturalSize.width * imageScale}
               height={backgroundImageNaturalSize.height * imageScale}
-              opacity={0.5}
+              opacity={0.7}
               listening={false}
             />
           </Layer>

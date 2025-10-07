@@ -30,7 +30,7 @@ const Page = () => {
         queryKey="AddCustomer"
         title="New Customer"
         backButtonTitle="Customers"
-        postUrl="/api/AddCustomer"
+        postUrl="/api/ExecNewCustomer"
         customDataformatter={(values) => {
           return {
             customerName: values.customerName,

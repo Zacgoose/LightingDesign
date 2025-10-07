@@ -39,15 +39,9 @@ const Page = () => {
   // Define off-canvas details when clicking a row
   const offCanvas = {
     extendedInfoFields: [
-      "customerName",
-      "email",
-      "phone",
-      "address",
-      "city",
-      "state",
-      "postalCode",
-      "totalJobs",
-      "createdDate",
+      "CustomerName",
+      "Status",
+      "DateTime",
     ],
     actions: actions,
   };
@@ -73,14 +67,9 @@ const Page = () => {
 
   // Columns to display in the table
   const simpleColumns = [
-    "customerName",
-    "email",
-    "phone",
-    "city",
-    "state",
-    "totalJobs",
-    "status",
-    "createdDate",
+    "CustomerName",
+    "Status",
+    "DateTime",
   ];
 
   return (

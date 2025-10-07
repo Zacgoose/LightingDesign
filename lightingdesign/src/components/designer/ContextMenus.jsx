@@ -11,6 +11,7 @@ export const ContextMenus = ({
   onDelete,
   onInsertProduct,
   onSwapPlacementProduct,
+  onScale,
 }) => {
   return (
     <Menu
@@ -42,6 +43,12 @@ export const ContextMenus = ({
               <LinkIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText>Connect to...</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={onScale}>
+            <ListItemIcon>
+              <SettingsBackupRestore fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Scale...</ListItemText>
           </MenuItem>
           <MenuItem onClick={onResetScale}>
             <ListItemIcon>

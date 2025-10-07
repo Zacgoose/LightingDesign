@@ -11,11 +11,16 @@ import { ConnectionModeBanner } from "/src/components/designer/ConnectionModeBan
 import { ProductsLayer } from "/src/components/designer/ProductsLayer";
 import { ConnectorsLayer } from "/src/components/designer/ConnectorsLayer";
 import { ProductShape } from "/src/components/designer/ProductShape";
+import { ScaleButton } from "/src/components/designer/ScaleButton";
 import { useHistory } from "/src/hooks/useHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
 import productTypesConfig from "/src/data/productTypes.json";
 
 const Page = () => {
+  // Middle mouse pan handler
+  const handleCanvasPan = (dx, dy) => {
+    setStagePosition(pos => ({ x: pos.x + dx, y: pos.y + dy }));
+  };
   const router = useRouter();
   const { id } = router.query;
   const theme = useTheme();
@@ -56,6 +61,52 @@ const Page = () => {
   const [selectedConnectorId, setSelectedConnectorId] = useState(null);
   const [groupKey, setGroupKey] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Scale dialog state
+  const [scaleDialogOpen, setScaleDialogOpen] = useState(false);
+  const [scaleValue, setScaleValue] = useState(1);
+
+  // Handler for context menu 'Scale...'
+  const handleOpenScaleDialog = () => {
+    setScaleDialogOpen(true);
+    handleCloseContextMenu();
+  };
+
+  // Handler for applying scale to selected products
+  const handleScaleConfirm = (scaleValue) => {
+    applyGroupTransform();
+    // For each selected product, set its real-world size attribute based on dialog input (meters)
+    const newProducts = products.map(product => {
+      if (!selectedIds.includes(product.id)) return product;
+      // Get product type config
+      const config = productTypesConfig[product.type] || productTypesConfig.default;
+      let updated = { ...product };
+      if (productTypesConfig[product.type]) {
+        // Known type
+        if (config.realWorldSize !== undefined) {
+          updated.realWorldSize = scaleValue;
+        }
+        if (config.realWorldWidth !== undefined && config.realWorldHeight !== undefined) {
+          updated.realWorldWidth = scaleValue;
+          updated.realWorldHeight = scaleValue;
+        } else if (config.realWorldWidth !== undefined) {
+          updated.realWorldWidth = scaleValue;
+        } else if (config.realWorldHeight !== undefined) {
+          updated.realWorldHeight = scaleValue;
+        }
+      } else {
+        // Fallback/default type: always set both width and height
+        updated.realWorldWidth = scaleValue;
+        updated.realWorldHeight = scaleValue;
+      }
+      // Always update scaleFactor for rendering
+      updated.scaleFactor = scaleFactor;
+      return updated;
+    });
+    updateHistory(newProducts);
+    setGroupKey(k => k + 1);
+    setScaleDialogOpen(false);
+  };
 
   // Connection mode
   const [connectMode, setConnectMode] = useState(null);
@@ -823,6 +874,7 @@ const Page = () => {
                   backgroundImage={backgroundImage}
                   backgroundImageNaturalSize={backgroundImageNaturalSize}
                   scaleFactor={scaleFactor}
+                  onPan={handleCanvasPan}
                 >
                   <ConnectorsLayer
                     connectors={connectors}
@@ -898,6 +950,14 @@ const Page = () => {
         onDelete={handleDeleteSelected}
         onInsertProduct={handleInsertProductAtPosition}
         onSwapPlacementProduct={handleSwapPlacementProduct}
+        onScale={handleOpenScaleDialog}
+      />
+
+      <ScaleButton
+        open={scaleDialogOpen}
+        onScale={handleScaleConfirm}
+        onClose={() => setScaleDialogOpen(false)}
+        defaultValue={1}
       />
 
       <ColorPickerPopover

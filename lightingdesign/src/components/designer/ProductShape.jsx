@@ -44,6 +44,10 @@ export const ProductShape = ({
         width={config.width}
         height={config.height}
         listening={listening}
+        realWorldWidth={product.realWorldWidth}
+        realWorldHeight={product.realWorldHeight}
+        realWorldSize={product.realWorldSize}
+        scaleFactor={product.scaleFactor}
       />
       
       {product.sku && (

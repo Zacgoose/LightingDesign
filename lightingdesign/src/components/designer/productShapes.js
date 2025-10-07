@@ -1,6 +1,9 @@
 export const ProductShapes = {
   pendant: (context, shape) => {
-    const width = shape.width() || 50;
+    // Use realWorldSize (meters) and scaleFactor (pixels per meter)
+    const scaleFactor = shape.getAttr('scaleFactor') || 50; // fallback if not set
+    const realWorldSize = shape.getAttr('realWorldSize') || (shape.width() ? shape.width() / scaleFactor : 1); // meters
+    const width = realWorldSize * scaleFactor;
     const radius = width / 2;
     
     // Hanging wire
@@ -21,7 +24,9 @@ export const ProductShapes = {
   },
 
   downlight: (context, shape) => {
-    const width = shape.width() || 40;
+    const scaleFactor = shape.getAttr('scaleFactor') || 50;
+    const realWorldSize = shape.getAttr('realWorldSize') || (shape.width() ? shape.width() / scaleFactor : 0.8);
+    const width = realWorldSize * scaleFactor;
     const radius = width / 2;
     
     // Main circle
@@ -50,7 +55,9 @@ export const ProductShapes = {
   },
 
   spotlight: (context, shape) => {
-    const width = shape.width() || 40;
+    const scaleFactor = shape.getAttr('scaleFactor') || 50;
+    const realWorldSize = shape.getAttr('realWorldSize') || (shape.width() ? shape.width() / scaleFactor : 0.8);
+    const width = realWorldSize * scaleFactor;
     const radius = width / 2;
     
     // Mounting bracket
@@ -69,9 +76,11 @@ export const ProductShapes = {
   },
 
   wall: (context, shape) => {
-    const width = shape.width() || 30;
-    const height = shape.height() || 40;
-    
+    const scaleFactor = shape.getAttr('scaleFactor') || 50;
+    const realWorldWidth = shape.getAttr('realWorldWidth') || (shape.width() ? shape.width() / scaleFactor : 0.3);
+    const realWorldHeight = shape.getAttr('realWorldHeight') || (shape.height() ? shape.height() / scaleFactor : 0.4);
+    const width = realWorldWidth * scaleFactor;
+    const height = realWorldHeight * scaleFactor;
     // Wall mount (rectangle)
     context.beginPath();
     context.rect(-width/4, -height/2, width/2, height * 0.3);
@@ -85,7 +94,9 @@ export const ProductShapes = {
   },
 
   fan: (context, shape) => {
-    const width = shape.width() || 70;
+    const scaleFactor = shape.getAttr('scaleFactor') || 50;
+    const realWorldSize = shape.getAttr('realWorldSize') || (shape.width() ? shape.width() / scaleFactor : 1.4);
+    const width = realWorldSize * scaleFactor;
     const radius = width / 2;
     
     // Center circle
@@ -109,9 +120,11 @@ export const ProductShapes = {
   },
 
   lamp: (context, shape) => {
-    const width = shape.width() || 25;
-    const height = shape.height() || 50;
-    
+    const scaleFactor = shape.getAttr('scaleFactor') || 50;
+    const realWorldWidth = shape.getAttr('realWorldWidth') || (shape.width() ? shape.width() / scaleFactor : 0.25);
+    const realWorldHeight = shape.getAttr('realWorldHeight') || (shape.height() ? shape.height() / scaleFactor : 0.5);
+    const width = realWorldWidth * scaleFactor;
+    const height = realWorldHeight * scaleFactor;
     // Base
     context.beginPath();
     context.rect(-width/3, height/2 - 8, width * 0.66, 8);
@@ -133,9 +146,11 @@ export const ProductShapes = {
   },
 
   strip: (context, shape) => {
-    const width = shape.width() || 60;
-    const height = shape.height() || 10;
-    
+    const scaleFactor = shape.getAttr('scaleFactor') || 50;
+    const realWorldWidth = shape.getAttr('realWorldWidth') || (shape.width() ? shape.width() / scaleFactor : 0.6);
+    const realWorldHeight = shape.getAttr('realWorldHeight') || (shape.height() ? shape.height() / scaleFactor : 0.1);
+    const width = realWorldWidth * scaleFactor;
+    const height = realWorldHeight * scaleFactor;
     // Main strip
     context.beginPath();
     context.roundRect(-width/2, -height/2, width, height, height/2);
@@ -156,7 +171,9 @@ export const ProductShapes = {
   },
 
   ceiling: (context, shape) => {
-    const width = shape.width() || 60;
+    const scaleFactor = shape.getAttr('scaleFactor') || 50;
+    const realWorldSize = shape.getAttr('realWorldSize') || (shape.width() ? shape.width() / scaleFactor : 1.2);
+    const width = realWorldSize * scaleFactor;
     const radius = width / 2;
     
     // Outer circle
@@ -184,7 +201,9 @@ export const ProductShapes = {
   },
 
   circle: (context, shape) => {
-    const width = shape.width() || 50;
+    const scaleFactor = shape.getAttr('scaleFactor') || 50;
+    const realWorldSize = shape.getAttr('realWorldSize') || (shape.width() ? shape.width() / scaleFactor : 1);
+    const width = realWorldSize * scaleFactor;
     const radius = width / 2;
     context.beginPath();
     context.arc(0, 0, radius, 0, Math.PI * 2);
@@ -193,8 +212,11 @@ export const ProductShapes = {
   },
 
   rect: (context, shape) => {
-    const width = shape.width() || 30;
-    const height = shape.height() || 30;
+    const scaleFactor = shape.getAttr('scaleFactor') || 50;
+    const realWorldWidth = shape.getAttr('realWorldWidth') || (shape.width() ? shape.width() / scaleFactor : 0.3);
+    const realWorldHeight = shape.getAttr('realWorldHeight') || (shape.height() ? shape.height() / scaleFactor : 0.3);
+    const width = realWorldWidth * scaleFactor;
+    const height = realWorldHeight * scaleFactor;
     context.beginPath();
     context.rect(-width/2, -height/2, width, height);
     context.fillStrokeShape(shape);

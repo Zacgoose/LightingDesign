@@ -3,6 +3,7 @@
     "shapeType": "pendant",
     "width": 50,
     "height": 50,
+    "realWorldSize": 1.0,
     "fill": "#FFF59D",
     "stroke": "#F57C00",
     "strokeWidth": 2
@@ -11,6 +12,7 @@
     "shapeType": "downlight",
     "width": 40,
     "height": 40,
+    "realWorldSize": 0.8,
     "fill": "#FFFFFF",
     "stroke": "#424242",
     "strokeWidth": 2
@@ -19,6 +21,7 @@
     "shapeType": "spotlight",
     "width": 40,
     "height": 40,
+    "realWorldSize": 0.8,
     "fill": "#E3F2FD",
     "stroke": "#1976D2",
     "strokeWidth": 2
@@ -27,6 +30,8 @@
     "shapeType": "wall",
     "width": 30,
     "height": 40,
+    "realWorldWidth": 0.3,
+    "realWorldHeight": 0.4,
     "fill": "#B3E5FC",
     "stroke": "#0277BD",
     "strokeWidth": 2
@@ -35,6 +40,7 @@
     "shapeType": "ceiling",
     "width": 60,
     "height": 60,
+    "realWorldSize": 1.2,
     "fill": "#EEEEEE",
     "stroke": "#616161",
     "strokeWidth": 2
@@ -43,6 +49,8 @@
     "shapeType": "lamp",
     "width": 25,
     "height": 50,
+    "realWorldWidth": 0.25,
+    "realWorldHeight": 0.5,
     "fill": "#D7CCC8",
     "stroke": "#5D4037",
     "strokeWidth": 2
@@ -51,6 +59,8 @@
     "shapeType": "lamp",
     "width": 22,
     "height": 45,
+    "realWorldWidth": 0.22,
+    "realWorldHeight": 0.45,
     "fill": "#BCAAA4",
     "stroke": "#4E342E",
     "strokeWidth": 2
@@ -59,6 +69,8 @@
     "shapeType": "lamp",
     "width": 25,
     "height": 50,
+    "realWorldWidth": 0.25,
+    "realWorldHeight": 0.5,
     "fill": "#D7CCC8",
     "stroke": "#5D4037",
     "strokeWidth": 2
@@ -67,6 +79,8 @@
     "shapeType": "strip",
     "width": 60,
     "height": 10,
+    "realWorldWidth": 0.6,
+    "realWorldHeight": 0.1,
     "fill": "#C8E6C9",
     "stroke": "#388E3C",
     "strokeWidth": 2
@@ -75,6 +89,7 @@
     "shapeType": "fan",
     "width": 40,
     "height": 40,
+    "realWorldSize": 1.4,
     "fill": "#B2EBF2",
     "stroke": "#00838F",
     "strokeWidth": 2
@@ -83,6 +98,8 @@
     "shapeType": "strip",
     "width": 80,
     "height": 12,
+    "realWorldWidth": 0.8,
+    "realWorldHeight": 0.12,
     "fill": "#CFD8DC",
     "stroke": "#455A64",
     "strokeWidth": 2
@@ -91,6 +108,7 @@
     "shapeType": "pendant",
     "width": 70,
     "height": 70,
+    "realWorldSize": 1.4,
     "fill": "#FFF9C4",
     "stroke": "#F9A825",
     "strokeWidth": 2
@@ -99,6 +117,8 @@
     "shapeType": "rect",
     "width": 30,
     "height": 30,
+    "realWorldWidth": 0.3,
+    "realWorldHeight": 0.3,
     "fill": "#BDBDBD",
     "stroke": "#424242",
     "strokeWidth": 2

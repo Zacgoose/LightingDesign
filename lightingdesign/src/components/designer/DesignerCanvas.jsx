@@ -20,7 +20,8 @@ export const DesignerCanvas = ({
   backgroundImage = null,
   backgroundImageNaturalSize = null,
   children,
-  onMouseMove
+  onMouseMove,
+  onPan
 }) => {
   const theme = useTheme();
   const [bgImage, setBgImage] = useState(null);
@@ -109,6 +110,43 @@ export const DesignerCanvas = ({
     return lines;
   };
 
+  // Middle mouse panning state
+  const [isMiddlePanning, setIsMiddlePanning] = useState(false);
+  const [lastPanPos, setLastPanPos] = useState(null);
+
+  // Middle mouse down handler
+  const handleStageMouseDown = (e) => {
+    if (e.evt.button === 1) { // Middle mouse
+      setIsMiddlePanning(true);
+      setLastPanPos({ x: e.evt.clientX, y: e.evt.clientY });
+      e.evt.preventDefault();
+    }
+    if (onMouseDown) onMouseDown(e);
+  };
+
+  // Middle mouse up handler
+  const handleStageMouseUp = (e) => {
+    if (isMiddlePanning) {
+      setIsMiddlePanning(false);
+      setLastPanPos(null);
+      e.evt.preventDefault();
+    }
+  };
+
+  // Middle mouse move handler
+  const handleStageMouseMove = (e) => {
+    if (isMiddlePanning && lastPanPos) {
+      const dx = e.evt.clientX - lastPanPos.x;
+      const dy = e.evt.clientY - lastPanPos.y;
+      if (typeof onPan === 'function') {
+        onPan(dx, dy);
+      }
+      setLastPanPos({ x: e.evt.clientX, y: e.evt.clientY });
+      e.evt.preventDefault();
+    }
+    if (onMouseMove) onMouseMove(e);
+  };
+
   return (
     <Box
       sx={{
@@ -130,10 +168,11 @@ export const DesignerCanvas = ({
         draggable={draggable}
         onWheel={onWheel}
         onDragEnd={onDragEnd}
-        onMouseDown={onMouseDown}
+        onMouseDown={handleStageMouseDown}
+        onMouseUp={handleStageMouseUp}
         onTouchStart={onTouchStart}
         onContextMenu={onContextMenu}
-        onMouseMove={onMouseMove}
+        onMouseMove={handleStageMouseMove}
       >
         {/* Grid Layer */}
         {showGrid && (

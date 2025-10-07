@@ -1,11 +1,13 @@
 import { Stack, ToggleButtonGroup, ToggleButton, Divider, Box, Typography, Button } from "@mui/material";
-import { NearMe, PanTool, Close } from "@mui/icons-material";
+import { NearMe, PanTool, Close, Cable } from "@mui/icons-material";
+
 
 const DesignerToolsToolbarControls = ({
   selectedTool,
   onToolChange,
   placementMode,
-  onStopPlacement
+  onStopPlacement,
+  onDisconnectCable
 }) => (
   <Stack direction="row" spacing={1} alignItems="center">
     {placementMode ? (
@@ -24,28 +26,50 @@ const DesignerToolsToolbarControls = ({
         </Button>
       </>
     ) : (
-      <ToggleButtonGroup
-        value={selectedTool}
-        exclusive
-        onChange={(e, newTool) => {
-          if (newTool !== null) {
-            onToolChange(newTool);
-          }
-        }}
-        size="small"
-      >
-        <ToggleButton value="select">
-          <NearMe fontSize="small" />
-        </ToggleButton>
-        <ToggleButton value="pan">
-          <PanTool fontSize="small" />
-        </ToggleButton>
-      </ToggleButtonGroup>
+      <>
+        <ToggleButtonGroup
+          value={selectedTool}
+          exclusive
+          onChange={(e, newTool) => {
+            if (newTool !== null) {
+              onToolChange(newTool);
+            }
+          }}
+          size="small"
+        >
+          <ToggleButton value="select">
+            <NearMe fontSize="small" />
+          </ToggleButton>
+          <ToggleButton value="pan">
+            <PanTool fontSize="small" />
+          </ToggleButton>
+          <ToggleButton value="connect">
+            <Cable fontSize="small" />
+          </ToggleButton>
+        </ToggleButtonGroup>
+        {selectedTool === 'connect' && (
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<Cable />}
+            onClick={onDisconnectCable}
+            size="small"
+            sx={{ ml: 2 }}
+          >
+            Disconnect Cable
+          </Button>
+        )}
+      </>
     )}
     <Box sx={{ flex: 1 }} />
-    {selectedTool && selectedTool !== 'select' && selectedTool !== 'pan' && !placementMode && (
+    {selectedTool && selectedTool !== 'select' && selectedTool !== 'pan' && selectedTool !== 'connect' && !placementMode && (
       <Typography variant="body2" color="primary">
         Click on canvas to place {selectedTool}
+      </Typography>
+    )}
+    {selectedTool === 'connect' && (
+      <Typography variant="body2" color="info.main">
+        Click objects to string together, right-click to split
       </Typography>
     )}
     {placementMode && (

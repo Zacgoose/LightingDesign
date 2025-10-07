@@ -101,8 +101,8 @@ const Page = () => {
     setScaleDialogOpen(false);
   };
 
-  // Connection mode
-  const [connectMode, setConnectMode] = useState(null);
+  // Connection sequence for connect tool
+  const [connectSequence, setConnectSequence] = useState([]);
 
   // UI state
   const [contextMenu, setContextMenu] = useState(null);
@@ -287,7 +287,6 @@ const Page = () => {
       applyGroupTransform();
       setSelectedIds([]);
       setSelectedConnectorId(null);
-      setConnectMode(null);
       setGroupKey(k => k + 1);
     },
     onUndo: () => {
@@ -398,43 +397,38 @@ const Page = () => {
   };
 
   const handleStageContextMenu = (e) => {
+    // Always prevent default system context menu
     e.evt.preventDefault();
-    
+
+    // Disable all context menus in pan or connect mode
+    if (selectedTool === 'connect' || selectedTool === 'pan') return;
+
+    // Always move our context menu to the new location
+    let menuType = null;
+    let menuProps = {};
     if (placementMode) {
-      // Show placement context menu at mouse position
-      setContextMenu({
-        x: e.evt.clientX,
-        y: e.evt.clientY,
-        type: 'placement',
-      });
-      return;
-    }
-    
-    if (selectedIds.length > 0) {
-      setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, type: 'product' });
-      return;
-    }
-    
-    if (selectedConnectorId) {
-      setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, type: 'connector' });
-      return;
-    }
-    
-    if (e.target === e.target.getStage()) {
+      menuType = 'placement';
+    } else if (selectedIds.length > 0) {
+      menuType = 'product';
+    } else if (selectedConnectorId) {
+      menuType = 'connector';
+    } else if (e.target === e.target.getStage()) {
+      menuType = 'canvas';
       const stage = e.target.getStage();
       const pointerPosition = stage.getPointerPosition();
-      const canvasPos = {
-        x: (pointerPosition.x - stagePosition.x) / stageScale,
-        y: (pointerPosition.y - stagePosition.y) / stageScale,
-      };
-      
-      setContextMenu({
-        x: e.evt.clientX,
-        y: e.evt.clientY,
-        type: 'canvas',
-        canvasX: canvasPos.x,
-        canvasY: canvasPos.y,
-      });
+      menuProps.canvasX = (pointerPosition.x - stagePosition.x) / stageScale;
+      menuProps.canvasY = (pointerPosition.y - stagePosition.y) / stageScale;
+    }
+    if (menuType) {
+      setContextMenu(null); // Explicitly close any open menu first
+      setTimeout(() => {
+        setContextMenu({
+          x: e.evt.clientX,
+          y: e.evt.clientY,
+          type: menuType,
+          ...menuProps
+        });
+      }, 0);
     }
   };
 
@@ -469,8 +463,14 @@ const Page = () => {
     setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, type: 'connector' });
   };
 
-  const handleCloseContextMenu = () => {
-    setContextMenu(null);
+  const handleCloseContextMenu = (e, newContextMenu) => {
+    if (newContextMenu) {
+      // If we have a new menu position, update it
+      setContextMenu(newContextMenu);
+    } else {
+      // Otherwise just close the menu
+      setContextMenu(null);
+    }
   };
 
   const handleSwapPlacementProduct = () => {
@@ -525,13 +525,6 @@ const Page = () => {
     setConnectors([...connectors, ...newConnectors]);
     setSelectedIds(newProducts.map(p => p.id));
     setGroupKey(k => k + 1);
-    handleCloseContextMenu();
-  };
-
-  const handleStartConnect = () => {
-    if (selectedIds.length > 0) {
-      setConnectMode({ fromIds: selectedIds });
-    }
     handleCloseContextMenu();
   };
 
@@ -624,30 +617,41 @@ const Page = () => {
   const handleProductClick = (e, productId) => {
     if (isDragging) return;
     setSelectedConnectorId(null);
-    
-    if (connectMode) {
-      if (connectMode.fromIds && !connectMode.fromIds.includes(productId)) {
-        const newConnectors = connectMode.fromIds.map(fromId => ({
-          id: `connector-${Date.now()}-${fromId}`,
-          from: fromId,
-          to: productId,
-          controlX: null,
-          controlY: null,
-          color: null,
-        }));
-        
-        setConnectors([...connectors, ...newConnectors]);
-        setConnectMode(null);
-        return;
-      } else {
-        setConnectMode(null);
+
+    // Connect mode logic
+    if (selectedTool === 'connect') {
+      // Right-click splits the sequence
+      if (e.evt?.button === 2) {
+        setConnectSequence([]);
         return;
       }
+      // Add to sequence if not already last
+      setConnectSequence(seq => {
+        if (seq.length > 0 && seq[seq.length - 1] === productId) return seq;
+        const newSeq = [...seq, productId];
+        // If at least two, create connector
+        if (newSeq.length >= 2) {
+          const prevId = newSeq[newSeq.length - 2];
+          setConnectors(conns => [
+            ...conns,
+            {
+              id: `connector-${Date.now()}-${Math.random()}`,
+              from: prevId,
+              to: productId,
+              controlX: null,
+              controlY: null,
+              color: null,
+            }
+          ]);
+        }
+        return newSeq;
+      });
+      return;
     }
 
+    // Normal selection logic
     const shiftKey = e.evt?.shiftKey;
     const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
-    
     if (shiftKey || ctrlKey) {
       if (selectedIds.includes(productId)) {
         applyGroupTransform();
@@ -761,7 +765,6 @@ const Page = () => {
       applyGroupTransform();
       setSelectedIds([]);
       setSelectedConnectorId(null);
-      setConnectMode(null);
       setGroupKey(k => k + 1);
     }
   };
@@ -773,6 +776,9 @@ const Page = () => {
     setStageScale(1);
     setStagePosition({ x: canvasWidth / 2, y: canvasHeight / 2 });
   };
+
+  // Disconnect cable handler for connect mode
+  const handleDisconnectCable = () => setConnectSequence([]);
 
   const handleSave = () => {
     applyGroupTransform();
@@ -816,9 +822,16 @@ const Page = () => {
             }}
             toolsProps={{
               selectedTool: selectedTool,
-              onToolChange: setSelectedTool,
+              onToolChange: (tool) => {
+                // If leaving connect mode, clear connectSequence
+                if (selectedTool === 'connect' && tool !== 'connect') {
+                  setConnectSequence([]);
+                }
+                setSelectedTool(tool);
+              },
               placementMode: placementMode,
               onStopPlacement: handleStopPlacement,
+              onDisconnectCable: handleDisconnectCable,
             }}
           />
 
@@ -833,8 +846,6 @@ const Page = () => {
               }}
             />
           </Box>
-
-          <ConnectionModeBanner connectMode={connectMode} />
 
           <Card sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
             <CardContent sx={{ p: 0, "&:last-child": { pb: 0 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -937,7 +948,6 @@ const Page = () => {
         onClose={handleCloseContextMenu}
         onDuplicate={handleDuplicateSelected}
         onOpenColorPicker={handleOpenColorPicker}
-        onStartConnect={handleStartConnect}
         onResetScale={handleResetScale}
         onDelete={handleDeleteSelected}
         onInsertProduct={handleInsertProductAtPosition}

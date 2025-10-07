@@ -13,8 +13,34 @@ export const ContextMenus = ({
   onSwapPlacementProduct,
   onScale,
 }) => {
+  // Prevent right-click on the menu itself
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // If a context menu is already open, update its position
+    if (contextMenu) {
+      const newContextMenu = {
+        ...contextMenu,
+        x: e.clientX,
+        y: e.clientY
+      };
+      
+      // Close and reopen the menu to force position update
+      onClose();
+      setTimeout(() => {
+        onClose(e, newContextMenu);
+      }, 0);
+    }
+  };
+
   return (
-    <Menu
+    <Box 
+      onContextMenu={handleContextMenu}
+      sx={{ position: 'fixed', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: contextMenu ? 'auto' : 'none' }}
+    >
+      <Menu
+      key={contextMenu ? `${contextMenu.x},${contextMenu.y}` : 'none'}
       open={contextMenu !== null}
       onClose={onClose}
       anchorReference="anchorPosition"
@@ -100,5 +126,6 @@ export const ContextMenus = ({
         </MenuItem>
       )}
     </Menu>
+    </Box>
   );
 };

@@ -75,28 +75,21 @@ const Page = () => {
   // Handler for applying scale to selected products
   const handleScaleConfirm = (scaleValue) => {
     applyGroupTransform();
-    // For each selected product, set its real-world size attribute based on dialog input (meters)
+    // For each selected product, set only the correct real-world size property based on config
     const newProducts = products.map(product => {
       if (!selectedIds.includes(product.id)) return product;
       // Get product type config
-      const config = productTypesConfig[product.type] || productTypesConfig.default;
+      const config = productTypesConfig[product.product_type] || productTypesConfig.default;
       let updated = { ...product };
-      if (productTypesConfig[product.type]) {
-        // Known type
-        if (config.realWorldSize !== undefined) {
-          updated.realWorldSize = scaleValue;
-        }
-        if (config.realWorldWidth !== undefined && config.realWorldHeight !== undefined) {
-          updated.realWorldWidth = scaleValue;
-          updated.realWorldHeight = scaleValue;
-        } else if (config.realWorldWidth !== undefined) {
-          updated.realWorldWidth = scaleValue;
-        } else if (config.realWorldHeight !== undefined) {
-          updated.realWorldHeight = scaleValue;
-        }
-      } else {
-        // Fallback/default type: always set both width and height
+      // Set only realWorldSize if present in config
+      if (config.realWorldSize !== undefined) {
+        updated.realWorldSize = scaleValue;
+      }
+      // Set only realWorldWidth/realWorldHeight if present in config
+      if (config.realWorldWidth !== undefined) {
         updated.realWorldWidth = scaleValue;
+      }
+      if (config.realWorldHeight !== undefined) {
         updated.realWorldHeight = scaleValue;
       }
       // Always update scaleFactor for rendering
@@ -129,7 +122,6 @@ const Page = () => {
   const [scaleFactor, setScaleFactor] = useState(100); // 100px per meter
   const [measureMode, setMeasureMode] = useState(false);
   const [measurePoints, setMeasurePoints] = useState([]);
-  const [objectScaleFactor, setObjectScaleFactor] = useState(1); // For future use
   const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(null);
 
   // Selection snapshot for group transformations

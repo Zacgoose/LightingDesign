@@ -12,7 +12,7 @@
     "shapeType": "downlight",
     "width": 40,
     "height": 40,
-    "realWorldSize": 0.8,
+    "realWorldSize": 0.4,
     "fill": "#FFFFFF",
     "stroke": "#424242",
     "strokeWidth": 2

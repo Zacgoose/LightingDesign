@@ -3,8 +3,7 @@ import { getShapeFunction } from "/src/components/designer/productShapes";
 
 export const ProductShape = ({ 
   product, 
-  config, 
-  isSelected, 
+  config,
   onMouseDown,
   onContextMenu,
   onDragStart,

@@ -7,7 +7,6 @@ import { DesignerCanvas } from "/src/components/designer/DesignerCanvas";
 import { ProductSelectionDrawer } from "/src/components/designer/ProductSelectionDrawer";
 import { ContextMenus } from "/src/components/designer/ContextMenus";
 import { ColorPickerPopover } from "/src/components/designer/ColorPickerPopover";
-import { ConnectionModeBanner } from "/src/components/designer/ConnectionModeBanner";
 import { ProductsLayer } from "/src/components/designer/ProductsLayer";
 import { ConnectorsLayer } from "/src/components/designer/ConnectorsLayer";
 import { ProductShape } from "/src/components/designer/ProductShape";

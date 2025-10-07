@@ -1,12 +1,11 @@
 import { Menu, MenuItem, ListItemIcon, ListItemText, Box } from "@mui/material";
-import { Delete, ContentCopy, Link as LinkIcon, SettingsBackupRestore, Add, SwapHoriz } from "@mui/icons-material";
+import { Delete, ContentCopy, SettingsBackupRestore, Add, SwapHoriz } from "@mui/icons-material";
 
 export const ContextMenus = ({
   contextMenu,
   onClose,
   onDuplicate,
   onOpenColorPicker,
-  onStartConnect,
   onResetScale,
   onDelete,
   onInsertProduct,
@@ -63,12 +62,6 @@ export const ContextMenus = ({
               <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: 'primary.main', border: '1px solid', borderColor: 'divider' }} />
             </ListItemIcon>
             <ListItemText>Change Color...</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={onStartConnect}>
-            <ListItemIcon>
-              <LinkIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Connect to...</ListItemText>
           </MenuItem>
           <MenuItem onClick={onScale}>
             <ListItemIcon>

@@ -10,11 +10,11 @@ import { TopNav } from "./top-nav";
 import { ApiGetCall } from "../api/ApiCall";
 import { useDispatch } from "react-redux";
 import { showToast } from "../store/toasts";
-import Page from "../pages/onboardingv2";
+import Page from "../pages/settings/super-admin/onboardingv2";
 import { useDialog } from "../hooks/use-dialog";
 import { nativeMenuItems } from "/src/layouts/config";
 
-const SIDE_NAV_WIDTH = 150;
+const SIDE_NAV_WIDTH = 200;
 const SIDE_NAV_COLLAPSED_WIDTH = 56;
 const TOP_NAV_HEIGHT = 64;
 

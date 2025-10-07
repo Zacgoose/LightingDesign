@@ -3,7 +3,7 @@ import {
   BriefcaseIcon,
   UsersIcon,
   DocumentChartBarIcon,
-  Cog6ToothIcon 
+  WrenchIcon 
 } from "@heroicons/react/24/outline";
 import { SvgIcon } from "@mui/material";
 
@@ -16,8 +16,7 @@ export const nativeMenuItems = [
         <HomeIcon />
       </SvgIcon>
     ),
-    //permissions: ["CIPP.Core.*"],
-    permissions: ["Lighting.Designer.*"],
+    permissions: ["LightingDesigner.*"],
   },
   {
     title: "Jobs",
@@ -27,8 +26,7 @@ export const nativeMenuItems = [
         <BriefcaseIcon />
       </SvgIcon>
     ),
-    //permissions: ["CIPP.Core.*"],
-    permissions: ["Lighting.Designer.Jobs.*"],
+    permissions: ["LightingDesigner.Jobs.*"],
   },
   {
     title: "Customers",
@@ -38,8 +36,7 @@ export const nativeMenuItems = [
         <UsersIcon />
       </SvgIcon>
     ),
-    //permissions: ["CIPP.Core.*"],
-    permissions: ["Lighting.Designer.Customers.*"],
+    permissions: ["LightingDesigner.Customers.*"],
   },
   {
     title: "Reports",
@@ -49,7 +46,63 @@ export const nativeMenuItems = [
         <DocumentChartBarIcon />
       </SvgIcon>
     ),
-    //permissions: ["CIPP.Core.*"],
-    permissions: ["Lighting.Designer.Reports.*"],
+    permissions: ["LightingDesigner.Reports.*"],
+  },
+  {
+    title: "Settings",
+    type: "header",
+    icon: (
+      <SvgIcon>
+        <WrenchIcon />
+      </SvgIcon>
+    ),
+    permissions: [
+      "LightingDesigner.Settings.*", "*",
+    ],
+    items: [
+      {
+        title: "Application Settings",
+        path: "/settings/settings",
+        roles: ["admin", "superadmin"],
+        permissions: ["CIPP.AppSettings.*"],
+      },
+      {
+        title: "Logbook",
+        path: "/settings/logs",
+        roles: ["editor", "admin", "superadmin"],
+        permissions: ["CIPP.Core.*"],
+      },
+      {
+        title: "Super Admin",
+        roles: ["superadmin"],
+        permissions: ["CIPP.SuperAdmin.*"],
+        items: [
+          {
+            title: "Settings",
+            path: "/settings/super-admin/user-roles",
+            roles: ["superadmin"],
+            permissions: ["CIPP.SuperAdmin.*"],
+          },
+          {
+            title: "Timers",
+            path: "/settings/super-admin/timers",
+            roles: ["superadmin"],
+            permissions: ["CIPP.SuperAdmin.*"],
+          },
+          {
+            title: "Table Maintenance",
+            path: "/settings/super-admin/table-maintenance",
+            roles: ["superadmin"],
+            permissions: ["CIPP.SuperAdmin.*"],
+          },
+          {
+            title: "Onboarding",
+            path: "/settings/super-admin/onboardingv2",
+            roles: ["superadmin"],
+            permissions: ["CIPP.SuperAdmin.*"],
+          },
+        ],
+      },
+    ],
   },
 ];

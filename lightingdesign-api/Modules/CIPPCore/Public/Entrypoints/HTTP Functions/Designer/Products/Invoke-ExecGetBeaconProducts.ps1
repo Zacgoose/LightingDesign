@@ -5,7 +5,7 @@ Function Invoke-ExecGetBeaconProducts {
     .FUNCTIONALITY
         Entrypoint
     .ROLE
-        Lighting.Designer.Products.Read
+        LightingDesigner.Products.Read
     #>
     [CmdletBinding()]
     param($Request, $TriggerMetadata)

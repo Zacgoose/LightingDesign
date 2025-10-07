@@ -7,7 +7,7 @@ import { Scrollbar } from "../components/scrollbar";
 import { SideNavItem } from "./side-nav-item";
 import { ApiGetCall } from "../api/ApiCall.jsx";
 
-const SIDE_NAV_WIDTH = 150;
+const SIDE_NAV_WIDTH = 200;
 const SIDE_NAV_COLLAPSED_WIDTH = 56;
 const TOP_NAV_HEIGHT = 64;
 

@@ -1,0 +1,10 @@
+[
+  {
+    "label": "General",
+    "path": "/settings/settings"
+  },
+  {
+    "label": "Backend",
+    "path": "/settings/settings/backend"
+  }
+]

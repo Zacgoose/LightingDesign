@@ -1,0 +1,10 @@
+[
+  {
+    "label": "User Roles",
+    "path": "/settings/super-admin/user-roles"
+  },
+  {
+    "label": "Function Offloading",
+    "path": "/settings/super-admin/function-offloading"
+  }
+]

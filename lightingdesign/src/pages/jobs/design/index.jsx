@@ -743,11 +743,10 @@ const Page = () => {
 
   return (
     <>
-      <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", minHeight: 0 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 80px)", minHeight: 0 }}>
         <Container maxWidth={false} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
 
           <div style={{ height: 4 }} />
-
 
           <DesignerToolbarRow
             mainProps={{
@@ -780,7 +779,7 @@ const Page = () => {
             }}
           />
 
-          <Box sx={{ mb: 1 }}>
+          <Box sx={{ mb: 0.75 }}>
             <ProductSelectionDrawer 
               onProductSelect={handleProductAdd}
               visible={productDrawerVisible}

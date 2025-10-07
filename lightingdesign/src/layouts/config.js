@@ -56,9 +56,8 @@ export const nativeMenuItems = [
         <WrenchIcon />
       </SvgIcon>
     ),
-    permissions: [
-      "LightingDesigner.Admin.*",
-    ],
+    roles: ["admin", "superadmin"],
+    permissions: ["LightingDesigner.Admin.*"],
     items: [
       {
         title: "Application Settings",
@@ -69,7 +68,7 @@ export const nativeMenuItems = [
       {
         title: "Logbook",
         path: "/settings/logs",
-        roles: ["editor", "admin", "superadmin"],
+        roles: ["admin", "superadmin"],
         permissions: ["LightingDesigner.Admin.*"],
       },
       {

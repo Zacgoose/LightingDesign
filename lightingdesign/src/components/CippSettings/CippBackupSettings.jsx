@@ -19,7 +19,7 @@ const CippBackupSettings = () => {
           size="small"
           component={Link}
           disabled={backupAction.isPending}
-          href="/cipp/settings/backup"
+          href="/settings/settings/backup"
         >
           <SvgIcon fontSize="small" style={{ marginRight: 4 }}>
             <SettingsBackupRestore />

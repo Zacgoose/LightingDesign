@@ -46,12 +46,6 @@
       "queueName": "incidentqueue"
     },
     {
-      "type": "queue",
-      "direction": "out",
-      "name": "offboardingmailbox",
-      "queueName": "offboardingmailbox"
-    },
-    {
       "name": "starter",
       "type": "durableClient",
       "direction": "in"

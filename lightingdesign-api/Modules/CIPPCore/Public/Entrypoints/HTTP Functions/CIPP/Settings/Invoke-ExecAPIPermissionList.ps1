@@ -3,7 +3,7 @@ function Invoke-ExecAPIPermissionList {
     .FUNCTIONALITY
         Entrypoint
     .ROLE
-        CIPP.SuperAdmin.Read
+        LightingDesigner.SuperAdmin.Read
     #>
     [CmdletBinding()]
     param($Request, $TriggerMetadata)

@@ -4,7 +4,7 @@ function Invoke-ExecOffloadFunctions {
     .FUNCTIONALITY
         Entrypoint
     .ROLE
-        CIPP.SuperAdmin.ReadWrite
+        LightingDesigner.SuperAdmin.ReadWrite
     #>
     [CmdletBinding()]
     param($Request, $TriggerMetadata)

@@ -3,7 +3,7 @@ function Invoke-ExecSAMAppPermissions {
     .FUNCTIONALITY
         Entrypoint
     .ROLE
-        CIPP.SuperAdmin.ReadWrite
+        LightingDesigner.SuperAdmin.ReadWrite
     #>
     [CmdletBinding()]
     param($Request, $TriggerMetadata)

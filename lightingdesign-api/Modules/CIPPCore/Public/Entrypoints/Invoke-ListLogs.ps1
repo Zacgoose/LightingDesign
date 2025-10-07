@@ -5,7 +5,7 @@ function Invoke-ListLogs {
     .FUNCTIONALITY
         Entrypoint,AnyTenant
     .ROLE
-        CIPP.Core.Read
+        LightingDesigner.Admin.Read
     #>
     [CmdletBinding()]
     param($Request, $TriggerMetadata)

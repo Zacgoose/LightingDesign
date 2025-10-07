@@ -57,49 +57,49 @@ export const nativeMenuItems = [
       </SvgIcon>
     ),
     permissions: [
-      "LightingDesigner.Settings.*", "*",
+      "LightingDesigner.Admin.*",
     ],
     items: [
       {
         title: "Application Settings",
         path: "/settings/settings",
         roles: ["admin", "superadmin"],
-        permissions: ["CIPP.AppSettings.*"],
+        permissions: ["LightingDesigner.Admin.*"],
       },
       {
         title: "Logbook",
         path: "/settings/logs",
         roles: ["editor", "admin", "superadmin"],
-        permissions: ["CIPP.Core.*"],
+        permissions: ["LightingDesigner.Admin.*"],
       },
       {
         title: "Super Admin",
         roles: ["superadmin"],
-        permissions: ["CIPP.SuperAdmin.*"],
+        permissions: ["LightingDesigner.SuperAdmin.*"],
         items: [
           {
             title: "Settings",
             path: "/settings/super-admin/user-roles",
             roles: ["superadmin"],
-            permissions: ["CIPP.SuperAdmin.*"],
+            permissions: ["LightingDesigner.SuperAdmin.*"],
           },
           {
             title: "Timers",
             path: "/settings/super-admin/timers",
             roles: ["superadmin"],
-            permissions: ["CIPP.SuperAdmin.*"],
+            permissions: ["LightingDesigner.SuperAdmin.*"],
           },
           {
             title: "Table Maintenance",
             path: "/settings/super-admin/table-maintenance",
             roles: ["superadmin"],
-            permissions: ["CIPP.SuperAdmin.*"],
+            permissions: ["LightingDesigner.SuperAdmin.*"],
           },
           {
             title: "Onboarding",
             path: "/settings/super-admin/onboardingv2",
             roles: ["superadmin"],
-            permissions: ["CIPP.SuperAdmin.*"],
+            permissions: ["LightingDesigner.SuperAdmin.*"],
           },
         ],
       },

@@ -8,7 +8,7 @@ function Invoke-ExecAzBobbyTables {
     .FUNCTIONALITY
         Entrypoint
     .ROLE
-        CIPP.SuperAdmin.ReadWrite
+        LightingDesigner.SuperAdmin.ReadWrite
     #>
     [CmdletBinding()]
     param($Request, $TriggerMetadata)

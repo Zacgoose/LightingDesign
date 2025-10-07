@@ -36,7 +36,6 @@ const DesignerMainToolbarControls = ({
     >
       Export
     </Button>
-    <Box sx={{ width: 8 }} />
     <Button
       variant="outlined"
       size="small"

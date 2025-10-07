@@ -36,6 +36,13 @@ const DesignerToolsToolbarControls = ({
             }
           }}
           size="small"
+          sx={{ 
+            '& .MuiToggleButton-root': {
+              padding: '1px',
+              minWidth: '30px',
+              minHeight: '30px'
+            }
+          }}
         >
           <ToggleButton value="select">
             <NearMe fontSize="small" />
@@ -61,7 +68,6 @@ const DesignerToolsToolbarControls = ({
         )}
       </>
     )}
-    <Box sx={{ flex: 1 }} />
     {selectedTool && selectedTool !== 'select' && selectedTool !== 'pan' && selectedTool !== 'connect' && !placementMode && (
       <Typography variant="body2" color="primary">
         Click on canvas to place {selectedTool}

@@ -16,6 +16,7 @@ export const nativeMenuItems = [
         <HomeIcon />
       </SvgIcon>
     ),
+    roles: ["superadmin"],
     permissions: ["LightingDesigner.*"],
   },
   {
@@ -26,6 +27,7 @@ export const nativeMenuItems = [
         <BriefcaseIcon />
       </SvgIcon>
     ),
+    roles: ["superadmin"],
     permissions: ["LightingDesigner.Jobs.*"],
   },
   {
@@ -36,6 +38,7 @@ export const nativeMenuItems = [
         <UsersIcon />
       </SvgIcon>
     ),
+    roles: ["superadmin"],
     permissions: ["LightingDesigner.Customers.*"],
   },
   {
@@ -46,6 +49,7 @@ export const nativeMenuItems = [
         <DocumentChartBarIcon />
       </SvgIcon>
     ),
+    roles: ["superadmin"],
     permissions: ["LightingDesigner.Reports.*"],
   },
   {
@@ -56,19 +60,19 @@ export const nativeMenuItems = [
         <WrenchIcon />
       </SvgIcon>
     ),
-    roles: ["admin", "superadmin"],
+    roles: ["superadmin"],
     permissions: ["LightingDesigner.Admin.*"],
     items: [
       {
         title: "Application Settings",
         path: "/settings/settings",
-        roles: ["admin", "superadmin"],
+        roles: ["superadmin"],
         permissions: ["LightingDesigner.Admin.*"],
       },
       {
         title: "Logbook",
         path: "/settings/logs",
-        roles: ["admin", "superadmin"],
+        roles: ["superadmin"],
         permissions: ["LightingDesigner.Admin.*"],
       },
       {

@@ -98,15 +98,15 @@ export const Layout = (props) => {
       const filterItemsByRole = (items) => {
         return items
           .map((item) => {
-            // role
+            // Check both roles and permissions - if either matches, allow access
+            let hasAccess = false;
+
+            // Check roles if specified
             if (item.roles && item.roles.length > 0) {
-              const hasRole = item.roles.some((requiredRole) => userRoles.includes(requiredRole));
-              if (!hasRole) {
-                return null;
-              }
+              hasAccess = item.roles.some((requiredRole) => userRoles.includes(requiredRole));
             }
 
-            // Check permission with pattern matching support
+            // Check permissions if specified
             if (item.permissions && item.permissions.length > 0) {
               const hasPermission = userPermissions?.some((userPerm) => {
                 return item.permissions.some((requiredPerm) => {
@@ -128,10 +128,16 @@ export const Layout = (props) => {
                   return false;
                 });
               });
-              if (!hasPermission) {
-                return null;
-              }
-            } else {
+              hasAccess = hasAccess || hasPermission;
+            }
+
+            // If neither roles nor permissions are specified, or if no access granted
+            if ((!item.roles || item.roles.length === 0) && (!item.permissions || item.permissions.length === 0)) {
+              return null;
+            }
+
+            // Return null if no access granted through either roles or permissions
+            if (!hasAccess) {
               return null;
             }
             // check sub-items

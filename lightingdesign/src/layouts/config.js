@@ -61,48 +61,48 @@ export const nativeMenuItems = [
       </SvgIcon>
     ),
     roles: ["superadmin"],
-    permissions: ["LightingDesigner.Admin.*"],
+    permissions: ["LightingDesigner.Admin.Read*"],
     items: [
       {
         title: "Application Settings",
         path: "/settings/settings",
         roles: ["superadmin"],
-        permissions: ["LightingDesigner.Admin.*"],
+        permissions: ["LightingDesigner.Admin.Read*"],
       },
       {
         title: "Logbook",
         path: "/settings/logs",
         roles: ["superadmin"],
-        permissions: ["LightingDesigner.Admin.*"],
+        permissions: ["LightingDesigner.Admin.Read*"],
       },
       {
         title: "Super Admin",
         roles: ["superadmin"],
-        permissions: ["LightingDesigner.SuperAdmin.*"],
+        permissions: ["LightingDesigner.SuperAdmin.ReadWrite"],
         items: [
           {
             title: "Settings",
             path: "/settings/super-admin/user-roles",
             roles: ["superadmin"],
-            permissions: ["LightingDesigner.SuperAdmin.*"],
+            permissions: ["LightingDesigner.SuperAdmin.ReadWrite"],
           },
           {
             title: "Timers",
             path: "/settings/super-admin/timers",
             roles: ["superadmin"],
-            permissions: ["LightingDesigner.SuperAdmin.*"],
+            permissions: ["LightingDesigner.SuperAdmin.ReadWrite"],
           },
           {
             title: "Table Maintenance",
             path: "/settings/super-admin/table-maintenance",
             roles: ["superadmin"],
-            permissions: ["LightingDesigner.SuperAdmin.*"],
+            permissions: ["LightingDesigner.SuperAdmin.ReadWrite"],
           },
           {
             title: "Onboarding",
             path: "/settings/super-admin/onboardingv2",
             roles: ["superadmin"],
-            permissions: ["LightingDesigner.SuperAdmin.*"],
+            permissions: ["LightingDesigner.SuperAdmin.ReadWrite"],
           },
         ],
       },

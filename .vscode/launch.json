@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "type": "PowerShell",
+      "name": "Launch in Windows Terminal",
+      "request": "launch",
+      "cwd": "${cwd}",
+      "script": ". '${cwd}\\Start-DevEmulators.ps1'"
+    }
+  ]
+}

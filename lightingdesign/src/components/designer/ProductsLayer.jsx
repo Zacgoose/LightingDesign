@@ -77,6 +77,9 @@ export const ProductsLayer = ({
           ref={selectionGroupRef}
           x={selectionSnapshot.centerX || 0}
           y={selectionSnapshot.centerY || 0}
+          rotation={selectionSnapshot.rotation || 0}
+          offsetX={0}
+          offsetY={0}
           draggable={selectedTool === "select" && canInteract}
           onDragEnd={onGroupTransformEnd}
           onTransformEnd={onGroupTransformEnd}
@@ -107,6 +110,7 @@ export const ProductsLayer = ({
                 ...product,
                 x: product.relativeX || 0,
                 y: product.relativeY || 0,
+                rotation: product.rotation || 0,
               };
               
               return (
@@ -140,6 +144,13 @@ export const ProductsLayer = ({
             }
             return newBox;
           }}
+          rotateEnabled={true}
+          keepRatio={false}
+          ignoreStroke={true}
+          anchorSize={8}
+          borderDash={[4, 4]}
+          rotationSnapTolerance={5}
+          rotationDeltaOffset={-(selectionSnapshot.rotation || 0)}
         />
       )}
     </>

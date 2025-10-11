@@ -126,7 +126,7 @@ const Page = () => {
   // Selection snapshot for group transformations
   const selectionSnapshot = useMemo(() => {
     if (selectedIds.length === 0) {
-      return { centerX: 0, centerY: 0, products: [] };
+      return { centerX: 0, centerY: 0, products: [], rotation: 0 };
     }
 
     const snapshot = products
@@ -134,32 +134,84 @@ const Page = () => {
       .map(p => ({ ...p }));
     
     if (snapshot.length === 0) {
-      return { centerX: 0, centerY: 0, products: [] };
+      return { centerX: 0, centerY: 0, products: [], rotation: 0 };
     }
 
-    const centerX = snapshot.reduce((sum, p) => sum + p.x, 0) / snapshot.length;
-    const centerY = snapshot.reduce((sum, p) => sum + p.y, 0) / snapshot.length;
+    // Calculate average rotation of selected products first
+    const totalRotation = snapshot.reduce((sum, p) => sum + (p.rotation || 0), 0);
+    const avgRotation = totalRotation / snapshot.length;
+    
+    // Calculate center considering rotation
+    let sumX = 0;
+    let sumY = 0;
+    
+    snapshot.forEach(p => {
+      // If the product is rotated, we need to adjust its position relative to the average rotation
+      if (p.rotation) {
+        const angle = ((p.rotation - avgRotation) * Math.PI) / 180;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        sumX += p.x * cos - p.y * sin;
+        sumY += p.x * sin + p.y * cos;
+      } else {
+        sumX += p.x;
+        sumY += p.y;
+      }
+    });
+    
+    const centerX = sumX / snapshot.length;
+    const centerY = sumY / snapshot.length;
     
     return {
       centerX,
       centerY,
-      products: snapshot.map(p => ({
-        ...p,
-        relativeX: p.x - centerX,
-        relativeY: p.y - centerY,
-      })),
+      rotation: avgRotation,
+      products: snapshot.map(p => {
+        // Calculate relative position accounting for rotation
+        const angle = (avgRotation * Math.PI) / 180;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const relX = (p.x - centerX) * cos + (p.y - centerY) * sin;
+        const relY = -(p.x - centerX) * sin + (p.y - centerY) * cos;
+        
+        return {
+          ...p,
+          relativeX: relX,
+          relativeY: relY,
+          rotation: (p.rotation || 0) - avgRotation // Store relative rotation
+        };
+      })
     };
   }, [products, selectedIds]);
+
+  // Store the initial rotation when selection changes
+  const [initialRotation, setInitialRotation] = useState(0);
 
   // Attach transformer to selection group
   useEffect(() => {
     if (selectedIds.length && selectionGroupRef.current && transformerRef.current) {
+      // Get current or initial rotation
+      const currentRotation = selectionSnapshot.rotation || 0;
+      
+      // Set the group's rotation first
+      selectionGroupRef.current.rotation(currentRotation);
+      
+      // Store as initial rotation
+      setInitialRotation(currentRotation);
+      
+      // Set up the transformer
       transformerRef.current.nodes([selectionGroupRef.current]);
+      
+      // Ensure the transformer's rotation matches
+      transformerRef.current.rotation(currentRotation);
+      
       // Only cache if there are multiple selected items (caching is expensive)
       // and skip caching during dragging operations
       if (selectedIds.length > 1 && !isDragging) {
         selectionGroupRef.current.cache();
       }
+      
+      // Force update
       transformerRef.current.getLayer()?.batchDraw();
     } else if (transformerRef.current) {
       transformerRef.current.nodes([]);
@@ -167,7 +219,7 @@ const Page = () => {
         selectionGroupRef.current.clearCache();
       }
     }
-  }, [selectedIds, groupKey, isDragging]);
+  }, [selectedIds, groupKey, isDragging, selectionSnapshot.rotation]);
 
   useEffect(() => {
     const handleResize = () => {

@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Box, Container, Card, CardContent, useTheme } from "@mui/material";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
+import { useForm } from "react-hook-form";
 import { DesignerToolbarRow } from "/src/components/designer/DesignerToolbarRow";
 import { DesignerCanvas } from "/src/components/designer/DesignerCanvas";
 import { ProductSelectionDrawer } from "/src/components/designer/ProductSelectionDrawer";
@@ -10,7 +11,10 @@ import { ColorPickerPopover } from "/src/components/designer/ColorPickerPopover"
 import { ProductsLayer } from "/src/components/designer/ProductsLayer";
 import { ConnectorsLayer } from "/src/components/designer/ConnectorsLayer";
 import { ProductShape } from "/src/components/designer/ProductShape";
-import { ScaleButton } from "/src/components/designer/ScaleButton";
+import { MeasurementLayer } from "/src/components/designer/MeasurementLayer";
+import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
+import { Circle, Line } from "react-konva";
+import { TextField } from "@mui/material";
 import { useHistory } from "/src/hooks/useHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
 import productTypesConfig from "/src/data/productTypes.json";
@@ -52,6 +56,21 @@ const Page = () => {
     canUndo,
     canRedo,
   } = useHistory([]);
+
+  // Form hooks
+  const scaleForm = useForm({
+    mode: "onChange",
+    defaultValues: {
+      scale: 1
+    }
+  });
+
+  const measureForm = useForm({
+    mode: "onChange",
+    defaultValues: {
+      distance: 0
+    }
+  });
   
   const [connectors, setConnectors] = useState([]);
 
@@ -73,30 +92,41 @@ const Page = () => {
 
   // Handler for applying scale to selected products
   const handleScaleConfirm = (scaleValue) => {
-    applyGroupTransform();
+    scaleValue = Number(scaleValue);
+    if (isNaN(scaleValue) || scaleValue <= 0) return;
+
     // For each selected product, set only the correct real-world size property based on config
     const newProducts = products.map(product => {
       if (!selectedIds.includes(product.id)) return product;
-      // Get product type config
-      const config = productTypesConfig[product.product_type] || productTypesConfig.default;
+      
       let updated = { ...product };
-      // Set only realWorldSize if present in config
-      if (config.realWorldSize !== undefined) {
-        updated.realWorldSize = scaleValue;
+      // Ensure base scales exist
+      const baseScaleX = product.baseScaleX || 1;
+      const baseScaleY = product.baseScaleY || 1;
+      
+      // Store current scale as base if not set
+      if (!product.baseScaleX) {
+        updated.baseScaleX = product.scaleX || 1;
+        updated.baseScaleY = product.scaleY || 1;
       }
-      // Set only realWorldWidth/realWorldHeight if present in config
-      if (config.realWorldWidth !== undefined) {
-        updated.realWorldWidth = scaleValue;
-      }
-      if (config.realWorldHeight !== undefined) {
-        updated.realWorldHeight = scaleValue;
-      }
-      // Always update scaleFactor for rendering
-      updated.scaleFactor = scaleFactor;
+      
+      // Apply scale relative to base scale
+      updated.scaleX = baseScaleX * scaleValue;
+      updated.scaleY = baseScaleY * scaleValue;
+      
       return updated;
     });
+
     updateHistory(newProducts);
+    
+    // Force transformer update
     setGroupKey(k => k + 1);
+    if (transformerRef.current && selectionGroupRef.current) {
+      selectionGroupRef.current.scaleX(1);
+      selectionGroupRef.current.scaleY(1);
+      transformerRef.current.nodes([selectionGroupRef.current]);
+      transformerRef.current.getLayer()?.batchDraw();
+    }
     setScaleDialogOpen(false);
   };
 
@@ -121,6 +151,8 @@ const Page = () => {
   const [scaleFactor, setScaleFactor] = useState(100); // 100px per meter
   const [measureMode, setMeasureMode] = useState(false);
   const [measurePoints, setMeasurePoints] = useState([]);
+  const [measureDialogOpen, setMeasureDialogOpen] = useState(false);
+  const [measureValue, setMeasureValue] = useState(0);
   const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(null);
 
   // Selection snapshot for group transformations
@@ -404,23 +436,40 @@ const Page = () => {
       y: (pointerPosition.y - stagePosition.y) / stageScale,
     };
     setMeasurePoints(points => {
+      if (points.length >= 2) return points;
       const newPoints = [...points, canvasPos];
       if (newPoints.length === 2) {
-        // Prompt for real-world distance
-        const pixelDistance = Math.sqrt(
-          Math.pow(newPoints[1].x - newPoints[0].x, 2) +
-          Math.pow(newPoints[1].y - newPoints[0].y, 2)
-        );
-        const input = window.prompt("Enter real-world distance between points (meters):", "1");
-        const realDistance = parseFloat(input);
-        if (realDistance > 0 && pixelDistance > 0) {
-          setScaleFactor(pixelDistance / realDistance);
-        }
-        setMeasureMode(false);
-        return [];
+        setMeasureDialogOpen(true);
       }
       return newPoints;
     });
+  };
+
+  const calculateDistance = (point1, point2) => {
+    if (!point1 || !point2) return 0;
+    return Math.sqrt(
+      Math.pow(point2.x - point1.x, 2) +
+      Math.pow(point2.y - point1.y, 2)
+    );
+  };
+
+  const handleMeasureConfirm = () => {
+    const realDistance = Number(measureValue);
+    const pixelDistance = calculateDistance(measurePoints[0], measurePoints[1]);
+    if (realDistance > 0 && pixelDistance > 0) {
+      setScaleFactor(pixelDistance / realDistance);
+    }
+    setMeasureMode(false);
+    setMeasurePoints([]);
+    setMeasureDialogOpen(false);
+    setMeasureValue(0);
+  };
+
+  const handleMeasureCancel = () => {
+    setMeasureMode(false);
+    setMeasurePoints([]);
+    setMeasureDialogOpen(false);
+    setMeasureValue(0);
   };
 
   // Context menu handlers
@@ -625,6 +674,8 @@ const Page = () => {
       rotation: 0,
       scaleX: 1,
       scaleY: 1,
+      baseScaleX: 1,
+      baseScaleY: 1,
       color: null,
       name: template.name,
       sku: template.sku,
@@ -869,7 +920,9 @@ const Page = () => {
       y: (pointer.y - stage.y()) / oldScale,
     };
 
-    const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+    // Ensure scale stays within reasonable bounds (0.01 to 100)
+    let newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+    newScale = Math.min(Math.max(newScale, 0.01), 100);
 
     setStageScale(newScale);
     setStagePosition({
@@ -906,11 +959,22 @@ const Page = () => {
   };
 
   // Toolbar handlers
-  const handleZoomIn = () => setStageScale(stageScale * 1.5);
-  const handleZoomOut = () => setStageScale(stageScale / 1.5);
+  const handleZoomIn = () => {
+    const newScale = Math.min(stageScale * 1.5, 100);
+    setStageScale(newScale);
+  };
+  
+  const handleZoomOut = () => {
+    const newScale = Math.max(stageScale / 1.5, 0.01);
+    setStageScale(newScale);
+  };
+  
   const handleResetView = () => {
     setStageScale(1);
-    setStagePosition({ x: canvasWidth / 2, y: canvasHeight / 2 });
+    setStagePosition({ 
+      x: canvasWidth / 2, 
+      y: canvasHeight / 2 
+    });
   };
 
   // Disconnect cable handler for connect mode
@@ -1077,6 +1141,25 @@ const Page = () => {
                       onContextMenu={() => {}}
                     />
                   )}
+
+                  <MeasurementLayer
+                    measureMode={measureMode}
+                    measurePoints={measurePoints}
+                    cursorPosition={cursorPosition}
+                    theme={theme}
+                    stagePosition={stagePosition}
+                    stageScale={stageScale}
+                    onMeasurePointAdd={(point) => {
+                      setMeasurePoints(points => {
+                        if (points.length >= 2) return points;
+                        const newPoints = [...points, point];
+                        if (newPoints.length === 2) {
+                          setMeasureDialogOpen(true);
+                        }
+                        return newPoints;
+                      });
+                    }}
+                  />
                 </DesignerCanvas>
               </Box>
             </CardContent>
@@ -1096,12 +1179,54 @@ const Page = () => {
         onScale={handleOpenScaleDialog}
       />
 
-      <ScaleButton
+      <CippComponentDialog
         open={scaleDialogOpen}
-        onScale={handleScaleConfirm}
-        onClose={() => setScaleDialogOpen(false)}
-        defaultValue={1}
-      />
+        title="Set Scale"
+        createDialog={{
+          open: scaleDialogOpen,
+          handleClose: () => setScaleDialogOpen(false),
+          handleSubmit: (data) => {
+            handleScaleConfirm(data.scale);
+            setScaleValue(data.scale);
+          },
+          form: scaleForm
+        }}
+      >
+        <TextField
+          {...scaleForm.register('scale', {
+            onChange: (e) => setScaleValue(Number(e.target.value))
+          })}
+          label="Scale"
+          type="number"
+          defaultValue={scaleValue}
+          fullWidth
+          inputProps={{ min: 0.001, step: 0.001 }}
+          autoFocus
+        />
+      </CippComponentDialog>
+
+      <CippComponentDialog
+        open={measureDialogOpen}
+        title="Set Distance"
+        createDialog={{
+          open: measureDialogOpen,
+          handleClose: () => setMeasureDialogOpen(false),
+          handleSubmit: (data) => handleMeasureConfirm(data.distance),
+          form: measureForm
+        }}
+      >
+        <TextField
+          {...measureForm.register('distance')}
+          label="Real-world distance"
+          type="number"
+          fullWidth
+          inputProps={{ min: 0.001, step: 0.001 }}
+          autoFocus
+          helperText={`Measured distance: ${(measurePoints && scaleFactor 
+            ? calculateDistance(measurePoints[0], measurePoints[1]) / scaleFactor 
+            : 0).toFixed(2)} units`}
+        />
+      </CippComponentDialog>
 
       <ColorPickerPopover
         anchorEl={colorPickerAnchor}

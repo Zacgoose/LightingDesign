@@ -2,6 +2,12 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/
 
 export const CippComponentDialog = (props) => {
   const { children, createDialog, title, ...other } = props;
+  const formHook = createDialog.form;
+
+  const onSubmit = async (data) => {
+    await createDialog.handleSubmit(data);
+    createDialog.handleClose();
+  };
 
   return (
     <Dialog fullWidth maxWidth="sm" onClose={createDialog.handleClose} open={createDialog.open}>

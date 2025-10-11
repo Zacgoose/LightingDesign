@@ -155,7 +155,11 @@ const Page = () => {
   useEffect(() => {
     if (selectedIds.length && selectionGroupRef.current && transformerRef.current) {
       transformerRef.current.nodes([selectionGroupRef.current]);
-      selectionGroupRef.current.cache();
+      // Only cache if there are multiple selected items (caching is expensive)
+      // and skip caching during dragging operations
+      if (selectedIds.length > 1 && !isDragging) {
+        selectionGroupRef.current.cache();
+      }
       transformerRef.current.getLayer()?.batchDraw();
     } else if (transformerRef.current) {
       transformerRef.current.nodes([]);
@@ -163,7 +167,7 @@ const Page = () => {
         selectionGroupRef.current.clearCache();
       }
     }
-  }, [selectedIds, groupKey]);
+  }, [selectedIds, groupKey, isDragging]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -192,6 +196,16 @@ const Page = () => {
     const groupScaleX = group.scaleX();
     const groupScaleY = group.scaleY();
     const groupRotation = group.rotation();
+    
+    // Check if the group has actually been transformed
+    // If all values are at their defaults, skip the update
+    if (groupX === selectionSnapshot.centerX && 
+        groupY === selectionSnapshot.centerY && 
+        groupScaleX === 1 && 
+        groupScaleY === 1 && 
+        groupRotation === 0) {
+      return;
+    }
     
     const { products: snapshotProducts } = selectionSnapshot;
     
@@ -419,15 +433,12 @@ const Page = () => {
       menuProps.canvasY = (pointerPosition.y - stagePosition.y) / stageScale;
     }
     if (menuType) {
-      setContextMenu(null); // Explicitly close any open menu first
-      setTimeout(() => {
-        setContextMenu({
-          x: e.evt.clientX,
-          y: e.evt.clientY,
-          type: menuType,
-          ...menuProps
-        });
-      }, 0);
+      setContextMenu({
+        x: e.evt.clientX,
+        y: e.evt.clientY,
+        type: menuType,
+        ...menuProps
+      });
     }
   };
 
@@ -462,14 +473,8 @@ const Page = () => {
     setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, type: 'connector' });
   };
 
-  const handleCloseContextMenu = (e, newContextMenu) => {
-    if (newContextMenu) {
-      // If we have a new menu position, update it
-      setContextMenu(newContextMenu);
-    } else {
-      // Otherwise just close the menu
-      setContextMenu(null);
-    }
+  const handleCloseContextMenu = () => {
+    setContextMenu(null);
   };
 
   const handleSwapPlacementProduct = () => {

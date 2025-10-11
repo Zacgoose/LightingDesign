@@ -80,6 +80,17 @@ export const DesignerCanvas = ({
     }
 
     const scaledGridSize = scaleFactor > 0 ? scaleFactor : gridSize;
+    
+    // Safeguard: Prevent creating too many grid lines (max 200 lines in each direction)
+    const maxLines = 200;
+    const verticalLineCount = Math.ceil(gridWidth / scaledGridSize);
+    const horizontalLineCount = Math.ceil(gridHeight / scaledGridSize);
+    
+    if (verticalLineCount > maxLines || horizontalLineCount > maxLines) {
+      // Grid is too dense, skip rendering to prevent performance issues
+      console.warn('Grid density too high, skipping grid render to prevent performance issues');
+      return lines;
+    }
 
     // Vertical lines
     for (let x = offsetX; x <= offsetX + gridWidth; x += scaledGridSize) {

@@ -197,6 +197,16 @@ const Page = () => {
     const groupScaleY = group.scaleY();
     const groupRotation = group.rotation();
     
+    // Check if the group has actually been transformed
+    // If all values are at their defaults, skip the update
+    if (groupX === selectionSnapshot.centerX && 
+        groupY === selectionSnapshot.centerY && 
+        groupScaleX === 1 && 
+        groupScaleY === 1 && 
+        groupRotation === 0) {
+      return;
+    }
+    
     const { products: snapshotProducts } = selectionSnapshot;
     
     const newProducts = products.map((product) => {
@@ -423,15 +433,12 @@ const Page = () => {
       menuProps.canvasY = (pointerPosition.y - stagePosition.y) / stageScale;
     }
     if (menuType) {
-      setContextMenu(null); // Explicitly close any open menu first
-      setTimeout(() => {
-        setContextMenu({
-          x: e.evt.clientX,
-          y: e.evt.clientY,
-          type: menuType,
-          ...menuProps
-        });
-      }, 0);
+      setContextMenu({
+        x: e.evt.clientX,
+        y: e.evt.clientY,
+        type: menuType,
+        ...menuProps
+      });
     }
   };
 

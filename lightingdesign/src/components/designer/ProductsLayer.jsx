@@ -36,7 +36,8 @@ export const ProductsLayer = ({
 }) => {
   const isPlacementMode = selectedTool === "placement" || placementMode;
   const isPanMode = selectedTool === "pan";
-  const canInteract = !isPlacementMode && !isPanMode;
+  const isConnectMode = selectedTool === "connect";
+  const canInteract = !isPlacementMode && !isPanMode && !isConnectMode;
   return (
     <>
       {/* Unselected products - individually draggable */}
@@ -55,7 +56,7 @@ export const ProductsLayer = ({
               isSelected={false}
               draggable={selectedTool === "select" && canInteract}
               onDragStart={(e) => canInteract && onProductDragStart(e, product.id)}
-              onMouseDown={(e) => canInteract && onProductClick(e, product.id)}
+              onMouseDown={(e) => (canInteract || isConnectMode) && onProductClick(e, product.id)}
               onDragEnd={(e) => canInteract && onProductDragEnd(e, product.id)}
               onContextMenu={(e) => canInteract && onContextMenu(e, product.id)}
               customStroke={customStroke}
@@ -109,8 +110,8 @@ export const ProductsLayer = ({
                   config={config}
                   isSelected={true}
                   draggable={false}
-                  onMouseDown={(e) => onProductClick(e, product.id)}
-                  onContextMenu={(e) => onContextMenu(e, product.id)}
+                  onMouseDown={(e) => (canInteract || isConnectMode) && onProductClick(e, product.id)}
+                  onContextMenu={(e) => canInteract && onContextMenu(e, product.id)}
                   customStroke={customStroke}
                   theme={theme}
                 />

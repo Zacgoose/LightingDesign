@@ -17,7 +17,6 @@ export const useKeyboardShortcuts = ({
   // Use refs to access latest values without re-registering event listeners
   const selectedIdsRef = useRef(selectedIds);
   const selectedConnectorIdRef = useRef(selectedConnectorId);
-  const clipboardRef = useRef(clipboard);
   const onCopyRef = useRef(onCopy);
   const onPasteRef = useRef(onPaste);
   const onDeleteRef = useRef(onDelete);
@@ -30,7 +29,6 @@ export const useKeyboardShortcuts = ({
   useEffect(() => {
     selectedIdsRef.current = selectedIds;
     selectedConnectorIdRef.current = selectedConnectorId;
-    clipboardRef.current = clipboard;
     onCopyRef.current = onCopy;
     onPasteRef.current = onPaste;
     onDeleteRef.current = onDelete;
@@ -51,7 +49,7 @@ export const useKeyboardShortcuts = ({
       }
       
       // Paste
-      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboardRef.current.products?.length > 0) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboard.current.products?.length > 0) {
         e.preventDefault();
         onPasteRef.current();
       }

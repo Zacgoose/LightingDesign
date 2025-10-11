@@ -455,6 +455,12 @@ const Page = () => {
 
   const handleContextMenu = (e, productId) => {
     e.evt.preventDefault();
+    
+    // In connect mode, don't show context menu
+    if (selectedTool === 'connect') {
+      return;
+    }
+    
     if (!selectedIds.includes(productId)) {
       applyGroupTransform();
       setSelectedIds([productId]);

@@ -155,7 +155,11 @@ const Page = () => {
   useEffect(() => {
     if (selectedIds.length && selectionGroupRef.current && transformerRef.current) {
       transformerRef.current.nodes([selectionGroupRef.current]);
-      selectionGroupRef.current.cache();
+      // Only cache if there are multiple selected items (caching is expensive)
+      // and skip caching during dragging operations
+      if (selectedIds.length > 1 && !isDragging) {
+        selectionGroupRef.current.cache();
+      }
       transformerRef.current.getLayer()?.batchDraw();
     } else if (transformerRef.current) {
       transformerRef.current.nodes([]);
@@ -163,7 +167,7 @@ const Page = () => {
         selectionGroupRef.current.clearCache();
       }
     }
-  }, [selectedIds, groupKey]);
+  }, [selectedIds, groupKey, isDragging]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -462,14 +466,8 @@ const Page = () => {
     setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, type: 'connector' });
   };
 
-  const handleCloseContextMenu = (e, newContextMenu) => {
-    if (newContextMenu) {
-      // If we have a new menu position, update it
-      setContextMenu(newContextMenu);
-    } else {
-      // Otherwise just close the menu
-      setContextMenu(null);
-    }
+  const handleCloseContextMenu = () => {
+    setContextMenu(null);
   };
 
   const handleSwapPlacementProduct = () => {

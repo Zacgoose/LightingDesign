@@ -12,25 +12,11 @@ export const ContextMenus = ({
   onSwapPlacementProduct,
   onScale,
 }) => {
-  // Prevent right-click on the menu itself
+  // Prevent right-click on the menu itself - just close it
   const handleContextMenu = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    // If a context menu is already open, update its position
-    if (contextMenu) {
-      const newContextMenu = {
-        ...contextMenu,
-        x: e.clientX,
-        y: e.clientY
-      };
-      
-      // Close and reopen the menu to force position update
-      onClose();
-      setTimeout(() => {
-        onClose(e, newContextMenu);
-      }, 0);
-    }
+    onClose();
   };
 
   return (

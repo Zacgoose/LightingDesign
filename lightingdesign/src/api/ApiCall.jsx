@@ -15,7 +15,7 @@ export function ApiGetCall(props) {
     bulkRequest = false,
     toast = false,
     onResult,
-    staleTime = 3000000,
+    staleTime = 300000,
     refetchOnWindowFocus = false,
     refetchOnMount = true,
     refetchOnReconnect = true,
@@ -297,7 +297,7 @@ export function ApiGetCallWithPagination({
       }
       return lastPage?.Metadata?.nextLink ? { nextLink: lastPage.Metadata.nextLink } : undefined;
     },
-    staleTime: 3000000,
+    staleTime: 300000,
     refetchOnWindowFocus: false,
     retry: retryFn,
   });

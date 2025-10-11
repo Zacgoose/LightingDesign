@@ -413,8 +413,14 @@ const Page = () => {
     // Always prevent default system context menu
     e.evt.preventDefault();
 
-    // Disable all context menus in pan or connect mode
-    if (selectedTool === 'connect' || selectedTool === 'pan') return;
+    // Handle right-click in connect mode to break the connection sequence
+    if (selectedTool === 'connect') {
+      setConnectSequence([]);
+      return;
+    }
+
+    // Disable context menus in pan mode
+    if (selectedTool === 'pan') return;
 
     // Always move our context menu to the new location
     let menuType = null;
@@ -725,8 +731,76 @@ const Page = () => {
     }
   };
 
-  const handleGroupDragEnd = () => {
+  const handleGroupTransformEnd = () => {
+    // Apply transforms to products
+    if (!selectedIds.length || !selectionGroupRef.current) return;
+
     applyGroupTransform();
+
+    // Find any connectors connected to transformed products
+    const connectedConnectors = connectors.filter(connector =>
+      selectedIds.includes(connector.from) || selectedIds.includes(connector.to)
+    );
+
+    // Update connected connectors control points to maintain their relative positions
+    if (connectedConnectors.length > 0) {
+      const newConnectors = connectors.map(connector => {
+        if (!selectedIds.includes(connector.from) && !selectedIds.includes(connector.to)) {
+          return connector;
+        }
+
+        // If control points are set to the default, let them auto-update
+        if (connector.controlX === null || connector.controlY === null) {
+          return connector;
+        }
+
+        // Otherwise, apply the same transform to the control point
+        const group = selectionGroupRef.current;
+        const fromProduct = products.find(p => p.id === connector.from);
+        const toProduct = products.find(p => p.id === connector.to);
+
+        // Calculate center of affected products for transform origin
+        let centerX, centerY;
+        if (selectedIds.includes(connector.from) && selectedIds.includes(connector.to)) {
+          centerX = (fromProduct.x + toProduct.x) / 2;
+          centerY = (fromProduct.y + toProduct.y) / 2;
+        } else if (selectedIds.includes(connector.from)) {
+          centerX = fromProduct.x;
+          centerY = fromProduct.y;
+        } else {
+          centerX = toProduct.x;
+          centerY = toProduct.y;
+        }
+
+        let relX = connector.controlX - centerX;
+        let relY = connector.controlY - centerY;
+
+        // Apply rotation
+        if (group.rotation() !== 0) {
+          const angle = (group.rotation() * Math.PI) / 180;
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+          const rotatedX = relX * cos - relY * sin;
+          const rotatedY = relX * sin + relY * cos;
+          relX = rotatedX;
+          relY = rotatedY;
+        }
+
+        // Apply scale
+        relX *= group.scaleX();
+        relY *= group.scaleY();
+
+        return {
+          ...connector,
+          controlX: centerX + relX,
+          controlY: centerY + relY,
+        };
+      });
+
+      setConnectors(newConnectors);
+    }
+    
+    // Force transformer and connections to update
     setGroupKey(k => k + 1);
   };
 
@@ -837,6 +911,11 @@ const Page = () => {
                 if (selectedTool === 'connect' && tool !== 'connect') {
                   setConnectSequence([]);
                 }
+                // Clear selections when changing tools
+                applyGroupTransform();
+                setSelectedIds([]);
+                setSelectedConnectorId(null);
+                setGroupKey(k => k + 1);
                 setSelectedTool(tool);
               },
               placementMode: placementMode,
@@ -921,7 +1000,7 @@ const Page = () => {
                     onProductDragStart={handleProductDragStart}
                     onProductDragEnd={handleProductDragEnd}
                     onContextMenu={handleContextMenu}
-                    onGroupDragEnd={handleGroupDragEnd}
+                    onGroupTransformEnd={handleGroupTransformEnd}
                   />
 
                   {/* Ghost product preview in placement mode */}

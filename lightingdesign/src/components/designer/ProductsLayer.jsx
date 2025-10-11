@@ -32,7 +32,7 @@ export const ProductsLayer = ({
   onProductDragStart,
   onProductDragEnd,
   onContextMenu,
-  onGroupDragEnd,
+  onGroupTransformEnd,
 }) => {
   const isPlacementMode = selectedTool === "placement" || placementMode;
   const isPanMode = selectedTool === "pan";
@@ -55,10 +55,15 @@ export const ProductsLayer = ({
               config={config}
               isSelected={false}
               draggable={selectedTool === "select" && canInteract}
-              onDragStart={(e) => canInteract && onProductDragStart(e, product.id)}
-              onMouseDown={(e) => (canInteract || isConnectMode) && onProductClick(e, product.id)}
-              onDragEnd={(e) => canInteract && onProductDragEnd(e, product.id)}
-              onContextMenu={(e) => canInteract && onContextMenu(e, product.id)}
+              onDragStart={(e) => selectedTool === "select" && canInteract && onProductDragStart(e, product.id)}
+              onMouseDown={(e) => {
+                // Allow click in connect mode or select mode
+                if (selectedTool === "connect" || selectedTool === "select") {
+                  onProductClick(e, product.id);
+                }
+              }}
+              onDragEnd={(e) => selectedTool === "select" && canInteract && onProductDragEnd(e, product.id)}
+              onContextMenu={(e) => selectedTool === "select" && canInteract && onContextMenu(e, product.id)}
               customStroke={customStroke}
               theme={theme}
             />
@@ -66,14 +71,15 @@ export const ProductsLayer = ({
         })}
 
       {/* Selected products in a draggable group */}
-      {selectedIds.length > 0 && selectedTool === "select" && canInteract && (
+      {selectedIds.length > 0 && (
         <Group
           key={groupKey}
           ref={selectionGroupRef}
           x={selectionSnapshot.centerX || 0}
           y={selectionSnapshot.centerY || 0}
-          draggable
-          onDragEnd={onGroupDragEnd}
+          draggable={selectedTool === "select" && canInteract}
+          onDragEnd={onGroupTransformEnd}
+          onTransformEnd={onGroupTransformEnd}
         >
           {(selectionSnapshot.products?.length > 0 
             ? selectionSnapshot.products 

@@ -51,7 +51,7 @@ export const useKeyboardShortcuts = ({
       }
       
       // Paste
-      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboardRef.current.current.products?.length > 0) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboardRef.current.products?.length > 0) {
         e.preventDefault();
         onPasteRef.current();
       }

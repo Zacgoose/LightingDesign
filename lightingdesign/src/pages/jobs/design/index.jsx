@@ -743,11 +743,7 @@ const Page = () => {
             const sizeData = { width: img.width, height: img.height };
             setBackgroundImage(imageData);
             setBackgroundImageNaturalSize(sizeData);
-            // Save to active layer
-            updateActiveLayer({
-              backgroundImage: imageData,
-              backgroundImageNaturalSize: sizeData
-            });
+            // Note: The sync effect will automatically update the active layer with this data
           };
           img.src = ev.target.result;
         };
@@ -794,8 +790,7 @@ const Page = () => {
     if (realDistance > 0 && pixelDistance > 0) {
       const newScaleFactor = pixelDistance / realDistance;
       setScaleFactor(newScaleFactor);
-      // Save to active layer
-      updateActiveLayer({ scaleFactor: newScaleFactor });
+      // Note: The sync effect will automatically update the active layer with this data
     }
     setMeasureMode(false);
     setMeasurePoints([]);

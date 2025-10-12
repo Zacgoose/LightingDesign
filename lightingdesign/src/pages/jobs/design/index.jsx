@@ -100,7 +100,7 @@ const Page = () => {
       setBackgroundImage(activeLayer.backgroundImage);
       setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize);
     }
-  }, [activeLayerId]);
+  }, [activeLayerId, updateHistory, setBackgroundImage, setBackgroundImageNaturalSize]);
 
   // Form hooks
   const scaleForm = useForm({

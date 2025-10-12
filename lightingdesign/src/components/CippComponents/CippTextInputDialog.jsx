@@ -12,9 +12,9 @@ export const CippTextInputDialog = ({ open, onClose, onConfirm, title, label, de
     }
   });
 
-  const onSubmit = async (data) => {
+  const onSubmit = (data) => {
     if (data.value && data.value.trim()) {
-      await onConfirm(data.value.trim());
+      onConfirm(data.value.trim());
       onClose();
       form.reset({ value: "" });
     }

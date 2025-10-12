@@ -1,5 +1,6 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 
 /**
  * Simple text input dialog for getting user input
@@ -11,6 +12,13 @@ export const TextInputDialog = ({ open, onClose, onConfirm, title, label, defaul
       value: defaultValue
     }
   });
+
+  // Reset form with new defaultValue when dialog opens
+  useEffect(() => {
+    if (open) {
+      form.reset({ value: defaultValue });
+    }
+  }, [open, defaultValue, form]);
 
   const onSubmit = (data) => {
     if (data.value && data.value.trim()) {

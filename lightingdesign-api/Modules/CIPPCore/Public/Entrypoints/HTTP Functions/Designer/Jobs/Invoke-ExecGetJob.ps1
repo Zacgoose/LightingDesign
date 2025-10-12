@@ -9,9 +9,9 @@ function Invoke-ExecGetJob {
     param($Request, $TriggerMetadata)
 
     $Table = Get-CippTable -tablename 'Jobs'
-    
+
     $JobId = $Request.Query.jobId
-    
+
     if (-not $JobId) {
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::BadRequest
@@ -22,17 +22,17 @@ function Invoke-ExecGetJob {
     # Lookup a single job by RowKey
     $Filter = "RowKey eq '{0}'" -f $JobId
     $Row = Get-AzDataTableEntity @Table -Filter $Filter
-    
+
     if ($Row) {
         $JobData = if ($Row.JobData -and (Test-Json -Json $Row.JobData -ErrorAction SilentlyContinue)) {
             $Row.JobData | ConvertFrom-Json
         } else { $Row.JobData }
-        
+
         $ReturnedJob = [PSCustomObject]@{
             jobId            = $Row.RowKey
             jobNumber        = $Row.JobNumber
             customerName     = if ($Row.CustomerId) { @{ value = $Row.CustomerId; label = $Row.CustomerName } } else { $null }
-            status           = if ($Row.Status) { @{ value = $Row.Status; label = (Get-Culture).TextInfo.ToTitleCase($Row.Status -replace '_', ' ') } } else { $null }
+            status           = $Row.Status
             description      = $Row.Description
             address          = $Row.Address
             city             = $Row.City

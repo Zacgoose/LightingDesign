@@ -9,10 +9,10 @@ function Invoke-ExecSaveDesign {
     param($Request, $TriggerMetadata)
 
     $Table = Get-CIPPTable -TableName 'Designs'
-    
+
     $JobId = $Request.Body.jobId
     $DesignData = $Request.Body.designData
-    
+
     if (-not $JobId) {
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::BadRequest
@@ -26,10 +26,10 @@ function Invoke-ExecSaveDesign {
         $ExistingDesign = Get-AzDataTableEntity @Table -Filter $Filter
 
         # Convert design data to JSON
-        $DesignDataJson = if ($DesignData) { 
-            [string]($DesignData | ConvertTo-Json -Depth 20 -Compress) 
-        } else { 
-            $null 
+        $DesignDataJson = if ($DesignData) {
+            [string]($DesignData | ConvertTo-Json -Depth 20 -Compress)
+        } else {
+            $null
         }
 
         # Azure Table Storage has a 64KB limit per property (32K characters for UTF-16)
@@ -41,7 +41,7 @@ function Invoke-ExecSaveDesign {
         if ($DesignDataJson -and $DesignDataJson.Length -gt $MaxChunkSize) {
             # Split data into chunks
             $ChunkCount = [Math]::Ceiling($DesignDataJson.Length / $MaxChunkSize)
-            
+
             for ($i = 0; $i -lt $ChunkCount; $i++) {
                 $Start = $i * $MaxChunkSize
                 $Length = [Math]::Min($MaxChunkSize, $DesignDataJson.Length - $Start)
@@ -57,14 +57,14 @@ function Invoke-ExecSaveDesign {
                 JobId        = [string]$JobId
                 LastModified = (Get-Date).ToString('o')
             }
-            
+
             # Clear old chunk properties if they exist
             if ($ExistingDesign.ChunkCount) {
                 for ($i = 0; $i -lt $ExistingDesign.ChunkCount; $i++) {
                     $Entity | Add-Member -NotePropertyName "DesignData_$i" -NotePropertyValue $null -Force
                 }
             }
-            
+
             # Add chunk count and chunks or single property
             if ($ChunkCount -gt 0) {
                 $Entity | Add-Member -NotePropertyName 'ChunkCount' -NotePropertyValue $ChunkCount -Force
@@ -85,7 +85,7 @@ function Invoke-ExecSaveDesign {
                 LastModified = (Get-Date).ToString('o')
                 ChunkCount   = $ChunkCount
             }
-            
+
             # Add chunks or single property
             if ($ChunkCount -gt 0) {
                 $Entity | Add-Member -NotePropertyName 'DesignData' -NotePropertyValue $null -Force
@@ -101,7 +101,7 @@ function Invoke-ExecSaveDesign {
 
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::OK
-            Body       = @{ 
+            Body       = @{
                 Results = 'Design saved successfully'
                 DesignId = $Entity.RowKey
                 JobId = $JobId
@@ -112,7 +112,7 @@ function Invoke-ExecSaveDesign {
         Write-Error "Error saving design: $_"
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::InternalServerError
-            Body       = @{ 
+            Body       = @{
                 error = 'Failed to save design'
                 message = $_.Exception.Message
                 details = $_.Exception.ToString()

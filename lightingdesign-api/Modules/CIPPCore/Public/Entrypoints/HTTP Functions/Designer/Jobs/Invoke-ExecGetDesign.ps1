@@ -9,9 +9,9 @@ function Invoke-ExecGetDesign {
     param($Request, $TriggerMetadata)
 
     $Table = Get-CippTable -tablename 'Designs'
-    
+
     $JobId = $Request.Query.jobId
-    
+
     if (-not $JobId) {
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::BadRequest
@@ -23,10 +23,10 @@ function Invoke-ExecGetDesign {
         # Lookup design by JobId
         $Filter = "JobId eq '{0}'" -f $JobId
         $Row = Get-AzDataTableEntity @Table -Filter $Filter
-        
+
         if ($Row) {
             $DesignDataJson = $null
-            
+
             # Check if data is chunked
             if ($Row.ChunkCount -and $Row.ChunkCount -gt 0) {
                 # Reassemble chunks
@@ -42,11 +42,11 @@ function Invoke-ExecGetDesign {
                 # Single property (not chunked)
                 $DesignDataJson = $Row.DesignData
             }
-            
+
             # Parse the JSON
             $DesignData = if ($DesignDataJson -and (Test-Json -Json $DesignDataJson -ErrorAction SilentlyContinue)) {
                 $DesignDataJson | ConvertFrom-Json -Depth 20
-            } else { 
+            } else {
                 # Return empty design structure if no data
                 @{
                     products = @()
@@ -54,7 +54,7 @@ function Invoke-ExecGetDesign {
                     layers = @()
                 }
             }
-            
+
             $ReturnedDesign = [PSCustomObject]@{
                 designId     = $Row.RowKey
                 jobId        = $Row.JobId
@@ -85,7 +85,7 @@ function Invoke-ExecGetDesign {
         Write-Error "Error retrieving design: $_"
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::InternalServerError
-            Body       = @{ 
+            Body       = @{
                 error = 'Failed to retrieve design'
                 message = $_.Exception.Message
             }

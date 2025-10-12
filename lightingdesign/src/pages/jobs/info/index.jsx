@@ -38,6 +38,16 @@ const Page = () => {
       contactEmail: "",
       estimatedValue: "",
       notes: "",
+      assignedDesigner: null,
+      builders: [],
+      relatedTrades: [],
+      pricingMatrix: {
+        customerPrice: "",
+        tradePrice: "",
+        builderPrice: "",
+        costBasis: "",
+        markupPercentage: "",
+      },
     },
   });
 
@@ -75,6 +85,12 @@ const Page = () => {
             contactEmail: values.contactEmail,
             estimatedValue: values.estimatedValue,
             notes: values.notes,
+            assignedDesigner: values.assignedDesigner?.value 
+              ? { value: values.assignedDesigner.value, label: values.assignedDesigner.label }
+              : null,
+            builders: values.builders?.map((b) => ({ value: b.value, label: b.label })) || [],
+            relatedTrades: values.relatedTrades?.map((t) => ({ value: t.value, label: t.label })) || [],
+            pricingMatrix: values.pricingMatrix || {},
           };
         }}
         addedButtons={

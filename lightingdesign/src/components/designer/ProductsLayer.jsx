@@ -1,7 +1,7 @@
 import { Group, Transformer } from "react-konva";
 import { ProductShape } from "./ProductShape";
 import productTypesConfig from "/src/data/productTypes.json";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, memo } from "react";
 import { logRender } from "/src/utils/performanceLogger";
 
 const COLOR_PALETTE = [
@@ -19,7 +19,7 @@ const getProductStrokeColor = (product, products, defaultColor) => {
   return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
 };
 
-export const ProductsLayer = ({
+export const ProductsLayer = memo(({
   products,
   selectedIds,
   selectedTool,
@@ -170,4 +170,22 @@ export const ProductsLayer = ({
       )}
     </>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function for memo
+  // Only re-render if these specific props change
+  return (
+    prevProps.products === nextProps.products &&
+    prevProps.selectedIds === nextProps.selectedIds &&
+    prevProps.selectedTool === nextProps.selectedTool &&
+    prevProps.selectionSnapshot === nextProps.selectionSnapshot &&
+    prevProps.groupKey === nextProps.groupKey &&
+    prevProps.placementMode === nextProps.placementMode &&
+    prevProps.rotationSnaps === nextProps.rotationSnaps &&
+    prevProps.theme === nextProps.theme &&
+    prevProps.onProductClick === nextProps.onProductClick &&
+    prevProps.onProductDragStart === nextProps.onProductDragStart &&
+    prevProps.onProductDragEnd === nextProps.onProductDragEnd &&
+    prevProps.onContextMenu === nextProps.onContextMenu &&
+    prevProps.onGroupTransformEnd === nextProps.onGroupTransformEnd
+  );
+});

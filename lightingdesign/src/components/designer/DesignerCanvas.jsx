@@ -1,10 +1,10 @@
 import { Box, useTheme } from "@mui/material";
 import { Stage, Layer, Image as KonvaImage } from "react-konva";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, memo } from "react";
 import { GridLayer } from "./GridLayer";
 import { usePerformanceMonitor, logRender } from "/src/utils/performanceLogger";
 
-export const DesignerCanvas = ({
+export const DesignerCanvas = memo(({
   width = 4200,
   height = 2970,
   stageScale = 1,
@@ -178,4 +178,29 @@ export const DesignerCanvas = ({
       </Stage>
     </Box>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison - only re-render if these props actually change
+  // Note: stagePosition and stageScale changes are handled by Konva internally
+  // so we include them to ensure proper updates but the Stage component handles the actual rendering
+  return (
+    prevProps.width === nextProps.width &&
+    prevProps.height === nextProps.height &&
+    prevProps.stageScale === nextProps.stageScale &&
+    prevProps.stagePosition.x === nextProps.stagePosition.x &&
+    prevProps.stagePosition.y === nextProps.stagePosition.y &&
+    prevProps.showGrid === nextProps.showGrid &&
+    prevProps.gridSize === nextProps.gridSize &&
+    prevProps.scaleFactor === nextProps.scaleFactor &&
+    prevProps.draggable === nextProps.draggable &&
+    prevProps.backgroundImage === nextProps.backgroundImage &&
+    prevProps.backgroundImageNaturalSize === nextProps.backgroundImageNaturalSize &&
+    prevProps.children === nextProps.children &&
+    prevProps.onWheel === nextProps.onWheel &&
+    prevProps.onDragEnd === nextProps.onDragEnd &&
+    prevProps.onMouseDown === nextProps.onMouseDown &&
+    prevProps.onTouchStart === nextProps.onTouchStart &&
+    prevProps.onContextMenu === nextProps.onContextMenu &&
+    prevProps.onMouseMove === nextProps.onMouseMove &&
+    prevProps.onPan === nextProps.onPan
+  );
+});

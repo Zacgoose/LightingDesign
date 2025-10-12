@@ -43,13 +43,12 @@ const Page = () => {
     url: "/api/ExecGetDesign",
     data: { jobId: id },
     queryKey: `Design-${id}`,
-    enabled: !!id,
+    waiting: !!id,
   });
 
   // Save design mutation
-  const saveDesignMutation = ApiPostCall({
-    relatedQueryKeys: [`Design-${id}`],
-  });
+  // Note: We don't refetch after save since we're still on the canvas with current data
+  const saveDesignMutation = ApiPostCall({});
 
   // Canvas state
   const [stageScale, setStageScale] = useState(1);
@@ -132,13 +131,13 @@ const Page = () => {
       // Set flag to prevent saving back to layer while loading
       isLoadingLayerData.current = true;
       
-      // Load products into history
-      if (loadedDesign.products && loadedDesign.products.length > 0) {
+      // Load products into history - always set, even if empty
+      if (loadedDesign.products !== undefined) {
         updateHistory(loadedDesign.products);
       }
       
-      // Load connectors
-      if (loadedDesign.connectors && loadedDesign.connectors.length > 0) {
+      // Load connectors - always set, even if empty
+      if (loadedDesign.connectors !== undefined) {
         setConnectors(loadedDesign.connectors);
       }
       

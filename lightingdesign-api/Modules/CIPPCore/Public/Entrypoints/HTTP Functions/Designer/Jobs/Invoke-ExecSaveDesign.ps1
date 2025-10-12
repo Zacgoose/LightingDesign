@@ -32,49 +32,16 @@ function Invoke-ExecSaveDesign {
             $null
         }
 
-        # Azure Table Storage has a 64KB limit per property (32K characters for UTF-16)
-        # Use 60KB (30K characters) as safe threshold to account for overhead
-        $MaxChunkSize = 30000
-        $ChunkCount = 0
-        $Chunks = @{}
-
-        if ($DesignDataJson -and $DesignDataJson.Length -gt $MaxChunkSize) {
-            # Split data into chunks
-            $ChunkCount = [Math]::Ceiling($DesignDataJson.Length / $MaxChunkSize)
-
-            for ($i = 0; $i -lt $ChunkCount; $i++) {
-                $Start = $i * $MaxChunkSize
-                $Length = [Math]::Min($MaxChunkSize, $DesignDataJson.Length - $Start)
-                $Chunks["DesignData_$i"] = [string]$DesignDataJson.Substring($Start, $Length)
-            }
-        }
-
+        # Create or update design entity
+        # Note: Add-CIPPAzDataTableEntity handles large properties automatically by splitting into chunks
         if ($ExistingDesign) {
             # Update existing design
             $Entity = @{
                 PartitionKey = $ExistingDesign.PartitionKey
                 RowKey       = $ExistingDesign.RowKey
                 JobId        = [string]$JobId
+                DesignData   = $DesignDataJson
                 LastModified = (Get-Date).ToString('o')
-            }
-
-            # Clear old chunk properties if they exist
-            if ($ExistingDesign.ChunkCount) {
-                for ($i = 0; $i -lt $ExistingDesign.ChunkCount; $i++) {
-                    $Entity["DesignData_$i"] = $null
-                }
-            }
-
-            # Add chunk count and chunks or single property
-            if ($ChunkCount -gt 0) {
-                $Entity['ChunkCount'] = $ChunkCount
-                $Entity['DesignData'] = $null
-                foreach ($Key in $Chunks.Keys) {
-                    $Entity[$Key] = $Chunks[$Key]
-                }
-            } else {
-                $Entity['ChunkCount'] = 0
-                $Entity['DesignData'] = $DesignDataJson
             }
         } else {
             # Create new design
@@ -82,18 +49,8 @@ function Invoke-ExecSaveDesign {
                 PartitionKey = 'Design'
                 RowKey       = [guid]::NewGuid().ToString()
                 JobId        = [string]$JobId
+                DesignData   = $DesignDataJson
                 LastModified = (Get-Date).ToString('o')
-                ChunkCount   = $ChunkCount
-            }
-
-            # Add chunks or single property
-            if ($ChunkCount -gt 0) {
-                $Entity['DesignData'] = $null
-                foreach ($Key in $Chunks.Keys) {
-                    $Entity[$Key] = $Chunks[$Key]
-                }
-            } else {
-                $Entity['DesignData'] = $DesignDataJson
             }
         }
 
@@ -105,7 +62,6 @@ function Invoke-ExecSaveDesign {
                 Results = 'Design saved successfully'
                 DesignId = $Entity.RowKey
                 JobId = $JobId
-                ChunkCount = $ChunkCount
             }
         }
     } catch {

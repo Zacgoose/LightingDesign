@@ -21,31 +21,15 @@ function Invoke-ExecGetDesign {
 
     try {
         # Lookup design by JobId
+        # Note: Get-CIPPAzDataTableEntity handles chunked properties automatically by reassembling them
         $Filter = "JobId eq '{0}'" -f $JobId
         $Row = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
 
         if ($Row) {
-            $DesignDataJson = $null
-
-            # Check if data is chunked
-            if ($Row.ChunkCount -and $Row.ChunkCount -gt 0) {
-                # Reassemble chunks
-                $StringBuilder = New-Object System.Text.StringBuilder
-                for ($i = 0; $i -lt $Row.ChunkCount; $i++) {
-                    $ChunkProperty = "DesignData_$i"
-                    if ($Row.$ChunkProperty) {
-                        [void]$StringBuilder.Append($Row.$ChunkProperty)
-                    }
-                }
-                $DesignDataJson = $StringBuilder.ToString()
-            } elseif ($Row.DesignData) {
-                # Single property (not chunked)
-                $DesignDataJson = $Row.DesignData
-            }
-
             # Parse the JSON
-            $DesignData = if ($DesignDataJson -and (Test-Json -Json $DesignDataJson -ErrorAction SilentlyContinue)) {
-                $DesignDataJson | ConvertFrom-Json -Depth 20
+            # The DesignData property is already reassembled by Get-CIPPAzDataTableEntity
+            $DesignData = if ($Row.DesignData -and (Test-Json -Json $Row.DesignData -ErrorAction SilentlyContinue)) {
+                $Row.DesignData | ConvertFrom-Json -Depth 20
             } else {
                 # Return empty design structure if no data
                 @{

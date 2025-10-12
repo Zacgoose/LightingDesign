@@ -150,6 +150,32 @@ const Page = () => {
     }
   }, [products, connectors]);
 
+  // Handle save mutation success
+  useEffect(() => {
+    if (saveDesignMutation.isSuccess) {
+      setLastSaved(new Date().toISOString());
+      setHasUnsavedChanges(false);
+      setIsSaving(false);
+      
+      dispatch(showToast({ 
+        message: "Design saved successfully", 
+        title: "Success" 
+      }));
+    }
+  }, [saveDesignMutation.isSuccess, dispatch]);
+
+  // Handle save mutation error
+  useEffect(() => {
+    if (saveDesignMutation.isError) {
+      setIsSaving(false);
+      
+      dispatch(showToast({ 
+        message: `Failed to save design: ${saveDesignMutation.error?.message || 'Unknown error'}`, 
+        title: "Save Error" 
+      }));
+    }
+  }, [saveDesignMutation.isError, saveDesignMutation.error, dispatch]);
+
   // Auto-save functionality (every 2 minutes if there are unsaved changes)
   useEffect(() => {
     if (!id || !hasUnsavedChanges || isSaving) return;
@@ -1107,7 +1133,7 @@ const Page = () => {
   // Disconnect cable handler for connect mode
   const handleDisconnectCable = () => setConnectSequence([]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!id) {
       dispatch(showToast({ 
         message: "No job ID found. Cannot save design.", 
@@ -1119,40 +1145,23 @@ const Page = () => {
     applyGroupTransform();
     setIsSaving(true);
 
-    try {
-      await saveDesignMutation.mutateAsync({
-        url: "/api/ExecSaveDesign",
-        data: {
-          jobId: id,
-          designData: {
-            products,
-            connectors,
-            layers,
-            canvasSettings: {
-              width: canvasWidth,
-              height: canvasHeight,
-              scale: stageScale,
-              position: stagePosition,
-            }
+    saveDesignMutation.mutate({
+      url: "/api/ExecSaveDesign",
+      data: {
+        jobId: id,
+        designData: {
+          products,
+          connectors,
+          layers,
+          canvasSettings: {
+            width: canvasWidth,
+            height: canvasHeight,
+            scale: stageScale,
+            position: stagePosition,
           }
         }
-      });
-
-      setLastSaved(new Date().toISOString());
-      setHasUnsavedChanges(false);
-      
-      dispatch(showToast({ 
-        message: "Design saved successfully", 
-        title: "Success" 
-      }));
-    } catch (error) {
-      dispatch(showToast({ 
-        message: `Failed to save design: ${error.message}`, 
-        title: "Save Error" 
-      }));
-    } finally {
-      setIsSaving(false);
-    }
+      }
+    });
   };
 
   const handleExport = () => {

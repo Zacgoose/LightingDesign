@@ -1247,7 +1247,7 @@ const Page = () => {
 
           <Box sx={{ mb: 0.75 }}>
             {/* Display API response messages */}
-            <CippApiResults apiObject={saveDesignMutation} />
+            <CippApiResults apiObject={saveDesignMutation} floating={true} autoCloseSeconds={5} hideResultsButtons={true}/>
             
             <ProductSelectionDrawer 
               onProductSelect={handleProductAdd}

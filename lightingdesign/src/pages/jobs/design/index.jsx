@@ -132,6 +132,22 @@ const Page = () => {
     updateLayer(activeLayerId, { connectors });
   }, [connectors, activeLayerId, updateLayer]);
 
+  // Keep background image in sync with active layer
+  useEffect(() => {
+    // Don't save back to layer if we're in the middle of loading from layer
+    if (isLoadingLayerData.current) return;
+    
+    updateLayer(activeLayerId, { backgroundImage, backgroundImageNaturalSize });
+  }, [backgroundImage, backgroundImageNaturalSize, activeLayerId, updateLayer]);
+
+  // Keep scale factor in sync with active layer
+  useEffect(() => {
+    // Don't save back to layer if we're in the middle of loading from layer
+    if (isLoadingLayerData.current) return;
+    
+    updateLayer(activeLayerId, { scaleFactor });
+  }, [scaleFactor, activeLayerId, updateLayer]);
+
   // Load design data when available
   useEffect(() => {
     if (designData.isSuccess && designData.data?.designData) {
@@ -157,21 +173,7 @@ const Page = () => {
         setStageScale(loadedDesign.canvasSettings.scale);
       }
       
-      // 2. Load background and scale factor from first layer (if available)
-      if (loadedDesign.layers && loadedDesign.layers.length > 0) {
-        const firstLayer = loadedDesign.layers[0];
-        if (firstLayer.backgroundImage) {
-          setBackgroundImage(firstLayer.backgroundImage);
-        }
-        if (firstLayer.backgroundImageNaturalSize) {
-          setBackgroundImageNaturalSize(firstLayer.backgroundImageNaturalSize);
-        }
-        if (firstLayer.scaleFactor !== undefined) {
-          setScaleFactor(firstLayer.scaleFactor);
-        }
-      }
-      
-      // 3. Now load layers and products (they will use the settings set above)
+      // 2. Now load layers and products (background images are per-layer, loaded via layer switching)
       if (loadedDesign.layers && loadedDesign.layers.length > 0) {
         // Enrich products in layers with API data
         const enrichedLayers = loadedDesign.layers.map(layer => ({
@@ -205,8 +207,13 @@ const Page = () => {
           })
         }));
         
-        // Load the enriched layers (products will render with correct settings)
+        // Load the enriched layers
         loadLayers(enrichedLayers);
+        
+        // Reset lastLoadedLayerId so the layer switching effect will load the active layer's data
+        // This ensures that after loading layers, the active layer's background and other data
+        // are properly loaded into local state
+        lastLoadedLayerId.current = null;
       }
       
       // Load products into history - always set, even if empty

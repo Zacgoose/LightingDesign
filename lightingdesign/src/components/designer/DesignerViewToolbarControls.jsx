@@ -8,7 +8,9 @@ const DesignerViewToolbarControls = ({
   onZoomIn,
   onZoomOut,
   onResetView,
-  zoomLevel
+  zoomLevel,
+  showLayers,
+  onToggleLayers,
 }) => (
   <Stack direction="row" spacing={1} alignItems="center">
     <Button
@@ -24,6 +26,13 @@ const DesignerViewToolbarControls = ({
       onClick={onToggleMeasurements}
     >
       Measurements
+    </Button>
+    <Button
+      variant={showLayers ? "contained" : "outlined"}
+      size="small"
+      onClick={onToggleLayers}
+    >
+      Layers
     </Button>
     <Button
       variant="outlined"

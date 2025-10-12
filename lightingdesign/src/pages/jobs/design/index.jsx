@@ -181,6 +181,21 @@ const Page = () => {
           })
         }));
         loadLayers(enrichedLayers);
+        
+        // Load background image and scale factor from the active (first) layer after loading
+        // This ensures these properties are loaded when the design is first opened
+        if (enrichedLayers.length > 0 && enrichedLayers[0]) {
+          const firstLayer = enrichedLayers[0];
+          if (firstLayer.backgroundImage) {
+            setBackgroundImage(firstLayer.backgroundImage);
+          }
+          if (firstLayer.backgroundImageNaturalSize) {
+            setBackgroundImageNaturalSize(firstLayer.backgroundImageNaturalSize);
+          }
+          if (firstLayer.scaleFactor) {
+            setScaleFactor(firstLayer.scaleFactor);
+          }
+        }
       }
       
       // Load products into history - always set, even if empty

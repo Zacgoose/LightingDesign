@@ -78,10 +78,10 @@ const Page = () => {
 
   // Keep products in sync with active layer
   useEffect(() => {
-    if (activeLayer) {
+    if (activeLayer && JSON.stringify(products) !== JSON.stringify(activeLayer.products)) {
       updateActiveLayer({ products });
     }
-  }, [products, updateActiveLayer]);
+  }, [products, updateActiveLayer, activeLayer]);
 
   const [connectors, setConnectors] = useState(activeLayer?.connectors || []);
 
@@ -91,16 +91,6 @@ const Page = () => {
       updateActiveLayer({ connectors });
     }
   }, [connectors, updateActiveLayer]);
-
-  // Update local state when switching layers
-  useEffect(() => {
-    if (activeLayer) {
-      updateHistory(activeLayer.products || []);
-      setConnectors(activeLayer.connectors || []);
-      setBackgroundImage(activeLayer.backgroundImage);
-      setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize);
-    }
-  }, [activeLayerId, updateHistory, setBackgroundImage, setBackgroundImageNaturalSize]);
 
   // Form hooks
   const scaleForm = useForm({
@@ -190,6 +180,16 @@ const Page = () => {
   const [measureDialogOpen, setMeasureDialogOpen] = useState(false);
   const [measureValue, setMeasureValue] = useState(0);
   const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(null);
+
+  // Update local state when switching layers
+  useEffect(() => {
+    if (activeLayer) {
+      updateHistory(activeLayer.products || []);
+      setConnectors(activeLayer.connectors || []);
+      setBackgroundImage(activeLayer.backgroundImage);
+      setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize);
+    }
+  }, [activeLayerId, updateHistory, setBackgroundImage, setBackgroundImageNaturalSize]);
 
   // Selection snapshot for group transformations
   const selectionSnapshot = useMemo(() => {

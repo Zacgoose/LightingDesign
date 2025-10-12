@@ -161,7 +161,10 @@ export const useLayerManager = (initialLayers = null) => {
         }
         return {
           ...layer,
-          sublayers: filteredSublayers,
+          sublayers: filteredSublayers.map(sub => ({
+            ...sub,
+            isDefault: sub.id === newDefaultId
+          })),
           defaultSublayerId: newDefaultId,
         };
       }

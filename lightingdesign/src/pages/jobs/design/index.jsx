@@ -49,7 +49,7 @@ const Page = () => {
   // Load products catalog for enriching saved designs
   const productsData = ApiGetCall({
     url: "/api/ExecListBeaconProducts",
-    queryKey: "BeaconProducts",
+    queryKey: "Products",
   });
 
   // Save design mutation

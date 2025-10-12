@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Box, Container, Card, CardContent, useTheme, CircularProgress, Typography } from "@mui/material";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { useForm } from "react-hook-form";
@@ -26,9 +26,9 @@ import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
 
 const Page = () => {
   // Middle mouse pan handler
-  const handleCanvasPan = (dx, dy) => {
+  const handleCanvasPan = useCallback((dx, dy) => {
     setStagePosition(pos => ({ x: pos.x + dx, y: pos.y + dy }));
-  };
+  }, []);
   const router = useRouter();
   const { id } = router.query;
   const theme = useTheme();
@@ -870,7 +870,7 @@ const Page = () => {
     handleCloseContextMenu();
   };
 
-  const handleContextMenu = (e, productId) => {
+  const handleContextMenu = useCallback((e, productId) => {
     e.evt.preventDefault();
     
     // In connect mode, don't show context menu
@@ -885,7 +885,7 @@ const Page = () => {
       setGroupKey(k => k + 1);
     }
     setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, type: 'product' });
-  };
+  }, [selectedTool, selectedIds, applyGroupTransform]);
 
   const handleConnectorContextMenu = (e, connectorId) => {
     e.evt.preventDefault();
@@ -1050,7 +1050,7 @@ const Page = () => {
     setSelectedTool("select");
   };
 
-  const handleProductClick = (e, productId) => {
+  const handleProductClick = useCallback((e, productId) => {
     if (isDragging) return;
     setSelectedConnectorId(null);
 
@@ -1105,9 +1105,9 @@ const Page = () => {
         setGroupKey(k => k + 1);
       }
     }
-  };
+  }, [isDragging, selectedTool, selectedIds, applyGroupTransform]);
 
-  const handleProductDragStart = (e, productId) => {
+  const handleProductDragStart = useCallback((e, productId) => {
     setIsDragging(true);
     if (!selectedIds.includes(productId)) {
       const shiftKey = e.evt?.shiftKey;
@@ -1121,9 +1121,9 @@ const Page = () => {
       }
       setGroupKey(k => k + 1);
     }
-  };
+  }, [selectedIds, applyGroupTransform]);
 
-  const handleProductDragEnd = (e, productId) => {
+  const handleProductDragEnd = useCallback((e, productId) => {
     setIsDragging(false);
     const newX = e.target.x();
     const newY = e.target.y();
@@ -1149,9 +1149,9 @@ const Page = () => {
       });
       updateHistory(newProducts);
     }
-  };
+  }, [selectedIds, products, updateHistory]);
 
-  const handleGroupTransformEnd = () => {
+  const handleGroupTransformEnd = useCallback(() => {
     // Apply transforms to products
     if (!selectedIds.length || !selectionGroupRef.current) return;
 
@@ -1222,10 +1222,10 @@ const Page = () => {
     
     // Force transformer and connections to update
     setGroupKey(k => k + 1);
-  };
+  }, [selectedIds, applyGroupTransform, connectors, products]);
 
   // Canvas handlers
-  const handleWheel = (e) => {
+  const handleWheel = useCallback((e) => {
     e.evt.preventDefault();
     const scaleBy = 1.1;
     const stage = e.target.getStage();
@@ -1246,15 +1246,15 @@ const Page = () => {
       x: pointer.x - mousePointTo.x * newScale,
       y: pointer.y - mousePointTo.y * newScale,
     });
-  };
+  }, []); // No dependencies - uses event data directly
 
-  const handleStageDragEnd = (e) => {
+  const handleStageDragEnd = useCallback((e) => {
     if (e.target === e.target.getStage()) {
       setStagePosition({ x: e.target.x(), y: e.target.y() });
     }
-  };
+  }, []); // No dependencies - uses event data directly
 
-  const checkDeselect = (e) => {
+  const checkDeselect = useCallback((e) => {
     if (e.evt.button !== 0) return;
     
     // Don't handle clicks in pan mode
@@ -1273,7 +1273,7 @@ const Page = () => {
       setSelectedConnectorId(null);
       setGroupKey(k => k + 1);
     }
-  };
+  }, [selectedTool, placementMode, applyGroupTransform, handleCanvasClick]);
 
   // Toolbar handlers
   const handleZoomIn = () => {

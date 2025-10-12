@@ -22,8 +22,7 @@ import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
 import { useLayerManager } from "/src/hooks/useLayerManager";
 import productTypesConfig from "/src/data/productTypes.json";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
-import { useDispatch } from "react-redux";
-import { showToast } from "/src/store/toasts";
+import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
 
 const Page = () => {
   // Middle mouse pan handler
@@ -33,7 +32,6 @@ const Page = () => {
   const router = useRouter();
   const { id } = router.query;
   const theme = useTheme();
-  const dispatch = useDispatch();
 
   // State for tracking save status
   const [isSaving, setIsSaving] = useState(false);
@@ -150,31 +148,21 @@ const Page = () => {
     }
   }, [products, connectors]);
 
-  // Handle save mutation success
+  // Handle save mutation success - update state only
   useEffect(() => {
     if (saveDesignMutation.isSuccess) {
       setLastSaved(new Date().toISOString());
       setHasUnsavedChanges(false);
       setIsSaving(false);
-      
-      dispatch(showToast({ 
-        message: "Design saved successfully", 
-        title: "Success" 
-      }));
     }
-  }, [saveDesignMutation.isSuccess, dispatch]);
+  }, [saveDesignMutation.isSuccess]);
 
-  // Handle save mutation error
+  // Handle save mutation end (error or success) - clear saving state
   useEffect(() => {
-    if (saveDesignMutation.isError) {
+    if (!saveDesignMutation.isPending) {
       setIsSaving(false);
-      
-      dispatch(showToast({ 
-        message: `Failed to save design: ${saveDesignMutation.error?.message || 'Unknown error'}`, 
-        title: "Save Error" 
-      }));
     }
-  }, [saveDesignMutation.isError, saveDesignMutation.error, dispatch]);
+  }, [saveDesignMutation.isPending]);
 
   // Auto-save functionality (every 2 minutes if there are unsaved changes)
   useEffect(() => {
@@ -1135,10 +1123,8 @@ const Page = () => {
 
   const handleSave = () => {
     if (!id) {
-      dispatch(showToast({ 
-        message: "No job ID found. Cannot save design.", 
-        title: "Save Error" 
-      }));
+      // Can't save without a job ID - this is a validation error, not an API error
+      console.error("No job ID found. Cannot save design.");
       return;
     }
 
@@ -1239,6 +1225,9 @@ const Page = () => {
           />
 
           <Box sx={{ mb: 0.75 }}>
+            {/* Display API response messages */}
+            <CippApiResults apiObject={saveDesignMutation} />
+            
             <ProductSelectionDrawer 
               onProductSelect={handleProductAdd}
               visible={productDrawerVisible}

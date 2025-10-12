@@ -14,7 +14,6 @@ import { ProductShape } from "/src/components/designer/ProductShape";
 import { MeasurementLayer } from "/src/components/designer/MeasurementLayer";
 import { MeasurementConfirmation } from "/src/components/designer/MeasurementConfirmation";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
-import { Circle, Line } from "react-konva";
 import { TextField } from "@mui/material";
 import { useHistory } from "/src/hooks/useHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";

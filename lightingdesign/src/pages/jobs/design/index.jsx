@@ -123,6 +123,12 @@ const Page = () => {
   }, [products, activeLayerId, updateLayer]);
 
   const [connectors, setConnectors] = useState(activeLayer?.connectors || []);
+  
+  // Background and Scale - now derived from active layer
+  // These must be defined before the sync effects below
+  const [backgroundImage, setBackgroundImage] = useState(activeLayer?.backgroundImage || null);
+  const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(activeLayer?.backgroundImageNaturalSize || null);
+  const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100); // 100px per meter
 
   // Keep connectors in sync with active layer (save to layer when connectors change)
   useEffect(() => {
@@ -137,16 +143,24 @@ const Page = () => {
     // Don't save back to layer if we're in the middle of loading from layer
     if (isLoadingLayerData.current) return;
     
-    updateLayer(activeLayerId, { backgroundImage, backgroundImageNaturalSize });
-  }, [backgroundImage, backgroundImageNaturalSize, activeLayerId, updateLayer]);
+    // Only update if we actually have valid data to save
+    // This prevents writing stale data when activeLayerId changes
+    if (activeLayer && (backgroundImage !== activeLayer.backgroundImage || 
+        backgroundImageNaturalSize !== activeLayer.backgroundImageNaturalSize)) {
+      updateLayer(activeLayerId, { backgroundImage, backgroundImageNaturalSize });
+    }
+  }, [backgroundImage, backgroundImageNaturalSize, activeLayerId, activeLayer, updateLayer]);
 
   // Keep scale factor in sync with active layer
   useEffect(() => {
     // Don't save back to layer if we're in the middle of loading from layer
     if (isLoadingLayerData.current) return;
     
-    updateLayer(activeLayerId, { scaleFactor });
-  }, [scaleFactor, activeLayerId, updateLayer]);
+    // Only update if the value actually changed from what's in the layer
+    if (activeLayer && scaleFactor !== activeLayer.scaleFactor) {
+      updateLayer(activeLayerId, { scaleFactor });
+    }
+  }, [scaleFactor, activeLayerId, activeLayer, updateLayer]);
 
   // Load design data when available
   useEffect(() => {
@@ -445,14 +459,11 @@ const Page = () => {
   const canvasContainerRef = useRef();
   const subLayerControlsRef = useRef();
 
-  // Background and Scale - now derived from active layer
-  const [backgroundImage, setBackgroundImage] = useState(activeLayer?.backgroundImage || null);
-  const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100); // 100px per meter
+  // Measurement state
   const [measureMode, setMeasureMode] = useState(false);
   const [measurePoints, setMeasurePoints] = useState([]);
   const [measureDialogOpen, setMeasureDialogOpen] = useState(false);
   const [measureValue, setMeasureValue] = useState(0);
-  const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(activeLayer?.backgroundImageNaturalSize || null);
 
   // Update local state when switching layers
   useEffect(() => {
@@ -465,14 +476,17 @@ const Page = () => {
       
       updateHistory(activeLayer.products || []);
       setConnectors(activeLayer.connectors || []);
-      setBackgroundImage(activeLayer.backgroundImage);
-      setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize);
+      setBackgroundImage(activeLayer.backgroundImage || null);
+      setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
       setScaleFactor(activeLayer.scaleFactor || 100);
       
-      // Clear flag after state updates complete
-      setTimeout(() => {
+      // Use a longer timeout to ensure all state updates have completed
+      // before allowing sync effects to run
+      const timer = setTimeout(() => {
         isLoadingLayerData.current = false;
-      }, 0);
+      }, 100); // Increased from 0 to 100ms to ensure state updates complete
+      
+      return () => clearTimeout(timer);
     }
   }, [activeLayerId, activeLayer, updateHistory]);
 

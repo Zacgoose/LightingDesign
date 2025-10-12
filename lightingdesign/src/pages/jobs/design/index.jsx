@@ -22,8 +22,7 @@ import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
 import { useLayerManager } from "/src/hooks/useLayerManager";
 import productTypesConfig from "/src/data/productTypes.json";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
-import { useDispatch } from "react-redux";
-import { showToast } from "/src/store/toasts";
+import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
 
 const Page = () => {
   // Middle mouse pan handler
@@ -33,7 +32,6 @@ const Page = () => {
   const router = useRouter();
   const { id } = router.query;
   const theme = useTheme();
-  const dispatch = useDispatch();
 
   // State for tracking save status
   const [isSaving, setIsSaving] = useState(false);
@@ -149,6 +147,22 @@ const Page = () => {
       setHasUnsavedChanges(true);
     }
   }, [products, connectors]);
+
+  // Handle save mutation success - update state only
+  useEffect(() => {
+    if (saveDesignMutation.isSuccess) {
+      setLastSaved(new Date().toISOString());
+      setHasUnsavedChanges(false);
+      setIsSaving(false);
+    }
+  }, [saveDesignMutation.isSuccess]);
+
+  // Handle save mutation end (error or success) - clear saving state
+  useEffect(() => {
+    if (!saveDesignMutation.isPending) {
+      setIsSaving(false);
+    }
+  }, [saveDesignMutation.isPending]);
 
   // Auto-save functionality (every 2 minutes if there are unsaved changes)
   useEffect(() => {
@@ -1107,52 +1121,33 @@ const Page = () => {
   // Disconnect cable handler for connect mode
   const handleDisconnectCable = () => setConnectSequence([]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!id) {
-      dispatch(showToast({ 
-        message: "No job ID found. Cannot save design.", 
-        title: "Save Error" 
-      }));
+      // Can't save without a job ID - this is a validation error, not an API error
+      console.error("No job ID found. Cannot save design.");
       return;
     }
 
     applyGroupTransform();
     setIsSaving(true);
 
-    try {
-      await saveDesignMutation.mutateAsync({
-        url: "/api/ExecSaveDesign",
-        data: {
-          jobId: id,
-          designData: {
-            products,
-            connectors,
-            layers,
-            canvasSettings: {
-              width: canvasWidth,
-              height: canvasHeight,
-              scale: stageScale,
-              position: stagePosition,
-            }
+    saveDesignMutation.mutate({
+      url: "/api/ExecSaveDesign",
+      data: {
+        jobId: id,
+        designData: {
+          products,
+          connectors,
+          layers,
+          canvasSettings: {
+            width: canvasWidth,
+            height: canvasHeight,
+            scale: stageScale,
+            position: stagePosition,
           }
         }
-      });
-
-      setLastSaved(new Date().toISOString());
-      setHasUnsavedChanges(false);
-      
-      dispatch(showToast({ 
-        message: "Design saved successfully", 
-        title: "Success" 
-      }));
-    } catch (error) {
-      dispatch(showToast({ 
-        message: `Failed to save design: ${error.message}`, 
-        title: "Save Error" 
-      }));
-    } finally {
-      setIsSaving(false);
-    }
+      }
+    });
   };
 
   const handleExport = () => {
@@ -1230,6 +1225,9 @@ const Page = () => {
           />
 
           <Box sx={{ mb: 0.75 }}>
+            {/* Display API response messages */}
+            <CippApiResults apiObject={saveDesignMutation} />
+            
             <ProductSelectionDrawer 
               onProductSelect={handleProductAdd}
               visible={productDrawerVisible}

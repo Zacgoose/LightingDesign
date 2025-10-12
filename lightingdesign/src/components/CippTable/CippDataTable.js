@@ -94,8 +94,8 @@ export const CippDataTable = (props) => {
   }, [data, api?.url, usedData]);
 
   useEffect(() => {
-    if (getRequestData.isSuccess && !getRequestData.isFetching) {
-      const lastPage = getRequestData.data?.pages[getRequestData.data.pages.length - 1];
+    if (getRequestData.isSuccess && !getRequestData.isFetching && getRequestData.data?.pages) {
+      const lastPage = getRequestData.data.pages[getRequestData.data.pages.length - 1];
       const nextLinkExists = lastPage?.Metadata?.nextLink;
       if (nextLinkExists) {
         getRequestData.fetchNextPage();
@@ -104,7 +104,7 @@ export const CippDataTable = (props) => {
   }, [getRequestData.data?.pages?.length, getRequestData.isFetching, queryKey]);
 
   useEffect(() => {
-    if (getRequestData.isSuccess) {
+    if (getRequestData.isSuccess && getRequestData.data?.pages) {
       const allPages = getRequestData.data.pages;
       const getNestedValue = (obj, path) => {
         if (!path) {

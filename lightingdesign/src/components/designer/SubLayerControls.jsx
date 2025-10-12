@@ -65,9 +65,13 @@ export const SubLayerControls = React.forwardRef(({
   };
 
   const handleStartRename = (sublayer) => {
-    setEditingSublayerId(sublayer.id);
-    setEditingName(sublayer.name);
     handleCloseContextMenu();
+    // Use setTimeout to ensure the context menu is closed before setting editing state
+    // This prevents the TextField from being blurred immediately
+    setTimeout(() => {
+      setEditingSublayerId(sublayer.id);
+      setEditingName(sublayer.name);
+    }, 0);
   };
 
   const handleFinishRename = (sublayerId) => {

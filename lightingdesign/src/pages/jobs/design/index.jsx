@@ -250,7 +250,7 @@ const Page = () => {
         isLoadingLayerData.current = false;
       }, 0);
     }
-  }, [designData.isSuccess, designData.data, productsData.isSuccess, productsData.data, loadLayers]);
+  }, [designData.isSuccess, designData.data, productsData.isSuccess, productsData.data]);
 
   // Track changes to mark as unsaved
   useEffect(() => {

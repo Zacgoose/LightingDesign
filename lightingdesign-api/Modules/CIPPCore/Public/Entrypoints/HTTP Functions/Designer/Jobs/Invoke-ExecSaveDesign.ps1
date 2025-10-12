@@ -29,8 +29,8 @@ function Invoke-ExecSaveDesign {
         $Entity = [PSCustomObject]@{
             PartitionKey = $ExistingDesign.PartitionKey
             RowKey       = $ExistingDesign.RowKey
-            JobId        = $JobId
-            DesignData   = if ($DesignData) { ($DesignData | ConvertTo-Json -Depth 20 -Compress) } else { $null }
+            JobId        = [string]$JobId
+            DesignData   = if ($DesignData) { [string]($DesignData | ConvertTo-Json -Depth 20 -Compress) } else { $null }
             LastModified = (Get-Date).ToString('o')
         }
     } else {
@@ -38,8 +38,8 @@ function Invoke-ExecSaveDesign {
         $Entity = [PSCustomObject]@{
             PartitionKey = 'Design'
             RowKey       = [guid]::NewGuid().ToString()
-            JobId        = $JobId
-            DesignData   = if ($DesignData) { ($DesignData | ConvertTo-Json -Depth 20 -Compress) } else { $null }
+            JobId        = [string]$JobId
+            DesignData   = if ($DesignData) { [string]($DesignData | ConvertTo-Json -Depth 20 -Compress) } else { $null }
             LastModified = (Get-Date).ToString('o')
         }
     }

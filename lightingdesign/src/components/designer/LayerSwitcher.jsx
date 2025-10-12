@@ -26,6 +26,7 @@ export const LayerSwitcher = ({
   onLayerAdd,
   onLayerDelete,
   onClose,
+  subLayerControlsRef,
 }) => {
   const paperRef = useRef(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -35,7 +36,10 @@ export const LayerSwitcher = ({
   // Handle click outside to close
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (paperRef.current && !paperRef.current.contains(event.target)) {
+      const isOutsideLayerSwitcher = paperRef.current && !paperRef.current.contains(event.target);
+      const isOutsideSubLayerControls = !subLayerControlsRef?.current || !subLayerControlsRef.current.contains(event.target);
+      
+      if (isOutsideLayerSwitcher && isOutsideSubLayerControls) {
         onClose?.();
       }
     };
@@ -44,7 +48,7 @@ export const LayerSwitcher = ({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [onClose]);
+  }, [onClose, subLayerControlsRef]);
 
   const handleAddLayer = () => {
     setAddDialogOpen(true);

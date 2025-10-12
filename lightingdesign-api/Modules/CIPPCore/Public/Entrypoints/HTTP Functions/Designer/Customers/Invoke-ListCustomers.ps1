@@ -32,9 +32,12 @@ function Invoke-ListCustomers {
         # List all customers (summary)
         $ReturnedCustomer = Get-AzDataTableEntity @Table | ForEach-Object {
             [PSCustomObject]@{
+                id           = $_.RowKey
                 DateTime     = $_.Timestamp
-                CustomerName = $_.CustomerName
+                customerName = $_.CustomerName
                 Status       = $_.Status
+                Email        = $_.Email
+                Phone        = $_.Phone
                 User         = $_.Username
                 RowKey       = $_.RowKey
             }
@@ -58,9 +61,12 @@ function Invoke-ListCustomers {
 
         $ReturnedCustomer = $Rows | ForEach-Object {
             [PSCustomObject]@{
+                id           = $_.RowKey
                 DateTime     = $_.Timestamp
-                CustomerName = $_.CustomerName
+                customerName = $_.CustomerName
                 Status       = $_.Status
+                Email        = $_.Email
+                Phone        = $_.Phone
                 User         = $_.Username
                 RowKey       = $_.RowKey
             }

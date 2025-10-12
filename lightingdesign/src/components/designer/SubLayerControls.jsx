@@ -74,6 +74,7 @@ export const SubLayerControls = React.forwardRef(({
     if (editingName.trim()) {
       onSublayerRename(layerId, sublayerId, editingName.trim());
     }
+    // Always reset editing state, even if name is empty
     setEditingSublayerId(null);
     setEditingName('');
   };
@@ -150,6 +151,7 @@ export const SubLayerControls = React.forwardRef(({
                         handleFinishRename(sublayer.id);
                       } else if (e.key === 'Escape') {
                         setEditingSublayerId(null);
+                        setEditingName('');
                       }
                     }}
                     autoFocus

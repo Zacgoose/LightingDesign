@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Box, Container, Card, CardContent, useTheme, CircularProgress, Typography } from "@mui/material";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { DesignerToolbarRow } from "/src/components/designer/DesignerToolbarRow";
 import { DesignerCanvas } from "/src/components/designer/DesignerCanvas";
 import { ProductSelectionDrawer } from "/src/components/designer/ProductSelectionDrawer";
@@ -32,6 +33,7 @@ const Page = () => {
   const router = useRouter();
   const { id } = router.query;
   const theme = useTheme();
+  const queryClient = useQueryClient();
 
   // State for tracking save status
   const [isSaving, setIsSaving] = useState(false);
@@ -243,12 +245,15 @@ const Page = () => {
       setLastSaved(designData.data.lastModified);
       setHasUnsavedChanges(false);
       
+      // Invalidate the design query so that on next page load/reload, we fetch fresh data
+      queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
+      
       // Clear flag after state updates complete
       setTimeout(() => {
         isLoadingLayerData.current = false;
       }, 0);
     }
-  }, [designData.isSuccess, designData.data, productsData.isSuccess, productsData.data, loadLayers]);
+  }, [designData.isSuccess, designData.data, productsData.isSuccess, productsData.data, loadLayers, id, queryClient]);
 
   // Track changes to mark as unsaved
   useEffect(() => {
@@ -978,7 +983,13 @@ const Page = () => {
 
   const handleAssignToSublayer = (sublayerId) => {
     applyGroupTransform();
-    assignProductsToSublayer(activeLayerId, selectedIds, sublayerId);
+    // Update products in the history to assign them to the sublayer
+    const newProducts = products.map(product =>
+      selectedIds.includes(product.id)
+        ? { ...product, sublayerId }
+        : product
+    );
+    updateHistory(newProducts);
     handleCloseContextMenu();
   };
 

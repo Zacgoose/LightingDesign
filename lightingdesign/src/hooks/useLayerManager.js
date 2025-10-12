@@ -55,11 +55,12 @@ export const useLayerManager = (initialLayers = null) => {
   // Add a new layer
   const addLayer = useCallback((name) => {
     const newId = `layer-${Date.now()}`;
-    const newLayer = createEmptyLayer(newId, name || `Floor ${layers.length + 1}`);
-    setLayers(prev => [...prev, newLayer]);
+    setLayers(prev => {
+      const newLayer = createEmptyLayer(newId, name || `Floor ${prev.length + 1}`);
+      return [...prev, newLayer];
+    });
     setActiveLayerId(newId);
-    return newLayer;
-  }, [layers.length]);
+  }, []);
 
   // Delete a layer
   const deleteLayer = useCallback((layerId) => {

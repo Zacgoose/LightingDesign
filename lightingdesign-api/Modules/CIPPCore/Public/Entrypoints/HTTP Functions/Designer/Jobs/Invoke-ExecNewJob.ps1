@@ -39,7 +39,7 @@ function Invoke-ExecNewJob {
 
     $NewJobId = [guid]::NewGuid().ToString()
 
-    $Entity = [PSCustomObject]@{
+    $Entity = @{
         PartitionKey     = 'Job'
         RowKey           = $NewJobId
         JobNumber        = $JobNumber
@@ -67,7 +67,7 @@ function Invoke-ExecNewJob {
         IP               = $IP
     }
 
-    Add-AzDataTableEntity @Table -Entity $Entity -Force
+    Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $Entity -Force
 
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::Created

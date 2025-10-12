@@ -22,7 +22,7 @@ function Invoke-ExecGetDesign {
     try {
         # Lookup design by JobId
         $Filter = "JobId eq '{0}'" -f $JobId
-        $Row = Get-AzDataTableEntity @Table -Filter $Filter
+        $Row = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
 
         if ($Row) {
             $DesignDataJson = $null

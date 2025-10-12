@@ -51,7 +51,7 @@ function Invoke-ExecSaveDesign {
 
         if ($ExistingDesign) {
             # Update existing design
-            $Entity = [PSCustomObject]@{
+            $Entity = @{
                 PartitionKey = $ExistingDesign.PartitionKey
                 RowKey       = $ExistingDesign.RowKey
                 JobId        = [string]$JobId
@@ -61,24 +61,24 @@ function Invoke-ExecSaveDesign {
             # Clear old chunk properties if they exist
             if ($ExistingDesign.ChunkCount) {
                 for ($i = 0; $i -lt $ExistingDesign.ChunkCount; $i++) {
-                    $Entity | Add-Member -NotePropertyName "DesignData_$i" -NotePropertyValue $null -Force
+                    $Entity["DesignData_$i"] = $null
                 }
             }
 
             # Add chunk count and chunks or single property
             if ($ChunkCount -gt 0) {
-                $Entity | Add-Member -NotePropertyName 'ChunkCount' -NotePropertyValue $ChunkCount -Force
-                $Entity | Add-Member -NotePropertyName 'DesignData' -NotePropertyValue $null -Force
+                $Entity['ChunkCount'] = $ChunkCount
+                $Entity['DesignData'] = $null
                 foreach ($Key in $Chunks.Keys) {
-                    $Entity | Add-Member -NotePropertyName $Key -NotePropertyValue $Chunks[$Key] -Force
+                    $Entity[$Key] = $Chunks[$Key]
                 }
             } else {
-                $Entity | Add-Member -NotePropertyName 'ChunkCount' -NotePropertyValue 0 -Force
-                $Entity | Add-Member -NotePropertyName 'DesignData' -NotePropertyValue $DesignDataJson -Force
+                $Entity['ChunkCount'] = 0
+                $Entity['DesignData'] = $DesignDataJson
             }
         } else {
             # Create new design
-            $Entity = [PSCustomObject]@{
+            $Entity = @{
                 PartitionKey = 'Design'
                 RowKey       = [guid]::NewGuid().ToString()
                 JobId        = [string]$JobId
@@ -88,16 +88,16 @@ function Invoke-ExecSaveDesign {
 
             # Add chunks or single property
             if ($ChunkCount -gt 0) {
-                $Entity | Add-Member -NotePropertyName 'DesignData' -NotePropertyValue $null -Force
+                $Entity['DesignData'] = $null
                 foreach ($Key in $Chunks.Keys) {
-                    $Entity | Add-Member -NotePropertyName $Key -NotePropertyValue $Chunks[$Key] -Force
+                    $Entity[$Key] = $Chunks[$Key]
                 }
             } else {
-                $Entity | Add-Member -NotePropertyName 'DesignData' -NotePropertyValue $DesignDataJson -Force
+                $Entity['DesignData'] = $DesignDataJson
             }
         }
 
-        Add-AzDataTableEntity @Table -Entity $Entity -Force
+        Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $Entity -Force
 
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::OK

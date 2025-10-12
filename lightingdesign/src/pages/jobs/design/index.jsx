@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import { useState, useRef, useEffect, useMemo } from "react";
+import { flushSync } from "react-dom";
 import { Box, Container, Card, CardContent, useTheme, CircularProgress, Typography } from "@mui/material";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { useForm } from "react-hook-form";
@@ -148,9 +149,12 @@ const Page = () => {
       isLoadingLayerData.current = true;
       
       // IMPORTANT: Load canvas settings (stageScale) FIRST before rendering products
-      // This ensures products render with the correct zoom level from the start
+      // Use flushSync to ensure this state update is applied synchronously
+      // This prevents products from rendering with stale zoom level
       if (loadedDesign.canvasSettings?.scale !== undefined) {
-        setStageScale(loadedDesign.canvasSettings.scale);
+        flushSync(() => {
+          setStageScale(loadedDesign.canvasSettings.scale);
+        });
       }
       
       // Load layers if available
@@ -189,19 +193,22 @@ const Page = () => {
         loadLayers(enrichedLayers);
         
         // Load background image and scale factor from the active (first) layer after loading
-        // This ensures these properties are loaded when the design is first opened
+        // Use flushSync to ensure these are applied before products render
+        // This prevents grid and visual artifacts from stale values
         if (enrichedLayers.length > 0 && enrichedLayers[0]) {
           const firstLayer = enrichedLayers[0];
-          if (firstLayer.backgroundImage) {
-            setBackgroundImage(firstLayer.backgroundImage);
-          }
-          if (firstLayer.backgroundImageNaturalSize) {
-            setBackgroundImageNaturalSize(firstLayer.backgroundImageNaturalSize);
-          }
-          if (firstLayer.scaleFactor !== undefined) {
-            // Force update scaleFactor to ensure grid renders correctly
-            setScaleFactor(firstLayer.scaleFactor);
-          }
+          flushSync(() => {
+            if (firstLayer.backgroundImage) {
+              setBackgroundImage(firstLayer.backgroundImage);
+            }
+            if (firstLayer.backgroundImageNaturalSize) {
+              setBackgroundImageNaturalSize(firstLayer.backgroundImageNaturalSize);
+            }
+            if (firstLayer.scaleFactor !== undefined) {
+              // Force update scaleFactor to ensure grid renders correctly
+              setScaleFactor(firstLayer.scaleFactor);
+            }
+          });
         }
       }
       

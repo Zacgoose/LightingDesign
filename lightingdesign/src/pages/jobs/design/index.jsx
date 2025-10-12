@@ -453,8 +453,8 @@ const Page = () => {
     );
   };
 
-  const handleMeasureConfirm = () => {
-    const realDistance = Number(measureValue);
+  const handleMeasureConfirm = (distance) => {
+    const realDistance = Number(distance);
     const pixelDistance = calculateDistance(measurePoints[0], measurePoints[1]);
     if (realDistance > 0 && pixelDistance > 0) {
       setScaleFactor(pixelDistance / realDistance);
@@ -714,7 +714,7 @@ const Page = () => {
   };
 
   const handleCanvasMouseMove = (e) => {
-    if (!placementMode) return;
+    if (!placementMode && !measureMode) return;
     
     const stage = e.target.getStage();
     const pointerPosition = stage.getPointerPosition();
@@ -1210,7 +1210,7 @@ const Page = () => {
         title="Set Distance"
         createDialog={{
           open: measureDialogOpen,
-          handleClose: () => setMeasureDialogOpen(false),
+          handleClose: handleMeasureCancel,
           handleSubmit: (data) => handleMeasureConfirm(data.distance),
           form: measureForm
         }}

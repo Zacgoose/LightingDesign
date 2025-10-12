@@ -24,7 +24,7 @@ export const MeasurementLayer = ({
     }
   };
 
-  if (!measureMode || !measurePoints.length) return null;
+  if (!measureMode) return null;
 
   return (
     <>

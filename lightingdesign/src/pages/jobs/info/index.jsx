@@ -16,7 +16,7 @@ const Page = () => {
 
   // Fetch job details
   const jobDetails = ApiGetCall({
-    url: "/api/GetJob",
+    url: "/api/ExecGetJob",
     data: { jobId: id },
     queryKey: `Job-${id}`,
     enabled: !!id,

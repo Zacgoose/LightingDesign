@@ -150,6 +150,20 @@ const Page = () => {
     }
   }, [products, connectors]);
 
+  // Auto-save functionality (every 2 minutes if there are unsaved changes)
+  useEffect(() => {
+    if (!id || !hasUnsavedChanges || isSaving) return;
+
+    const autoSaveInterval = setInterval(() => {
+      if (hasUnsavedChanges && !isSaving) {
+        console.log("Auto-saving design...");
+        handleSave();
+      }
+    }, 120000); // Auto-save every 2 minutes
+
+    return () => clearInterval(autoSaveInterval);
+  }, [id, hasUnsavedChanges, isSaving]);
+
   // Form hooks
   const scaleForm = useForm({
     mode: "onChange",

@@ -162,7 +162,7 @@ const Page = () => {
     }, 120000); // Auto-save every 2 minutes
 
     return () => clearInterval(autoSaveInterval);
-  }, [id, hasUnsavedChanges, isSaving]);
+  }, [id, hasUnsavedChanges, isSaving, handleSave]);
 
   // Form hooks
   const scaleForm = useForm({

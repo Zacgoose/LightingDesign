@@ -9,6 +9,13 @@ export const JobForm = ({ formControl, mode = "new" }) => {
     url: "/api/ListCustomers",
     queryKey: "Customers",
   });
+  // Ensure customers.data is always an array
+  const customerOptions = Array.isArray(customers.data)
+    ? customers.data.map((customer) => ({
+        value: customer.id,
+        label: customer.customerName,
+      }))
+    : [];
 
   // Job status options
   const statusOptions = [
@@ -41,12 +48,7 @@ export const JobForm = ({ formControl, mode = "new" }) => {
           label="Customer"
           name="customerName"
           formControl={formControl}
-          options={
-            customers.data?.map((customer) => ({
-              value: customer.id,
-              label: customer.customerName,
-            })) || []
-          }
+          options={customerOptions}
           validators={{ required: "Customer is required" }}
         />
       </Grid>

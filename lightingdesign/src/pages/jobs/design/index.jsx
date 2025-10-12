@@ -164,6 +164,35 @@ const Page = () => {
     }
   }, [saveDesignMutation.isPending]);
 
+  const handleSave = () => {
+    if (!id) {
+      // Can't save without a job ID - this is a validation error, not an API error
+      console.error("No job ID found. Cannot save design.");
+      return;
+    }
+
+    applyGroupTransform();
+    setIsSaving(true);
+
+    saveDesignMutation.mutate({
+      url: "/api/ExecSaveDesign",
+      data: {
+        jobId: id,
+        designData: {
+          products,
+          connectors,
+          layers,
+          canvasSettings: {
+            width: canvasWidth,
+            height: canvasHeight,
+            scale: stageScale,
+            position: stagePosition,
+          }
+        }
+      }
+    });
+  };
+
   // Auto-save functionality (every 2 minutes if there are unsaved changes)
   useEffect(() => {
     if (!id || !hasUnsavedChanges || isSaving) return;
@@ -1120,35 +1149,6 @@ const Page = () => {
 
   // Disconnect cable handler for connect mode
   const handleDisconnectCable = () => setConnectSequence([]);
-
-  const handleSave = () => {
-    if (!id) {
-      // Can't save without a job ID - this is a validation error, not an API error
-      console.error("No job ID found. Cannot save design.");
-      return;
-    }
-
-    applyGroupTransform();
-    setIsSaving(true);
-
-    saveDesignMutation.mutate({
-      url: "/api/ExecSaveDesign",
-      data: {
-        jobId: id,
-        designData: {
-          products,
-          connectors,
-          layers,
-          canvasSettings: {
-            width: canvasWidth,
-            height: canvasHeight,
-            scale: stageScale,
-            position: stagePosition,
-          }
-        }
-      }
-    });
-  };
 
   const handleExport = () => {
     applyGroupTransform();

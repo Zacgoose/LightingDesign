@@ -25,7 +25,7 @@ function Invoke-ExecGetDesign {
     
     if ($Row) {
         $DesignData = if ($Row.DesignData -and (Test-Json -Json $Row.DesignData -ErrorAction SilentlyContinue)) {
-            $Row.DesignData | ConvertFrom-Json
+            $Row.DesignData | ConvertFrom-Json -Depth 20
         } else { 
             # Return empty design structure if no data
             @{

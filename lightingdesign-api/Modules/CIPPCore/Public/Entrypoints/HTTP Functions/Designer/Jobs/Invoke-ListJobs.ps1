@@ -15,7 +15,7 @@ function Invoke-ListJobs {
     if ($Request.Query.jobentryid) {
         # Lookup a single job by RowKey
         $Filter = "RowKey eq '{0}'" -f $Request.Query.jobentryid
-        $Row = Get-AzDataTableEntity @Table -Filter $Filter
+        $Row = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
         if ($Row) {
             $JobData = if ($Row.JobData -and (Test-Json -Json $Row.JobData -ErrorAction SilentlyContinue)) {
                 $Row.JobData | ConvertFrom-Json
@@ -50,7 +50,7 @@ function Invoke-ListJobs {
         }
     } elseif ($Request.Query.ListJobs) {
         # List all jobs (summary)
-        $ReturnedJob = Get-AzDataTableEntity @Table | ForEach-Object {
+        $ReturnedJob = Get-CIPPAzDataTableEntity -Context $Table.Context | ForEach-Object {
             [PSCustomObject]@{
                 DateTime       = $_.Timestamp
                 JobName        = $_.JobName
@@ -72,7 +72,7 @@ function Invoke-ListJobs {
         $UserFilter = $Request.Query.User
         $DateFilter = $Request.Query.DateFilter
 
-        $Rows = Get-AzDataTableEntity @Table
+        $Rows = Get-CIPPAzDataTableEntity -Context $Table.Context
         if ($StatusFilter) {
             $Rows = $Rows | Where-Object { $_.Status -in $StatusFilter }
         }

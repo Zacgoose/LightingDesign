@@ -1,7 +1,9 @@
 import { Shape, Text, Group } from "react-konva";
 import { getShapeFunction } from "/src/components/designer/productShapes";
+import { useEffect, useRef, memo } from "react";
+import { logRender } from "/src/utils/performanceLogger";
 
-export const ProductShape = ({ 
+export const ProductShape = memo(({ 
   product, 
   config,
   onMouseDown,
@@ -14,6 +16,19 @@ export const ProductShape = ({
   opacity = 1,
   listening,
 }) => {
+  // Performance monitoring
+  const renderCount = useRef(0);
+  useEffect(() => {
+    renderCount.current++;
+    if (renderCount.current > 1) {
+      logRender(`ProductShape-${product.id}`, {
+        renderCount: renderCount.current,
+        sku: product.sku,
+        draggable
+      });
+    }
+  });
+
   const shapeFunction = getShapeFunction(config.shapeType);
   const maxDimension = Math.max(config.width || 30, config.height || 30);
   const textYOffset = maxDimension / 2 + 10;
@@ -102,4 +117,4 @@ export const ProductShape = ({
       )}
     </Group>
   );
-};
+});

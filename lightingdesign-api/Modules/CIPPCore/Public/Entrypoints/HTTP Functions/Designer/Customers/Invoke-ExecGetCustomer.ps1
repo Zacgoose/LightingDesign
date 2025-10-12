@@ -21,7 +21,7 @@ function Invoke-ExecGetCustomer {
 
     # Lookup a single customer by RowKey
     $Filter = "RowKey eq '{0}'" -f $CustomerId
-    $Row = Get-AzDataTableEntity @Table -Filter $Filter
+    $Row = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
     
     if ($Row) {
         $ReturnedCustomer = [PSCustomObject]@{

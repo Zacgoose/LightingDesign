@@ -21,7 +21,7 @@ function Invoke-ExecEditJob {
 
     # Get existing job
     $Filter = "RowKey eq '{0}'" -f $JobId
-    $ExistingJob = Get-AzDataTableEntity @Table -Filter $Filter
+    $ExistingJob = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
     
     if (-not $ExistingJob) {
         return [HttpResponseContext]@{
@@ -31,7 +31,7 @@ function Invoke-ExecEditJob {
     }
 
     # Update job fields
-    $Entity = [PSCustomObject]@{
+    $Entity = @{
         PartitionKey     = $ExistingJob.PartitionKey
         RowKey           = $ExistingJob.RowKey
         JobNumber        = if ($Request.Body.jobNumber) { $Request.Body.jobNumber } else { $ExistingJob.JobNumber }
@@ -55,7 +55,7 @@ function Invoke-ExecEditJob {
         JobData          = $ExistingJob.JobData
     }
 
-    Add-AzDataTableEntity @Table -Entity $Entity -Force
+    Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $Entity -Force
 
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::OK

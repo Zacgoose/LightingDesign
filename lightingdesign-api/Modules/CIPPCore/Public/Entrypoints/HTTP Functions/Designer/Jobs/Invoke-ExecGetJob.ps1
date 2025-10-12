@@ -21,7 +21,7 @@ function Invoke-ExecGetJob {
 
     # Lookup a single job by RowKey
     $Filter = "RowKey eq '{0}'" -f $JobId
-    $Row = Get-AzDataTableEntity @Table -Filter $Filter
+    $Row = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
 
     if ($Row) {
         $JobData = if ($Row.JobData -and (Test-Json -Json $Row.JobData -ErrorAction SilentlyContinue)) {

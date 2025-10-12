@@ -1,6 +1,8 @@
 import { Group, Transformer } from "react-konva";
 import { ProductShape } from "./ProductShape";
 import productTypesConfig from "/src/data/productTypes.json";
+import { useEffect, useRef } from "react";
+import { logRender } from "/src/utils/performanceLogger";
 
 const COLOR_PALETTE = [
   '#1976d2', '#d32f2f', '#388e3c', '#f57c00', '#7b1fa2',
@@ -34,6 +36,19 @@ export const ProductsLayer = ({
   onContextMenu,
   onGroupTransformEnd,
 }) => {
+  // Performance monitoring
+  const renderCount = useRef(0);
+  useEffect(() => {
+    renderCount.current++;
+    logRender('ProductsLayer', {
+      renderCount: renderCount.current,
+      productsCount: products.length,
+      selectedCount: selectedIds.length,
+      selectedTool,
+      groupKey
+    });
+  });
+
   const isPlacementMode = selectedTool === "placement" || placementMode;
   const isPanMode = selectedTool === "pan";
   const isConnectMode = selectedTool === "connect";

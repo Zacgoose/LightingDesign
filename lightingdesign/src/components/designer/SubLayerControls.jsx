@@ -146,6 +146,8 @@ export const SubLayerControls = React.forwardRef(({
                     value={editingName}
                     onChange={(e) => setEditingName(e.target.value)}
                     onBlur={() => handleFinishRename(sublayer.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         handleFinishRename(sublayer.id);

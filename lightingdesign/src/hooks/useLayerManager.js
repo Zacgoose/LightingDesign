@@ -55,11 +55,15 @@ export const useLayerManager = (initialLayers = null) => {
   // Add a new layer
   const addLayer = useCallback((name) => {
     const newId = `layer-${Date.now()}`;
-    const newLayer = createEmptyLayer(newId, name || `Floor ${layers.length + 1}`);
-    setLayers(prev => [...prev, newLayer]);
-    setActiveLayerId(newId);
-    return newLayer;
-  }, [layers.length]);
+    setLayers(prev => {
+      const newLayer = createEmptyLayer(newId, name || `Floor ${prev.length + 1}`);
+      return [...prev, newLayer];
+    });
+    // Use setTimeout to ensure setLayers has completed before switching to the new layer
+    setTimeout(() => {
+      setActiveLayerId(newId);
+    }, 0);
+  }, []);
 
   // Delete a layer
   const deleteLayer = useCallback((layerId) => {

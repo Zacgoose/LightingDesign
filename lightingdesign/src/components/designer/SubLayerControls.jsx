@@ -22,6 +22,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import { CippTextInputDialog } from '/src/components/CippComponents/CippTextInputDialog';
+import { CippConfirmDialog } from '/src/components/CippComponents/CippConfirmDialog';
 
 /**
  * SubLayerControls - UI component for showing/hiding sublayers within a floor
@@ -40,6 +42,9 @@ export const SubLayerControls = ({
   const [contextMenu, setContextMenu] = useState(null);
   const [editingSublayerId, setEditingSublayerId] = useState(null);
   const [editingName, setEditingName] = useState('');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [sublayerToDelete, setSublayerToDelete] = useState(null);
 
   if (!sublayers || sublayers.length === 0) {
     return null;
@@ -74,10 +79,16 @@ export const SubLayerControls = ({
   };
 
   const handleDelete = (sublayerId) => {
-    if (window.confirm('Delete this sublayer? Objects in this layer will remain visible.')) {
-      onSublayerRemove(layerId, sublayerId);
-    }
+    setSublayerToDelete(sublayerId);
+    setDeleteDialogOpen(true);
     handleCloseContextMenu();
+  };
+
+  const handleConfirmDelete = () => {
+    if (sublayerToDelete) {
+      onSublayerRemove(layerId, sublayerToDelete);
+      setSublayerToDelete(null);
+    }
   };
 
   const handleSetDefault = (sublayerId) => {
@@ -86,10 +97,11 @@ export const SubLayerControls = ({
   };
 
   const handleAddSublayer = () => {
-    const name = prompt('Enter sublayer name:', `Layer ${sublayers.length + 1}`);
-    if (name) {
-      onSublayerAdd(layerId, name);
-    }
+    setAddDialogOpen(true);
+  };
+
+  const handleConfirmAdd = (name) => {
+    onSublayerAdd(layerId, name);
   };
 
   return (
@@ -105,6 +117,7 @@ export const SubLayerControls = ({
           flexDirection: 'column',
           zIndex: 1000,
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         <Box sx={{ p: 2, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
@@ -215,6 +228,26 @@ export const SubLayerControls = ({
           </MenuItem>
         )}
       </Menu>
+
+      <CippTextInputDialog
+        open={addDialogOpen}
+        onClose={() => setAddDialogOpen(false)}
+        onConfirm={handleConfirmAdd}
+        title="Add Sublayer"
+        label="Sublayer Name"
+        defaultValue={`Layer ${sublayers.length + 1}`}
+      />
+
+      <CippConfirmDialog
+        open={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setSublayerToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Sublayer"
+        message="Delete this sublayer? Objects in this layer will remain visible."
+      />
     </>
   );
 };

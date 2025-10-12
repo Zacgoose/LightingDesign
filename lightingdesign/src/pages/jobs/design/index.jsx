@@ -113,6 +113,11 @@ const Page = () => {
   
   // Ref to track the last loaded layer ID to detect layer switches
   const lastLoadedLayerId = useRef(activeLayerId);
+  
+  // Ref to track the last synced values to prevent unnecessary updates
+  const lastSyncedBackgroundImage = useRef(null);
+  const lastSyncedBackgroundImageNaturalSize = useRef(null);
+  const lastSyncedScaleFactor = useRef(null);
 
   // Keep products in sync with active layer (save to layer when products change)
   useEffect(() => {
@@ -143,24 +148,27 @@ const Page = () => {
     // Don't save back to layer if we're in the middle of loading from layer
     if (isLoadingLayerData.current) return;
     
-    // Only update if we actually have valid data to save
-    // This prevents writing stale data when activeLayerId changes
-    if (activeLayer && (backgroundImage !== activeLayer.backgroundImage || 
-        backgroundImageNaturalSize !== activeLayer.backgroundImageNaturalSize)) {
+    // Only sync if the values have actually changed from what we last synced
+    // This prevents redundant updates and race conditions during layer switching
+    if (backgroundImage !== lastSyncedBackgroundImage.current || 
+        backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current) {
       updateLayer(activeLayerId, { backgroundImage, backgroundImageNaturalSize });
+      lastSyncedBackgroundImage.current = backgroundImage;
+      lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
     }
-  }, [backgroundImage, backgroundImageNaturalSize, activeLayerId, activeLayer, updateLayer]);
+  }, [backgroundImage, backgroundImageNaturalSize, activeLayerId, updateLayer]);
 
   // Keep scale factor in sync with active layer
   useEffect(() => {
     // Don't save back to layer if we're in the middle of loading from layer
     if (isLoadingLayerData.current) return;
     
-    // Only update if the value actually changed from what's in the layer
-    if (activeLayer && scaleFactor !== activeLayer.scaleFactor) {
+    // Only sync if the value has actually changed from what we last synced
+    if (scaleFactor !== lastSyncedScaleFactor.current) {
       updateLayer(activeLayerId, { scaleFactor });
+      lastSyncedScaleFactor.current = scaleFactor;
     }
-  }, [scaleFactor, activeLayerId, activeLayer, updateLayer]);
+  }, [scaleFactor, activeLayerId, updateLayer]);
 
   // Load design data when available
   useEffect(() => {
@@ -479,6 +487,12 @@ const Page = () => {
       setBackgroundImage(activeLayer.backgroundImage || null);
       setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
       setScaleFactor(activeLayer.scaleFactor || 100);
+      
+      // Update the sync refs to match what we just loaded
+      // This prevents the sync effects from writing back the loaded values
+      lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
+      lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
+      lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
       
       // Use a longer timeout to ensure all state updates have completed
       // before allowing sync effects to run

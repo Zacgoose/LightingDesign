@@ -13,8 +13,8 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { CippTextInputDialog } from '/src/components/CippComponents/CippTextInputDialog';
-import { CippConfirmDialog } from '/src/components/CippComponents/CippConfirmDialog';
+import { TextInputDialog } from '/src/components/designer/TextInputDialog';
+import { ConfirmDialog } from '/src/components/designer/ConfirmDialog';
 
 /**
  * LayerSwitcher - UI component for managing and switching between floor layers
@@ -149,7 +149,7 @@ export const LayerSwitcher = ({
         })}
       </List>
 
-      <CippTextInputDialog
+      <TextInputDialog
         open={addDialogOpen}
         onClose={() => setAddDialogOpen(false)}
         onConfirm={handleConfirmAdd}
@@ -158,7 +158,7 @@ export const LayerSwitcher = ({
         defaultValue={`Floor ${layers.length + 1}`}
       />
 
-      <CippConfirmDialog
+      <ConfirmDialog
         open={deleteDialogOpen}
         onClose={() => {
           setDeleteDialogOpen(false);

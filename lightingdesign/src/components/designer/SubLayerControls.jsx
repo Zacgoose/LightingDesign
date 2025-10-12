@@ -22,8 +22,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
-import { CippTextInputDialog } from '/src/components/CippComponents/CippTextInputDialog';
-import { CippConfirmDialog } from '/src/components/CippComponents/CippConfirmDialog';
+import { TextInputDialog } from '/src/components/designer/TextInputDialog';
+import { ConfirmDialog } from '/src/components/designer/ConfirmDialog';
 
 /**
  * SubLayerControls - UI component for showing/hiding sublayers within a floor
@@ -229,7 +229,7 @@ export const SubLayerControls = ({
         )}
       </Menu>
 
-      <CippTextInputDialog
+      <TextInputDialog
         open={addDialogOpen}
         onClose={() => setAddDialogOpen(false)}
         onConfirm={handleConfirmAdd}
@@ -238,7 +238,7 @@ export const SubLayerControls = ({
         defaultValue={`Layer ${sublayers.length + 1}`}
       />
 
-      <CippConfirmDialog
+      <ConfirmDialog
         open={deleteDialogOpen}
         onClose={() => {
           setDeleteDialogOpen(false);

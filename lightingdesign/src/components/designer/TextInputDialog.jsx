@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 /**
  * Simple text input dialog for getting user input
  */
-export const CippTextInputDialog = ({ open, onClose, onConfirm, title, label, defaultValue = "" }) => {
+export const TextInputDialog = ({ open, onClose, onConfirm, title, label, defaultValue = "" }) => {
   const form = useForm({
     mode: "onChange",
     defaultValues: {
@@ -12,9 +12,9 @@ export const CippTextInputDialog = ({ open, onClose, onConfirm, title, label, de
     }
   });
 
-  const onSubmit = async (data) => {
+  const onSubmit = (data) => {
     if (data.value && data.value.trim()) {
-      await onConfirm(data.value.trim());
+      onConfirm(data.value.trim());
       onClose();
       form.reset({ value: "" });
     }
@@ -51,4 +51,4 @@ export const CippTextInputDialog = ({ open, onClose, onConfirm, title, label, de
   );
 };
 
-export default CippTextInputDialog;
+export default TextInputDialog;

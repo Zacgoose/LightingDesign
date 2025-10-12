@@ -16,7 +16,7 @@ import { MeasurementConfirmation } from "/src/components/designer/MeasurementCon
 import { LayerSwitcher } from "/src/components/designer/LayerSwitcher";
 import { SubLayerControls } from "/src/components/designer/SubLayerControls";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
-import { CippTextInputDialog } from "/src/components/CippComponents/CippTextInputDialog";
+import { TextInputDialog } from "/src/components/designer/TextInputDialog";
 import { TextField } from "@mui/material";
 import { useHistory } from "/src/hooks/useHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";

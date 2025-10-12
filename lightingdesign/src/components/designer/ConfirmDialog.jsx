@@ -3,9 +3,9 @@ import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Dialog
 /**
  * Simple confirmation dialog for getting user confirmation
  */
-export const CippConfirmDialog = ({ open, onClose, onConfirm, title, message }) => {
-  const handleConfirm = async () => {
-    await onConfirm();
+export const ConfirmDialog = ({ open, onClose, onConfirm, title, message }) => {
+  const handleConfirm = () => {
+    onConfirm();
     onClose();
   };
 
@@ -27,4 +27,4 @@ export const CippConfirmDialog = ({ open, onClose, onConfirm, title, message }) 
   );
 };
 
-export default CippConfirmDialog;
+export default ConfirmDialog;

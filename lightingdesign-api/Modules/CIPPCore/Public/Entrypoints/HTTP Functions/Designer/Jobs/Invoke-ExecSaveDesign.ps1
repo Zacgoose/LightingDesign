@@ -23,7 +23,7 @@ function Invoke-ExecSaveDesign {
     try {
         # Check if design already exists for this job
         $Filter = "JobId eq '{0}'" -f $JobId
-        $ExistingDesign = Get-AzDataTableEntity @Table -Filter $Filter
+        $ExistingDesign = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
 
         # Convert design data to JSON
         $DesignDataJson = if ($DesignData) {

@@ -12,7 +12,7 @@ Function Invoke-ExecListBeaconProducts {
 
     try {
         $Table = Get-CIPPTable -TableName 'Products'
-        $Entities = Get-AzDataTableEntity @Table
+        $Entities = Get-CIPPAzDataTableEntity -Context $Table.Context
         $ProductsObject = [System.Collections.Generic.List[object]]::new()
         foreach ($entity in $Entities) {
             if ($entity.ProductJson) {

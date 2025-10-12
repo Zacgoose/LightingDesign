@@ -21,7 +21,7 @@ function Invoke-ExecEditCustomer {
 
     # Get existing customer
     $Filter = "RowKey eq '{0}'" -f $CustomerId
-    $ExistingCustomer = Get-AzDataTableEntity @Table -Filter $Filter
+    $ExistingCustomer = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
     
     if (-not $ExistingCustomer) {
         return [HttpResponseContext]@{

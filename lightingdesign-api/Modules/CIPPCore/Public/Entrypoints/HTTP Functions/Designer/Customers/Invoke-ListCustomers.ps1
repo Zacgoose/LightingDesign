@@ -13,7 +13,7 @@ function Invoke-ListCustomers {
     if ($Request.Query.customerentryid) {
         # Lookup a single customer by RowKey
         $Filter = "RowKey eq '{0}'" -f $Request.Query.customerentryid
-        $Row = Get-AzDataTableEntity @Table -Filter $Filter
+        $Row = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
         if ($Row) {
             $ReturnedCustomer = [PSCustomObject]@{
                 DateTime     = $Row.Timestamp
@@ -30,7 +30,7 @@ function Invoke-ListCustomers {
         }
     } elseif ($Request.Query.ListCustomers) {
         # List all customers (summary)
-        $ReturnedCustomer = Get-AzDataTableEntity @Table | ForEach-Object {
+        $ReturnedCustomer = Get-CIPPAzDataTableEntity -Context $Table.Context | ForEach-Object {
             [PSCustomObject]@{
                 id           = $_.RowKey
                 DateTime     = $_.Timestamp
@@ -48,7 +48,7 @@ function Invoke-ListCustomers {
         $UserFilter = $Request.Query.User
         $DateFilter = $Request.Query.DateFilter
 
-        $Rows = Get-AzDataTableEntity @Table
+        $Rows = Get-CIPPAzDataTableEntity -Context $Table.Context
         if ($StatusFilter) {
             $Rows = $Rows | Where-Object { $_.Status -in $StatusFilter }
         }

@@ -21,7 +21,7 @@ function Invoke-ExecDeleteJob {
 
     # Get existing job to verify it exists
     $Filter = "RowKey eq '{0}'" -f $JobId
-    $ExistingJob = Get-AzDataTableEntity @Table -Filter $Filter
+    $ExistingJob = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
     
     if (-not $ExistingJob) {
         return [HttpResponseContext]@{
@@ -40,7 +40,7 @@ function Invoke-ExecDeleteJob {
     # Also delete associated design if it exists
     $DesignTable = Get-CIPPTable -TableName 'Designs'
     $DesignFilter = "JobId eq '{0}'" -f $JobId
-    $ExistingDesign = Get-AzDataTableEntity @DesignTable -Filter $DesignFilter
+    $ExistingDesign = Get-CIPPAzDataTableEntity -Context $DesignTable.Context -Filter $DesignFilter
     
     if ($ExistingDesign) {
         $DesignEntity = @{

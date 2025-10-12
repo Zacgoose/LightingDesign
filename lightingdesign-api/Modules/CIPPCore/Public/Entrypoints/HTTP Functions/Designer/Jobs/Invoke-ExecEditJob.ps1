@@ -21,7 +21,7 @@ function Invoke-ExecEditJob {
 
     # Get existing job
     $Filter = "RowKey eq '{0}'" -f $JobId
-    $ExistingJob = Get-AzDataTableEntity @Table -Filter $Filter
+    $ExistingJob = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
     
     if (-not $ExistingJob) {
         return [HttpResponseContext]@{

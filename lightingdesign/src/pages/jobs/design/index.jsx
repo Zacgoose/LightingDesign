@@ -669,7 +669,14 @@ const Page = () => {
       const newProducts = clipboard.current.products.map((p, index) => {
         const newId = `product-${Date.now()}-${index}`;
         idMap[p.id] = newId;
-        return { ...p, id: newId, x: p.x + 20, y: p.y + 20 };
+        return { 
+          ...p, 
+          id: newId, 
+          x: p.x + 20, 
+          y: p.y + 20,
+          // Assign to the default sublayer of the current layer
+          sublayerId: activeLayer?.defaultSublayerId || null
+        };
       });
       
       const newConnectors = (clipboard.current.connectors || []).map((c, index) => ({

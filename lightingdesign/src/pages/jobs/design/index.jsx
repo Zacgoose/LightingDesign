@@ -13,10 +13,13 @@ import { ConnectorsLayer } from "/src/components/designer/ConnectorsLayer";
 import { ProductShape } from "/src/components/designer/ProductShape";
 import { MeasurementLayer } from "/src/components/designer/MeasurementLayer";
 import { MeasurementConfirmation } from "/src/components/designer/MeasurementConfirmation";
+import { LayerSwitcher } from "/src/components/designer/LayerSwitcher";
+import { SubLayerControls } from "/src/components/designer/SubLayerControls";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
 import { TextField } from "@mui/material";
 import { useHistory } from "/src/hooks/useHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
+import { useLayerManager } from "/src/hooks/useLayerManager";
 import productTypesConfig from "/src/data/productTypes.json";
 
 const Page = () => {
@@ -40,14 +43,30 @@ const Page = () => {
   // View options
   const [showGrid, setShowGrid] = useState(true);
   const [showMeasurements, setShowMeasurements] = useState(false);
+  const [showLayers, setShowLayers] = useState(false);
   const [selectedTool, setSelectedTool] = useState("select");
   const [rotationSnaps, setRotationSnaps] = useState(8);
+  
+  // Layer management
+  const layerManager = useLayerManager();
+  const {
+    layers,
+    activeLayerId,
+    activeLayer,
+    setActiveLayerId,
+    addLayer,
+    deleteLayer,
+    updateLayer,
+    updateActiveLayer,
+    toggleSublayerVisibility,
+    filterProductsBySublayers,
+  } = layerManager;
   
   // Placement mode
   const [placementMode, setPlacementMode] = useState(null);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
 
-  // Products and connectors with history
+  // Products and connectors with history - now synced with active layer
   const {
     state: products,
     updateHistory,
@@ -55,7 +74,33 @@ const Page = () => {
     redo: handleRedo,
     canUndo,
     canRedo,
-  } = useHistory([]);
+  } = useHistory(activeLayer?.products || []);
+
+  // Keep products in sync with active layer
+  useEffect(() => {
+    if (activeLayer) {
+      updateActiveLayer({ products });
+    }
+  }, [products, updateActiveLayer]);
+
+  const [connectors, setConnectors] = useState(activeLayer?.connectors || []);
+
+  // Keep connectors in sync with active layer
+  useEffect(() => {
+    if (activeLayer) {
+      updateActiveLayer({ connectors });
+    }
+  }, [connectors, updateActiveLayer]);
+
+  // Update local state when switching layers
+  useEffect(() => {
+    if (activeLayer) {
+      updateHistory(activeLayer.products || []);
+      setConnectors(activeLayer.connectors || []);
+      setBackgroundImage(activeLayer.backgroundImage);
+      setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize);
+    }
+  }, [activeLayerId, updateHistory, setBackgroundImage, setBackgroundImageNaturalSize]);
 
   // Form hooks
   const scaleForm = useForm({
@@ -64,8 +109,6 @@ const Page = () => {
       scale: 1
     }
   });
-  
-  const [connectors, setConnectors] = useState([]);
 
   // Selection state
   const [selectedIds, setSelectedIds] = useState([]);
@@ -1006,6 +1049,8 @@ const Page = () => {
               onToggleGrid: () => setShowGrid(!showGrid),
               showMeasurements: showMeasurements,
               onToggleMeasurements: () => setShowMeasurements(!showMeasurements),
+              showLayers: showLayers,
+              onToggleLayers: () => setShowLayers(!showLayers),
               onZoomIn: handleZoomIn,
               onZoomOut: handleZoomOut,
               onResetView: handleResetView,
@@ -1095,7 +1140,7 @@ const Page = () => {
                   />
 
                   <ProductsLayer
-                    products={products}
+                    products={filterProductsBySublayers(products, activeLayerId)}
                     selectedIds={selectedIds}
                     selectedTool={selectedTool}
                     selectionSnapshot={selectionSnapshot}
@@ -1166,6 +1211,35 @@ const Page = () => {
                   calculateDistance={calculateDistance}
                   scaleFactor={scaleFactor}
                 />
+
+                {/* Layer management panels */}
+                {showLayers && (
+                  <>
+                    <LayerSwitcher
+                      layers={layers}
+                      activeLayerId={activeLayerId}
+                      onLayerSelect={setActiveLayerId}
+                      onLayerAdd={() => {
+                        const name = prompt('Enter layer name:', `Floor ${layers.length + 1}`);
+                        if (name) addLayer(name);
+                      }}
+                      onLayerDelete={deleteLayer}
+                      onLayerToggleVisibility={(layerId) => {
+                        const layer = layers.find(l => l.id === layerId);
+                        updateLayer(layerId, { visible: !layer.visible });
+                      }}
+                      onLayerToggleLock={(layerId) => {
+                        const layer = layers.find(l => l.id === layerId);
+                        updateLayer(layerId, { locked: !layer.locked });
+                      }}
+                    />
+                    <SubLayerControls
+                      sublayers={activeLayer?.sublayers || []}
+                      layerId={activeLayerId}
+                      onSublayerToggle={toggleSublayerVisibility}
+                    />
+                  </>
+                )}
               </Box>
             </CardContent>
           </Card>

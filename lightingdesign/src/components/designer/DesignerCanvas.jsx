@@ -1,6 +1,7 @@
 import { Box, useTheme } from "@mui/material";
-import { Stage, Layer, Line, Image as KonvaImage } from "react-konva";
-import { useState, useEffect } from "react";
+import { Stage, Layer, Image as KonvaImage } from "react-konva";
+import { useState, useEffect, useMemo } from "react";
+import { GridLayer } from "./GridLayer";
 
 export const DesignerCanvas = ({
   width = 4200,
@@ -63,63 +64,6 @@ export const DesignerCanvas = ({
   };
 
   const imageScale = getImageScale();
-
-  // Generate grid lines to match scaled image bounds if image is present
-  const generateGrid = () => {
-    const lines = [];
-    let gridWidth = width;
-    let gridHeight = height;
-    let offsetX = -width / 2;
-    let offsetY = -height / 2;
-
-    if (bgImage && backgroundImageNaturalSize) {
-      gridWidth = backgroundImageNaturalSize.width * imageScale;
-      gridHeight = backgroundImageNaturalSize.height * imageScale;
-      offsetX = -gridWidth / 2;
-      offsetY = -gridHeight / 2;
-    }
-
-    const scaledGridSize = scaleFactor > 0 ? scaleFactor : gridSize;
-    
-    // Safeguard: Prevent creating too many grid lines (max 200 lines in each direction)
-    const maxLines = 200;
-    const verticalLineCount = Math.ceil(gridWidth / scaledGridSize);
-    const horizontalLineCount = Math.ceil(gridHeight / scaledGridSize);
-    
-    if (verticalLineCount > maxLines || horizontalLineCount > maxLines) {
-      // Grid is too dense, skip rendering to prevent performance issues
-      console.warn('Grid density too high, skipping grid render to prevent performance issues');
-      return lines;
-    }
-
-    // Vertical lines
-    for (let x = offsetX; x <= offsetX + gridWidth; x += scaledGridSize) {
-      lines.push(
-        <Line
-          key={`v-${x}`}
-          points={[x, offsetY, x, offsetY + gridHeight]}
-          stroke={gridColor}
-          strokeWidth={0.5}
-          listening={false}
-        />
-      );
-    }
-
-    // Horizontal lines
-    for (let y = offsetY; y <= offsetY + gridHeight; y += scaledGridSize) {
-      lines.push(
-        <Line
-          key={`h-${y}`}
-          points={[offsetX, y, offsetX + gridWidth, y]}
-          stroke={gridColor}
-          strokeWidth={0.5}
-          listening={false}
-        />
-      );
-    }
-
-    return lines;
-  };
 
   // Middle mouse panning state
   const [isMiddlePanning, setIsMiddlePanning] = useState(false);
@@ -185,12 +129,17 @@ export const DesignerCanvas = ({
         onContextMenu={onContextMenu}
         onMouseMove={handleStageMouseMove}
       >
-        {/* Grid Layer */}
-        {showGrid && (
-          <Layer>
-            {generateGrid()}
-          </Layer>
-        )}
+        {/* Grid Layer - Optimized with memoization */}
+        <GridLayer
+          visible={showGrid}
+          width={width}
+          height={height}
+          gridSize={gridSize}
+          scaleFactor={scaleFactor}
+          backgroundImageNaturalSize={backgroundImageNaturalSize}
+          imageScale={imageScale}
+          gridColor={gridColor}
+        />
 
         {/* Background Image Layer */}
         {bgImage && backgroundImageNaturalSize && (

@@ -46,6 +46,12 @@ const Page = () => {
     waiting: !!id,
   });
 
+  // Load products catalog for enriching saved designs
+  const productsData = ApiGetCall({
+    url: "/api/ExecListBeaconProducts",
+    queryKey: "BeaconProducts",
+  });
+
   // Save design mutation
   // Note: We don't refetch after save since we're still on the canvas with current data
   const saveDesignMutation = ApiPostCall({});
@@ -78,6 +84,7 @@ const Page = () => {
     updateActiveLayer,
     toggleSublayerVisibility,
     filterProductsBySublayers,
+    loadLayers,
     addSublayer,
     removeSublayer,
     renameSublayer,
@@ -125,25 +132,79 @@ const Page = () => {
 
   // Load design data when available
   useEffect(() => {
-    if (designData.isSuccess && designData.data?.designData) {
+    if (designData.isSuccess && designData.data?.designData && productsData.isSuccess) {
       const loadedDesign = designData.data.designData;
       
       // Set flag to prevent saving back to layer while loading
       isLoadingLayerData.current = true;
       
+      // Load layers if available
+      if (loadedDesign.layers && loadedDesign.layers.length > 0) {
+        // Enrich products in layers with API data
+        const enrichedLayers = loadedDesign.layers.map(layer => ({
+          ...layer,
+          products: layer.products.map(savedProduct => {
+            // Find product in API data by SKU
+            const apiProduct = productsData.data?.find(p => p.sku === savedProduct.sku);
+            if (apiProduct) {
+              // Merge saved canvas data with fresh API data
+              return {
+                ...savedProduct, // Canvas position, scale, rotation, etc.
+                // Enrich with API data
+                brand: apiProduct.brand,
+                product_type: apiProduct.product_type_unigram,
+                price: parseFloat(apiProduct.price) || 0,
+                msrp: parseFloat(apiProduct.msrp) || 0,
+                imageUrl: apiProduct.imageUrl,
+                thumbnailUrl: apiProduct.thumbnailImageUrl,
+                category: apiProduct.top_web_category,
+                categories: apiProduct.category_hierarchy || [],
+                description: apiProduct.short_description,
+                colors: apiProduct.item_colours || [],
+                inStock: apiProduct.ss_in_stock === "1",
+                stockQty: parseInt(apiProduct.stock_qty) || 0,
+                // Store minimal metadata for potential use
+                metadata: apiProduct,
+              };
+            }
+            // If product not found in API, return saved data as-is
+            return savedProduct;
+          })
+        }));
+        loadLayers(enrichedLayers);
+      }
+      
       // Load products into history - always set, even if empty
       if (loadedDesign.products !== undefined) {
-        updateHistory(loadedDesign.products);
+        // Enrich products with API data
+        const enrichedProducts = loadedDesign.products.map(savedProduct => {
+          const apiProduct = productsData.data?.find(p => p.sku === savedProduct.sku);
+          if (apiProduct) {
+            return {
+              ...savedProduct,
+              brand: apiProduct.brand,
+              product_type: apiProduct.product_type_unigram,
+              price: parseFloat(apiProduct.price) || 0,
+              msrp: parseFloat(apiProduct.msrp) || 0,
+              imageUrl: apiProduct.imageUrl,
+              thumbnailUrl: apiProduct.thumbnailImageUrl,
+              category: apiProduct.top_web_category,
+              categories: apiProduct.category_hierarchy || [],
+              description: apiProduct.short_description,
+              colors: apiProduct.item_colours || [],
+              inStock: apiProduct.ss_in_stock === "1",
+              stockQty: parseInt(apiProduct.stock_qty) || 0,
+              metadata: apiProduct,
+            };
+          }
+          return savedProduct;
+        });
+        updateHistory(enrichedProducts);
       }
       
       // Load connectors - always set, even if empty
       if (loadedDesign.connectors !== undefined) {
         setConnectors(loadedDesign.connectors);
-      }
-      
-      // Load layers if available
-      if (loadedDesign.layers && loadedDesign.layers.length > 0) {
-        // TODO: Implement layer loading when layer manager supports it
       }
       
       setLastSaved(designData.data.lastModified);
@@ -154,7 +215,7 @@ const Page = () => {
         isLoadingLayerData.current = false;
       }, 0);
     }
-  }, [designData.isSuccess, designData.data]);
+  }, [designData.isSuccess, designData.data, productsData.isSuccess, productsData.data, loadLayers]);
 
   // Track changes to mark as unsaved
   useEffect(() => {
@@ -179,6 +240,38 @@ const Page = () => {
     }
   }, [saveDesignMutation.isPending]);
 
+  // Helper function to strip unnecessary metadata from products before saving
+  const stripProductMetadata = (product) => {
+    // Only keep essential data for canvas operations and identification
+    return {
+      id: product.id,
+      x: product.x,
+      y: product.y,
+      rotation: product.rotation,
+      scaleX: product.scaleX,
+      scaleY: product.scaleY,
+      baseScaleX: product.baseScaleX,
+      baseScaleY: product.baseScaleY,
+      color: product.color,
+      sku: product.sku, // For fetching from API on load
+      name: product.name, // For display when API is unavailable
+      quantity: product.quantity,
+      notes: product.notes,
+      customLabel: product.customLabel,
+      sublayerId: product.sublayerId,
+    };
+  };
+
+  // Helper function to strip background images and unnecessary data from layers
+  const stripLayersForSave = (layersToSave) => {
+    return layersToSave.map(layer => ({
+      ...layer,
+      products: layer.products.map(stripProductMetadata),
+      // Keep background image data but note: consider compression in future
+      // backgroundImage is already a data URL, which is what we need
+    }));
+  };
+
   const handleSave = () => {
     if (!id) {
       // Can't save without a job ID - this is a validation error, not an API error
@@ -189,14 +282,18 @@ const Page = () => {
     applyGroupTransform();
     setIsSaving(true);
 
+    // Strip metadata from products and layers before saving
+    const strippedProducts = products.map(stripProductMetadata);
+    const strippedLayers = stripLayersForSave(layers);
+
     saveDesignMutation.mutate({
       url: "/api/ExecSaveDesign",
       data: {
         jobId: id,
         designData: {
-          products,
+          products: strippedProducts,
           connectors,
-          layers,
+          layers: strippedLayers,
           canvasSettings: {
             width: canvasWidth,
             height: canvasHeight,

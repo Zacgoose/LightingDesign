@@ -232,6 +232,18 @@ export const useLayerManager = (initialLayers = null) => {
     });
   }, []);
 
+  // Load layers (replace all layers with new ones)
+  const loadLayers = useCallback((newLayers) => {
+    if (newLayers && newLayers.length > 0) {
+      setLayers(newLayers);
+      // Set active layer to first layer if current active doesn't exist in new layers
+      const layerIds = newLayers.map(l => l.id);
+      if (!layerIds.includes(activeLayerId)) {
+        setActiveLayerId(newLayers[0].id);
+      }
+    }
+  }, [activeLayerId]);
+
   return {
     layers,
     activeLayerId,
@@ -245,6 +257,7 @@ export const useLayerManager = (initialLayers = null) => {
     getVisibleSublayers,
     filterProductsBySublayers,
     reorderLayers,
+    loadLayers,
     addSublayer,
     removeSublayer,
     renameSublayer,

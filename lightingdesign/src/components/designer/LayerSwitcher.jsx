@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Paper,
@@ -28,27 +28,9 @@ export const LayerSwitcher = ({
   onClose,
   subLayerControlsRef,
 }) => {
-  const paperRef = useRef(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [layerToDelete, setLayerToDelete] = useState(null);
-
-  // Handle click outside to close
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const isOutsideLayerSwitcher = paperRef.current && !paperRef.current.contains(event.target);
-      const isOutsideSubLayerControls = !subLayerControlsRef?.current || !subLayerControlsRef.current.contains(event.target);
-      
-      if (isOutsideLayerSwitcher && isOutsideSubLayerControls) {
-        onClose?.();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [onClose, subLayerControlsRef]);
 
   const handleAddLayer = () => {
     setAddDialogOpen(true);
@@ -72,7 +54,6 @@ export const LayerSwitcher = ({
 
   return (
     <Paper
-      ref={paperRef}
       elevation={2}
       sx={{
         position: 'absolute',

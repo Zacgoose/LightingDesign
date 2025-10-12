@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Paper,
@@ -7,7 +7,21 @@ import {
   Checkbox,
   Typography,
   Divider,
+  IconButton,
+  Tooltip,
+  TextField,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Radio,
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 
 /**
  * SubLayerControls - UI component for showing/hiding sublayers within a floor
@@ -15,53 +29,193 @@ import {
 export const SubLayerControls = ({
   sublayers = [],
   layerId,
+  defaultSublayerId,
   onSublayerToggle,
+  onSublayerAdd,
+  onSublayerRemove,
+  onSublayerRename,
+  onSetDefaultSublayer,
+  onClose,
 }) => {
+  const [contextMenu, setContextMenu] = useState(null);
+  const [editingSublayerId, setEditingSublayerId] = useState(null);
+  const [editingName, setEditingName] = useState('');
+
   if (!sublayers || sublayers.length === 0) {
     return null;
   }
 
+  const handleContextMenu = (e, sublayer) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      sublayer,
+    });
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu(null);
+  };
+
+  const handleStartRename = (sublayer) => {
+    setEditingSublayerId(sublayer.id);
+    setEditingName(sublayer.name);
+    handleCloseContextMenu();
+  };
+
+  const handleFinishRename = (sublayerId) => {
+    if (editingName.trim()) {
+      onSublayerRename(layerId, sublayerId, editingName.trim());
+    }
+    setEditingSublayerId(null);
+    setEditingName('');
+  };
+
+  const handleDelete = (sublayerId) => {
+    if (window.confirm('Delete this sublayer? Objects in this layer will remain visible.')) {
+      onSublayerRemove(layerId, sublayerId);
+    }
+    handleCloseContextMenu();
+  };
+
+  const handleSetDefault = (sublayerId) => {
+    onSetDefaultSublayer(layerId, sublayerId);
+    handleCloseContextMenu();
+  };
+
+  const handleAddSublayer = () => {
+    const name = prompt('Enter sublayer name:', `Layer ${sublayers.length + 1}`);
+    if (name) {
+      onSublayerAdd(layerId, name);
+    }
+  };
+
   return (
-    <Paper
-      elevation={2}
-      sx={{
-        position: 'absolute',
-        top: 80,
-        right: 312,
-        width: 200,
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 1000,
-      }}
-    >
-      <Box sx={{ p: 2, pb: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
-          Object Layers
-        </Typography>
-      </Box>
-      <Divider />
-      <Box sx={{ p: 2, pt: 1 }}>
-        <FormGroup>
-          {sublayers.map((sublayer) => (
-            <FormControlLabel
-              key={sublayer.id}
-              control={
-                <Checkbox
-                  checked={sublayer.visible}
-                  onChange={() => onSublayerToggle(layerId, sublayer.id)}
-                  size="small"
-                />
-              }
-              label={
-                <Typography variant="body2">
-                  {sublayer.name}
-                </Typography>
-              }
-            />
-          ))}
-        </FormGroup>
-      </Box>
-    </Paper>
+    <>
+      <Paper
+        elevation={2}
+        sx={{
+          position: 'absolute',
+          top: 16,
+          right: 312,
+          width: 240,
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 1000,
+        }}
+      >
+        <Box sx={{ p: 2, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+            Object Layers
+          </Typography>
+          <Tooltip title="Add Sublayer">
+            <IconButton size="small" onClick={handleAddSublayer} color="primary">
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+        <Divider />
+        <Box sx={{ p: 2, pt: 1 }}>
+          <FormGroup>
+            {sublayers.map((sublayer) => (
+              <Box
+                key={sublayer.id}
+                sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                onContextMenu={(e) => handleContextMenu(e, sublayer)}
+              >
+                {editingSublayerId === sublayer.id ? (
+                  <TextField
+                    size="small"
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    onBlur={() => handleFinishRename(sublayer.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleFinishRename(sublayer.id);
+                      } else if (e.key === 'Escape') {
+                        setEditingSublayerId(null);
+                      }
+                    }}
+                    autoFocus
+                    fullWidth
+                    sx={{ my: 0.5 }}
+                  />
+                ) : (
+                  <>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={sublayer.visible}
+                          onChange={() => onSublayerToggle(layerId, sublayer.id)}
+                          size="small"
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Typography variant="body2">
+                            {sublayer.name}
+                          </Typography>
+                          {defaultSublayerId === sublayer.id && (
+                            <Tooltip title="Default sublayer for new objects">
+                              <StarIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />
+                            </Tooltip>
+                          )}
+                        </Box>
+                      }
+                      sx={{ flex: 1 }}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleContextMenu(e, sublayer)}
+                    >
+                      <MoreVertIcon fontSize="small" />
+                    </IconButton>
+                  </>
+                )}
+              </Box>
+            ))}
+          </FormGroup>
+        </Box>
+      </Paper>
+
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleCloseContextMenu}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem onClick={() => handleSetDefault(contextMenu?.sublayer.id)}>
+          <ListItemIcon>
+            {defaultSublayerId === contextMenu?.sublayer.id ? (
+              <StarIcon fontSize="small" />
+            ) : (
+              <StarBorderIcon fontSize="small" />
+            )}
+          </ListItemIcon>
+          <ListItemText>Set as Default</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleStartRename(contextMenu?.sublayer)}>
+          <ListItemIcon>
+            <EditIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Rename</ListItemText>
+        </MenuItem>
+        {sublayers.length > 1 && (
+          <MenuItem onClick={() => handleDelete(contextMenu?.sublayer.id)}>
+            <ListItemIcon>
+              <DeleteIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Delete</ListItemText>
+          </MenuItem>
+        )}
+      </Menu>
+    </>
   );
 };
 

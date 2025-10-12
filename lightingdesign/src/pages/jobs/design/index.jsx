@@ -60,6 +60,11 @@ const Page = () => {
     updateActiveLayer,
     toggleSublayerVisibility,
     filterProductsBySublayers,
+    addSublayer,
+    removeSublayer,
+    renameSublayer,
+    setDefaultSublayer,
+    assignProductsToSublayer,
   } = layerManager;
   
   // Placement mode
@@ -447,8 +452,15 @@ const Page = () => {
         reader.onload = (ev) => {
           const img = new window.Image();
           img.onload = () => {
-            setBackgroundImage(ev.target.result);
-            setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+            const imageData = ev.target.result;
+            const sizeData = { width: img.width, height: img.height };
+            setBackgroundImage(imageData);
+            setBackgroundImageNaturalSize(sizeData);
+            // Save to active layer
+            updateActiveLayer({
+              backgroundImage: imageData,
+              backgroundImageNaturalSize: sizeData
+            });
           };
           img.src = ev.target.result;
         };
@@ -692,6 +704,12 @@ const Page = () => {
     handleCloseContextMenu();
   };
 
+  const handleAssignToSublayer = (sublayerId) => {
+    applyGroupTransform();
+    assignProductsToSublayer(activeLayerId, selectedIds, sublayerId);
+    handleCloseContextMenu();
+  };
+
   const handleProductAdd = (product) => {
     // Enter placement mode with the selected product
     setPlacementMode({
@@ -731,6 +749,7 @@ const Page = () => {
       quantity: 1,
       notes: "",
       customLabel: "",
+      sublayerId: activeLayer?.defaultSublayerId || null, // Assign to default sublayer
     };
   };
 
@@ -1232,11 +1251,18 @@ const Page = () => {
                         const layer = layers.find(l => l.id === layerId);
                         updateLayer(layerId, { locked: !layer.locked });
                       }}
+                      onClose={() => setShowLayers(false)}
                     />
                     <SubLayerControls
                       sublayers={activeLayer?.sublayers || []}
                       layerId={activeLayerId}
+                      defaultSublayerId={activeLayer?.defaultSublayerId}
                       onSublayerToggle={toggleSublayerVisibility}
+                      onSublayerAdd={addSublayer}
+                      onSublayerRemove={removeSublayer}
+                      onSublayerRename={renameSublayer}
+                      onSetDefaultSublayer={setDefaultSublayer}
+                      onClose={() => setShowLayers(false)}
                     />
                   </>
                 )}
@@ -1256,6 +1282,8 @@ const Page = () => {
         onInsertProduct={handleInsertProductAtPosition}
         onSwapPlacementProduct={handleSwapPlacementProduct}
         onScale={handleOpenScaleDialog}
+        onAssignToSublayer={handleAssignToSublayer}
+        sublayers={activeLayer?.sublayers || []}
       />
 
       <CippComponentDialog

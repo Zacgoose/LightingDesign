@@ -192,7 +192,8 @@ const Page = () => {
           if (firstLayer.backgroundImageNaturalSize) {
             setBackgroundImageNaturalSize(firstLayer.backgroundImageNaturalSize);
           }
-          if (firstLayer.scaleFactor) {
+          if (firstLayer.scaleFactor !== undefined) {
+            // Force update scaleFactor to ensure grid renders correctly
             setScaleFactor(firstLayer.scaleFactor);
           }
         }

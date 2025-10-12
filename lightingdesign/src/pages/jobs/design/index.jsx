@@ -12,6 +12,7 @@ import { ProductsLayer } from "/src/components/designer/ProductsLayer";
 import { ConnectorsLayer } from "/src/components/designer/ConnectorsLayer";
 import { ProductShape } from "/src/components/designer/ProductShape";
 import { MeasurementLayer } from "/src/components/designer/MeasurementLayer";
+import { MeasurementConfirmation } from "/src/components/designer/MeasurementConfirmation";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
 import { Circle, Line } from "react-konva";
 import { TextField } from "@mui/material";
@@ -62,13 +63,6 @@ const Page = () => {
     mode: "onChange",
     defaultValues: {
       scale: 1
-    }
-  });
-
-  const measureForm = useForm({
-    mode: "onChange",
-    defaultValues: {
-      distance: 0
     }
   });
   
@@ -1161,6 +1155,18 @@ const Page = () => {
                     }}
                   />
                 </DesignerCanvas>
+                
+                {/* Inline measurement confirmation */}
+                <MeasurementConfirmation
+                  open={measureDialogOpen}
+                  measurePoints={measurePoints}
+                  stagePosition={stagePosition}
+                  stageScale={stageScale}
+                  onConfirm={handleMeasureConfirm}
+                  onCancel={handleMeasureCancel}
+                  calculateDistance={calculateDistance}
+                  scaleFactor={scaleFactor}
+                />
               </Box>
             </CardContent>
           </Card>
@@ -1202,29 +1208,6 @@ const Page = () => {
           fullWidth
           inputProps={{ min: 0.001, step: 0.001 }}
           autoFocus
-        />
-      </CippComponentDialog>
-
-      <CippComponentDialog
-        open={measureDialogOpen}
-        title="Set Distance"
-        createDialog={{
-          open: measureDialogOpen,
-          handleClose: handleMeasureCancel,
-          handleSubmit: (data) => handleMeasureConfirm(data.distance),
-          form: measureForm
-        }}
-      >
-        <TextField
-          {...measureForm.register('distance')}
-          label="Real-world distance"
-          type="number"
-          fullWidth
-          inputProps={{ min: 0.001, step: 0.001 }}
-          autoFocus
-          helperText={`Measured distance: ${(measurePoints && scaleFactor 
-            ? calculateDistance(measurePoints[0], measurePoints[1]) / scaleFactor 
-            : 0).toFixed(2)} units`}
         />
       </CippComponentDialog>
 

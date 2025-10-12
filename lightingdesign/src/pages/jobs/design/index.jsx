@@ -245,15 +245,12 @@ const Page = () => {
       setLastSaved(designData.data.lastModified);
       setHasUnsavedChanges(false);
       
-      // Invalidate the design query so that on next page load/reload, we fetch fresh data
-      queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
-      
       // Clear flag after state updates complete
       setTimeout(() => {
         isLoadingLayerData.current = false;
       }, 0);
     }
-  }, [designData.isSuccess, designData.data, productsData.isSuccess, productsData.data, loadLayers, id, queryClient]);
+  }, [designData.isSuccess, designData.data, productsData.isSuccess, productsData.data, loadLayers]);
 
   // Track changes to mark as unsaved
   useEffect(() => {
@@ -268,8 +265,10 @@ const Page = () => {
       setLastSaved(new Date().toISOString());
       setHasUnsavedChanges(false);
       setIsSaving(false);
+      // Invalidate the design query so that on next page reload, we fetch fresh data
+      queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
     }
-  }, [saveDesignMutation.isSuccess]);
+  }, [saveDesignMutation.isSuccess, queryClient, id]);
 
   // Handle save mutation end (error or success) - clear saving state
   useEffect(() => {

@@ -147,6 +147,12 @@ const Page = () => {
       // Set flag to prevent saving back to layer while loading
       isLoadingLayerData.current = true;
       
+      // IMPORTANT: Load canvas settings (stageScale) FIRST before rendering products
+      // This ensures products render with the correct zoom level from the start
+      if (loadedDesign.canvasSettings?.scale !== undefined) {
+        setStageScale(loadedDesign.canvasSettings.scale);
+      }
+      
       // Load layers if available
       if (loadedDesign.layers && loadedDesign.layers.length > 0) {
         // Enrich products in layers with API data
@@ -230,11 +236,6 @@ const Page = () => {
       // Load connectors - always set, even if empty
       if (loadedDesign.connectors !== undefined) {
         setConnectors(loadedDesign.connectors);
-      }
-      
-      // Load canvas settings (scale only, not position to avoid coordinate issues)
-      if (loadedDesign.canvasSettings?.scale !== undefined) {
-        setStageScale(loadedDesign.canvasSettings.scale);
       }
       
       setLastSaved(designData.data.lastModified);

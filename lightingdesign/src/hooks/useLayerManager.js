@@ -63,15 +63,17 @@ export const useLayerManager = (initialLayers = null) => {
       const filtered = prev.filter(l => l.id !== layerId);
       // Ensure at least one layer exists
       if (filtered.length === 0) {
+        // If all layers are deleted, reset active layer to default
+        setActiveLayerId('layer-1');
         return [createEmptyLayer('layer-1', 'Floor 1')];
+      }
+      // If deleting active layer, switch to first available in filtered
+      if (layerId === activeLayerId) {
+        setActiveLayerId(filtered[0].id);
       }
       return filtered;
     });
-    // If deleting active layer, switch to first available
-    if (layerId === activeLayerId) {
-      setActiveLayerId(layers.find(l => l.id !== layerId)?.id || 'layer-1');
-    }
-  }, [activeLayerId, layers]);
+  }, [activeLayerId]);
 
   // Update layer properties
   const updateLayer = useCallback((layerId, updates) => {

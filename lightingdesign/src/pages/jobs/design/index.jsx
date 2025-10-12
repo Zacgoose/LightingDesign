@@ -90,7 +90,7 @@ const Page = () => {
     if (activeLayer) {
       updateActiveLayer({ connectors });
     }
-  }, [connectors]);
+  }, [connectors, updateActiveLayer]);
 
   // Update local state when switching layers
   useEffect(() => {

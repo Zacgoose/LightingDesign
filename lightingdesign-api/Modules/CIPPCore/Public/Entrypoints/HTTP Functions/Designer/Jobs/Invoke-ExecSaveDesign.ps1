@@ -23,13 +23,6 @@ function Invoke-ExecSaveDesign {
     # Check if design already exists for this job
     $Filter = "JobId eq '{0}'" -f $JobId
     $ExistingDesign = Get-AzDataTableEntity @Table -Filter $Filter
-    
-    # Convert design data to JSON if it's an object
-    $DesignDataJson = if ($DesignData -is [string]) {
-        $DesignData
-    } else {
-        $DesignData | ConvertTo-Json -Depth 20 -Compress
-    }
 
     if ($ExistingDesign) {
         # Update existing design
@@ -37,7 +30,7 @@ function Invoke-ExecSaveDesign {
             PartitionKey = $ExistingDesign.PartitionKey
             RowKey       = $ExistingDesign.RowKey
             JobId        = $JobId
-            DesignData   = $DesignDataJson
+            DesignData   = if ($DesignData) { ($DesignData | ConvertTo-Json -Depth 20 -Compress) } else { $null }
             LastModified = (Get-Date).ToString('o')
         }
     } else {
@@ -46,7 +39,7 @@ function Invoke-ExecSaveDesign {
             PartitionKey = 'Design'
             RowKey       = [guid]::NewGuid().ToString()
             JobId        = $JobId
-            DesignData   = $DesignDataJson
+            DesignData   = if ($DesignData) { ($DesignData | ConvertTo-Json -Depth 20 -Compress) } else { $null }
             LastModified = (Get-Date).ToString('o')
         }
     }

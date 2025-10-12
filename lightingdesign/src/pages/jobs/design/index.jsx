@@ -16,6 +16,7 @@ import { MeasurementConfirmation } from "/src/components/designer/MeasurementCon
 import { LayerSwitcher } from "/src/components/designer/LayerSwitcher";
 import { SubLayerControls } from "/src/components/designer/SubLayerControls";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
+import { CippTextInputDialog } from "/src/components/CippComponents/CippTextInputDialog";
 import { TextField } from "@mui/material";
 import { useHistory } from "/src/hooks/useHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
@@ -177,14 +178,14 @@ const Page = () => {
   const pendingInsertPosition = useRef(null);
   const canvasContainerRef = useRef();
 
-  // Background and Scale
-  const [backgroundImage, setBackgroundImage] = useState(null);
-  const [scaleFactor, setScaleFactor] = useState(100); // 100px per meter
+  // Background and Scale - now derived from active layer
+  const [backgroundImage, setBackgroundImage] = useState(activeLayer?.backgroundImage || null);
+  const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100); // 100px per meter
   const [measureMode, setMeasureMode] = useState(false);
   const [measurePoints, setMeasurePoints] = useState([]);
   const [measureDialogOpen, setMeasureDialogOpen] = useState(false);
   const [measureValue, setMeasureValue] = useState(0);
-  const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(null);
+  const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(activeLayer?.backgroundImageNaturalSize || null);
 
   // Update local state when switching layers
   useEffect(() => {
@@ -193,6 +194,7 @@ const Page = () => {
       setConnectors(activeLayer.connectors || []);
       setBackgroundImage(activeLayer.backgroundImage);
       setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize);
+      setScaleFactor(activeLayer.scaleFactor || 100);
     }
   }, [activeLayerId, updateHistory, setBackgroundImage, setBackgroundImageNaturalSize]);
 
@@ -505,7 +507,10 @@ const Page = () => {
     const realDistance = Number(distance);
     const pixelDistance = calculateDistance(measurePoints[0], measurePoints[1]);
     if (realDistance > 0 && pixelDistance > 0) {
-      setScaleFactor(pixelDistance / realDistance);
+      const newScaleFactor = pixelDistance / realDistance;
+      setScaleFactor(newScaleFactor);
+      // Save to active layer
+      updateActiveLayer({ scaleFactor: newScaleFactor });
     }
     setMeasureMode(false);
     setMeasurePoints([]);
@@ -1238,19 +1243,8 @@ const Page = () => {
                       layers={layers}
                       activeLayerId={activeLayerId}
                       onLayerSelect={setActiveLayerId}
-                      onLayerAdd={() => {
-                        const name = prompt('Enter layer name:', `Floor ${layers.length + 1}`);
-                        if (name) addLayer(name);
-                      }}
+                      onLayerAdd={addLayer}
                       onLayerDelete={deleteLayer}
-                      onLayerToggleVisibility={(layerId) => {
-                        const layer = layers.find(l => l.id === layerId);
-                        updateLayer(layerId, { visible: !layer.visible });
-                      }}
-                      onLayerToggleLock={(layerId) => {
-                        const layer = layers.find(l => l.id === layerId);
-                        updateLayer(layerId, { locked: !layer.locked });
-                      }}
                       onClose={() => setShowLayers(false)}
                     />
                     <SubLayerControls

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Paper,
@@ -13,10 +13,8 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import LockIcon from '@mui/icons-material/Lock';
-import LockOpenIcon from '@mui/icons-material/LockOpen';
+import { CippTextInputDialog } from '/src/components/CippComponents/CippTextInputDialog';
+import { CippConfirmDialog } from '/src/components/CippComponents/CippConfirmDialog';
 
 /**
  * LayerSwitcher - UI component for managing and switching between floor layers
@@ -27,11 +25,12 @@ export const LayerSwitcher = ({
   onLayerSelect,
   onLayerAdd,
   onLayerDelete,
-  onLayerToggleVisibility,
-  onLayerToggleLock,
   onClose,
 }) => {
   const paperRef = useRef(null);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [layerToDelete, setLayerToDelete] = useState(null);
 
   // Handle click outside to close
   useEffect(() => {
@@ -46,6 +45,26 @@ export const LayerSwitcher = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [onClose]);
+
+  const handleAddLayer = () => {
+    setAddDialogOpen(true);
+  };
+
+  const handleConfirmAdd = (name) => {
+    onLayerAdd(name);
+  };
+
+  const handleDeleteLayer = (layerId, layerName) => {
+    setLayerToDelete({ id: layerId, name: layerName });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (layerToDelete) {
+      onLayerDelete(layerToDelete.id);
+      setLayerToDelete(null);
+    }
+  };
 
   return (
     <Paper
@@ -74,7 +93,7 @@ export const LayerSwitcher = ({
           Layers
         </Typography>
         <Tooltip title="Add New Layer">
-          <IconButton size="small" onClick={onLayerAdd} color="primary">
+          <IconButton size="small" onClick={handleAddLayer} color="primary">
             <AddIcon />
           </IconButton>
         </Tooltip>
@@ -94,56 +113,20 @@ export const LayerSwitcher = ({
               key={layer.id}
               disablePadding
               secondaryAction={
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
-                  <Tooltip title={layer.visible ? 'Hide Layer' : 'Show Layer'}>
+                layers.length > 1 && (
+                  <Tooltip title="Delete Layer">
                     <IconButton
                       edge="end"
                       size="small"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onLayerToggleVisibility(layer.id);
+                        handleDeleteLayer(layer.id, layer.name);
                       }}
                     >
-                      {layer.visible ? (
-                        <VisibilityIcon fontSize="small" />
-                      ) : (
-                        <VisibilityOffIcon fontSize="small" />
-                      )}
+                      <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title={layer.locked ? 'Unlock Layer' : 'Lock Layer'}>
-                    <IconButton
-                      edge="end"
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onLayerToggleLock(layer.id);
-                      }}
-                    >
-                      {layer.locked ? (
-                        <LockIcon fontSize="small" />
-                      ) : (
-                        <LockOpenIcon fontSize="small" />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                  {layers.length > 1 && (
-                    <Tooltip title="Delete Layer">
-                      <IconButton
-                        edge="end"
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (window.confirm(`Delete layer "${layer.name}"?`)) {
-                            onLayerDelete(layer.id);
-                          }
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                </Box>
+                )
               }
             >
               <ListItemButton
@@ -151,7 +134,6 @@ export const LayerSwitcher = ({
                 onClick={() => onLayerSelect(layer.id)}
                 sx={{
                   py: 1.5,
-                  opacity: layer.visible ? 1 : 0.5,
                 }}
               >
                 <ListItemText
@@ -166,6 +148,26 @@ export const LayerSwitcher = ({
           );
         })}
       </List>
+
+      <CippTextInputDialog
+        open={addDialogOpen}
+        onClose={() => setAddDialogOpen(false)}
+        onConfirm={handleConfirmAdd}
+        title="Add Layer"
+        label="Layer Name"
+        defaultValue={`Floor ${layers.length + 1}`}
+      />
+
+      <CippConfirmDialog
+        open={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setLayerToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Layer"
+        message={`Delete layer "${layerToDelete?.name}"?`}
+      />
     </Paper>
   );
 };

@@ -1,5 +1,5 @@
 import { Menu, MenuItem, ListItemIcon, ListItemText, Box } from "@mui/material";
-import { Delete, ContentCopy, SettingsBackupRestore, Add, SwapHoriz } from "@mui/icons-material";
+import { Delete, ContentCopy, SettingsBackupRestore, Add, SwapHoriz, Layers } from "@mui/icons-material";
 
 export const ContextMenus = ({
   contextMenu,
@@ -11,6 +11,8 @@ export const ContextMenus = ({
   onInsertProduct,
   onSwapPlacementProduct,
   onScale,
+  onAssignToSublayer,
+  sublayers = [],
 }) => {
   // Prevent right-click on the menu itself - just close it
   const handleContextMenu = (e) => {
@@ -61,6 +63,23 @@ export const ContextMenus = ({
             </ListItemIcon>
             <ListItemText>Reset Scale</ListItemText>
           </MenuItem>
+          {sublayers && sublayers.length > 0 && (
+            <MenuItem>
+              <ListItemIcon>
+                <Layers fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Assign to Sublayer</ListItemText>
+            </MenuItem>
+          )}
+          {sublayers && sublayers.length > 0 && sublayers.map((sublayer) => (
+            <MenuItem
+              key={sublayer.id}
+              onClick={() => onAssignToSublayer(sublayer.id)}
+              sx={{ pl: 5 }}
+            >
+              <ListItemText inset>{sublayer.name}</ListItemText>
+            </MenuItem>
+          ))}
           <MenuItem onClick={onDelete}>
             <ListItemIcon>
               <Delete fontSize="small" />

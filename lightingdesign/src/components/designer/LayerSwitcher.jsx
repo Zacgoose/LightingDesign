@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -29,13 +29,31 @@ export const LayerSwitcher = ({
   onLayerDelete,
   onLayerToggleVisibility,
   onLayerToggleLock,
+  onClose,
 }) => {
+  const paperRef = useRef(null);
+
+  // Handle click outside to close
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (paperRef.current && !paperRef.current.contains(event.target)) {
+        onClose?.();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
+
   return (
     <Paper
+      ref={paperRef}
       elevation={2}
       sx={{
         position: 'absolute',
-        top: 80,
+        top: 16,
         right: 16,
         width: 280,
         maxHeight: 'calc(100vh - 200px)',

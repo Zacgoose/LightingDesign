@@ -20,11 +20,10 @@ export const createEmptyLayer = (id, name) => ({
   products: [],
   connectors: [],
   sublayers: [
-    { id: `${id}-lights`, name: 'Lights', visible: true, type: 'light' },
-    { id: `${id}-power`, name: 'Power Points', visible: true, type: 'power' },
-    { id: `${id}-switches`, name: 'Switches', visible: true, type: 'switch' },
-    { id: `${id}-other`, name: 'Other', visible: true, type: 'other' },
+    { id: `${id}-default`, name: 'Default', visible: true, isDefault: true },
+    { id: `${id}-objects`, name: 'Objects', visible: true, isDefault: false },
   ],
+  defaultSublayerId: `${id}-default`, // Track which sublayer is default for new objects
 });
 
 /**
@@ -110,18 +109,110 @@ export const useLayerManager = (initialLayers = null) => {
 
   // Filter products by visible sublayers
   const filterProductsBySublayers = useCallback((products, layerId) => {
-    const visibleSublayers = getVisibleSublayers(layerId);
-    const visibleTypes = visibleSublayers.map(sub => sub.type);
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer) return products;
+    
+    const visibleSublayerIds = layer.sublayers
+      .filter(sub => sub.visible)
+      .map(sub => sub.id);
     
     return products.filter(product => {
-      const productType = product.product_type?.toLowerCase();
-      // Map product types to sublayer types
-      if (productType?.includes('light')) return visibleTypes.includes('light');
-      if (productType?.includes('power') || productType?.includes('outlet')) return visibleTypes.includes('power');
-      if (productType?.includes('switch')) return visibleTypes.includes('switch');
-      return visibleTypes.includes('other');
+      // If product doesn't have a sublayer assignment, show it in all visible sublayers
+      if (!product.sublayerId) return true;
+      return visibleSublayerIds.includes(product.sublayerId);
     });
-  }, [getVisibleSublayers]);
+  }, [layers]);
+
+  // Add a new sublayer to a layer
+  const addSublayer = useCallback((layerId, name) => {
+    const newSublayerId = `${layerId}-sublayer-${Date.now()}`;
+    setLayers(prev => prev.map(layer => {
+      if (layer.id === layerId) {
+        return {
+          ...layer,
+          sublayers: [
+            ...layer.sublayers,
+            { id: newSublayerId, name: name || `Layer ${layer.sublayers.length + 1}`, visible: true, isDefault: false }
+          ],
+        };
+      }
+      return layer;
+    }));
+    return newSublayerId;
+  }, []);
+
+  // Remove a sublayer from a layer
+  const removeSublayer = useCallback((layerId, sublayerId) => {
+    setLayers(prev => prev.map(layer => {
+      if (layer.id === layerId) {
+        const filteredSublayers = layer.sublayers.filter(sub => sub.id !== sublayerId);
+        // Ensure at least one sublayer exists
+        if (filteredSublayers.length === 0) {
+          return {
+            ...layer,
+            sublayers: [{ id: `${layerId}-default`, name: 'Default', visible: true, isDefault: true }],
+            defaultSublayerId: `${layerId}-default`,
+          };
+        }
+        // If removing the default sublayer, set the first remaining as default
+        let newDefaultId = layer.defaultSublayerId;
+        if (sublayerId === layer.defaultSublayerId) {
+          newDefaultId = filteredSublayers[0].id;
+        }
+        return {
+          ...layer,
+          sublayers: filteredSublayers,
+          defaultSublayerId: newDefaultId,
+        };
+      }
+      return layer;
+    }));
+  }, []);
+
+  // Rename a sublayer
+  const renameSublayer = useCallback((layerId, sublayerId, newName) => {
+    setLayers(prev => prev.map(layer => {
+      if (layer.id === layerId) {
+        return {
+          ...layer,
+          sublayers: layer.sublayers.map(sub =>
+            sub.id === sublayerId ? { ...sub, name: newName } : sub
+          ),
+        };
+      }
+      return layer;
+    }));
+  }, []);
+
+  // Set default sublayer for new objects
+  const setDefaultSublayer = useCallback((layerId, sublayerId) => {
+    setLayers(prev => prev.map(layer => {
+      if (layer.id === layerId) {
+        return {
+          ...layer,
+          defaultSublayerId: sublayerId,
+        };
+      }
+      return layer;
+    }));
+  }, []);
+
+  // Assign products to a sublayer
+  const assignProductsToSublayer = useCallback((layerId, productIds, sublayerId) => {
+    setLayers(prev => prev.map(layer => {
+      if (layer.id === layerId) {
+        return {
+          ...layer,
+          products: layer.products.map(product =>
+            productIds.includes(product.id)
+              ? { ...product, sublayerId }
+              : product
+          ),
+        };
+      }
+      return layer;
+    }));
+  }, []);
 
   // Reorder layers
   const reorderLayers = useCallback((startIndex, endIndex) => {
@@ -146,6 +237,11 @@ export const useLayerManager = (initialLayers = null) => {
     getVisibleSublayers,
     filterProductsBySublayers,
     reorderLayers,
+    addSublayer,
+    removeSublayer,
+    renameSublayer,
+    setDefaultSublayer,
+    assignProductsToSublayer,
   };
 };
 

@@ -477,6 +477,24 @@ const Page = () => {
   useEffect(() => {
     // Only load layer data if we actually switched to a different layer
     if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
+      // Before switching, ensure current layer's data is synced
+      // This prevents loss of unsaved changes when switching layers
+      if (lastLoadedLayerId.current && (
+          backgroundImage !== lastSyncedBackgroundImage.current ||
+          backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current ||
+          scaleFactor !== lastSyncedScaleFactor.current
+      )) {
+        // Sync current layer's data before switching
+        updateLayer(lastLoadedLayerId.current, {
+          backgroundImage,
+          backgroundImageNaturalSize,
+          scaleFactor
+        });
+        lastSyncedBackgroundImage.current = backgroundImage;
+        lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
+        lastSyncedScaleFactor.current = scaleFactor;
+      }
+      
       lastLoadedLayerId.current = activeLayerId;
       
       // Set flag to prevent saving back to layer while loading
@@ -502,7 +520,7 @@ const Page = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [activeLayerId, activeLayer, updateHistory]);
+  }, [activeLayerId, activeLayer, updateHistory, backgroundImage, backgroundImageNaturalSize, scaleFactor, updateLayer]);
 
   // Selection snapshot for group transformations
   const selectionSnapshot = useMemo(() => {

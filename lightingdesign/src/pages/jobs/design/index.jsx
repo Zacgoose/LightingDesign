@@ -147,7 +147,29 @@ const Page = () => {
       // Set flag to prevent saving back to layer while loading
       isLoadingLayerData.current = true;
       
-      // Load layers if available
+      // IMPORTANT: Set all canvas settings FIRST before loading products
+      // This ensures products render with correct values from the start
+      
+      // 1. Load canvas zoom level (stageScale) first
+      if (loadedDesign.canvasSettings?.scale !== undefined) {
+        setStageScale(loadedDesign.canvasSettings.scale);
+      }
+      
+      // 2. Load background and scale factor from first layer (if available)
+      if (loadedDesign.layers && loadedDesign.layers.length > 0) {
+        const firstLayer = loadedDesign.layers[0];
+        if (firstLayer.backgroundImage) {
+          setBackgroundImage(firstLayer.backgroundImage);
+        }
+        if (firstLayer.backgroundImageNaturalSize) {
+          setBackgroundImageNaturalSize(firstLayer.backgroundImageNaturalSize);
+        }
+        if (firstLayer.scaleFactor !== undefined) {
+          setScaleFactor(firstLayer.scaleFactor);
+        }
+      }
+      
+      // 3. Now load layers and products (they will use the settings set above)
       if (loadedDesign.layers && loadedDesign.layers.length > 0) {
         // Enrich products in layers with API data
         const enrichedLayers = loadedDesign.layers.map(layer => ({
@@ -180,22 +202,9 @@ const Page = () => {
             return savedProduct;
           })
         }));
-        loadLayers(enrichedLayers);
         
-        // Load background image and scale factor from the active (first) layer after loading
-        // This ensures these properties are loaded when the design is first opened
-        if (enrichedLayers.length > 0 && enrichedLayers[0]) {
-          const firstLayer = enrichedLayers[0];
-          if (firstLayer.backgroundImage) {
-            setBackgroundImage(firstLayer.backgroundImage);
-          }
-          if (firstLayer.backgroundImageNaturalSize) {
-            setBackgroundImageNaturalSize(firstLayer.backgroundImageNaturalSize);
-          }
-          if (firstLayer.scaleFactor) {
-            setScaleFactor(firstLayer.scaleFactor);
-          }
-        }
+        // Load the enriched layers (products will render with correct settings)
+        loadLayers(enrichedLayers);
       }
       
       // Load products into history - always set, even if empty

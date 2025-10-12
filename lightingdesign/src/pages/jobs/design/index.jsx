@@ -102,6 +102,9 @@ const Page = () => {
 
   // Ref to track if we're loading data from a layer (vs user editing)
   const isLoadingLayerData = useRef(false);
+  
+  // Ref to track the last loaded layer ID to detect layer switches
+  const lastLoadedLayerId = useRef(activeLayerId);
 
   // Keep products in sync with active layer (save to layer when products change)
   useEffect(() => {
@@ -312,7 +315,10 @@ const Page = () => {
 
   // Update local state when switching layers
   useEffect(() => {
-    if (activeLayer) {
+    // Only load layer data if we actually switched to a different layer
+    if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
+      lastLoadedLayerId.current = activeLayerId;
+      
       // Set flag to prevent saving back to layer while loading
       isLoadingLayerData.current = true;
       
@@ -327,7 +333,7 @@ const Page = () => {
         isLoadingLayerData.current = false;
       }, 0);
     }
-  }, [activeLayerId, updateHistory, setBackgroundImage, setBackgroundImageNaturalSize]);
+  }, [activeLayerId, activeLayer, updateHistory]);
 
   // Selection snapshot for group transformations
   const selectionSnapshot = useMemo(() => {

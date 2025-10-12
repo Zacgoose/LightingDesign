@@ -5,7 +5,7 @@
  * Each floor layer can contain multiple sublayers for different object types
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 /**
  * Creates a new empty floor layer
@@ -42,10 +42,15 @@ export const useLayerManager = (initialLayers = null) => {
     return (initialLayers && initialLayers.length > 0) ? initialLayers[0].id : 'layer-1';
   });
 
-  // Get active layer
-  const getActiveLayer = useCallback(() => {
+  // Get active layer - memoized to prevent unnecessary re-renders
+  const activeLayer = useMemo(() => {
     return layers.find(l => l.id === activeLayerId) || layers[0];
   }, [layers, activeLayerId]);
+
+  // Get active layer function (for backwards compatibility if needed)
+  const getActiveLayer = useCallback(() => {
+    return activeLayer;
+  }, [activeLayer]);
 
   // Add a new layer
   const addLayer = useCallback((name) => {
@@ -230,7 +235,7 @@ export const useLayerManager = (initialLayers = null) => {
   return {
     layers,
     activeLayerId,
-    activeLayer: getActiveLayer(),
+    activeLayer,
     setActiveLayerId,
     addLayer,
     deleteLayer,

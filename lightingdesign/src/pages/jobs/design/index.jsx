@@ -132,8 +132,17 @@ const Page = () => {
 
   // Load design data when available
   useEffect(() => {
-    if (designData.isSuccess && designData.data?.designData && productsData.isSuccess) {
+    if (designData.isSuccess && designData.data?.designData) {
       const loadedDesign = designData.data.designData;
+      
+      // Check if we need to wait for products data
+      const hasProductsToEnrich = (loadedDesign.products && loadedDesign.products.length > 0) ||
+        (loadedDesign.layers && loadedDesign.layers.some(l => l.products && l.products.length > 0));
+      
+      // If there are products to enrich, wait for products API
+      if (hasProductsToEnrich && !productsData.isSuccess) {
+        return; // Wait for products data
+      }
       
       // Set flag to prevent saving back to layer while loading
       isLoadingLayerData.current = true;
@@ -1281,7 +1290,7 @@ const Page = () => {
   return (
     <>
       {/* Loading indicator */}
-      {designData.isLoading && (
+      {(designData.isLoading || productsData.isLoading) && (
         <Box sx={{ 
           display: "flex", 
           justifyContent: "center", 
@@ -1291,14 +1300,14 @@ const Page = () => {
           <Box sx={{ textAlign: "center" }}>
             <CircularProgress />
             <Typography variant="body1" sx={{ mt: 2 }}>
-              Loading design...
+              {designData.isLoading ? "Loading design..." : "Loading product catalog..."}
             </Typography>
           </Box>
         </Box>
       )}
 
       {/* Main design interface */}
-      {!designData.isLoading && (
+      {!designData.isLoading && !productsData.isLoading && (
         <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 80px)", minHeight: 0 }}>
           <Container maxWidth={false} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
 

@@ -100,26 +100,34 @@ const Page = () => {
     canRedo,
   } = useHistory(activeLayer?.products || []);
 
-  // Keep products in sync with active layer
+  // Ref to track if we're loading data from a layer (vs user editing)
+  const isLoadingLayerData = useRef(false);
+
+  // Keep products in sync with active layer (save to layer when products change)
   useEffect(() => {
-    if (activeLayer && JSON.stringify(products) !== JSON.stringify(activeLayer.products)) {
-      updateActiveLayer({ products });
-    }
-  }, [products, updateActiveLayer, activeLayer]);
+    // Don't save back to layer if we're in the middle of loading from layer
+    if (isLoadingLayerData.current) return;
+    
+    updateLayer(activeLayerId, { products });
+  }, [products, activeLayerId, updateLayer]);
 
   const [connectors, setConnectors] = useState(activeLayer?.connectors || []);
 
-  // Keep connectors in sync with active layer
+  // Keep connectors in sync with active layer (save to layer when connectors change)
   useEffect(() => {
-    if (activeLayer) {
-      updateActiveLayer({ connectors });
-    }
-  }, [connectors, updateActiveLayer]);
+    // Don't save back to layer if we're in the middle of loading from layer
+    if (isLoadingLayerData.current) return;
+    
+    updateLayer(activeLayerId, { connectors });
+  }, [connectors, activeLayerId, updateLayer]);
 
   // Load design data when available
   useEffect(() => {
     if (designData.isSuccess && designData.data?.designData) {
       const loadedDesign = designData.data.designData;
+      
+      // Set flag to prevent saving back to layer while loading
+      isLoadingLayerData.current = true;
       
       // Load products into history
       if (loadedDesign.products && loadedDesign.products.length > 0) {
@@ -138,6 +146,11 @@ const Page = () => {
       
       setLastSaved(designData.data.lastModified);
       setHasUnsavedChanges(false);
+      
+      // Clear flag after state updates complete
+      setTimeout(() => {
+        isLoadingLayerData.current = false;
+      }, 0);
     }
   }, [designData.isSuccess, designData.data]);
 
@@ -300,11 +313,19 @@ const Page = () => {
   // Update local state when switching layers
   useEffect(() => {
     if (activeLayer) {
+      // Set flag to prevent saving back to layer while loading
+      isLoadingLayerData.current = true;
+      
       updateHistory(activeLayer.products || []);
       setConnectors(activeLayer.connectors || []);
       setBackgroundImage(activeLayer.backgroundImage);
       setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize);
       setScaleFactor(activeLayer.scaleFactor || 100);
+      
+      // Clear flag after state updates complete
+      setTimeout(() => {
+        isLoadingLayerData.current = false;
+      }, 0);
     }
   }, [activeLayerId, updateHistory, setBackgroundImage, setBackgroundImageNaturalSize]);
 

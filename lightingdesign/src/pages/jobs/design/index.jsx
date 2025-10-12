@@ -81,7 +81,7 @@ const Page = () => {
     if (activeLayer) {
       updateActiveLayer({ products });
     }
-  }, [products]);
+  }, [products, updateActiveLayer]);
 
   const [connectors, setConnectors] = useState(activeLayer?.connectors || []);
 

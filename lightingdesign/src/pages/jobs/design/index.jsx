@@ -582,32 +582,34 @@ const Page = () => {
     const handleResize = () => {
       if (canvasContainerRef.current) {
         const rect = canvasContainerRef.current.getBoundingClientRect();
-        const oldWidth = canvasWidth;
-        const oldHeight = canvasHeight;
         
-        setCanvasWidth(rect.width);
-        setCanvasHeight(rect.height);
-        
-        // Adjust stage position proportionally when viewport size changes
-        // This keeps the canvas content at the same relative position
-        if (oldWidth > 0 && oldHeight > 0) {
-          setStagePosition(pos => ({
-            x: (pos.x / oldWidth) * rect.width,
-            y: (pos.y / oldHeight) * rect.height,
-          }));
-        } else {
-          // Initial setup - center the canvas
-          setStagePosition({
-            x: rect.width / 2,
-            y: rect.height / 2,
+        // Use functional updates to avoid dependency on canvasWidth/canvasHeight
+        setCanvasWidth(oldWidth => {
+          setCanvasHeight(oldHeight => {
+            // Adjust stage position proportionally when viewport size changes
+            // This keeps the canvas content at the same relative position
+            if (oldWidth > 0 && oldHeight > 0 && (oldWidth !== rect.width || oldHeight !== rect.height)) {
+              setStagePosition(pos => ({
+                x: (pos.x / oldWidth) * rect.width,
+                y: (pos.y / oldHeight) * rect.height,
+              }));
+            } else if (oldWidth === 0 || oldHeight === 0) {
+              // Initial setup - center the canvas
+              setStagePosition({
+                x: rect.width / 2,
+                y: rect.height / 2,
+              });
+            }
+            return rect.height;
           });
-        }
+          return rect.width;
+        });
       }
     };
     window.addEventListener("resize", handleResize);
     handleResize();
     return () => window.removeEventListener("resize", handleResize);
-  }, [canvasWidth, canvasHeight]);
+  }, []);
 
   // Apply group transform to actual product data
   const applyGroupTransform = () => {

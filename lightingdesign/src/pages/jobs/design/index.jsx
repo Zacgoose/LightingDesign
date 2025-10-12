@@ -1,6 +1,5 @@
 import { useRouter } from "next/router";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { flushSync } from "react-dom";
 import { Box, Container, Card, CardContent, useTheme, CircularProgress, Typography } from "@mui/material";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { useForm } from "react-hook-form";
@@ -148,16 +147,29 @@ const Page = () => {
       // Set flag to prevent saving back to layer while loading
       isLoadingLayerData.current = true;
       
-      // IMPORTANT: Load canvas settings (stageScale) FIRST before rendering products
-      // Use flushSync to ensure this state update is applied synchronously
-      // This prevents products from rendering with stale zoom level
+      // IMPORTANT: Set all canvas settings FIRST before loading products
+      // This ensures products render with correct values from the start
+      
+      // 1. Load canvas zoom level (stageScale) first
       if (loadedDesign.canvasSettings?.scale !== undefined) {
-        flushSync(() => {
-          setStageScale(loadedDesign.canvasSettings.scale);
-        });
+        setStageScale(loadedDesign.canvasSettings.scale);
       }
       
-      // Load layers if available
+      // 2. Load background and scale factor from first layer (if available)
+      if (loadedDesign.layers && loadedDesign.layers.length > 0) {
+        const firstLayer = loadedDesign.layers[0];
+        if (firstLayer.backgroundImage) {
+          setBackgroundImage(firstLayer.backgroundImage);
+        }
+        if (firstLayer.backgroundImageNaturalSize) {
+          setBackgroundImageNaturalSize(firstLayer.backgroundImageNaturalSize);
+        }
+        if (firstLayer.scaleFactor !== undefined) {
+          setScaleFactor(firstLayer.scaleFactor);
+        }
+      }
+      
+      // 3. Now load layers and products (they will use the settings set above)
       if (loadedDesign.layers && loadedDesign.layers.length > 0) {
         // Enrich products in layers with API data
         const enrichedLayers = loadedDesign.layers.map(layer => ({
@@ -190,26 +202,9 @@ const Page = () => {
             return savedProduct;
           })
         }));
-        loadLayers(enrichedLayers);
         
-        // Load background image and scale factor from the active (first) layer after loading
-        // Use flushSync to ensure these are applied before products render
-        // This prevents grid and visual artifacts from stale values
-        if (enrichedLayers.length > 0 && enrichedLayers[0]) {
-          const firstLayer = enrichedLayers[0];
-          flushSync(() => {
-            if (firstLayer.backgroundImage) {
-              setBackgroundImage(firstLayer.backgroundImage);
-            }
-            if (firstLayer.backgroundImageNaturalSize) {
-              setBackgroundImageNaturalSize(firstLayer.backgroundImageNaturalSize);
-            }
-            if (firstLayer.scaleFactor !== undefined) {
-              // Force update scaleFactor to ensure grid renders correctly
-              setScaleFactor(firstLayer.scaleFactor);
-            }
-          });
-        }
+        // Load the enriched layers (products will render with correct settings)
+        loadLayers(enrichedLayers);
       }
       
       // Load products into history - always set, even if empty

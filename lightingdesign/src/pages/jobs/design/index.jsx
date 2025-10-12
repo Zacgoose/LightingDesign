@@ -237,22 +237,9 @@ const Page = () => {
           setStageScale(loadedDesign.canvasSettings.scale);
         }
         if (loadedDesign.canvasSettings.position !== undefined) {
-          // If saved viewport size is available, scale position proportionally
-          // This ensures the view remains consistent across different screen sizes
-          const savedWidth = loadedDesign.canvasSettings.width;
-          const savedHeight = loadedDesign.canvasSettings.height;
-          const savedPosition = loadedDesign.canvasSettings.position;
-          
-          if (savedWidth && savedHeight && canvasWidth > 0 && canvasHeight > 0) {
-            // Scale position proportionally to current viewport size
-            setStagePosition({
-              x: (savedPosition.x / savedWidth) * canvasWidth,
-              y: (savedPosition.y / savedHeight) * canvasHeight,
-            });
-          } else {
-            // No saved dimensions, use position as-is
-            setStagePosition(savedPosition);
-          }
+          // Restore position as-is without proportional scaling
+          // Canvas coordinates are absolute and shouldn't be scaled
+          setStagePosition(loadedDesign.canvasSettings.position);
         }
       }
       

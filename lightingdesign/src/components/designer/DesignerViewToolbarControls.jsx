@@ -3,8 +3,6 @@ import { Button, Stack, Typography } from "@mui/material";
 const DesignerViewToolbarControls = ({
   showGrid,
   onToggleGrid,
-  showMeasurements,
-  onToggleMeasurements,
   onZoomIn,
   onZoomOut,
   onResetView,
@@ -19,13 +17,6 @@ const DesignerViewToolbarControls = ({
       onClick={onToggleGrid}
     >
       Grid
-    </Button>
-    <Button
-      variant={showMeasurements ? "contained" : "outlined"}
-      size="small"
-      onClick={onToggleMeasurements}
-    >
-      Measurements
     </Button>
     <Button
       variant={showLayers ? "contained" : "outlined"}

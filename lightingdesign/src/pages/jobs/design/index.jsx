@@ -16,7 +16,6 @@ import { MeasurementConfirmation } from "/src/components/designer/MeasurementCon
 import { LayerSwitcher } from "/src/components/designer/LayerSwitcher";
 import { SubLayerControls } from "/src/components/designer/SubLayerControls";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
-import { TextInputDialog } from "/src/components/designer/TextInputDialog";
 import { TextField } from "@mui/material";
 import { useHistory } from "/src/hooks/useHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
@@ -43,7 +42,6 @@ const Page = () => {
 
   // View options
   const [showGrid, setShowGrid] = useState(true);
-  const [showMeasurements, setShowMeasurements] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
   const [selectedTool, setSelectedTool] = useState("select");
   const [rotationSnaps, setRotationSnaps] = useState(8);
@@ -1072,8 +1070,6 @@ const Page = () => {
             viewProps={{
               showGrid: showGrid,
               onToggleGrid: () => setShowGrid(!showGrid),
-              showMeasurements: showMeasurements,
-              onToggleMeasurements: () => setShowMeasurements(!showMeasurements),
               showLayers: showLayers,
               onToggleLayers: () => setShowLayers(!showLayers),
               onZoomIn: handleZoomIn,

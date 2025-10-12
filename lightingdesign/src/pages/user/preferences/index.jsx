@@ -43,7 +43,6 @@ const Page = () => {
     gridSize: { value: "20", label: "20 units" },
     showGrid: true,
     snapToGrid: true,
-    showMeasurements: true,
     exportFormat: { value: "pdf", label: "PDF" },
     exportQuality: { value: "medium", label: "Medium" },
     exportIncludeGrid: false,
@@ -73,7 +72,6 @@ const Page = () => {
       gridSize: formValues.gridSize,
       showGrid: formValues.showGrid,
       snapToGrid: formValues.snapToGrid,
-      showMeasurements: formValues.showMeasurements,
       exportFormat: formValues.exportFormat,
       exportQuality: formValues.exportQuality,
       exportIncludeGrid: formValues.exportIncludeGrid,
@@ -212,16 +210,6 @@ const Page = () => {
                           <CippFormComponent
                             type="switch"
                             name="snapToGrid"
-                            formControl={formcontrol}
-                          />
-                        ),
-                      },
-                      {
-                        label: "Show Measurements on Canvas",
-                        value: (
-                          <CippFormComponent
-                            type="switch"
-                            name="showMeasurements"
                             formControl={formcontrol}
                           />
                         ),

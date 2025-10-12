@@ -8,7 +8,7 @@ import { DesignerCanvas } from "/src/components/designer/DesignerCanvas";
 import { ProductSelectionDrawer } from "/src/components/designer/ProductSelectionDrawer";
 import { ContextMenus } from "/src/components/designer/ContextMenus";
 import { ColorPickerPopover } from "/src/components/designer/ColorPickerPopover";
-import { ProductsLayer } from "/src/components/designer/ProductsLayer";
+import { ProductsLayer, COLOR_PALETTE } from "/src/components/designer/ProductsLayer";
 import { ConnectorsLayer } from "/src/components/designer/ConnectorsLayer";
 import { ProductShape } from "/src/components/designer/ProductShape";
 import { MeasurementLayer } from "/src/components/designer/MeasurementLayer";
@@ -286,6 +286,7 @@ const Page = () => {
       baseScaleX: product.baseScaleX,
       baseScaleY: product.baseScaleY,
       color: product.color,
+      strokeColor: product.strokeColor, // Keep stroke color for consistent appearance
       sku: product.sku, // For fetching from API on load
       name: product.name, // For display when API is unavailable
       quantity: product.quantity,
@@ -991,7 +992,41 @@ const Page = () => {
     pendingInsertPosition.current = null;
   };
 
+  // Helper to determine stroke color for a new product with a given SKU
+  const determineStrokeColorForSku = (sku) => {
+    if (!sku) return null;
+    
+    // Check if we already have products with this SKU
+    const existingProductsWithSku = products.filter(p => p.sku === sku);
+    
+    // If we have existing products with this SKU, check if any have a strokeColor
+    if (existingProductsWithSku.length > 0) {
+      const existingWithColor = existingProductsWithSku.find(p => p.strokeColor);
+      if (existingWithColor) {
+        return existingWithColor.strokeColor;
+      }
+    }
+    
+    // This will be the second product with this SKU (first gets default color)
+    // OR this is a new SKU that needs a color
+    // Calculate the color based on current SKU list
+    const currentSkuList = [...new Set(products.map(p => p.sku).filter(Boolean))];
+    
+    // If this SKU is already in the list, find its index
+    let skuIndex = currentSkuList.indexOf(sku);
+    
+    // If it's not in the list yet, it will be added at the end
+    if (skuIndex === -1) {
+      skuIndex = currentSkuList.length;
+    }
+    
+    return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
+  };
+
   const createProductFromTemplate = (template, x, y) => {
+    // Determine stroke color when product is created
+    const strokeColor = determineStrokeColorForSku(template.sku);
+    
     return {
       id: `product-${Date.now()}-${Math.random()}`,
       x,
@@ -1002,6 +1037,7 @@ const Page = () => {
       baseScaleX: 1,
       baseScaleY: 1,
       color: null,
+      strokeColor: strokeColor, // Store the stroke color
       name: template.name,
       sku: template.sku,
       brand: template.brand,

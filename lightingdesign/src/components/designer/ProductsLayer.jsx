@@ -4,16 +4,28 @@ import productTypesConfig from "/src/data/productTypes.json";
 import { useEffect, useRef, memo } from "react";
 import { logRender } from "/src/utils/performanceLogger";
 
-const COLOR_PALETTE = [
+export const COLOR_PALETTE = [
   '#1976d2', '#d32f2f', '#388e3c', '#f57c00', '#7b1fa2',
   '#0097a7', '#c2185b', '#5d4037', '#455a64', '#00796b',
 ];
 
 const getProductStrokeColor = (product, products, defaultColor) => {
+  // If product already has a strokeColor assigned, use it
+  if (product.strokeColor) {
+    return product.strokeColor;
+  }
+  
   const sku = product.sku;
   if (!sku) return defaultColor;
   const skuProducts = products.filter(p => p.sku === sku);
   if (skuProducts.length <= 1) return defaultColor;
+  
+  // Use stored strokeColor if available
+  const existingProduct = skuProducts.find(p => p.strokeColor);
+  if (existingProduct) {
+    return existingProduct.strokeColor;
+  }
+  
   const skuList = [...new Set(products.map(p => p.sku).filter(Boolean))];
   const skuIndex = skuList.indexOf(sku);
   return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];

@@ -231,6 +231,16 @@ const Page = () => {
         setConnectors(loadedDesign.connectors);
       }
       
+      // Load canvas settings (scale and position) if available
+      if (loadedDesign.canvasSettings) {
+        if (loadedDesign.canvasSettings.scale !== undefined) {
+          setStageScale(loadedDesign.canvasSettings.scale);
+        }
+        if (loadedDesign.canvasSettings.position !== undefined) {
+          setStagePosition(loadedDesign.canvasSettings.position);
+        }
+      }
+      
       setLastSaved(designData.data.lastModified);
       setHasUnsavedChanges(false);
       
@@ -557,18 +567,32 @@ const Page = () => {
     const handleResize = () => {
       if (canvasContainerRef.current) {
         const rect = canvasContainerRef.current.getBoundingClientRect();
+        const oldWidth = canvasWidth;
+        const oldHeight = canvasHeight;
+        
         setCanvasWidth(rect.width);
         setCanvasHeight(rect.height);
-        setStagePosition({
-          x: rect.width / 2,
-          y: rect.height / 2,
-        });
+        
+        // Adjust stage position proportionally when viewport size changes
+        // This keeps the canvas content at the same relative position
+        if (oldWidth > 0 && oldHeight > 0) {
+          setStagePosition(pos => ({
+            x: (pos.x / oldWidth) * rect.width,
+            y: (pos.y / oldHeight) * rect.height,
+          }));
+        } else {
+          // Initial setup - center the canvas
+          setStagePosition({
+            x: rect.width / 2,
+            y: rect.height / 2,
+          });
+        }
       }
     };
     window.addEventListener("resize", handleResize);
     handleResize();
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [canvasWidth, canvasHeight]);
 
   // Apply group transform to actual product data
   const applyGroupTransform = () => {
@@ -1288,6 +1312,8 @@ const Page = () => {
   
   const handleResetView = () => {
     setStageScale(1);
+    // Center the canvas origin (0,0) at the viewport center
+    // Since canvas uses centered coordinate system, stage position should be at viewport center
     setStagePosition({ 
       x: canvasWidth / 2, 
       y: canvasHeight / 2 

@@ -43,7 +43,7 @@ const Page = () => {
     url: "/api/ExecGetDesign",
     data: { jobId: id },
     queryKey: `Design-${id}`,
-    enabled: !!id,
+    waiting: !!id,
   });
 
   // Save design mutation

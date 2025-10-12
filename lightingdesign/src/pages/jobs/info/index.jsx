@@ -7,7 +7,7 @@ import { JobForm } from "/src/components/designer/JobForm";
 import { ApiGetCall } from "/src/api/ApiCall";
 import { useEffect } from "react";
 import { Button } from "@mui/material";
-import { Design } from "@mui/icons-material";
+import { DesignServices } from "@mui/icons-material";
 import Link from "next/link";
 
 const Page = () => {
@@ -82,7 +82,7 @@ const Page = () => {
             component={Link}
             href={`/jobs/design?id=${id}`}
             variant="outlined"
-            startIcon={<Design />}
+            startIcon={<DesignServices />}
             disabled={!id}
           >
             Open Design

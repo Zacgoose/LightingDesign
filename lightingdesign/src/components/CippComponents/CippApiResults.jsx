@@ -126,6 +126,8 @@ export const CippApiResults = (props) => {
     errorsOnly = false,
     alertSx = {},
     floating = false,
+    floatingTop = 106,
+    floatingRight = 24,
     autoCloseSeconds = null,
     hideResultsButtons = false,
   } = props;
@@ -249,8 +251,8 @@ export const CippApiResults = (props) => {
   const containerSx = floating
     ? {
         position: "fixed",
-        top: 16,
-        right: 16,
+        top: floatingTop,
+        right: floatingRight,
         maxWidth: 500,
         zIndex: (theme) => theme.zIndex.snackbar,
         pointerEvents: "auto",

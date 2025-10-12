@@ -29,23 +29,27 @@ function Invoke-ExecGetJob {
         } else { $Row.JobData }
         
         $ReturnedJob = [PSCustomObject]@{
-            jobId          = $Row.RowKey
-            jobNumber      = $Row.JobNumber
-            customerName   = if ($Row.CustomerId) { @{ value = $Row.CustomerId; label = $Row.CustomerName } } else { $null }
-            status         = if ($Row.Status) { @{ value = $Row.Status; label = (Get-Culture).TextInfo.ToTitleCase($Row.Status -replace '_', ' ') } } else { $null }
-            description    = $Row.Description
-            address        = $Row.Address
-            city           = $Row.City
-            state          = $Row.State
-            postalCode     = $Row.PostalCode
-            contactName    = $Row.ContactName
-            contactPhone   = $Row.ContactPhone
-            contactEmail   = $Row.ContactEmail
-            estimatedValue = $Row.EstimatedValue
-            notes          = $Row.Notes
-            createdDate    = $Row.Timestamp
-            user           = $Row.Username
-            jobData        = $JobData
+            jobId            = $Row.RowKey
+            jobNumber        = $Row.JobNumber
+            customerName     = if ($Row.CustomerId) { @{ value = $Row.CustomerId; label = $Row.CustomerName } } else { $null }
+            status           = if ($Row.Status) { @{ value = $Row.Status; label = (Get-Culture).TextInfo.ToTitleCase($Row.Status -replace '_', ' ') } } else { $null }
+            description      = $Row.Description
+            address          = $Row.Address
+            city             = $Row.City
+            state            = $Row.State
+            postalCode       = $Row.PostalCode
+            contactName      = $Row.ContactName
+            contactPhone     = $Row.ContactPhone
+            contactEmail     = $Row.ContactEmail
+            estimatedValue   = $Row.EstimatedValue
+            notes            = $Row.Notes
+            relatedTrades    = if ($Row.RelatedTrades) { $Row.RelatedTrades | ConvertFrom-Json } else { @() }
+            builders         = if ($Row.Builders) { $Row.Builders | ConvertFrom-Json } else { @() }
+            assignedDesigner = if ($Row.AssignedDesigner) { $Row.AssignedDesigner | ConvertFrom-Json } else { $null }
+            pricingMatrix    = if ($Row.PricingMatrix) { $Row.PricingMatrix | ConvertFrom-Json } else { $null }
+            createdDate      = $Row.Timestamp
+            user             = $Row.Username
+            jobData          = $JobData
         }
     } else {
         return [HttpResponseContext]@{

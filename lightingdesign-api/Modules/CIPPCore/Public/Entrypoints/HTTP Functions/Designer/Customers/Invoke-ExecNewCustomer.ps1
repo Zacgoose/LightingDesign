@@ -19,19 +19,25 @@ function Invoke-ExecNewCustomer {
     $PostalCode        = $Request.Body.postalCode
     $State             = $Request.Body.state
     $Status            = $Request.Body.status
+    $CustomerType      = $Request.Body.customerType
+    $RelatedBuilders   = $Request.Body.relatedBuilders
+    $TradeAssociations = $Request.Body.tradeAssociations
 
     $Entity = [PSCustomObject]@{
-        PartitionKey  = 'Customer'
-        RowKey        = [guid]::NewGuid().ToString()
-        CustomerName  = $CustomerName
-        Address       = $Address
-        City          = $City
-        Email         = $Email
-        Notes         = $Notes
-        Phone         = $Phone
-        PostalCode    = $PostalCode
-        State         = $State
-        Status        = $Status
+        PartitionKey      = 'Customer'
+        RowKey            = [guid]::NewGuid().ToString()
+        CustomerName      = $CustomerName
+        Address           = $Address
+        City              = $City
+        Email             = $Email
+        Notes             = $Notes
+        Phone             = $Phone
+        PostalCode        = $PostalCode
+        State             = $State
+        Status            = $Status
+        CustomerType      = $CustomerType
+        RelatedBuilders   = if ($RelatedBuilders) { ($RelatedBuilders | ConvertTo-Json -Compress) } else { $null }
+        TradeAssociations = if ($TradeAssociations) { ($TradeAssociations | ConvertTo-Json -Compress) } else { $null }
     }
 
     Add-AzDataTableEntity @Table -Entity $Entity -Force

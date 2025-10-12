@@ -9,6 +9,40 @@ export const CustomerForm = ({ formControl, mode = "new" }) => {
     { value: "inactive", label: "Inactive" },
   ];
 
+  // Customer type options
+  const customerTypeOptions = [
+    { value: "residential", label: "Residential" },
+    { value: "commercial", label: "Commercial" },
+    { value: "builder", label: "Builder" },
+    { value: "trade", label: "Trade" },
+  ];
+
+  // Fetch customers for builder selection (excluding current customer)
+  const customers = ApiGetCall({
+    url: "/api/ListCustomers",
+    queryKey: "Customers",
+  });
+
+  const builderOptions = Array.isArray(customers.data)
+    ? customers.data
+        .filter((c) => c.customerType === "builder" || !c.customerType)
+        .map((customer) => ({
+          value: customer.id,
+          label: customer.customerName,
+        }))
+    : [];
+
+  // Trade options (for now, hardcoded - can be moved to API later)
+  const tradeOptions = [
+    { value: "electrical", label: "Electrical" },
+    { value: "plumbing", label: "Plumbing" },
+    { value: "hvac", label: "HVAC" },
+    { value: "carpentry", label: "Carpentry" },
+    { value: "painting", label: "Painting" },
+    { value: "flooring", label: "Flooring" },
+    { value: "landscaping", label: "Landscaping" },
+  ];
+
   return (
     <Grid container spacing={2}>
       {/* Customer Information Section */}
@@ -59,6 +93,38 @@ export const CustomerForm = ({ formControl, mode = "new" }) => {
           label="Phone"
           name="phone"
           formControl={formControl}
+        />
+      </Grid>
+
+      <Grid size={{ md: 6, xs: 12 }}>
+        <CippFormComponent
+          type="autoComplete"
+          label="Customer Type"
+          name="customerType"
+          formControl={formControl}
+          options={customerTypeOptions}
+        />
+      </Grid>
+
+      <Grid size={{ md: 6, xs: 12 }}>
+        <CippFormComponent
+          type="autoComplete"
+          label="Related Builders"
+          name="relatedBuilders"
+          formControl={formControl}
+          options={builderOptions}
+          multiple
+        />
+      </Grid>
+
+      <Grid size={12}>
+        <CippFormComponent
+          type="autoComplete"
+          label="Trade Associations"
+          name="tradeAssociations"
+          formControl={formControl}
+          options={tradeOptions}
+          multiple
         />
       </Grid>
 

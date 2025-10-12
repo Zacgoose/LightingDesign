@@ -6,6 +6,9 @@ import CippFormPage from "/src/components/CippFormPages/CippFormPage";
 import { JobForm } from "/src/components/designer/JobForm";
 import { ApiGetCall } from "/src/api/ApiCall";
 import { useEffect } from "react";
+import { Button } from "@mui/material";
+import { Design } from "@mui/icons-material";
+import Link from "next/link";
 
 const Page = () => {
   const router = useRouter();
@@ -13,7 +16,7 @@ const Page = () => {
 
   // Fetch job details
   const jobDetails = ApiGetCall({
-    url: "/api/GetJob",
+    url: "/api/ExecGetJob",
     data: { jobId: id },
     queryKey: `Job-${id}`,
     enabled: !!id,
@@ -74,6 +77,17 @@ const Page = () => {
             notes: values.notes,
           };
         }}
+        addedButtons={
+          <Button
+            component={Link}
+            href={`/jobs/design?id=${id}`}
+            variant="outlined"
+            startIcon={<Design />}
+            disabled={!id}
+          >
+            Open Design
+          </Button>
+        }
       >
         <JobForm formControl={formControl} mode="edit" />
       </CippFormPage>

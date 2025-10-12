@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Box, Container, Card, CardContent, useTheme } from "@mui/material";
+import { Box, Container, Card, CardContent, useTheme, CircularProgress, Typography } from "@mui/material";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { useForm } from "react-hook-form";
 import { DesignerToolbarRow } from "/src/components/designer/DesignerToolbarRow";
@@ -21,6 +21,9 @@ import { useHistory } from "/src/hooks/useHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
 import { useLayerManager } from "/src/hooks/useLayerManager";
 import productTypesConfig from "/src/data/productTypes.json";
+import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
+import { useDispatch } from "react-redux";
+import { showToast } from "/src/store/toasts";
 
 const Page = () => {
   // Middle mouse pan handler
@@ -30,6 +33,25 @@ const Page = () => {
   const router = useRouter();
   const { id } = router.query;
   const theme = useTheme();
+  const dispatch = useDispatch();
+
+  // State for tracking save status
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Load design data
+  const designData = ApiGetCall({
+    url: "/api/ExecGetDesign",
+    data: { jobId: id },
+    queryKey: `Design-${id}`,
+    enabled: !!id,
+  });
+
+  // Save design mutation
+  const saveDesignMutation = ApiPostCall({
+    relatedQueryKeys: [`Design-${id}`],
+  });
 
   // Canvas state
   const [stageScale, setStageScale] = useState(1);
@@ -95,6 +117,52 @@ const Page = () => {
       updateActiveLayer({ connectors });
     }
   }, [connectors, updateActiveLayer]);
+
+  // Load design data when available
+  useEffect(() => {
+    if (designData.isSuccess && designData.data?.designData) {
+      const loadedDesign = designData.data.designData;
+      
+      // Load products into history
+      if (loadedDesign.products && loadedDesign.products.length > 0) {
+        updateHistory(loadedDesign.products);
+      }
+      
+      // Load connectors
+      if (loadedDesign.connectors && loadedDesign.connectors.length > 0) {
+        setConnectors(loadedDesign.connectors);
+      }
+      
+      // Load layers if available
+      if (loadedDesign.layers && loadedDesign.layers.length > 0) {
+        // TODO: Implement layer loading when layer manager supports it
+      }
+      
+      setLastSaved(designData.data.lastModified);
+      setHasUnsavedChanges(false);
+    }
+  }, [designData.isSuccess, designData.data]);
+
+  // Track changes to mark as unsaved
+  useEffect(() => {
+    if (products.length > 0 || connectors.length > 0) {
+      setHasUnsavedChanges(true);
+    }
+  }, [products, connectors]);
+
+  // Auto-save functionality (every 2 minutes if there are unsaved changes)
+  useEffect(() => {
+    if (!id || !hasUnsavedChanges || isSaving) return;
+
+    const autoSaveInterval = setInterval(() => {
+      if (hasUnsavedChanges && !isSaving) {
+        console.log("Auto-saving design...");
+        handleSave();
+      }
+    }, 120000); // Auto-save every 2 minutes
+
+    return () => clearInterval(autoSaveInterval);
+  }, [id, hasUnsavedChanges, isSaving, handleSave]);
 
   // Form hooks
   const scaleForm = useForm({
@@ -1039,9 +1107,52 @@ const Page = () => {
   // Disconnect cable handler for connect mode
   const handleDisconnectCable = () => setConnectSequence([]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!id) {
+      dispatch(showToast({ 
+        message: "No job ID found. Cannot save design.", 
+        title: "Save Error" 
+      }));
+      return;
+    }
+
     applyGroupTransform();
-    console.log("Save project", { products, connectors });
+    setIsSaving(true);
+
+    try {
+      await saveDesignMutation.mutateAsync({
+        url: "/api/ExecSaveDesign",
+        data: {
+          jobId: id,
+          designData: {
+            products,
+            connectors,
+            layers,
+            canvasSettings: {
+              width: canvasWidth,
+              height: canvasHeight,
+              scale: stageScale,
+              position: stagePosition,
+            }
+          }
+        }
+      });
+
+      setLastSaved(new Date().toISOString());
+      setHasUnsavedChanges(false);
+      
+      dispatch(showToast({ 
+        message: "Design saved successfully", 
+        title: "Success" 
+      }));
+    } catch (error) {
+      dispatch(showToast({ 
+        message: `Failed to save design: ${error.message}`, 
+        title: "Save Error" 
+      }));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleExport = () => {
@@ -1051,8 +1162,27 @@ const Page = () => {
 
   return (
     <>
-      <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 80px)", minHeight: 0 }}>
-        <Container maxWidth={false} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+      {/* Loading indicator */}
+      {designData.isLoading && (
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "center", 
+          alignItems: "center", 
+          height: "calc(100vh - 80px)" 
+        }}>
+          <Box sx={{ textAlign: "center" }}>
+            <CircularProgress />
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              Loading design...
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
+      {/* Main design interface */}
+      {!designData.isLoading && (
+        <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 80px)", minHeight: 0 }}>
+          <Container maxWidth={false} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
 
           <div style={{ height: 4 }} />
 
@@ -1264,6 +1394,7 @@ const Page = () => {
           </Card>
         </Container>
       </Box>
+      )}
 
       <ContextMenus
         contextMenu={contextMenu}

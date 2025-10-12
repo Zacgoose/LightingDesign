@@ -11,14 +11,14 @@ const Page = () => {
   const actions = [
     {
       label: "View Job Details",
-      link: "/jobs/info?id=[id]",
+      link: "/jobs/info?id=[RowKey]",
       icon: <Visibility />,
       color: "primary",
       target: "_self",
     },
     {
       label: "Edit Job",
-      link: "/jobs/info?id=[id]",
+      link: "/jobs/info?id=[RowKey]",
       icon: <Edit />,
       color: "success",
       target: "_self",
@@ -26,9 +26,9 @@ const Page = () => {
     {
       label: "Delete Job",
       type: "POST",
-      url: "/api/DeleteJob",
+      url: "/api/ExecDeleteJob",
       data: {
-        jobId: "id",
+        jobId: "RowKey",
       },
       confirmText: "Are you sure you want to delete this job? This action cannot be undone.",
       icon: <Delete />,
@@ -88,7 +88,7 @@ const Page = () => {
   return (
     <CippTablePage
       title={pageTitle}
-      apiUrl="/api/ListJobs"
+      apiUrl="/api/ListJobs?ListJobs=true"
       actions={actions}
       offCanvas={offCanvas}
       simpleColumns={simpleColumns}

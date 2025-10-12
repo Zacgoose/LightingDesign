@@ -59,7 +59,10 @@ export const useLayerManager = (initialLayers = null) => {
       const newLayer = createEmptyLayer(newId, name || `Floor ${prev.length + 1}`);
       return [...prev, newLayer];
     });
-    setActiveLayerId(newId);
+    // Use setTimeout to ensure setLayers has completed before switching to the new layer
+    setTimeout(() => {
+      setActiveLayerId(newId);
+    }, 0);
   }, []);
 
   // Delete a layer

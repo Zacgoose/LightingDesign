@@ -121,7 +121,14 @@ const extractAllResults = (data) => {
 };
 
 export const CippApiResults = (props) => {
-  const { apiObject, errorsOnly = false, alertSx = {} } = props;
+  const {
+    apiObject,
+    errorsOnly = false,
+    alertSx = {},
+    floating = false,
+    autoCloseSeconds = null,
+    hideResultsButtons = false,
+  } = props;
 
   const [errorVisible, setErrorVisible] = useState(false);
   const [fetchingVisible, setFetchingVisible] = useState(false);
@@ -224,8 +231,34 @@ export const CippApiResults = (props) => {
   }, [finalResults, apiObject]);
 
   const hasVisibleResults = finalResults.some((r) => r.visible);
+
+  // Auto-close functionality
+  useEffect(() => {
+    if (autoCloseSeconds && finalResults.length > 0 && hasVisibleResults) {
+      const timer = setTimeout(() => {
+        setFinalResults((prev) => prev.map((r) => ({ ...r, visible: false })));
+        setFetchingVisible(false);
+        setErrorVisible(false);
+      }, autoCloseSeconds * 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [autoCloseSeconds, finalResults.length, hasVisibleResults]);
+
+  // Floating container styles
+  const containerSx = floating
+    ? {
+        position: "fixed",
+        top: 16,
+        right: 16,
+        maxWidth: 500,
+        zIndex: (theme) => theme.zIndex.snackbar,
+        pointerEvents: "auto",
+      }
+    : {};
+
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2} sx={containerSx}>
       {/* Loading alert */}
       {!errorsOnly && (
         <Collapse in={fetchingVisible} unmountOnExit>
@@ -389,7 +422,8 @@ export const CippApiResults = (props) => {
           ))}
         </>
       )}
-      {(apiObject.isSuccess || apiObject.isError) &&
+      {!hideResultsButtons &&
+      (apiObject.isSuccess || apiObject.isError) &&
       finalResults?.length > 0 &&
       hasVisibleResults ? (
         <Box display="flex" flexDirection="row">

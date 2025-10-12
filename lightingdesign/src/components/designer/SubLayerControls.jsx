@@ -28,7 +28,7 @@ import { ConfirmDialog } from '/src/components/designer/ConfirmDialog';
 /**
  * SubLayerControls - UI component for showing/hiding sublayers within a floor
  */
-export const SubLayerControls = ({
+export const SubLayerControls = React.forwardRef(({
   sublayers = [],
   layerId,
   defaultSublayerId,
@@ -38,7 +38,7 @@ export const SubLayerControls = ({
   onSublayerRename,
   onSetDefaultSublayer,
   onClose,
-}) => {
+}, ref) => {
   const [contextMenu, setContextMenu] = useState(null);
   const [editingSublayerId, setEditingSublayerId] = useState(null);
   const [editingName, setEditingName] = useState('');
@@ -107,6 +107,7 @@ export const SubLayerControls = ({
   return (
     <>
       <Paper
+        ref={ref}
         elevation={2}
         sx={{
           position: 'absolute',
@@ -250,6 +251,8 @@ export const SubLayerControls = ({
       />
     </>
   );
-};
+});
+
+SubLayerControls.displayName = 'SubLayerControls';
 
 export default SubLayerControls;

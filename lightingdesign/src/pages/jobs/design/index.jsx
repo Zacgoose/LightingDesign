@@ -177,6 +177,7 @@ const Page = () => {
   const selectionGroupRef = useRef();
   const pendingInsertPosition = useRef(null);
   const canvasContainerRef = useRef();
+  const subLayerControlsRef = useRef();
 
   // Background and Scale - now derived from active layer
   const [backgroundImage, setBackgroundImage] = useState(activeLayer?.backgroundImage || null);
@@ -1246,8 +1247,10 @@ const Page = () => {
                       onLayerAdd={addLayer}
                       onLayerDelete={deleteLayer}
                       onClose={() => setShowLayers(false)}
+                      subLayerControlsRef={subLayerControlsRef}
                     />
                     <SubLayerControls
+                      ref={subLayerControlsRef}
                       sublayers={activeLayer?.sublayers || []}
                       layerId={activeLayerId}
                       defaultSublayerId={activeLayer?.defaultSublayerId}

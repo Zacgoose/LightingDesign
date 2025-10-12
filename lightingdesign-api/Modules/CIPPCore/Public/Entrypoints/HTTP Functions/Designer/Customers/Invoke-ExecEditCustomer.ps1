@@ -31,7 +31,7 @@ function Invoke-ExecEditCustomer {
     }
 
     # Update customer fields
-    $Entity = [PSCustomObject]@{
+    $Entity = @{
         PartitionKey      = $ExistingCustomer.PartitionKey
         RowKey            = $ExistingCustomer.RowKey
         CustomerName      = if ($Request.Body.customerName) { $Request.Body.customerName } else { $ExistingCustomer.CustomerName }
@@ -48,7 +48,7 @@ function Invoke-ExecEditCustomer {
         TradeAssociations = if ($Request.Body.tradeAssociations) { ($Request.Body.tradeAssociations | ConvertTo-Json -Compress) } else { $ExistingCustomer.TradeAssociations }
     }
 
-    Add-AzDataTableEntity @Table -Entity $Entity -Force
+    Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $Entity -Force
 
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::OK

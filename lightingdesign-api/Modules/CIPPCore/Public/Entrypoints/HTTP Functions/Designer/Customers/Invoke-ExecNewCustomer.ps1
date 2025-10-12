@@ -23,7 +23,7 @@ function Invoke-ExecNewCustomer {
     $RelatedBuilders   = $Request.Body.relatedBuilders
     $TradeAssociations = $Request.Body.tradeAssociations
 
-    $Entity = [PSCustomObject]@{
+    $Entity = @{
         PartitionKey      = 'Customer'
         RowKey            = [guid]::NewGuid().ToString()
         CustomerName      = $CustomerName
@@ -40,7 +40,7 @@ function Invoke-ExecNewCustomer {
         TradeAssociations = if ($TradeAssociations) { ($TradeAssociations | ConvertTo-Json -Compress) } else { $null }
     }
 
-    Add-AzDataTableEntity @Table -Entity $Entity -Force
+    Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $Entity -Force
 
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::Created

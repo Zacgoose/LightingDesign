@@ -125,14 +125,44 @@ export const useDesignLoader = ({
 
         // 2. Load layers with enriched products (NEW FORMAT - prioritize this)
         if (loadedDesign.layers && loadedDesign.layers.length > 0) {
-          const enrichedLayers = loadedDesign.layers.map((layer) => ({
-            ...layer,
-            products: (layer.products || []).map((savedProduct) =>
-              enrichProduct(savedProduct, productsData.data),
-            ),
-            // Ensure connectors are included
-            connectors: layer.connectors || [],
-          }));
+          // Check if layers have products or if we need to migrate from root
+          const layersHaveProducts = loadedDesign.layers.some(
+            (l) => l.products && l.products.length > 0,
+          );
+
+          let enrichedLayers;
+          if (!layersHaveProducts && loadedDesign.products && loadedDesign.products.length > 0) {
+            // MIGRATION: Products are at root with sublayerId references
+            // Distribute them into their respective layers
+            console.log("Migrating products from root level to layers...");
+
+            enrichedLayers = loadedDesign.layers.map((layer) => {
+              // Find products that belong to this layer's sublayers
+              const sublayerIds = (layer.sublayers || []).map((s) => s.id);
+              const layerProducts = (loadedDesign.products || []).filter((p) =>
+                sublayerIds.includes(p.sublayerId),
+              );
+
+              return {
+                ...layer,
+                products: layerProducts.map((savedProduct) =>
+                  enrichProduct(savedProduct, productsData.data),
+                ),
+                // Migrate connectors too if they exist at root
+                connectors: loadedDesign.connectors || layer.connectors || [],
+              };
+            });
+          } else {
+            // Products are already in layers (new format)
+            enrichedLayers = loadedDesign.layers.map((layer) => ({
+              ...layer,
+              products: (layer.products || []).map((savedProduct) =>
+                enrichProduct(savedProduct, productsData.data),
+              ),
+              // Ensure connectors are included
+              connectors: layer.connectors || [],
+            }));
+          }
 
           // Load all layers at once
           loadLayers(enrichedLayers);
@@ -141,7 +171,7 @@ export const useDesignLoader = ({
           // (they may exist from old saves but shouldn't override layer data)
         } else {
           // 3. LEGACY FALLBACK: Load root-level products/connectors only if no layers exist
-          // This provides backward compatibility with old saved designs
+          // This provides backward compatibility with very old saved designs
           if (loadedDesign.products !== undefined) {
             const enrichedProducts = loadedDesign.products.map((savedProduct) =>
               enrichProduct(savedProduct, productsData.data),

@@ -277,16 +277,16 @@ const Page = () => {
     if (transformed) updateHistory(transformed);
     setIsSaving(true);
 
-    const strippedProducts = products.map(stripProductMetadata);
+    // Strip metadata from all layers (products and connectors are already in layers)
     const strippedLayers = stripLayersForSave(layers);
 
+    // Use new format: only save layers (not root products/connectors)
+    // Products and connectors are stored within their respective layers
     saveDesignMutation.mutate({
       url: "/api/ExecSaveDesign",
       data: {
         jobId: id,
         designData: {
-          products: strippedProducts,
-          connectors,
           layers: strippedLayers,
           canvasSettings: {
             width: canvasWidth,
@@ -299,8 +299,6 @@ const Page = () => {
     });
   }, [
     id,
-    products,
-    connectors,
     layers,
     canvasWidth,
     canvasHeight,
@@ -308,7 +306,6 @@ const Page = () => {
     stagePosition,
     applyGroupTransform,
     updateHistory,
-    stripProductMetadata,
     stripLayersForSave,
     saveDesignMutation,
   ]);

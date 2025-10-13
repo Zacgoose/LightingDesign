@@ -48,12 +48,14 @@ export const useDesignLoader = ({
     };
   }, []);
 
-  // Helper function to strip background images and unnecessary data from layers
+  // Helper function to strip unnecessary metadata from layers before saving
   const stripLayersForSave = useCallback(
     (layersToSave) => {
       return layersToSave.map((layer) => ({
         ...layer,
         products: layer.products.map(stripProductMetadata),
+        // Connectors are already in the correct format, just ensure they're included
+        connectors: layer.connectors || [],
       }));
     },
     [stripProductMetadata],
@@ -121,33 +123,38 @@ export const useDesignLoader = ({
           setStageScale(loadedDesign.canvasSettings.scale);
         }
 
-        // 2. Load layers with enriched products (if present)
+        // 2. Load layers with enriched products (NEW FORMAT - prioritize this)
         if (loadedDesign.layers && loadedDesign.layers.length > 0) {
           const enrichedLayers = loadedDesign.layers.map((layer) => ({
             ...layer,
-            products: layer.products.map((savedProduct) =>
+            products: (layer.products || []).map((savedProduct) =>
               enrichProduct(savedProduct, productsData.data),
             ),
+            // Ensure connectors are included
+            connectors: layer.connectors || [],
           }));
 
           // Load all layers at once
           loadLayers(enrichedLayers);
+
+          // If layers exist, skip loading root-level products/connectors
+          // (they may exist from old saves but shouldn't override layer data)
+        } else {
+          // 3. LEGACY FALLBACK: Load root-level products/connectors only if no layers exist
+          // This provides backward compatibility with old saved designs
+          if (loadedDesign.products !== undefined) {
+            const enrichedProducts = loadedDesign.products.map((savedProduct) =>
+              enrichProduct(savedProduct, productsData.data),
+            );
+            updateHistory(enrichedProducts);
+          }
+
+          if (loadedDesign.connectors !== undefined) {
+            setConnectors(loadedDesign.connectors);
+          }
         }
 
-        // 3. Load root-level products (legacy support)
-        if (loadedDesign.products !== undefined) {
-          const enrichedProducts = loadedDesign.products.map((savedProduct) =>
-            enrichProduct(savedProduct, productsData.data),
-          );
-          updateHistory(enrichedProducts);
-        }
-
-        // 4. Load connectors
-        if (loadedDesign.connectors !== undefined) {
-          setConnectors(loadedDesign.connectors);
-        }
-
-        // 5. Update metadata
+        // 4. Update metadata
         setLastSaved(designData.data.lastModified);
         setHasUnsavedChanges(false);
 

@@ -9,9 +9,9 @@ function Invoke-ExecEditJob {
     param($Request, $TriggerMetadata)
 
     $Table = Get-CIPPTable -TableName 'Jobs'
-    
+
     $JobId = $Request.Body.jobId
-    
+
     if (-not $JobId) {
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::BadRequest
@@ -21,8 +21,8 @@ function Invoke-ExecEditJob {
 
     # Get existing job
     $Filter = "RowKey eq '{0}'" -f $JobId
-    $ExistingJob = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
-    
+    $ExistingJob = Get-CIPPAzDataTableEntity @Table -Filter $Filter
+
     if (-not $ExistingJob) {
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::NotFound
@@ -55,7 +55,7 @@ function Invoke-ExecEditJob {
         JobData          = $ExistingJob.JobData
     }
 
-    Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $Entity -Force
+    Add-CIPPAzDataTableEntity @Table -Entity $Entity -Force
 
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::OK

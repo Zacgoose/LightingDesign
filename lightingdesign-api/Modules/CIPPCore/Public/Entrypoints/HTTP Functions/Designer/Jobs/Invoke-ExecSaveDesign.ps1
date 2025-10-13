@@ -23,7 +23,7 @@ function Invoke-ExecSaveDesign {
     try {
         # Check if design already exists for this job
         $Filter = "JobId eq '{0}'" -f $JobId
-        $ExistingDesign = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
+        $ExistingDesign = Get-CIPPAzDataTableEntity @Table -Filter $Filter
 
         # Convert design data to JSON
         $DesignDataJson = if ($DesignData) {
@@ -54,7 +54,7 @@ function Invoke-ExecSaveDesign {
             }
         }
 
-        Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $Entity -Force
+        Add-CIPPAzDataTableEntity @Table -Entity $Entity -Force
 
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::OK

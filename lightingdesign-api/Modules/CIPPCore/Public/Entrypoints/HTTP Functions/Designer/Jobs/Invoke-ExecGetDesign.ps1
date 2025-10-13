@@ -23,7 +23,7 @@ function Invoke-ExecGetDesign {
         # Lookup design by JobId
         # Note: Get-CIPPAzDataTableEntity handles chunked properties automatically by reassembling them
         $Filter = "JobId eq '{0}'" -f $JobId
-        $Row = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
+        $Row = Get-CIPPAzDataTableEntity @Table -Filter $Filter
 
         if ($Row) {
             # Parse the JSON

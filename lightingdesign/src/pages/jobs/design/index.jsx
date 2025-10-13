@@ -113,6 +113,11 @@ const Page = () => {
   
   // Ref to track the last loaded layer ID to detect layer switches
   const lastLoadedLayerId = useRef(activeLayerId);
+  
+  // Ref to track the last synced values to prevent unnecessary updates
+  const lastSyncedBackgroundImage = useRef(null);
+  const lastSyncedBackgroundImageNaturalSize = useRef(null);
+  const lastSyncedScaleFactor = useRef(null);
 
   // Keep products in sync with active layer (save to layer when products change)
   useEffect(() => {
@@ -123,6 +128,12 @@ const Page = () => {
   }, [products, activeLayerId, updateLayer]);
 
   const [connectors, setConnectors] = useState(activeLayer?.connectors || []);
+  
+  // Background and Scale - now derived from active layer
+  // These must be defined before the sync effects below
+  const [backgroundImage, setBackgroundImage] = useState(activeLayer?.backgroundImage || null);
+  const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(activeLayer?.backgroundImageNaturalSize || null);
+  const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100); // 100px per meter
 
   // Keep connectors in sync with active layer (save to layer when connectors change)
   useEffect(() => {
@@ -131,6 +142,33 @@ const Page = () => {
     
     updateLayer(activeLayerId, { connectors });
   }, [connectors, activeLayerId, updateLayer]);
+
+  // Keep background image in sync with active layer
+  useEffect(() => {
+    // Don't save back to layer if we're in the middle of loading from layer
+    if (isLoadingLayerData.current) return;
+    
+    // Only sync if the values have actually changed from what we last synced
+    // This prevents redundant updates and race conditions during layer switching
+    if (backgroundImage !== lastSyncedBackgroundImage.current || 
+        backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current) {
+      updateLayer(activeLayerId, { backgroundImage, backgroundImageNaturalSize });
+      lastSyncedBackgroundImage.current = backgroundImage;
+      lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
+    }
+  }, [backgroundImage, backgroundImageNaturalSize, activeLayerId, updateLayer]);
+
+  // Keep scale factor in sync with active layer
+  useEffect(() => {
+    // Don't save back to layer if we're in the middle of loading from layer
+    if (isLoadingLayerData.current) return;
+    
+    // Only sync if the value has actually changed from what we last synced
+    if (scaleFactor !== lastSyncedScaleFactor.current) {
+      updateLayer(activeLayerId, { scaleFactor });
+      lastSyncedScaleFactor.current = scaleFactor;
+    }
+  }, [scaleFactor, activeLayerId, updateLayer]);
 
   // Load design data when available
   useEffect(() => {
@@ -157,21 +195,7 @@ const Page = () => {
         setStageScale(loadedDesign.canvasSettings.scale);
       }
       
-      // 2. Load background and scale factor from first layer (if available)
-      if (loadedDesign.layers && loadedDesign.layers.length > 0) {
-        const firstLayer = loadedDesign.layers[0];
-        if (firstLayer.backgroundImage) {
-          setBackgroundImage(firstLayer.backgroundImage);
-        }
-        if (firstLayer.backgroundImageNaturalSize) {
-          setBackgroundImageNaturalSize(firstLayer.backgroundImageNaturalSize);
-        }
-        if (firstLayer.scaleFactor !== undefined) {
-          setScaleFactor(firstLayer.scaleFactor);
-        }
-      }
-      
-      // 3. Now load layers and products (they will use the settings set above)
+      // 2. Now load layers and products (background images are per-layer, loaded via layer switching)
       if (loadedDesign.layers && loadedDesign.layers.length > 0) {
         // Enrich products in layers with API data
         const enrichedLayers = loadedDesign.layers.map(layer => ({
@@ -205,8 +229,13 @@ const Page = () => {
           })
         }));
         
-        // Load the enriched layers (products will render with correct settings)
+        // Load the enriched layers
         loadLayers(enrichedLayers);
+        
+        // Reset lastLoadedLayerId so the layer switching effect will load the active layer's data
+        // This ensures that after loading layers, the active layer's background and other data
+        // are properly loaded into local state
+        lastLoadedLayerId.current = null;
       }
       
       // Load products into history - always set, even if empty
@@ -438,19 +467,34 @@ const Page = () => {
   const canvasContainerRef = useRef();
   const subLayerControlsRef = useRef();
 
-  // Background and Scale - now derived from active layer
-  const [backgroundImage, setBackgroundImage] = useState(activeLayer?.backgroundImage || null);
-  const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100); // 100px per meter
+  // Measurement state
   const [measureMode, setMeasureMode] = useState(false);
   const [measurePoints, setMeasurePoints] = useState([]);
   const [measureDialogOpen, setMeasureDialogOpen] = useState(false);
   const [measureValue, setMeasureValue] = useState(0);
-  const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(activeLayer?.backgroundImageNaturalSize || null);
 
   // Update local state when switching layers
   useEffect(() => {
     // Only load layer data if we actually switched to a different layer
     if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
+      // Before switching, ensure current layer's data is synced
+      // This prevents loss of unsaved changes when switching layers
+      if (lastLoadedLayerId.current && (
+          backgroundImage !== lastSyncedBackgroundImage.current ||
+          backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current ||
+          scaleFactor !== lastSyncedScaleFactor.current
+      )) {
+        // Sync current layer's data before switching
+        updateLayer(lastLoadedLayerId.current, {
+          backgroundImage,
+          backgroundImageNaturalSize,
+          scaleFactor
+        });
+        lastSyncedBackgroundImage.current = backgroundImage;
+        lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
+        lastSyncedScaleFactor.current = scaleFactor;
+      }
+      
       lastLoadedLayerId.current = activeLayerId;
       
       // Set flag to prevent saving back to layer while loading
@@ -458,16 +502,25 @@ const Page = () => {
       
       updateHistory(activeLayer.products || []);
       setConnectors(activeLayer.connectors || []);
-      setBackgroundImage(activeLayer.backgroundImage);
-      setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize);
+      setBackgroundImage(activeLayer.backgroundImage || null);
+      setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
       setScaleFactor(activeLayer.scaleFactor || 100);
       
-      // Clear flag after state updates complete
-      setTimeout(() => {
+      // Update the sync refs to match what we just loaded
+      // This prevents the sync effects from writing back the loaded values
+      lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
+      lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
+      lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
+      
+      // Use a longer timeout to ensure all state updates have completed
+      // before allowing sync effects to run
+      const timer = setTimeout(() => {
         isLoadingLayerData.current = false;
-      }, 0);
+      }, 100); // Increased from 0 to 100ms to ensure state updates complete
+      
+      return () => clearTimeout(timer);
     }
-  }, [activeLayerId, activeLayer, updateHistory]);
+  }, [activeLayerId, activeLayer, updateHistory, backgroundImage, backgroundImageNaturalSize, scaleFactor, updateLayer]);
 
   // Selection snapshot for group transformations
   const selectionSnapshot = useMemo(() => {
@@ -736,11 +789,7 @@ const Page = () => {
             const sizeData = { width: img.width, height: img.height };
             setBackgroundImage(imageData);
             setBackgroundImageNaturalSize(sizeData);
-            // Save to active layer
-            updateActiveLayer({
-              backgroundImage: imageData,
-              backgroundImageNaturalSize: sizeData
-            });
+            // Note: The sync effect will automatically update the active layer with this data
           };
           img.src = ev.target.result;
         };
@@ -787,8 +836,7 @@ const Page = () => {
     if (realDistance > 0 && pixelDistance > 0) {
       const newScaleFactor = pixelDistance / realDistance;
       setScaleFactor(newScaleFactor);
-      // Save to active layer
-      updateActiveLayer({ scaleFactor: newScaleFactor });
+      // Note: The sync effect will automatically update the active layer with this data
     }
     setMeasureMode(false);
     setMeasurePoints([]);

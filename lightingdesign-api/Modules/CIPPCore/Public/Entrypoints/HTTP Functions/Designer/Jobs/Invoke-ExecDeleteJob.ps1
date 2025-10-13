@@ -9,9 +9,9 @@ function Invoke-ExecDeleteJob {
     param($Request, $TriggerMetadata)
 
     $Table = Get-CIPPTable -TableName 'Jobs'
-    
+
     $JobId = $Request.Body.jobId
-    
+
     if (-not $JobId) {
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::BadRequest
@@ -21,8 +21,8 @@ function Invoke-ExecDeleteJob {
 
     # Get existing job to verify it exists
     $Filter = "RowKey eq '{0}'" -f $JobId
-    $ExistingJob = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
-    
+    $ExistingJob = Get-CIPPAzDataTableEntity @Table -Filter $Filter
+
     if (-not $ExistingJob) {
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::NotFound
@@ -40,8 +40,8 @@ function Invoke-ExecDeleteJob {
     # Also delete associated design if it exists
     $DesignTable = Get-CIPPTable -TableName 'Designs'
     $DesignFilter = "JobId eq '{0}'" -f $JobId
-    $ExistingDesign = Get-CIPPAzDataTableEntity -Context $DesignTable.Context -Filter $DesignFilter
-    
+    $ExistingDesign = Get-CIPPAzDataTableEntity @DesignTable -Filter $DesignFilter
+
     if ($ExistingDesign) {
         $DesignEntity = @{
             PartitionKey = $ExistingDesign.PartitionKey

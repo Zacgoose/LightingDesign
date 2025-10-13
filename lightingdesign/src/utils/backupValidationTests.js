@@ -132,7 +132,7 @@ export function testWithCorruptedSample() {
 
   if (result.data) {
     console.log(
-      `- Parsed entries: ${Array.isArray(result.data) ? result.data.length : "Not array"}`
+      `- Parsed entries: ${Array.isArray(result.data) ? result.data.length : "Not array"}`,
     );
   }
 }

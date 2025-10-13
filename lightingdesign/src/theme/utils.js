@@ -12,7 +12,7 @@ export const getPrimary = (preset) => {
       return purple;
     default:
       console.error(
-        'Invalid color preset, accepted values: "blue", "orange", "indigo" or "purple"".'
+        'Invalid color preset, accepted values: "blue", "orange", "indigo" or "purple"".',
       );
       return indigo;
   }

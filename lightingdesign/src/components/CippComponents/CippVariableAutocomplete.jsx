@@ -110,8 +110,8 @@ export const CippVariableAutocomplete = React.memo(
             variable.Type === "reserved"
               ? `Reserved (${variable.Category})`
               : variable.category === "global"
-              ? "Global Custom Variables"
-              : "Tenant Custom Variables",
+                ? "Global Custom Variables"
+                : "Tenant Custom Variables",
         }));
 
         setVariables(processedVariables);
@@ -142,7 +142,7 @@ export const CippVariableAutocomplete = React.memo(
       const filtered = variables.filter(
         (variable) =>
           variable.name?.toLowerCase().includes(lowerQuery) ||
-          variable.description?.toLowerCase().includes(lowerQuery)
+          variable.description?.toLowerCase().includes(lowerQuery),
       );
       setFilteredVariables(filtered);
       setSelectedIndex(0); // Reset selection when filtering
@@ -182,7 +182,7 @@ export const CippVariableAutocomplete = React.memo(
             break;
         }
       },
-      [open, filteredVariables, selectedIndex, onClose]
+      [open, filteredVariables, selectedIndex, onClose],
     );
 
     // Set up keyboard event listeners
@@ -338,5 +338,5 @@ export const CippVariableAutocomplete = React.memo(
         </Paper>
       </Popper>
     );
-  }
+  },
 );

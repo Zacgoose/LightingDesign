@@ -161,21 +161,11 @@ export const JobForm = ({ formControl, mode = "new" }) => {
       </Grid>
 
       <Grid size={{ md: 6, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          label="City"
-          name="city"
-          formControl={formControl}
-        />
+        <CippFormComponent type="textField" label="City" name="city" formControl={formControl} />
       </Grid>
 
       <Grid size={{ md: 3, xs: 12 }}>
-        <CippFormComponent
-          type="textField"
-          label="State"
-          name="state"
-          formControl={formControl}
-        />
+        <CippFormComponent type="textField" label="State" name="state" formControl={formControl} />
       </Grid>
 
       <Grid size={{ md: 3, xs: 12 }}>

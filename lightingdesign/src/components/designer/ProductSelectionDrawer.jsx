@@ -26,14 +26,10 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
       type: "column",
     },
   ];
-  
+
   // Columns to display
-  const simpleColumns = [
-    "name",
-    "sku",
-    "product_type_unigram",
-  ];
-  
+  const simpleColumns = ["name", "sku", "product_type_unigram"];
+
   // Actions - use customFunction with noConfirm for immediate execution
   const actions = [
     {
@@ -51,7 +47,7 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
       },
     },
   ];
-  
+
   return (
     <>
       <CippOffCanvas

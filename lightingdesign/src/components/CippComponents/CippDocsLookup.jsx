@@ -12,7 +12,7 @@ export const CippDocsLookup = (props) => {
 
   const handleDocsLookup = () => {
     const searchUrl = `https://docs.cipp.app/?q=Help+with:+${encodeURIComponent(text)}&ask=true`;
-    window.open(searchUrl, '_blank');
+    window.open(searchUrl, "_blank");
   };
 
   if (!visible) return null;
@@ -68,4 +68,4 @@ export const CippDocsLookup = (props) => {
   }
 
   return null;
-}; 
+};

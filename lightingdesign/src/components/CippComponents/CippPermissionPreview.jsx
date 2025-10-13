@@ -114,7 +114,7 @@ const CippPermissionPreview = ({
       return foundRole?.description || null;
     } else {
       const foundScope = spDetails.publishedPermissionScopes?.find(
-        (scope) => scope.id === permissionId
+        (scope) => scope.id === permissionId,
       );
       return foundScope?.userConsentDescription || foundScope?.description || null;
     }
@@ -439,7 +439,7 @@ const CippPermissionPreview = ({
             {Object.entries(permissions)
               .filter(
                 ([_, perms]) =>
-                  perms.applicationPermissions && perms.applicationPermissions.length > 0
+                  perms.applicationPermissions && perms.applicationPermissions.length > 0,
               )
               .map(([resourceId, resourcePerms]) => {
                 const resourceName = getResourceDisplayName(resourceId);
@@ -481,7 +481,7 @@ const CippPermissionPreview = ({
                 );
               })}
             {!Object.values(permissions).some(
-              (perms) => perms.applicationPermissions && perms.applicationPermissions.length > 0
+              (perms) => perms.applicationPermissions && perms.applicationPermissions.length > 0,
             ) && <Alert severity="info">No application permissions in this template.</Alert>}
           </Box>
         </CippCardTabPanel>
@@ -490,7 +490,7 @@ const CippPermissionPreview = ({
           <Box>
             {Object.entries(permissions)
               .filter(
-                ([_, perms]) => perms.delegatedPermissions && perms.delegatedPermissions.length > 0
+                ([_, perms]) => perms.delegatedPermissions && perms.delegatedPermissions.length > 0,
               )
               .map(([resourceId, resourcePerms]) => {
                 const resourceName = getResourceDisplayName(resourceId);
@@ -532,7 +532,7 @@ const CippPermissionPreview = ({
                 );
               })}
             {!Object.values(permissions).some(
-              (perms) => perms.delegatedPermissions && perms.delegatedPermissions.length > 0
+              (perms) => perms.delegatedPermissions && perms.delegatedPermissions.length > 0,
             ) && <Alert severity="info">No delegated permissions in this template.</Alert>}
           </Box>
         </CippCardTabPanel>
@@ -575,7 +575,7 @@ const ServicePrincipalResourceDetails = ({
       };
     } else {
       const foundScope = spDetails.publishedPermissionScopes?.find(
-        (scope) => scope.id === permissionId
+        (scope) => scope.id === permissionId,
       );
       return {
         name: foundScope?.value || permissionId,

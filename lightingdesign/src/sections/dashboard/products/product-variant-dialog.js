@@ -1,8 +1,8 @@
-import PropTypes from 'prop-types';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import toast from 'react-hot-toast';
-import TrashIcon from '@heroicons/react/24/outline/TrashIcon';
+import PropTypes from "prop-types";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import toast from "react-hot-toast";
+import TrashIcon from "@heroicons/react/24/outline/TrashIcon";
 import {
   Box,
   Button,
@@ -17,61 +17,49 @@ import {
   Stack,
   SvgIcon,
   TextField,
-  Typography
-} from '@mui/material';
-import { FileDropzone } from '../../../components/file-dropzone';
-import { createResourceId } from '../../../utils/create-resource-id';
-import { alpha } from '@mui/material/styles';
+  Typography,
+} from "@mui/material";
+import { FileDropzone } from "../../../components/file-dropzone";
+import { createResourceId } from "../../../utils/create-resource-id";
+import { alpha } from "@mui/material/styles";
 
 const currencyOptions = [
   {
-    label: 'EUR',
-    value: '€'
+    label: "EUR",
+    value: "€",
   },
   {
-    label: 'USD',
-    value: '$'
-  }
+    label: "USD",
+    value: "$",
+  },
 ];
 
 const getInitialValues = (variant) => {
   return {
-    currency: variant?.currency || '$',
-    description: variant?.description || '',
-    image: variant?.image || '',
-    name: variant?.name || '',
+    currency: variant?.currency || "$",
+    description: variant?.description || "",
+    image: variant?.image || "",
+    name: variant?.name || "",
     price: variant?.price || 0,
-    sku: variant?.sku || '',
-    submit: null
+    sku: variant?.sku || "",
+    submit: null,
   };
 };
 
 const validationSchema = Yup.object({
-  currency: Yup
-    .string()
+  currency: Yup.string()
     .oneOf(currencyOptions.map((option) => option.value))
-    .required('Currency is required'),
-  description: Yup
-    .string()
-    .max(1024)
-    .required('Description name is required'),
+    .required("Currency is required"),
+  description: Yup.string().max(1024).required("Description name is required"),
   image: Yup.string(),
-  name: Yup
-    .string()
-    .max(255)
-    .required('Variant name is required'),
-  price: Yup
-    .number()
-    .required('Price is required'),
-  sku: Yup
-    .string()
-    .max(255)
-    .required('Sku is required')
+  name: Yup.string().max(255).required("Variant name is required"),
+  price: Yup.number().required("Price is required"),
+  sku: Yup.string().max(255).required("Sku is required"),
 });
 
 export const ProductVariantDialog = (props) => {
   const {
-    action = 'create',
+    action = "create",
     onClose,
     onVariantCreated,
     onVariantUpdated,
@@ -85,7 +73,7 @@ export const ProductVariantDialog = (props) => {
     validationSchema,
     onSubmit: async (values, helpers) => {
       try {
-        if (action === 'update') {
+        if (action === "update") {
           // Do API call
           const updated = {
             ...variant,
@@ -94,10 +82,10 @@ export const ProductVariantDialog = (props) => {
             image: values.image,
             name: values.name,
             price: values.price,
-            sku: values.sku
+            sku: values.sku,
           };
 
-          toast.success('Variant updated');
+          toast.success("Variant updated");
           onVariantUpdated?.(updated);
         } else {
           // Do API call
@@ -110,10 +98,10 @@ export const ProductVariantDialog = (props) => {
             name: values.name,
             price: values.price,
             quantity: 1,
-            sku: values.sku
+            sku: values.sku,
           };
 
-          toast.success('Variant created');
+          toast.success("Variant created");
           onVariantCreated?.(created);
         }
 
@@ -125,13 +113,14 @@ export const ProductVariantDialog = (props) => {
         helpers.setErrors({ submit: err.message });
         helpers.setSubmitting(false);
       }
-    }
+    },
   });
 
-  const currencyLabel = currencyOptions.find((option) => option.value
-    === formik.values.currency)?.label;
+  const currencyLabel = currencyOptions.find(
+    (option) => option.value === formik.values.currency,
+  )?.label;
 
-  if (action === 'update' && !variant) {
+  if (action === "update" && !variant) {
     return null;
   }
 
@@ -144,12 +133,11 @@ export const ProductVariantDialog = (props) => {
       TransitionProps={{
         onExited: () => {
           formik.resetForm();
-        }
+        },
       }}
-      {...other}>
-      <DialogTitle>
-        {action === 'update' ? 'Update Variant' : 'Add Variant'}
-      </DialogTitle>
+      {...other}
+    >
+      <DialogTitle>{action === "update" ? "Update Variant" : "Add Variant"}</DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
           <TextField
@@ -199,10 +187,7 @@ export const ProductVariantDialog = (props) => {
             value={formik.values.currency}
           >
             {currencyOptions.map((option) => (
-              <MenuItem
-                key={option.value}
-                value={option.value}
-              >
+              <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>
             ))}
@@ -218,94 +203,79 @@ export const ProductVariantDialog = (props) => {
             sx={{ maxWidth: 236 }}
             value={formik.values.price}
             InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  {currencyLabel}
-                </InputAdornment>
-              )
+              startAdornment: <InputAdornment position="start">{currencyLabel}</InputAdornment>,
             }}
           />
           <Stack spacing={2}>
-            <Typography variant="subtitle2">
-              Image
-            </Typography>
-            {formik.values.image
-              ? (
+            <Typography variant="subtitle2">Image</Typography>
+            {formik.values.image ? (
+              <Box
+                sx={{
+                  backgroundImage: `url(${formik.values.image})`,
+                  backgroundPosition: "center",
+                  backgroundSize: "cover",
+                  borderRadius: 1,
+                  height: 126,
+                  overflow: "hidden",
+                  position: "relative",
+                  width: 126,
+                  "&:hover": {
+                    "& > div": {
+                      opacity: 1,
+                    },
+                  },
+                }}
+              >
                 <Box
                   sx={{
-                    backgroundImage: `url(${formik.values.image})`,
-                    backgroundPosition: 'center',
-                    backgroundSize: 'cover',
-                    borderRadius: 1,
-                    height: 126,
-                    overflow: 'hidden',
-                    position: 'relative',
-                    width: 126,
-                    '&:hover': {
-                      '& > div': {
-                        opacity: 1
-                      }
-                    }
+                    alignItems: "center",
+                    backgroundColor: (theme) => alpha(theme.palette.neutral[900], 0.8),
+                    display: "flex",
+                    height: "100%",
+                    justifyContent: "center",
+                    left: 0,
+                    opacity: 0,
+                    position: "absolute",
+                    top: 0,
+                    width: "100%",
                   }}
                 >
-                  <Box
-                    sx={{
-                      alignItems: 'center',
-                      backgroundColor: (theme) => alpha(theme.palette.neutral[900], 0.8),
-                      display: 'flex',
-                      height: '100%',
-                      justifyContent: 'center',
-                      left: 0,
-                      opacity: 0,
-                      position: 'absolute',
-                      top: 0,
-                      width: '100%'
-                    }}
-                  >
-                    <IconButton
-                      color="error"
-                      onClick={() => formik.setFieldValue('image', '')}
-                    >
-                      <SvgIcon fontSize="small">
-                        <TrashIcon />
-                      </SvgIcon>
-                    </IconButton>
-                  </Box>
+                  <IconButton color="error" onClick={() => formik.setFieldValue("image", "")}>
+                    <SvgIcon fontSize="small">
+                      <TrashIcon />
+                    </SvgIcon>
+                  </IconButton>
                 </Box>
-              )
-              : (
-                <FileDropzone
-                  accept={{ 'image/*': [] }}
-                  onDrop={(files) => formik.setFieldValue('image', URL.createObjectURL(files[0]))}
-                  sx={{
-                    height: 126,
-                    width: 126
-                  }}
-                />
-              )}
+              </Box>
+            ) : (
+              <FileDropzone
+                accept={{ "image/*": [] }}
+                onDrop={(files) => formik.setFieldValue("image", URL.createObjectURL(files[0]))}
+                sx={{
+                  height: 126,
+                  width: 126,
+                }}
+              />
+            )}
           </Stack>
         </Stack>
         {formik.errors.submit && (
-          <FormHelperText
-            error
-            sx={{ mt: 2 }}
-          >
+          <FormHelperText error sx={{ mt: 2 }}>
             {formik.errors.submit}
           </FormHelperText>
         )}
       </DialogContent>
       <DialogActions>
-        <Button
-          color="inherit"
-          onClick={onClose}
-        >
+        <Button color="inherit" onClick={onClose}>
           Cancel
         </Button>
         <Button
-          onClick={() => { formik.handleSubmit(); }}
+          onClick={() => {
+            formik.handleSubmit();
+          }}
           variant="contained"
         >
-          {action === 'update' ? 'Update' : 'Create'}
+          {action === "update" ? "Update" : "Create"}
         </Button>
       </DialogActions>
     </Dialog>
@@ -313,10 +283,10 @@ export const ProductVariantDialog = (props) => {
 };
 
 ProductVariantDialog.propTypes = {
-  action: PropTypes.oneOf(['create', 'update']),
+  action: PropTypes.oneOf(["create", "update"]),
   onClose: PropTypes.func,
   onVariantCreated: PropTypes.func,
   onVariantUpdated: PropTypes.func,
   open: PropTypes.bool,
-  variant: PropTypes.object
+  variant: PropTypes.object,
 };

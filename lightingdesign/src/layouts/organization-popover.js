@@ -12,7 +12,7 @@ export const OrganizationPopover = (props) => {
       popover.handleClose();
       onOrganizationSwitch?.(organizationId);
     },
-    [popover, onOrganizationSwitch]
+    [popover, onOrganizationSwitch],
   );
 
   // NOTE: Ensure an organization is found, otherwise some components will fail.

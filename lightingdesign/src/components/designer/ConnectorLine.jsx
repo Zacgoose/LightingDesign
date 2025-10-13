@@ -17,7 +17,7 @@ export const ConnectorLine = ({
   // Default control point if not set
   const defaultControlX = (fromProduct.x + toProduct.x) / 2;
   const defaultControlY = Math.min(fromProduct.y, toProduct.y) - 80;
-  
+
   const controlX = connector.controlX ?? defaultControlX;
   const controlY = connector.controlY ?? defaultControlY;
 
@@ -42,15 +42,13 @@ export const ConnectorLine = ({
         sceneFunc={(ctx, shape) => {
           ctx.beginPath();
           ctx.moveTo(fromProduct.x, fromProduct.y);
-          ctx.quadraticCurveTo(
-            controlX,
-            controlY,
-            toProduct.x,
-            toProduct.y
-          );
+          ctx.quadraticCurveTo(controlX, controlY, toProduct.x, toProduct.y);
           ctx.fillStrokeShape(shape);
         }}
-        stroke={connector.color || (isSelected ? theme.palette.secondary.main : theme.palette.primary.main)}
+        stroke={
+          connector.color ||
+          (isSelected ? theme.palette.secondary.main : theme.palette.primary.main)
+        }
         strokeWidth={isSelected ? 3 : 2}
         lineCap="round"
         hitStrokeWidth={20} // Makes it easier to click
@@ -70,7 +68,7 @@ export const ConnectorLine = ({
             dash={[5, 5]}
             listening={false}
           />
-          
+
           {/* Guide line from control point to end */}
           <Line
             points={[controlX, controlY, toProduct.x, toProduct.y]}
@@ -79,7 +77,7 @@ export const ConnectorLine = ({
             dash={[5, 5]}
             listening={false}
           />
-          
+
           {/* Draggable control point */}
           <Circle
             x={controlX}
@@ -96,7 +94,7 @@ export const ConnectorLine = ({
             }}
             onDragMove={handleControlDrag}
           />
-          
+
           {/* Start point indicator */}
           <Circle
             x={fromProduct.x}
@@ -105,7 +103,7 @@ export const ConnectorLine = ({
             fill={theme.palette.success.main}
             listening={false}
           />
-          
+
           {/* End point indicator */}
           <Circle
             x={toProduct.x}

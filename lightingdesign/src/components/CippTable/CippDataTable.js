@@ -153,7 +153,7 @@ export const CippDataTable = (props) => {
     // Check if we're in AllTenants mode and data has Tenant property
     const isAllTenants = settings?.currentTenant === "AllTenants";
     const hasTenantProperty = usedData.some(
-      (row) => row && typeof row === "object" && "Tenant" in row
+      (row) => row && typeof row === "object" && "Tenant" in row,
     );
     const shouldShowTenant = isAllTenants && hasTenantProperty;
 
@@ -210,8 +210,8 @@ export const CippDataTable = (props) => {
       configuredSimpleColumns,
       offCanvas,
       onChange,
-      maxHeightOffset
-    )
+      maxHeightOffset,
+    ),
   );
   //create memoized version of usedColumns, and usedData
   const memoizedColumns = useMemo(() => usedColumns, [usedColumns]);
@@ -333,8 +333,8 @@ export const CippDataTable = (props) => {
       showSkeletons: getRequestData.isFetchingNextPage
         ? false
         : getRequestData.isFetching
-        ? getRequestData.isFetching
-        : isFetching,
+          ? getRequestData.isFetching
+          : isFetching,
     },
     onSortingChange: (newSorting) => {
       setSorting(newSorting ?? []);

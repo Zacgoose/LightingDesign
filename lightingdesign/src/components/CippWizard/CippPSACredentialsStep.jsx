@@ -72,7 +72,7 @@ export const CippPSACredentialsStep = (props) => {
         ...values,
       });
     },
-    [PSATest.data, onNextStep, values]
+    [PSATest.data, onNextStep, values],
   );
   const fields = ["ClientName", "DeviceSerial", "DeviceProductNumber", "DeviceManufacturer"];
 
@@ -89,7 +89,7 @@ export const CippPSACredentialsStep = (props) => {
               <Typography color="text.secondary" variant="body2">
                 <Link
                   href={`data:text/csv;charset=utf-8,%EF%BB%BF${encodeURIComponent(
-                    fields.join(",") + "\n"
+                    fields.join(",") + "\n",
                   )}`}
                   download="BulkAdd.csv"
                 >

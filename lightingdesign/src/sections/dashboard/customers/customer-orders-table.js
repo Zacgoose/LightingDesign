@@ -1,7 +1,7 @@
-import NextLink from 'next/link';
-import PropTypes from 'prop-types';
-import { format } from 'date-fns';
-import numeral from 'numeral';
+import NextLink from "next/link";
+import PropTypes from "prop-types";
+import { format } from "date-fns";
+import numeral from "numeral";
 import {
   Box,
   Link,
@@ -12,57 +12,57 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
-  Typography
-} from '@mui/material';
-import { Scrollbar } from '../../../components/scrollbar';
-import { paths } from '../../../paths';
-import { CustomerOrderMenu } from './customer-order-menu';
+  Typography,
+} from "@mui/material";
+import { Scrollbar } from "../../../components/scrollbar";
+import { paths } from "../../../paths";
+import { CustomerOrderMenu } from "./customer-order-menu";
 
 const statusMap = {
   placed: {
-    color: 'info.main',
-    label: 'Placed'
+    color: "info.main",
+    label: "Placed",
   },
   processed: {
-    color: 'error.main',
-    label: 'Processed'
+    color: "error.main",
+    label: "Processed",
   },
   complete: {
-    color: 'success.main',
-    label: 'Complete'
+    color: "success.main",
+    label: "Complete",
   },
   delivered: {
-    color: 'success.main',
-    label: 'Delivered'
-  }
+    color: "success.main",
+    label: "Delivered",
+  },
 };
 
 const columns = [
   {
-    id: 'id',
-    label: 'Order ID',
-    sortable: true
+    id: "id",
+    label: "Order ID",
+    sortable: true,
   },
   {
-    id: 'createdAt',
-    label: 'Created',
-    sortable: true
+    id: "createdAt",
+    label: "Created",
+    sortable: true,
   },
   {
-    id: 'distribution',
-    label: 'Distribution',
-    sortable: true
+    id: "distribution",
+    label: "Distribution",
+    sortable: true,
   },
   {
-    id: 'status',
-    label: 'Status',
-    sortable: true
+    id: "status",
+    label: "Status",
+    sortable: true,
   },
   {
-    id: 'totalAmount',
-    label: 'Total Amount',
-    sortable: true
-  }
+    id: "totalAmount",
+    label: "Total Amount",
+    sortable: true,
+  },
 ];
 
 export const CustomerOrdersTable = (props) => {
@@ -75,18 +75,18 @@ export const CustomerOrdersTable = (props) => {
           <TableRow>
             {columns.map((column) => (
               <TableCell key={column.id}>
-                {column.sortable
-                  ? (
-                    <TableSortLabel
-                      active={sortBy === column.id}
-                      direction={sortBy === column.id ? sortDir : 'asc'}
-                      disabled={isLoading}
-                      onClick={() => onSortChange?.(column.id)}
-                    >
-                      {column.label}
-                    </TableSortLabel>
-                  )
-                  : column.label}
+                {column.sortable ? (
+                  <TableSortLabel
+                    active={sortBy === column.id}
+                    direction={sortBy === column.id ? sortDir : "asc"}
+                    disabled={isLoading}
+                    onClick={() => onSortChange?.(column.id)}
+                  >
+                    {column.label}
+                  </TableSortLabel>
+                ) : (
+                  column.label
+                )}
               </TableCell>
             ))}
             <TableCell />
@@ -95,9 +95,9 @@ export const CustomerOrdersTable = (props) => {
         <TableBody>
           {items.map((order) => {
             const status = statusMap[order.status];
-            const address = [order.address?.city, order.address?.country].join((', '));
-            const createdDate = format(order.createdAt, 'dd MMM yyyy');
-            const createdTime = format(order.createdAt, 'HH:mm');
+            const address = [order.address?.city, order.address?.country].join(", ");
+            const createdDate = format(order.createdAt, "dd MMM yyyy");
+            const createdTime = format(order.createdAt, "HH:mm");
             const totalAmount = numeral(order.totalAmount).format(`${order.currency}0,0.00`);
 
             return (
@@ -115,60 +115,40 @@ export const CustomerOrdersTable = (props) => {
                 </TableCell>
                 <TableCell>
                   <div>
-                    <Typography
-                      color="inherit"
-                      variant="inherit"
-                    >
+                    <Typography color="inherit" variant="inherit">
                       {createdDate}
                     </Typography>
-                    <Typography
-                      color="text.secondary"
-                      variant="inherit"
-                    >
+                    <Typography color="text.secondary" variant="inherit">
                       {createdTime}
                     </Typography>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Typography
-                    color="inherit"
-                    variant="inherit"
-                  >
+                  <Typography color="inherit" variant="inherit">
                     {address}
                   </Typography>
                   {order.courier && (
-                    <Typography
-                      color="text.secondary"
-                      variant="inherit"
-                    >
+                    <Typography color="text.secondary" variant="inherit">
                       {order.courier}
                     </Typography>
                   )}
                 </TableCell>
                 <TableCell>
                   {status && (
-                    <Stack
-                      alignItems="center"
-                      direction="row"
-                      spacing={1}
-                    >
+                    <Stack alignItems="center" direction="row" spacing={1}>
                       <Box
                         sx={{
                           backgroundColor: status.color,
-                          borderRadius: '50%',
+                          borderRadius: "50%",
                           height: 8,
-                          width: 8
+                          width: 8,
                         }}
                       />
-                      <Typography variant="body2">
-                        {status.label}
-                      </Typography>
+                      <Typography variant="body2">{status.label}</Typography>
                     </Stack>
                   )}
                 </TableCell>
-                <TableCell>
-                  {totalAmount}
-                </TableCell>
+                <TableCell>{totalAmount}</TableCell>
                 <TableCell align="right">
                   <CustomerOrderMenu />
                 </TableCell>
@@ -186,5 +166,5 @@ CustomerOrdersTable.propTypes = {
   items: PropTypes.array,
   onSortChange: PropTypes.func,
   sortBy: PropTypes.string,
-  sortDir: PropTypes.oneOf(['asc', 'desc'])
+  sortDir: PropTypes.oneOf(["asc", "desc"]),
 };

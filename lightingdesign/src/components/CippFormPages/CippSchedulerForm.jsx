@@ -109,7 +109,7 @@ const CippSchedulerForm = (props) => {
           tenantFilter = tenantList.data.find(
             (tenant) =>
               tenant.defaultDomainName === task?.Tenant.value ||
-              tenant.defaultDomainName === task?.Tenant
+              tenant.defaultDomainName === task?.Tenant,
           );
           if (tenantFilter) {
             tenantFilterForForm = {
@@ -134,7 +134,7 @@ const CippSchedulerForm = (props) => {
           }
 
           var recurrence = recurrenceOptions.find(
-            (option) => option.value === task.Recurrence || option.label === task.Recurrence
+            (option) => option.value === task.Recurrence || option.label === task.Recurrence,
           );
 
           // If recurrence is not found in predefined options, create a custom option

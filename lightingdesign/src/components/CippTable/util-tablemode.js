@@ -7,7 +7,7 @@ export const utilTableMode = (
   simpleColumns,
   offCanvas,
   onChange,
-  maxHeightOffset = "380px"
+  maxHeightOffset = "380px",
 ) => {
   const settings = useSettings();
   if (mode === true) {

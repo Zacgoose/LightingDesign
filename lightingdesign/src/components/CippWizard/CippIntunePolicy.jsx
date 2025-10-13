@@ -123,7 +123,7 @@ export const CippIntunePolicy = (props) => {
             const uniquePlaceholders = Array.from(new Set(placeholderMatches));
             // Filter out reserved placeholders
             const filteredPlaceholders = uniquePlaceholders.filter(
-              (placeholder) => !reservedPlaceholders.includes(`%${placeholder.toLowerCase()}%`)
+              (placeholder) => !reservedPlaceholders.includes(`%${placeholder.toLowerCase()}%`),
             );
             if (filteredPlaceholders.length === 0 || selectedTenants.length === 0) {
               return null;
@@ -139,8 +139,8 @@ export const CippIntunePolicy = (props) => {
                       placeholder === "tenantid"
                         ? tenant?.addedFields?.customerId
                         : placeholder === "tenantdomain"
-                        ? tenant?.addedFields?.defaultDomainName
-                        : ""
+                          ? tenant?.addedFields?.defaultDomainName
+                          : ""
                     }
                     name={`replacemap.${tenant.value}.%${placeholder}%`}
                     label={`Value for '${placeholder}' in Tenant '${tenant.addedFields.defaultDomainName}'`}

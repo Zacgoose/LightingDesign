@@ -129,7 +129,7 @@ const CippCustomDataMappingForm = ({ formControl }) => {
           return options.filter(
             (option) =>
               option?.addedFields?.targetObject?.toLowerCase() ===
-              selectedDirectoryObjectType?.value?.toLowerCase()
+              selectedDirectoryObjectType?.value?.toLowerCase(),
           );
         },
         valueField: "name",
@@ -175,7 +175,7 @@ const CippCustomDataMappingForm = ({ formControl }) => {
                   (option?.addedFields?.isMultiValued === false &&
                     selectedExtensionSyncDataset?.addedFields?.type === "object") ||
                   (option?.addedFields?.isMultiValued === true &&
-                    selectedExtensionSyncDataset?.addedFields?.type === "array")
+                    selectedExtensionSyncDataset?.addedFields?.type === "array"),
               )
             : options,
         valueField: "name",

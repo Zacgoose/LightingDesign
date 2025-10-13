@@ -803,22 +803,22 @@ const ExecutiveReportDocument = ({
         // Collect deviations with pretty names
         if (item.currentDeviations && Array.isArray(item.currentDeviations)) {
           acc.currentDeviations.push(
-            ...processDeviations(item.currentDeviations.filter((dev) => dev !== null))
+            ...processDeviations(item.currentDeviations.filter((dev) => dev !== null)),
           );
         }
         if (item.acceptedDeviations && Array.isArray(item.acceptedDeviations)) {
           acc.acceptedDeviations.push(
-            ...processDeviations(item.acceptedDeviations.filter((dev) => dev !== null))
+            ...processDeviations(item.acceptedDeviations.filter((dev) => dev !== null)),
           );
         }
         if (item.customerSpecificDeviations && Array.isArray(item.customerSpecificDeviations)) {
           acc.customerSpecificDeviations.push(
-            ...processDeviations(item.customerSpecificDeviations.filter((dev) => dev !== null))
+            ...processDeviations(item.customerSpecificDeviations.filter((dev) => dev !== null)),
           );
         }
         if (item.deniedDeviations && Array.isArray(item.deniedDeviations)) {
           acc.deniedDeviations.push(
-            ...processDeviations(item.deniedDeviations.filter((dev) => dev !== null))
+            ...processDeviations(item.deniedDeviations.filter((dev) => dev !== null)),
           );
         }
 
@@ -835,7 +835,7 @@ const ExecutiveReportDocument = ({
         customerSpecificDeviations: [],
         deniedDeviations: [],
         appliedStandards: [],
-      }
+      },
     );
 
     // Get complete list of applied standards from standards comparison data (like policies-deployed)
@@ -1194,16 +1194,24 @@ const ExecutiveReportDocument = ({
                               const endAngle = currentAngle + angle;
 
                               // Outer arc points
-                              const outerStartX = centerX + outerRadius * Math.cos((startAngle * Math.PI) / 180);
-                              const outerStartY = centerY + outerRadius * Math.sin((startAngle * Math.PI) / 180);
-                              const outerEndX = centerX + outerRadius * Math.cos((endAngle * Math.PI) / 180);
-                              const outerEndY = centerY + outerRadius * Math.sin((endAngle * Math.PI) / 180);
+                              const outerStartX =
+                                centerX + outerRadius * Math.cos((startAngle * Math.PI) / 180);
+                              const outerStartY =
+                                centerY + outerRadius * Math.sin((startAngle * Math.PI) / 180);
+                              const outerEndX =
+                                centerX + outerRadius * Math.cos((endAngle * Math.PI) / 180);
+                              const outerEndY =
+                                centerY + outerRadius * Math.sin((endAngle * Math.PI) / 180);
 
                               // Inner arc points
-                              const innerStartX = centerX + innerRadius * Math.cos((startAngle * Math.PI) / 180);
-                              const innerStartY = centerY + innerRadius * Math.sin((startAngle * Math.PI) / 180);
-                              const innerEndX = centerX + innerRadius * Math.cos((endAngle * Math.PI) / 180);
-                              const innerEndY = centerY + innerRadius * Math.sin((endAngle * Math.PI) / 180);
+                              const innerStartX =
+                                centerX + innerRadius * Math.cos((startAngle * Math.PI) / 180);
+                              const innerStartY =
+                                centerY + innerRadius * Math.sin((startAngle * Math.PI) / 180);
+                              const innerEndX =
+                                centerX + innerRadius * Math.cos((endAngle * Math.PI) / 180);
+                              const innerEndY =
+                                centerY + innerRadius * Math.sin((endAngle * Math.PI) / 180);
 
                               const largeArcFlag = angle > 180 ? 1 : 0;
 
@@ -1213,8 +1221,8 @@ const ExecutiveReportDocument = ({
                                 `A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${outerEndX} ${outerEndY}`,
                                 `L ${innerEndX} ${innerEndY}`,
                                 `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${innerStartX} ${innerStartY}`,
-                                'Z'
-                              ].join(' ');
+                                "Z",
+                              ].join(" ");
 
                               currentAngle += angle;
 
@@ -1256,15 +1264,17 @@ const ExecutiveReportDocument = ({
                                 .map((value, index) => ({
                                   value,
                                   index,
-                                  label: chartLabels[index].replace(" Deviations", "").replace(" Policies", ""),
-                                  color: chartColors[index]
+                                  label: chartLabels[index]
+                                    .replace(" Deviations", "")
+                                    .replace(" Policies", ""),
+                                  color: chartColors[index],
                                 }))
-                                .filter(item => item.value > 0);
-                              
+                                .filter((item) => item.value > 0);
+
                               return visibleItems.map((item, displayIndex) => {
                                 const legendX = 30 + displayIndex * 90;
                                 const legendY = 175;
-                                
+
                                 return (
                                   <g key={`legend-${item.index}`}>
                                     <Rect
@@ -1424,7 +1434,7 @@ const ExecutiveReportDocument = ({
                       } catch (error) {}
 
                       const standardDef = standardsData?.find(
-                        (std) => std.name === deviation.standardName
+                        (std) => std.name === deviation.standardName,
                       );
                       const description =
                         standardDef?.executiveText ||
@@ -1456,7 +1466,7 @@ const ExecutiveReportDocument = ({
                       } catch (error) {}
 
                       const standardDef = standardsData?.find(
-                        (std) => std.name === deviation.standardName
+                        (std) => std.name === deviation.standardName,
                       );
                       const description =
                         standardDef?.executiveText ||
@@ -1492,7 +1502,7 @@ const ExecutiveReportDocument = ({
                         } catch (error) {}
 
                         const standardDef = standardsData?.find(
-                          (std) => std.name === deviation.standardName
+                          (std) => std.name === deviation.standardName,
                         );
                         const description =
                           standardDef?.executiveText ||
@@ -1526,7 +1536,7 @@ const ExecutiveReportDocument = ({
                       } catch (error) {}
 
                       const standardDef = standardsData?.find(
-                        (std) => std.name === deviation.standardName
+                        (std) => std.name === deviation.standardName,
                       );
                       const description =
                         standardDef?.executiveText ||
@@ -1593,7 +1603,7 @@ const ExecutiveReportDocument = ({
                       acc[category].push(standard);
                       return acc;
                     },
-                    {}
+                    {},
                   );
 
                   return Object.entries(groupedStandards).map(([category, standards]) => (
@@ -1988,7 +1998,7 @@ const ExecutiveReportDocument = ({
                               "DEBUG: license.CountUsed is an object:",
                               countUsed,
                               "full license:",
-                              license
+                              license,
                             );
                           }
                           return countUsed;
@@ -2129,7 +2139,7 @@ const ExecutiveReportDocument = ({
                         deviceData.filter(
                           (device) =>
                             device.complianceState === "compliant" ||
-                            device.ComplianceState === "compliant"
+                            device.ComplianceState === "compliant",
                         ).length
                       }
                     </Text>
@@ -2141,7 +2151,7 @@ const ExecutiveReportDocument = ({
                         deviceData.filter(
                           (device) =>
                             device.complianceState !== "compliant" &&
-                            device.ComplianceState !== "compliant"
+                            device.ComplianceState !== "compliant",
                         ).length
                       }
                     </Text>
@@ -2153,10 +2163,10 @@ const ExecutiveReportDocument = ({
                         (deviceData.filter(
                           (device) =>
                             device.complianceState === "Compliant" ||
-                            device.ComplianceState === "Compliant"
+                            device.ComplianceState === "Compliant",
                         ).length /
                           deviceData.length) *
-                          100
+                          100,
                       )}
                       %
                     </Text>
@@ -2430,7 +2440,7 @@ const ExecutiveReportDocument = ({
                     <Text style={styles.statNumber}>
                       {
                         conditionalAccessData.filter(
-                          (policy) => policy.state === "enabledForReportingButNotEnforced"
+                          (policy) => policy.state === "enabledForReportingButNotEnforced",
                         ).length
                       }
                     </Text>
@@ -2441,7 +2451,7 @@ const ExecutiveReportDocument = ({
                       {
                         conditionalAccessData.filter(
                           (policy) =>
-                            policy.builtInControls && policy.builtInControls.includes("mfa")
+                            policy.builtInControls && policy.builtInControls.includes("mfa"),
                         ).length
                       }
                     </Text>
@@ -2475,7 +2485,7 @@ const ExecutiveReportDocument = ({
                       <Text style={styles.recommendationLabel}>Testing Phase:</Text>{" "}
                       {
                         conditionalAccessData.filter(
-                          (policy) => policy.state === "enabledForReportingButNotEnforced"
+                          (policy) => policy.state === "enabledForReportingButNotEnforced",
                         ).length
                       }{" "}
                       policies in report-only mode
@@ -2495,11 +2505,11 @@ const ExecutiveReportDocument = ({
                 <Text style={styles.infoTitle}>Access Control Recommendations</Text>
                 <Text style={styles.infoText}>
                   {conditionalAccessData.filter(
-                    (policy) => policy.state === "enabledForReportingButNotEnforced"
+                    (policy) => policy.state === "enabledForReportingButNotEnforced",
                   ).length > 0
                     ? `Consider activating ${
                         conditionalAccessData.filter(
-                          (policy) => policy.state === "enabledForReportingButNotEnforced"
+                          (policy) => policy.state === "enabledForReportingButNotEnforced",
                         ).length
                       } policies currently in testing mode after ensuring they don't disrupt business operations. `
                     : "Your access controls are properly configured. "}

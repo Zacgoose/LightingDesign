@@ -79,8 +79,8 @@ export const CippAutopilotProfileDrawer = ({
               {createProfile.isLoading
                 ? "Creating..."
                 : createProfile.isSuccess
-                ? "Create Another"
-                : "Create Profile"}
+                  ? "Create Another"
+                  : "Create Profile"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

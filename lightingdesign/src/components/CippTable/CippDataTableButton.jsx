@@ -30,8 +30,8 @@ const CippDataTableButton = ({ data, title, tableTitle = "Data" }) => {
   const dataLength = Array.isArray(data)
     ? data.length
     : typeof data === "object" && data !== null
-    ? Object.keys(data).length
-    : 0;
+      ? Object.keys(data).length
+      : 0;
 
   return (
     <>

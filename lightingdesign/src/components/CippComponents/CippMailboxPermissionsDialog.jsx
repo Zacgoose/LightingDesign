@@ -3,11 +3,11 @@ import { useEffect } from "react";
 import CippFormComponent from "./CippFormComponent";
 import { useWatch } from "react-hook-form";
 
-const CippMailboxPermissionsDialog = ({ 
-  formHook, 
-  combinedOptions, 
-  isUserGroupLoading, 
-  defaultAutoMap = false 
+const CippMailboxPermissionsDialog = ({
+  formHook,
+  combinedOptions,
+  isUserGroupLoading,
+  defaultAutoMap = false,
 }) => {
   const fullAccess = useWatch({
     control: formHook.control,

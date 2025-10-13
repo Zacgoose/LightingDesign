@@ -45,7 +45,7 @@ export const CippFormDomainSelector = ({
         });
       },
     }),
-    [currentTenant, selectedTenant, preselectDefaultDomain, multiple]
+    [currentTenant, selectedTenant, preselectDefaultDomain, multiple],
   );
 
   return (

@@ -55,7 +55,7 @@ export const PDFExportButton = (props) => {
     const columnWidths = exportColumns.map((col) => {
       const headerLength = col.header.length;
       const maxContentLength = Math.max(
-        ...formattedData.map((row) => String(row[col.dataKey] || "").length)
+        ...formattedData.map((row) => String(row[col.dataKey] || "").length),
       );
       const estimatedWidth = Math.max(headerLength, maxContentLength) * 6; // 6 points per character
       return Math.min(estimatedWidth, (availableWidth / columnCount) * 1.5); // Cap at 1.5x average
@@ -64,7 +64,7 @@ export const PDFExportButton = (props) => {
     // Normalize widths to fit available space
     const totalEstimatedWidth = columnWidths.reduce((sum, width) => sum + width, 0);
     const normalizedWidths = columnWidths.map(
-      (width) => (width / totalEstimatedWidth) * availableWidth
+      (width) => (width / totalEstimatedWidth) * availableWidth,
     );
 
     // Convert hex color to RGB if custom branding color is provided

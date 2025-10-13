@@ -77,7 +77,7 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname }) => {
             pathname,
           })}
         </Stack>
-      </SideNavItem>
+      </SideNavItem>,
     );
   } else {
     acc.push(
@@ -90,7 +90,7 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname }) => {
         key={item.title}
         path={item.path}
         title={item.title}
-      />
+      />,
     );
   }
 
@@ -102,12 +102,12 @@ export const SideNav = (props) => {
   const pathname = usePathname();
   const [hovered, setHovered] = useState(false);
   const [localPinned, setLocalPinned] = useState(pinned);
-  
+
   // Update local state when prop changes
   useEffect(() => {
     setLocalPinned(pinned);
   }, [pinned]);
-  
+
   // Simple collapse logic: collapse only when NOT pinned AND NOT hovered
   const collapse = !localPinned && !hovered;
   const { data: profile } = ApiGetCall({ url: "/api/me", queryKey: "authmecipp" });
@@ -118,12 +118,12 @@ export const SideNav = (props) => {
   const handleTogglePin = () => {
     const newPinned = !localPinned;
     setLocalPinned(newPinned);
-    
+
     if (onPin) {
       onPin();
     }
   };
-  
+
   const handleMouseLeave = () => {
     setHovered(false);
   };
@@ -181,7 +181,11 @@ export const SideNav = (props) => {
                   px: "16px", // Match icon positioning - always 16px
                 }}
               >
-                <Tooltip title={localPinned ? "Unpin sidebar" : "Pin sidebar"} placement="right" arrow>
+                <Tooltip
+                  title={localPinned ? "Unpin sidebar" : "Pin sidebar"}
+                  placement="right"
+                  arrow
+                >
                   <IconButton
                     onClick={handleTogglePin}
                     size="small"

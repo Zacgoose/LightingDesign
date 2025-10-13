@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Paper,
@@ -10,11 +10,11 @@ import {
   Typography,
   Divider,
   Tooltip,
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { TextInputDialog } from '/src/components/designer/TextInputDialog';
-import { ConfirmDialog } from '/src/components/designer/ConfirmDialog';
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { TextInputDialog } from "/src/components/designer/TextInputDialog";
+import { ConfirmDialog } from "/src/components/designer/ConfirmDialog";
 
 /**
  * LayerSwitcher - UI component for managing and switching between floor layers
@@ -56,22 +56,22 @@ export const LayerSwitcher = ({
     <Paper
       elevation={2}
       sx={{
-        position: 'absolute',
+        position: "absolute",
         top: 16,
         right: 16,
         width: 280,
-        maxHeight: 'calc(100vh - 200px)',
-        display: 'flex',
-        flexDirection: 'column',
+        maxHeight: "calc(100vh - 200px)",
+        display: "flex",
+        flexDirection: "column",
         zIndex: 1000,
       }}
     >
       <Box
         sx={{
           p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -87,7 +87,7 @@ export const LayerSwitcher = ({
       <List
         sx={{
           flex: 1,
-          overflow: 'auto',
+          overflow: "auto",
           py: 0,
         }}
       >

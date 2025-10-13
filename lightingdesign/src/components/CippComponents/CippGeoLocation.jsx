@@ -66,7 +66,7 @@ export default function CippGeoLocation({
               <strong>{getCippTranslation(key)}:</strong> {getCippFormatting(result[key], key)}
             </div>
           ))}
-        </div>
+        </div>,
       );
     },
   });

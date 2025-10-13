@@ -1,6 +1,6 @@
-import PropTypes from 'prop-types';
-import ExclamationCircleIcon from '@heroicons/react/24/outline/ExclamationCircleIcon';
-import ExclamationTriangleIcon from '@heroicons/react/24/outline/ExclamationTriangleIcon';
+import PropTypes from "prop-types";
+import ExclamationCircleIcon from "@heroicons/react/24/outline/ExclamationCircleIcon";
+import ExclamationTriangleIcon from "@heroicons/react/24/outline/ExclamationTriangleIcon";
 import {
   Button,
   Dialog,
@@ -9,84 +9,56 @@ import {
   DialogTitle,
   Stack,
   SvgIcon,
-  Typography
-} from '@mui/material';
+  Typography,
+} from "@mui/material";
 
 const iconMap = {
   error: (
-    <SvgIcon
-      color="error"
-      fontSize="large"
-    >
+    <SvgIcon color="error" fontSize="large">
       <ExclamationCircleIcon />
     </SvgIcon>
   ),
   warning: (
-    <SvgIcon
-      color="warning"
-      fontSize="large"
-    >
+    <SvgIcon color="warning" fontSize="large">
       <ExclamationTriangleIcon />
     </SvgIcon>
   ),
   info: (
-    <SvgIcon
-      color="info"
-      fontSize="large"
-    >
+    <SvgIcon color="info" fontSize="large">
       <ExclamationCircleIcon />
     </SvgIcon>
-  )
+  ),
 };
 
 export const ConfirmationDialog = (props) => {
   const {
-    message = '',
+    message = "",
     onCancel,
     onConfirm,
     open = false,
     title,
-    variant = 'info',
+    variant = "info",
     ...other
   } = props;
 
   const icon = iconMap[variant];
 
   return (
-    <Dialog
-      maxWidth="sm"
-      fullWidth
-      onClose={onCancel}
-      open={open}
-      {...other}>
+    <Dialog maxWidth="sm" fullWidth onClose={onCancel} open={open} {...other}>
       <DialogTitle>
-        <Stack
-          alignItems="center"
-          direction="row"
-          spacing={2}
-        >
+        <Stack alignItems="center" direction="row" spacing={2}>
           {icon}
-          <Typography variant="inherit">
-            {title}
-          </Typography>
+          <Typography variant="inherit">{title}</Typography>
         </Stack>
       </DialogTitle>
       <DialogContent>
-        <Typography>
-          {message}
-        </Typography>
+        <Typography>{message}</Typography>
       </DialogContent>
       <DialogActions>
-        <Button
-          color="inherit"
-          onClick={onCancel}
-        >
+        <Button color="inherit" onClick={onCancel}>
           Cancel
         </Button>
-        <Button
-          onClick={onConfirm}
-          variant="contained"
-        >
+        <Button onClick={onConfirm} variant="contained">
           Confirm
         </Button>
       </DialogActions>
@@ -100,5 +72,5 @@ ConfirmationDialog.propTypes = {
   onConfirm: PropTypes.func,
   open: PropTypes.bool,
   title: PropTypes.string,
-  variant: PropTypes.oneOf(['error', 'warning', 'info'])
+  variant: PropTypes.oneOf(["error", "warning", "info"]),
 };

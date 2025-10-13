@@ -47,7 +47,7 @@ export function ApiGetCall(props) {
           title: `${
             error.config?.params?.tenantFilter ? error.config?.params?.tenantFilter : ""
           } Error`,
-        })
+        }),
       );
     }
     return returnRetry;
@@ -206,7 +206,7 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
                   if (!query.queryKey || !query.queryKey[0]) return false;
                   const queryKeyStr = String(query.queryKey[0]);
                   const matches = wildcardPatterns.some((pattern) =>
-                    queryKeyStr.startsWith(pattern)
+                    queryKeyStr.startsWith(pattern),
                   );
 
                   // Debug logging for each query check
@@ -215,7 +215,7 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
                       queryKey: query.queryKey,
                       queryKeyStr,
                       matchedPattern: wildcardPatterns.find((pattern) =>
-                        queryKeyStr.startsWith(pattern)
+                        queryKeyStr.startsWith(pattern),
                       ),
                     });
                   }
@@ -268,7 +268,7 @@ export function ApiGetCallWithPagination({
           message: getCippError(error),
           title: "Error",
           toastError: error,
-        })
+        }),
       );
     }
     return returnRetry;

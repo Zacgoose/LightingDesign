@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  IconButton,
-} from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
 import { Close, ReceiptLong } from "@mui/icons-material";
 import { CippPropertyList } from "./CippPropertyList";
 
@@ -78,7 +73,7 @@ const forefrontHeaderMapping = {
   SFTY: {
     label: "The message was identified as phishing",
     values: {
-      "9.19": "Domain impersonation. The sending domain is attempting to impersonate a protected domain",
+      9.19: "Domain impersonation. The sending domain is attempting to impersonate a protected domain",
       "9.20":
         "User impersonation. The sending user is attempting to impersonate a user in the recipient's organization",
     },
@@ -108,13 +103,13 @@ const forefrontHeaderMapping = {
     label: "Spam Confidence Level",
     values: {
       "-1": "-1: The message skipped spam filtering. Deliver the message to recipient Inbox folders.",
-      "0": "0: Spam filtering determined the message wasn't spam. Deliver the message to recipient Inbox folders.",
-      "1": "1: Spam filtering determined the message wasn't spam. Deliver the message to recipient Inbox folders.",
-      "5": "5: Spam filtering marked the message as Spam. Deliver the message to recipient Junk Email folders.",
-      "6": "6: Spam filtering marked the message as Spam. Deliver the message to recipient Junk Email folders.",
-      "7": "7: Spam filtering marked the message as High confidence spam. Deliver the message to recipient Junk Email folders.",
-      "8": "8: Spam filtering marked the message as High confidence spam. Deliver the message to recipient Junk Email folders.",
-      "9": "9: Spam filtering marked the message as High confidence spam. Deliver the message to recipient Junk Email folders.",
+      0: "0: Spam filtering determined the message wasn't spam. Deliver the message to recipient Inbox folders.",
+      1: "1: Spam filtering determined the message wasn't spam. Deliver the message to recipient Inbox folders.",
+      5: "5: Spam filtering marked the message as Spam. Deliver the message to recipient Junk Email folders.",
+      6: "6: Spam filtering marked the message as Spam. Deliver the message to recipient Junk Email folders.",
+      7: "7: Spam filtering marked the message as High confidence spam. Deliver the message to recipient Junk Email folders.",
+      8: "8: Spam filtering marked the message as High confidence spam. Deliver the message to recipient Junk Email folders.",
+      9: "9: Spam filtering marked the message as High confidence spam. Deliver the message to recipient Junk Email folders.",
     },
   },
 };

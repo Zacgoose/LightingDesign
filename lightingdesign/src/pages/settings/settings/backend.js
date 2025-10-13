@@ -60,7 +60,7 @@ const Page = () => {
           window.open(
             "https://shell.azure.com/powershell",
             "_blank",
-            "toolbar=no,scrollbars=yes,resizable=yes,menubar=no,location=no,status=no"
+            "toolbar=no,scrollbars=yes,resizable=yes,menubar=no,location=no,status=no",
           );
         },
       },

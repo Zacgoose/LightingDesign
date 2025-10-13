@@ -16,8 +16,7 @@ import { Grid } from "@mui/system";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useForm } from "react-hook-form";
 import CippFormComponent from "../../../components/CippComponents/CippFormComponent";
-import { FunnelIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { EyeIcon } from "@heroicons/react/24/outline";
+import { FunnelIcon, XMarkIcon, EyeIcon } from "@heroicons/react/24/outline";
 
 const simpleColumns = [
   "DateTime",
@@ -101,14 +100,14 @@ const Page = () => {
     setStartDate(
       data.startDate
         ? new Date(data.startDate * 1000).toISOString().split("T")[0].replace(/-/g, "")
-        : null
+        : null,
     );
 
     // Format end date if available
     setEndDate(
       data.endDate
         ? new Date(data.endDate * 1000).toISOString().split("T")[0].replace(/-/g, "")
-        : null
+        : null,
     );
 
     // Set username filter if available
@@ -118,7 +117,7 @@ const Page = () => {
     setSeverity(
       data.severity && data.severity.length > 0
         ? data.severity.map((item) => item.value).join(",")
-        : null
+        : null,
     );
 
     // Close the accordion after applying filters
@@ -158,13 +157,13 @@ const Page = () => {
                       <>
                         {startDate
                           ? new Date(
-                              startDate.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3") + "T00:00:00"
+                              startDate.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3") + "T00:00:00",
                             ).toLocaleDateString()
                           : new Date().toLocaleDateString()}
                         {startDate && endDate ? " - " : ""}
                         {endDate
                           ? new Date(
-                              endDate.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3") + "T00:00:00"
+                              endDate.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3") + "T00:00:00",
                             ).toLocaleDateString()
                           : ""}
                       </>

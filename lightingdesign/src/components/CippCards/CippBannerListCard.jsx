@@ -220,7 +220,7 @@ CippBannerListCard.propTypes = {
       isFetching: PropTypes.bool,
       children: PropTypes.node,
       cardLabelBoxActions: PropTypes.element,
-    })
+    }),
   ).isRequired,
   isCollapsible: PropTypes.bool,
   isFetching: PropTypes.bool,

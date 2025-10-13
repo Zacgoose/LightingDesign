@@ -1,11 +1,11 @@
-import { useCallback } from 'react';
-import PropTypes from 'prop-types';
-import AdjustmentsHorizontalIcon from '@heroicons/react/24/outline/AdjustmentsHorizontalIcon';
-import { Box, Button, Divider, Stack, SvgIcon, Tab, Tabs } from '@mui/material';
-import { BulkActionsMenu } from '../../../components/bulk-actions-menu';
-import { FilterDialog } from '../../../components/filter-dialog';
-import { QueryField } from '../../../components/query-field';
-import { useDialog } from '../../../hooks/use-dialog';
+import { useCallback } from "react";
+import PropTypes from "prop-types";
+import AdjustmentsHorizontalIcon from "@heroicons/react/24/outline/AdjustmentsHorizontalIcon";
+import { Box, Button, Divider, Stack, SvgIcon, Tab, Tabs } from "@mui/material";
+import { BulkActionsMenu } from "../../../components/bulk-actions-menu";
+import { FilterDialog } from "../../../components/filter-dialog";
+import { QueryField } from "../../../components/query-field";
+import { useDialog } from "../../../hooks/use-dialog";
 import {
   containsOperator,
   endsWithOperator,
@@ -18,83 +18,83 @@ import {
   lessThanOperator,
   notContainsOperator,
   notEqualOperator,
-  startsWithOperator
-} from '../../../utils/filter-operators';
+  startsWithOperator,
+} from "../../../utils/filter-operators";
 
 const viewOptions = [
   {
-    label: 'Show all',
-    value: 'all'
+    label: "Show all",
+    value: "all",
   },
   {
-    label: 'Ongoing',
-    value: 'ongoing'
+    label: "Ongoing",
+    value: "ongoing",
   },
   {
-    label: 'Paid',
-    value: 'paid'
+    label: "Paid",
+    value: "paid",
   },
   {
-    label: 'Overdue',
-    value: 'overdue'
-  }
+    label: "Overdue",
+    value: "overdue",
+  },
 ];
 
 const filterProperties = [
   {
-    label: 'Ref',
-    name: 'ref',
+    label: "Ref",
+    name: "ref",
     operators: [
-      'contains',
-      'endsWith',
-      'equals',
-      'notContains',
-      'startsWith',
-      'isBlank',
-      'isPresent'
-    ]
+      "contains",
+      "endsWith",
+      "equals",
+      "notContains",
+      "startsWith",
+      "isBlank",
+      "isPresent",
+    ],
   },
   {
-    label: 'Status',
-    name: 'status',
+    label: "Status",
+    name: "status",
     operators: [
-      'contains',
-      'endsWith',
-      'equals',
-      'notContains',
-      'startsWith',
-      'isBlank',
-      'isPresent'
-    ]
+      "contains",
+      "endsWith",
+      "equals",
+      "notContains",
+      "startsWith",
+      "isBlank",
+      "isPresent",
+    ],
   },
   {
-    label: 'Payment Method',
-    name: 'paymentMethod',
+    label: "Payment Method",
+    name: "paymentMethod",
     operators: [
-      'contains',
-      'endsWith',
-      'equals',
-      'notContains',
-      'startsWith',
-      'isBlank',
-      'isPresent'
-    ]
+      "contains",
+      "endsWith",
+      "equals",
+      "notContains",
+      "startsWith",
+      "isBlank",
+      "isPresent",
+    ],
   },
   {
-    label: 'Total',
-    name: 'totalAmount',
-    operators: ['equals', 'greaterThan', 'lessThan', 'notEqual', 'isBlank', 'isPresent']
+    label: "Total",
+    name: "totalAmount",
+    operators: ["equals", "greaterThan", "lessThan", "notEqual", "isBlank", "isPresent"],
   },
   {
-    label: 'Issue Date',
-    name: 'issueDate',
-    operators: ['isAfter', 'isBefore', 'isBlank', 'isPresent']
+    label: "Issue Date",
+    name: "issueDate",
+    operators: ["isAfter", "isBefore", "isBlank", "isPresent"],
   },
   {
-    label: 'Due Date',
-    name: 'dueDate',
-    operators: ['isAfter', 'isBefore', 'isBlank', 'isPresent']
-  }
+    label: "Due Date",
+    name: "dueDate",
+    operators: ["isAfter", "isBefore", "isBlank", "isPresent"],
+  },
 ];
 
 const filterOperators = [
@@ -109,7 +109,7 @@ const filterOperators = [
   lessThanOperator,
   notContainsOperator,
   notEqualOperator,
-  startsWithOperator
+  startsWithOperator,
 ];
 
 export const InvoicesSearch = (props) => {
@@ -120,16 +120,19 @@ export const InvoicesSearch = (props) => {
     onFiltersClear,
     onQueryChange,
     onViewChange,
-    query = '',
+    query = "",
     selected = [],
-    view = 'all'
+    view = "all",
   } = props;
   const filterDialog = useDialog();
 
-  const handleFiltersApply = useCallback((filters) => {
-    filterDialog.handleClose();
-    onFiltersApply?.(filters);
-  }, [filterDialog, onFiltersApply]);
+  const handleFiltersApply = useCallback(
+    (filters) => {
+      filterDialog.handleClose();
+      onFiltersApply?.(filters);
+    },
+    [filterDialog, onFiltersApply],
+  );
 
   const handleFiltersClear = useCallback(() => {
     filterDialog.handleClose();
@@ -145,8 +148,8 @@ export const InvoicesSearch = (props) => {
         <Box
           sx={{
             px: {
-              sm: 3
-            }
+              sm: 3,
+            },
           }}
         >
           <Tabs
@@ -165,13 +168,7 @@ export const InvoicesSearch = (props) => {
           </Tabs>
         </Box>
         <Divider />
-        <Stack
-          alignItems="center"
-          direction="row"
-          flexWrap="wrap"
-          gap={2}
-          sx={{ p: 3 }}
-        >
+        <Stack alignItems="center" direction="row" flexWrap="wrap" gap={2} sx={{ p: 3 }}>
           {hasSelection && (
             <BulkActionsMenu
               disabled={disabled}
@@ -179,8 +176,8 @@ export const InvoicesSearch = (props) => {
               sx={{
                 order: {
                   xs: 3,
-                  sm: 1
-                }
+                  sm: 1,
+                },
               }}
             />
           )}
@@ -192,8 +189,8 @@ export const InvoicesSearch = (props) => {
               flexGrow: 1,
               order: {
                 xs: 1,
-                sm: 2
-              }
+                sm: 2,
+              },
             }}
             value={query}
           />
@@ -201,13 +198,13 @@ export const InvoicesSearch = (props) => {
             disabled={disabled}
             onClick={filterDialog.handleOpen}
             size="large"
-            startIcon={(
+            startIcon={
               <SvgIcon fontSize="small">
                 <AdjustmentsHorizontalIcon />
               </SvgIcon>
-            )}
+            }
             sx={{ order: 2 }}
-            variant={hasFilters ? 'contained' : 'text'}
+            variant={hasFilters ? "contained" : "text"}
           >
             Filter
           </Button>
@@ -235,5 +232,5 @@ InvoicesSearch.propTypes = {
   onViewChange: PropTypes.func,
   query: PropTypes.string,
   selected: PropTypes.array,
-  view: PropTypes.oneOf(['all', 'ongoing', 'paid', 'overdue'])
+  view: PropTypes.oneOf(["all", "ongoing", "paid", "overdue"]),
 };

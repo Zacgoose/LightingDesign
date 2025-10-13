@@ -1,13 +1,12 @@
 import { Stack, ToggleButtonGroup, ToggleButton, Box, Typography, Button } from "@mui/material";
 import { NearMe, PanTool, Close, Cable } from "@mui/icons-material";
 
-
 const DesignerToolsToolbarControls = ({
   selectedTool,
   onToolChange,
   placementMode,
   onStopPlacement,
-  onDisconnectCable
+  onDisconnectCable,
 }) => (
   <Stack direction="row" spacing={1} alignItems="center">
     {placementMode ? (
@@ -36,12 +35,12 @@ const DesignerToolsToolbarControls = ({
             }
           }}
           size="small"
-          sx={{ 
-            '& .MuiToggleButton-root': {
-              padding: '1px',
-              minWidth: '30px',
-              minHeight: '30px'
-            }
+          sx={{
+            "& .MuiToggleButton-root": {
+              padding: "1px",
+              minWidth: "30px",
+              minHeight: "30px",
+            },
           }}
         >
           <ToggleButton value="select">
@@ -54,7 +53,7 @@ const DesignerToolsToolbarControls = ({
             <Cable fontSize="small" />
           </ToggleButton>
         </ToggleButtonGroup>
-        {selectedTool === 'connect' && (
+        {selectedTool === "connect" && (
           <Button
             variant="outlined"
             color="primary"
@@ -68,12 +67,16 @@ const DesignerToolsToolbarControls = ({
         )}
       </>
     )}
-    {selectedTool && selectedTool !== 'select' && selectedTool !== 'pan' && selectedTool !== 'connect' && !placementMode && (
-      <Typography variant="body2" color="primary">
-        Click on canvas to place {selectedTool}
-      </Typography>
-    )}
-    {selectedTool === 'connect' && (
+    {selectedTool &&
+      selectedTool !== "select" &&
+      selectedTool !== "pan" &&
+      selectedTool !== "connect" &&
+      !placementMode && (
+        <Typography variant="body2" color="primary">
+          Click on canvas to place {selectedTool}
+        </Typography>
+      )}
+    {selectedTool === "connect" && (
       <Typography variant="body2" color="info.main">
         Click objects to string together, right-click to split
       </Typography>

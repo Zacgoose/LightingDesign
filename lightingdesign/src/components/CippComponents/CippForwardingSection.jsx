@@ -5,8 +5,13 @@ import { Grid } from "@mui/system";
 import { CippApiResults } from "./CippApiResults";
 import { getCippValidator } from "/src/utils/get-cipp-validator";
 
-const CippForwardingSection = ({ formControl, usersList, contactsList, postRequest, handleSubmit }) => {
-
+const CippForwardingSection = ({
+  formControl,
+  usersList,
+  contactsList,
+  postRequest,
+  handleSubmit,
+}) => {
   const internalAddressOptions = [
     // Add users
     ...(usersList?.data?.Results?.map((user) => ({
@@ -17,7 +22,7 @@ const CippForwardingSection = ({ formControl, usersList, contactsList, postReque
     ...(contactsList?.data?.Results?.map((contact) => ({
       value: contact.mail || contact.emailAddress,
       label: `${contact.displayName} (${contact.mail || contact.emailAddress}) - Contact`,
-    })) || [])
+    })) || []),
   ];
 
   return (
@@ -77,11 +82,11 @@ const CippForwardingSection = ({ formControl, usersList, contactsList, postReque
         name="forwarding.KeepCopy"
         formControl={formControl}
       />
-      
+
       <Grid size={12}>
         <CippApiResults apiObject={postRequest} />
       </Grid>
-      
+
       <Grid>
         <Button
           onClick={() => handleSubmit("forwarding")}

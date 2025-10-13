@@ -7,16 +7,16 @@ import { getCippTranslation } from "../../utils/get-cipp-translation";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 
 export const CippWizardConfirmation = (props) => {
-  const { 
-    postUrl, 
-    lastStep, 
-    formControl, 
-    onPreviousStep, 
-    onNextStep, 
+  const {
+    postUrl,
+    lastStep,
+    formControl,
+    onPreviousStep,
+    onNextStep,
     currentStep,
-    columns = 2 // Default to 2 columns for backward compatibility
+    columns = 2, // Default to 2 columns for backward compatibility
   } = props;
-  
+
   const formValues = formControl.getValues();
   const formEntries = Object.entries(formValues);
 
@@ -34,14 +34,14 @@ export const CippWizardConfirmation = (props) => {
 
   // Filter out null values and undefined values which could be from hidden conditional fields
   const filteredFormEntries = formEntries.filter(
-    ([_, value]) => value !== null && value !== undefined
+    ([_, value]) => value !== null && value !== undefined,
   );
 
   const tenantEntry = filteredFormEntries.find(
-    ([key]) => key === "tenantFilter" || key === "tenant"
+    ([key]) => key === "tenantFilter" || key === "tenant",
   );
   const userEntry = filteredFormEntries.find(([key]) =>
-    ["user", "userPrincipalName", "username"].includes(key)
+    ["user", "userPrincipalName", "username"].includes(key),
   );
 
   const filteredEntries = formEntries.filter(
@@ -50,7 +50,7 @@ export const CippWizardConfirmation = (props) => {
       key !== "tenantFilter" &&
       key !== "tenant" &&
       !["user", "userPrincipalName", "username"].includes(key) &&
-      !key.startsWith('HIDDEN_')
+      !key.startsWith("HIDDEN_"),
   );
 
   // Calculate total entries including special ones for even distribution
@@ -73,14 +73,14 @@ export const CippWizardConfirmation = (props) => {
       // Find the column with the fewest entries
       let targetColumn = 0;
       let minLength = result[0].length;
-      
+
       for (let i = 1; i < columns; i++) {
         if (result[i].length < minLength) {
           minLength = result[i].length;
           targetColumn = i;
         }
       }
-      
+
       result[targetColumn].push(entry);
     });
 
@@ -98,7 +98,7 @@ export const CippWizardConfirmation = (props) => {
       4: { lg: 3, md: 6, xs: 12 },
       6: { lg: 2, md: 4, xs: 12 },
     };
-    
+
     return sizes[columns] || sizes[2]; // Default to 2 columns
   };
 

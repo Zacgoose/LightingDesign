@@ -30,7 +30,8 @@ const Page = () => {
       data: {
         customerId: "id",
       },
-      confirmText: "Are you sure you want to delete this customer? This will also affect related jobs.",
+      confirmText:
+        "Are you sure you want to delete this customer? This will also affect related jobs.",
       icon: <Delete />,
       color: "danger",
     },
@@ -38,11 +39,7 @@ const Page = () => {
 
   // Define off-canvas details when clicking a row
   const offCanvas = {
-    extendedInfoFields: [
-      "CustomerName",
-      "Status",
-      "DateTime",
-    ],
+    extendedInfoFields: ["CustomerName", "Status", "DateTime"],
     actions: actions,
   };
 
@@ -66,11 +63,7 @@ const Page = () => {
   ];
 
   // Columns to display in the table
-  const simpleColumns = [
-    "CustomerName",
-    "Status",
-    "DateTime",
-  ];
+  const simpleColumns = ["CustomerName", "Status", "DateTime"];
 
   return (
     <CippTablePage
@@ -81,12 +74,7 @@ const Page = () => {
       simpleColumns={simpleColumns}
       filters={filterList}
       cardButton={
-        <Button
-          component={Link}
-          href="/customers/new"
-          startIcon={<Add />}
-          variant="contained"
-        >
+        <Button component={Link} href="/customers/new" startIcon={<Add />} variant="contained">
           New Customer
         </Button>
       }

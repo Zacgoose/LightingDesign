@@ -23,8 +23,8 @@ const Page = () => {
                     Reports
                   </Typography>
                   <Typography variant="body1" color="text.secondary">
-                    This page will contain various reports including job reports, customer analytics, 
-                    product usage statistics, and more.
+                    This page will contain various reports including job reports, customer
+                    analytics, product usage statistics, and more.
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                     Coming soon...

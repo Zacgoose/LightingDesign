@@ -109,7 +109,7 @@ export const CippFormInputArray = ({
       </Box>
 
       {fields.map((field, index) =>
-        mode === "simple" ? renderSimpleField(field, index) : renderKeyValueField(field, index)
+        mode === "simple" ? renderSimpleField(field, index) : renderKeyValueField(field, index),
       )}
     </Box>
   );

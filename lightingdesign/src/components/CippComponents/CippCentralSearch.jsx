@@ -75,7 +75,7 @@ export const CippCentralSearch = ({ handleClose, open }) => {
         </Typography>
       ) : (
         part
-      )
+      ),
     );
   };
 

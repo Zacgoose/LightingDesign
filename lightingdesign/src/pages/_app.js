@@ -38,7 +38,7 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 const ReactQueryDevtoolsProduction = React.lazy(() =>
   import("@tanstack/react-query-devtools/build/modern/production.js").then((d) => ({
     default: d.ReactQueryDevtools,
-  }))
+  })),
 );
 TimeAgo.addDefaultLocale(en);
 
@@ -76,7 +76,7 @@ const App = (props) => {
               }
               const queryKeyString = String(queryKey[0] || "");
               const excludeFromPersisting = excludeQueryKeys.some((key) =>
-                queryKeyString.includes(key)
+                queryKeyString.includes(key),
               );
               return !excludeFromPersisting;
             }
@@ -111,7 +111,7 @@ const App = (props) => {
       onClick: () =>
         window.open(
           "https://github.com/KelvinTegelaar/CIPP/issues/new?template=feature.yml",
-          "_blank"
+          "_blank",
         ),
     },
     {

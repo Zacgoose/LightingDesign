@@ -29,10 +29,10 @@ const flattenObject = (obj, parentKey = "") => {
                     Object.entries(flattenObject(item)).map(([k, v]) => [
                       k,
                       getCippFormatting(v, k, "text", false),
-                    ])
-                  )
+                    ]),
+                  ),
                 )
-              : getCippFormatting(item, fullKey, "text", false, false)
+              : getCippFormatting(item, fullKey, "text", false, false),
           )
           .join(", ");
       }

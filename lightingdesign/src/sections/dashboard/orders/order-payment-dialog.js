@@ -1,7 +1,7 @@
-import PropTypes from 'prop-types';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import toast from 'react-hot-toast';
+import PropTypes from "prop-types";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import toast from "react-hot-toast";
 import {
   Button,
   Dialog,
@@ -11,60 +11,48 @@ import {
   FormHelperText,
   MenuItem,
   Stack,
-  TextField
-} from '@mui/material';
+  TextField,
+} from "@mui/material";
 
 const paymentStatusOptions = [
   {
-    label: 'Paid',
-    value: 'paid'
+    label: "Paid",
+    value: "paid",
   },
   {
-    label: 'Not paid',
-    value: 'not-paid'
-  }
+    label: "Not paid",
+    value: "not-paid",
+  },
 ];
 
 const paymentMethodOptions = [
   {
-    label: 'Direct debit',
-    value: 'debit'
+    label: "Direct debit",
+    value: "debit",
   },
   {
-    label: 'Paypal',
-    value: 'paypal'
-  }
+    label: "Paypal",
+    value: "paypal",
+  },
 ];
 
-const courierOptions = ['DHL', 'UPS', 'FedEx', 'Purolator'];
+const courierOptions = ["DHL", "UPS", "FedEx", "Purolator"];
 
 const getInitialValues = (order) => {
   return {
-    paymentStatus: order?.paymentStatus || '',
-    courier: order?.courier || '',
-    paymentMethod: order?.paymentMethod || '',
+    paymentStatus: order?.paymentStatus || "",
+    courier: order?.courier || "",
+    paymentMethod: order?.paymentMethod || "",
     submit: null,
-    trackingCode: order?.trackingCode || ''
+    trackingCode: order?.trackingCode || "",
   };
 };
 
 const validationSchema = Yup.object({
-  paymentStatus: Yup
-    .string()
-    .max(255)
-    .required('Payment status is required'),
-  courier: Yup
-    .string()
-    .max(255)
-    .required('Courier is required'),
-  paymentMethod: Yup
-    .string()
-    .max(255)
-    .required('Payment method is required'),
-  trackingCode: Yup
-    .string()
-    .max(255)
-    .required('Tracking is required')
+  paymentStatus: Yup.string().max(255).required("Payment status is required"),
+  courier: Yup.string().max(255).required("Courier is required"),
+  paymentMethod: Yup.string().max(255).required("Payment method is required"),
+  trackingCode: Yup.string().max(255).required("Tracking is required"),
 });
 
 export const OrderPaymentDialog = (props) => {
@@ -75,7 +63,7 @@ export const OrderPaymentDialog = (props) => {
     validationSchema,
     onSubmit: async (values, helpers) => {
       try {
-        toast.success('Order updated');
+        toast.success("Order updated");
         helpers.setStatus({ success: true });
         helpers.setSubmitting(false);
         onClose?.();
@@ -85,7 +73,7 @@ export const OrderPaymentDialog = (props) => {
         helpers.setErrors({ submit: err.message });
         helpers.setSubmitting(false);
       }
-    }
+    },
   });
 
   return (
@@ -95,12 +83,10 @@ export const OrderPaymentDialog = (props) => {
       onClose={onClose}
       open={open}
       TransitionProps={{
-        onExited: () => formik.resetForm()
+        onExited: () => formik.resetForm(),
       }}
     >
-      <DialogTitle>
-        Edit order
-      </DialogTitle>
+      <DialogTitle>Edit order</DialogTitle>
       <DialogContent>
         <Stack spacing={3}>
           <TextField
@@ -122,10 +108,7 @@ export const OrderPaymentDialog = (props) => {
             value={formik.values.paymentStatus}
           >
             {paymentStatusOptions.map((option) => (
-              <MenuItem
-                key={option.value}
-                value={option.value}
-              >
+              <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>
             ))}
@@ -142,10 +125,7 @@ export const OrderPaymentDialog = (props) => {
             value={formik.values.paymentMethod}
           >
             {paymentMethodOptions.map((option) => (
-              <MenuItem
-                key={option.value}
-                value={option.value}
-              >
+              <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>
             ))}
@@ -162,10 +142,7 @@ export const OrderPaymentDialog = (props) => {
             value={formik.values.courier}
           >
             {courierOptions.map((option) => (
-              <MenuItem
-                key={option}
-                value={option}
-              >
+              <MenuItem key={option} value={option}>
                 {option}
               </MenuItem>
             ))}
@@ -182,23 +159,19 @@ export const OrderPaymentDialog = (props) => {
           />
         </Stack>
         {formik.errors.submit && (
-          <FormHelperText
-            error
-            sx={{ mt: 2 }}
-          >
+          <FormHelperText error sx={{ mt: 2 }}>
             {formik.errors.submit}
           </FormHelperText>
         )}
       </DialogContent>
       <DialogActions>
-        <Button
-          color="inherit"
-          onClick={onClose}
-        >
+        <Button color="inherit" onClick={onClose}>
           Cancel
         </Button>
         <Button
-          onClick={() => { formik.handleSubmit(); }}
+          onClick={() => {
+            formik.handleSubmit();
+          }}
           variant="contained"
         >
           Save Changes
@@ -211,5 +184,5 @@ export const OrderPaymentDialog = (props) => {
 OrderPaymentDialog.propTypes = {
   onClose: PropTypes.func,
   open: PropTypes.bool,
-  order: PropTypes.object
+  order: PropTypes.object,
 };

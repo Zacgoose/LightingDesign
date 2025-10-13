@@ -151,13 +151,13 @@ const replaceGuidsAndUpnsInString = (str, guidMapping, upnMapping, isLoadingGuid
       if (upnMapping[guid]) {
         result = result.replace(
           new RegExp(fullMatch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
-          upnMapping[guid]
+          upnMapping[guid],
         );
         hasResolvedNames = true;
       } else if (guidMapping[guid]) {
         result = result.replace(
           new RegExp(fullMatch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
-          guidMapping[guid]
+          guidMapping[guid],
         );
         hasResolvedNames = true;
       }
@@ -231,7 +231,7 @@ export const useGuidResolver = (manualTenant = null) => {
             ids: pendingGuidsRef.current,
             $select: "id,displayName,userPrincipalName,mail",
           },
-          retryAfterSeconds * 1000
+          retryAfterSeconds * 1000,
         );
         return;
       }
@@ -266,7 +266,7 @@ export const useGuidResolver = (manualTenant = null) => {
         // Add unresolved GUIDs to partner tenant fallback lookup
         if (notReturned.length > 0) {
           console.log(
-            `${notReturned.length} GUIDs not resolved by primary tenant, trying partner tenant lookup`
+            `${notReturned.length} GUIDs not resolved by primary tenant, trying partner tenant lookup`,
           );
 
           // Add to partner lookup with the current tenant as fallback
@@ -284,7 +284,7 @@ export const useGuidResolver = (manualTenant = null) => {
 
             // Use partner tenant API for unresolved GUIDs
             console.log(
-              `Sending partner fallback request for ${notReturned.length} GUIDs in tenant ${activeTenant}`
+              `Sending partner fallback request for ${notReturned.length} GUIDs in tenant ${activeTenant}`,
             );
             partnerDirectoryObjectsMutation.mutate({
               url: "/api/ListDirectoryObjects",
@@ -343,7 +343,7 @@ export const useGuidResolver = (manualTenant = null) => {
               ids: guidsToRetry,
               $select: "id,displayName,userPrincipalName,mail",
             },
-            retryAfterSeconds * 1000
+            retryAfterSeconds * 1000,
           );
         }
         return;
@@ -379,7 +379,7 @@ export const useGuidResolver = (manualTenant = null) => {
 
         const returnedGuids = new Set(data.value.map((item) => item.id));
         const stillNotFound = [...allPendingPartnerGuids].filter(
-          (guid) => !returnedGuids.has(guid)
+          (guid) => !returnedGuids.has(guid),
         );
 
         // Add truly unresolved GUIDs to notFoundGuids
@@ -404,7 +404,7 @@ export const useGuidResolver = (manualTenant = null) => {
       if (guidsSet.size > 0) {
         const guidsArray = Array.from(guidsSet);
         const notResolvedGuids = guidsArray.filter(
-          (guid) => !guidMapping[guid] && !notFoundGuidsRef.current.has(guid)
+          (guid) => !guidMapping[guid] && !notFoundGuidsRef.current.has(guid),
         );
 
         if (notResolvedGuids.length > 0) {
@@ -424,7 +424,7 @@ export const useGuidResolver = (manualTenant = null) => {
 
             if (guidsToSend.length > 0) {
               console.log(
-                `Sending primary tenant request for ${guidsToSend.length} GUIDs in tenant ${activeTenant}`
+                `Sending primary tenant request for ${guidsToSend.length} GUIDs in tenant ${activeTenant}`,
               );
               directoryObjectsMutation.mutate({
                 url: "/api/ListDirectoryObjects",
@@ -446,7 +446,7 @@ export const useGuidResolver = (manualTenant = null) => {
         partnerGuidsMap.forEach((guids, tenantDomain) => {
           const guidsArray = Array.from(guids);
           const notResolvedGuids = guidsArray.filter(
-            (guid) => !guidMapping[guid] && !notFoundGuidsRef.current.has(guid)
+            (guid) => !guidMapping[guid] && !notFoundGuidsRef.current.has(guid),
           );
 
           if (notResolvedGuids.length > 0) {
@@ -455,7 +455,7 @@ export const useGuidResolver = (manualTenant = null) => {
               pendingPartnerGuidsRef.current.set(tenantDomain, new Set());
             }
             notResolvedGuids.forEach((guid) =>
-              pendingPartnerGuidsRef.current.get(tenantDomain).add(guid)
+              pendingPartnerGuidsRef.current.get(tenantDomain).add(guid),
             );
 
             setIsLoadingGuids(true);
@@ -471,7 +471,7 @@ export const useGuidResolver = (manualTenant = null) => {
 
               if (guidsToSend.length > 0) {
                 console.log(
-                  `Sending partner tenant request for ${guidsToSend.length} GUIDs in tenant ${tenantDomain}`
+                  `Sending partner tenant request for ${guidsToSend.length} GUIDs in tenant ${tenantDomain}`,
                 );
                 partnerDirectoryObjectsMutation.mutate({
                   url: "/api/ListDirectoryObjects",
@@ -492,13 +492,13 @@ export const useGuidResolver = (manualTenant = null) => {
         setIsLoadingGuids(false);
       }
     },
-    [guidMapping, activeTenant, directoryObjectsMutation, partnerDirectoryObjectsMutation]
+    [guidMapping, activeTenant, directoryObjectsMutation, partnerDirectoryObjectsMutation],
   );
 
   // Create a memoized version of the string replacement function
   const replaceGuidsAndUpnsInStringMemoized = useCallback(
     (str) => replaceGuidsAndUpnsInString(str, guidMapping, upnMapping, isLoadingGuids),
-    [guidMapping, upnMapping, isLoadingGuids]
+    [guidMapping, upnMapping, isLoadingGuids],
   );
 
   // Cleanup function to clear any pending timeouts when the component unmounts

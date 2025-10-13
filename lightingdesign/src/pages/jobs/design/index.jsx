@@ -277,7 +277,6 @@ const Page = () => {
     if (transformed) updateHistory(transformed);
     setIsSaving(true);
 
-    const strippedProducts = products.map(stripProductMetadata);
     const strippedLayers = stripLayersForSave(layers);
 
     saveDesignMutation.mutate({
@@ -285,8 +284,9 @@ const Page = () => {
       data: {
         jobId: id,
         designData: {
-          products: strippedProducts,
-          connectors,
+          // Empty arrays at root level - actual data is in layers
+          products: [],
+          connectors: [],
           layers: strippedLayers,
           canvasSettings: {
             width: canvasWidth,
@@ -299,8 +299,6 @@ const Page = () => {
     });
   }, [
     id,
-    products,
-    connectors,
     layers,
     canvasWidth,
     canvasHeight,
@@ -308,7 +306,6 @@ const Page = () => {
     stagePosition,
     applyGroupTransform,
     updateHistory,
-    stripProductMetadata,
     stripLayersForSave,
     saveDesignMutation,
   ]);

@@ -124,20 +124,39 @@ export const useDesignLoader = ({
         // 2. Load layers with enriched products (if present)
         const hasLayers = loadedDesign.layers && loadedDesign.layers.length > 0;
         if (hasLayers) {
-          const enrichedLayers = loadedDesign.layers.map((layer) => ({
-            ...layer,
-            products: layer.products.map((savedProduct) =>
-              enrichProduct(savedProduct, productsData.data),
-            ),
-          }));
-
-          // Load all layers at once
-          loadLayers(enrichedLayers);
+          // Check if products are stored in layers or at root level
+          const productsInLayers = loadedDesign.layers.some(layer => 
+            layer.products && layer.products.length > 0
+          );
           
-          // When layers exist, DON'T load root-level data as it's stored in layers
-          // The layer switching logic in index.jsx will handle loading from active layer
+          if (productsInLayers) {
+            // New format: Products are stored in each layer
+            const enrichedLayers = loadedDesign.layers.map((layer) => ({
+              ...layer,
+              products: layer.products.map((savedProduct) =>
+                enrichProduct(savedProduct, productsData.data),
+              ),
+            }));
+            loadLayers(enrichedLayers);
+          } else {
+            // Old format: Products are at root level with sublayerId references
+            // Load layers first (for background images, scale factors, etc.)
+            loadLayers(loadedDesign.layers);
+            
+            // Then load root-level products/connectors
+            if (loadedDesign.products !== undefined) {
+              const enrichedProducts = loadedDesign.products.map((savedProduct) =>
+                enrichProduct(savedProduct, productsData.data),
+              );
+              updateHistory(enrichedProducts);
+            }
+            
+            if (loadedDesign.connectors !== undefined) {
+              setConnectors(loadedDesign.connectors);
+            }
+          }
         } else {
-          // 3. Load root-level products (legacy support - only if no layers)
+          // 3. Load root-level products (legacy support - no layers at all)
           if (loadedDesign.products !== undefined) {
             const enrichedProducts = loadedDesign.products.map((savedProduct) =>
               enrichProduct(savedProduct, productsData.data),

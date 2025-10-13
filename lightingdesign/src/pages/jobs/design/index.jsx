@@ -284,7 +284,7 @@ const Page = () => {
       data: {
         jobId: id,
         designData: {
-          // Empty arrays at root level - actual data is in layers
+          // New format: Empty arrays at root level, data stored in layers
           products: [],
           connectors: [],
           layers: strippedLayers,

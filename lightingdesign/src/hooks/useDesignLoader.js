@@ -122,7 +122,8 @@ export const useDesignLoader = ({
         }
 
         // 2. Load layers with enriched products (if present)
-        if (loadedDesign.layers && loadedDesign.layers.length > 0) {
+        const hasLayers = loadedDesign.layers && loadedDesign.layers.length > 0;
+        if (hasLayers) {
           const enrichedLayers = loadedDesign.layers.map((layer) => ({
             ...layer,
             products: layer.products.map((savedProduct) =>
@@ -132,19 +133,22 @@ export const useDesignLoader = ({
 
           // Load all layers at once
           loadLayers(enrichedLayers);
-        }
+          
+          // When layers exist, DON'T load root-level data as it's stored in layers
+          // The layer switching logic in index.jsx will handle loading from active layer
+        } else {
+          // 3. Load root-level products (legacy support - only if no layers)
+          if (loadedDesign.products !== undefined) {
+            const enrichedProducts = loadedDesign.products.map((savedProduct) =>
+              enrichProduct(savedProduct, productsData.data),
+            );
+            updateHistory(enrichedProducts);
+          }
 
-        // 3. Load root-level products (legacy support)
-        if (loadedDesign.products !== undefined) {
-          const enrichedProducts = loadedDesign.products.map((savedProduct) =>
-            enrichProduct(savedProduct, productsData.data),
-          );
-          updateHistory(enrichedProducts);
-        }
-
-        // 4. Load connectors
-        if (loadedDesign.connectors !== undefined) {
-          setConnectors(loadedDesign.connectors);
+          // 4. Load connectors (only if no layers)
+          if (loadedDesign.connectors !== undefined) {
+            setConnectors(loadedDesign.connectors);
+          }
         }
 
         // 5. Update metadata

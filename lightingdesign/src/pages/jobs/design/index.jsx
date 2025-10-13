@@ -1,6 +1,15 @@
 import { useRouter } from "next/router";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Box, Container, Card, CardContent, useTheme, CircularProgress, Typography } from "@mui/material";
+import {
+  Box,
+  Container,
+  Card,
+  CardContent,
+  useTheme,
+  CircularProgress,
+  Typography,
+  TextField,
+} from "@mui/material";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { useForm } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,7 +26,6 @@ import { MeasurementConfirmation } from "/src/components/designer/MeasurementCon
 import { LayerSwitcher } from "/src/components/designer/LayerSwitcher";
 import { SubLayerControls } from "/src/components/designer/SubLayerControls";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
-import { TextField } from "@mui/material";
 import { useHistory } from "/src/hooks/useHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
 import { useLayerManager } from "/src/hooks/useLayerManager";
@@ -82,7 +90,7 @@ const Page = () => {
     handleZoomOut,
     handleResetView,
   } = canvasState;
-  
+
   // Layer management
   const layerManager = useLayerManager();
   const {
@@ -101,7 +109,7 @@ const Page = () => {
     renameSublayer,
     setDefaultSublayer,
   } = layerManager;
-  
+
   // Placement mode
   const [placementMode, setPlacementMode] = useState(null);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
@@ -124,10 +132,12 @@ const Page = () => {
   const lastSyncedScaleFactor = useRef(null);
 
   const [connectors, setConnectors] = useState(activeLayer?.connectors || []);
-  
+
   // Background and Scale - now derived from active layer
   const [backgroundImage, setBackgroundImage] = useState(activeLayer?.backgroundImage || null);
-  const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(activeLayer?.backgroundImageNaturalSize || null);
+  const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(
+    activeLayer?.backgroundImageNaturalSize || null,
+  );
   const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100);
 
   // Selection state management using custom hook
@@ -174,8 +184,8 @@ const Page = () => {
   const scaleForm = useForm({
     mode: "onChange",
     defaultValues: {
-      scale: 1
-    }
+      scale: 1,
+    },
   });
 
   // Keep products in sync with active layer (save to layer when products change)
@@ -193,8 +203,10 @@ const Page = () => {
   // Keep background image in sync with active layer
   useEffect(() => {
     if (isLoadingLayerData.current) return;
-    if (backgroundImage !== lastSyncedBackgroundImage.current || 
-        backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current) {
+    if (
+      backgroundImage !== lastSyncedBackgroundImage.current ||
+      backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current
+    ) {
       updateLayer(activeLayerId, { backgroundImage, backgroundImageNaturalSize });
       lastSyncedBackgroundImage.current = backgroundImage;
       lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
@@ -281,9 +293,9 @@ const Page = () => {
             height: canvasHeight,
             scale: stageScale,
             position: stagePosition,
-          }
-        }
-      }
+          },
+        },
+      },
     });
   }, [
     id,
@@ -322,79 +334,95 @@ const Page = () => {
   }, []);
 
   // Handler for applying scale to selected products
-  const handleScaleConfirm = useCallback((scaleValue) => {
-    scaleValue = Number(scaleValue);
-    if (isNaN(scaleValue) || scaleValue <= 0) return;
+  const handleScaleConfirm = useCallback(
+    (scaleValue) => {
+      scaleValue = Number(scaleValue);
+      if (isNaN(scaleValue) || scaleValue <= 0) return;
 
-    const newProducts = products.map(product => {
-      if (!selectedIds.includes(product.id)) return product;
-      
-      let updated = { ...product };
-      const baseScaleX = product.baseScaleX || 1;
-      const baseScaleY = product.baseScaleY || 1;
-      
-      if (!product.baseScaleX) {
-        updated.baseScaleX = product.scaleX || 1;
-        updated.baseScaleY = product.scaleY || 1;
+      const newProducts = products.map((product) => {
+        if (!selectedIds.includes(product.id)) return product;
+
+        let updated = { ...product };
+        const baseScaleX = product.baseScaleX || 1;
+        const baseScaleY = product.baseScaleY || 1;
+
+        if (!product.baseScaleX) {
+          updated.baseScaleX = product.scaleX || 1;
+          updated.baseScaleY = product.scaleY || 1;
+        }
+
+        updated.scaleX = baseScaleX * scaleValue;
+        updated.scaleY = baseScaleY * scaleValue;
+
+        return updated;
+      });
+
+      updateHistory(newProducts);
+      forceGroupUpdate();
+
+      if (transformerRef.current && selectionGroupRef.current) {
+        selectionGroupRef.current.scaleX(1);
+        selectionGroupRef.current.scaleY(1);
+        transformerRef.current.nodes([selectionGroupRef.current]);
+        transformerRef.current.getLayer()?.batchDraw();
       }
-      
-      updated.scaleX = baseScaleX * scaleValue;
-      updated.scaleY = baseScaleY * scaleValue;
-      
-      return updated;
-    });
-
-    updateHistory(newProducts);
-    forceGroupUpdate();
-    
-    if (transformerRef.current && selectionGroupRef.current) {
-      selectionGroupRef.current.scaleX(1);
-      selectionGroupRef.current.scaleY(1);
-      transformerRef.current.nodes([selectionGroupRef.current]);
-      transformerRef.current.getLayer()?.batchDraw();
-    }
-    setScaleDialogOpen(false);
-  }, [products, selectedIds, updateHistory, forceGroupUpdate, transformerRef, selectionGroupRef]);
+      setScaleDialogOpen(false);
+    },
+    [products, selectedIds, updateHistory, forceGroupUpdate, transformerRef, selectionGroupRef],
+  );
 
   // Update local state when switching layers
   useEffect(() => {
     if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
       // Before switching, ensure current layer's data is synced
-      if (lastLoadedLayerId.current && (
-          backgroundImage !== lastSyncedBackgroundImage.current ||
+      if (
+        lastLoadedLayerId.current &&
+        (backgroundImage !== lastSyncedBackgroundImage.current ||
           backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current ||
-          scaleFactor !== lastSyncedScaleFactor.current
-      )) {
+          scaleFactor !== lastSyncedScaleFactor.current)
+      ) {
         updateLayer(lastLoadedLayerId.current, {
           backgroundImage,
           backgroundImageNaturalSize,
-          scaleFactor
+          scaleFactor,
         });
         lastSyncedBackgroundImage.current = backgroundImage;
         lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
         lastSyncedScaleFactor.current = scaleFactor;
       }
-      
+
       lastLoadedLayerId.current = activeLayerId;
       isLoadingLayerData.current = true;
-      
+
       updateHistory(activeLayer.products || []);
       setConnectors(activeLayer.connectors || []);
       setBackgroundImage(activeLayer.backgroundImage || null);
       setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
       setScaleFactor(activeLayer.scaleFactor || 100);
-      
+
       lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
       lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
       lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
-      
+
       const timer = setTimeout(() => {
         isLoadingLayerData.current = false;
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
-  }, [activeLayerId, activeLayer, updateHistory, backgroundImage, backgroundImageNaturalSize, scaleFactor, updateLayer, setConnectors, setBackgroundImage, setBackgroundImageNaturalSize, setScaleFactor]);
+  }, [
+    activeLayerId,
+    activeLayer,
+    updateHistory,
+    backgroundImage,
+    backgroundImageNaturalSize,
+    scaleFactor,
+    updateLayer,
+    setConnectors,
+    setBackgroundImage,
+    setBackgroundImageNaturalSize,
+    setScaleFactor,
+  ]);
 
   // Context menus hook
   const contextMenus = useContextMenus({
@@ -448,13 +476,13 @@ const Page = () => {
     connectors,
     clipboard,
     onCopy: () => {
-      const selectedProducts = products.filter(p => selectedIds.includes(p.id));
-      const selectedConnectors = connectors.filter(c => 
-        selectedIds.includes(c.from) && selectedIds.includes(c.to)
+      const selectedProducts = products.filter((p) => selectedIds.includes(p.id));
+      const selectedConnectors = connectors.filter(
+        (c) => selectedIds.includes(c.from) && selectedIds.includes(c.to),
       );
       clipboard.current = {
-        products: selectedProducts.map(p => ({ ...p })),
-        connectors: selectedConnectors.map(c => ({ ...c })),
+        products: selectedProducts.map((p) => ({ ...p })),
+        connectors: selectedConnectors.map((c) => ({ ...c })),
       };
     },
     onPaste: () => {
@@ -464,32 +492,32 @@ const Page = () => {
       const newProducts = clipboard.current.products.map((p, index) => {
         const newId = `product-${Date.now()}-${index}`;
         idMap[p.id] = newId;
-        return { 
-          ...p, 
-          id: newId, 
-          x: p.x + 20, 
+        return {
+          ...p,
+          id: newId,
+          x: p.x + 20,
           y: p.y + 20,
-          sublayerId: activeLayer?.defaultSublayerId || null
+          sublayerId: activeLayer?.defaultSublayerId || null,
         };
       });
-      
+
       const newConnectors = (clipboard.current.connectors || []).map((c, index) => ({
         ...c,
         id: `connector-${Date.now()}-${index}`,
         from: idMap[c.from],
         to: idMap[c.to],
       }));
-      
+
       updateHistory([...products, ...newProducts]);
       setConnectors([...connectors, ...newConnectors]);
-      setSelectedIds(newProducts.map(p => p.id));
+      setSelectedIds(newProducts.map((p) => p.id));
       forceGroupUpdate();
     },
     onDelete: () => contextMenus.handleDeleteSelected(),
     onSelectAll: () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
-      setSelectedIds(products.map(p => p.id));
+      setSelectedIds(products.map((p) => p.id));
       forceGroupUpdate();
     },
     onEscape: () => {
@@ -517,9 +545,9 @@ const Page = () => {
   });
 
   const handleUploadFloorPlan = useCallback(() => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
     input.onchange = (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -543,43 +571,46 @@ const Page = () => {
     setMeasurePoints([]);
   }, []);
 
-  const handleCanvasMeasureClick = useCallback((e) => {
-    if (!measureMode) return;
-    const stage = e.target.getStage();
-    const pointerPosition = stage.getPointerPosition();
-    const canvasPos = {
-      x: (pointerPosition.x - stagePosition.x) / stageScale,
-      y: (pointerPosition.y - stagePosition.y) / stageScale,
-    };
-    setMeasurePoints(points => {
-      if (points.length >= 2) return points;
-      const newPoints = [...points, canvasPos];
-      if (newPoints.length === 2) {
-        setMeasureDialogOpen(true);
-      }
-      return newPoints;
-    });
-  }, [measureMode, stagePosition, stageScale]);
+  const handleCanvasMeasureClick = useCallback(
+    (e) => {
+      if (!measureMode) return;
+      const stage = e.target.getStage();
+      const pointerPosition = stage.getPointerPosition();
+      const canvasPos = {
+        x: (pointerPosition.x - stagePosition.x) / stageScale,
+        y: (pointerPosition.y - stagePosition.y) / stageScale,
+      };
+      setMeasurePoints((points) => {
+        if (points.length >= 2) return points;
+        const newPoints = [...points, canvasPos];
+        if (newPoints.length === 2) {
+          setMeasureDialogOpen(true);
+        }
+        return newPoints;
+      });
+    },
+    [measureMode, stagePosition, stageScale],
+  );
 
   const calculateDistance = useCallback((point1, point2) => {
     if (!point1 || !point2) return 0;
-    return Math.sqrt(
-      Math.pow(point2.x - point1.x, 2) +
-      Math.pow(point2.y - point1.y, 2)
-    );
+    return Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
   }, []);
 
-  const handleMeasureConfirm = useCallback((distance) => {
-    const realDistance = Number(distance);
-    const pixelDistance = calculateDistance(measurePoints[0], measurePoints[1]);
-    if (realDistance > 0 && pixelDistance > 0) {
-      setScaleFactor(pixelDistance / realDistance);
-    }
-    setMeasureMode(false);
-    setMeasurePoints([]);
-    setMeasureDialogOpen(false);
-    setMeasureValue(0);
-  }, [measurePoints, calculateDistance, setScaleFactor]);
+  const handleMeasureConfirm = useCallback(
+    (distance) => {
+      const realDistance = Number(distance);
+      const pixelDistance = calculateDistance(measurePoints[0], measurePoints[1]);
+      if (realDistance > 0 && pixelDistance > 0) {
+        setScaleFactor(pixelDistance / realDistance);
+      }
+      setMeasureMode(false);
+      setMeasurePoints([]);
+      setMeasureDialogOpen(false);
+      setMeasureValue(0);
+    },
+    [measurePoints, calculateDistance, setScaleFactor],
+  );
 
   const handleMeasureCancel = useCallback(() => {
     setMeasureMode(false);
@@ -591,7 +622,7 @@ const Page = () => {
   const handleResetScale = useCallback(() => {
     const transformed = applyGroupTransform();
     const baseProducts = transformed || products;
-    const newProducts = baseProducts.map(product => {
+    const newProducts = baseProducts.map((product) => {
       if (!selectedIds.includes(product.id)) return product;
       return { ...product, scaleX: 1, scaleY: 1 };
     });
@@ -600,17 +631,18 @@ const Page = () => {
     contextMenus.handleCloseContextMenu();
   }, [products, selectedIds, applyGroupTransform, updateHistory, forceGroupUpdate, contextMenus]);
 
-  const handleAssignToSublayer = useCallback((sublayerId) => {
-    const transformed = applyGroupTransform();
-    const baseProducts = transformed || products;
-    const newProducts = baseProducts.map(product =>
-      selectedIds.includes(product.id)
-        ? { ...product, sublayerId }
-        : product
-    );
-    updateHistory(newProducts);
-    contextMenus.handleCloseContextMenu();
-  }, [products, selectedIds, applyGroupTransform, updateHistory, contextMenus]);
+  const handleAssignToSublayer = useCallback(
+    (sublayerId) => {
+      const transformed = applyGroupTransform();
+      const baseProducts = transformed || products;
+      const newProducts = baseProducts.map((product) =>
+        selectedIds.includes(product.id) ? { ...product, sublayerId } : product,
+      );
+      updateHistory(newProducts);
+      contextMenus.handleCloseContextMenu();
+    },
+    [products, selectedIds, applyGroupTransform, updateHistory, contextMenus],
+  );
 
   const handleSwapPlacementProduct = useCallback(() => {
     setProductDrawerVisible(true);
@@ -626,114 +658,140 @@ const Page = () => {
     pendingInsertPosition.current = null;
   }, []);
 
-  const determineStrokeColorForSku = useCallback((sku) => {
-    if (!sku) return null;
-    
-    const existingProductsWithSku = products.filter(p => p.sku === sku);
-    
-    if (existingProductsWithSku.length > 0) {
-      const existingWithColor = existingProductsWithSku.find(p => p.strokeColor);
-      if (existingWithColor) {
-        return existingWithColor.strokeColor;
+  const determineStrokeColorForSku = useCallback(
+    (sku) => {
+      if (!sku) return null;
+
+      const existingProductsWithSku = products.filter((p) => p.sku === sku);
+
+      if (existingProductsWithSku.length > 0) {
+        const existingWithColor = existingProductsWithSku.find((p) => p.strokeColor);
+        if (existingWithColor) {
+          return existingWithColor.strokeColor;
+        }
       }
-    }
-    
-    const currentSkuList = [...new Set(products.map(p => p.sku).filter(Boolean))];
-    let skuIndex = currentSkuList.indexOf(sku);
-    
-    if (skuIndex === -1) {
-      skuIndex = currentSkuList.length;
-    }
-    
-    return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
-  }, [products]);
 
-  const createProductFromTemplate = useCallback((template, x, y) => {
-    const strokeColor = determineStrokeColorForSku(template.sku);
-    
-    return {
-      id: `product-${Date.now()}-${Math.random()}`,
-      x,
-      y,
-      rotation: 0,
-      scaleX: 1,
-      scaleY: 1,
-      baseScaleX: 1,
-      baseScaleY: 1,
-      color: null,
-      strokeColor: strokeColor,
-      name: template.name,
-      sku: template.sku,
-      brand: template.brand,
-      product_type: template.product_type_unigram,
-      price: parseFloat(template.price) || 0,
-      msrp: parseFloat(template.msrp) || 0,
-      imageUrl: template.imageUrl,
-      thumbnailUrl: template.thumbnailImageUrl,
-      category: template.top_web_category,
-      categories: template.category_hierarchy || [],
-      description: template.short_description,
-      colors: template.item_colours || [],
-      inStock: template.ss_in_stock === "1",
-      stockQty: parseInt(template.stock_qty) || 0,
-      metadata: template,
-      quantity: 1,
-      notes: "",
-      customLabel: "",
-      sublayerId: activeLayer?.defaultSublayerId || null,
-    };
-  }, [determineStrokeColorForSku, activeLayer]);
+      const currentSkuList = [...new Set(products.map((p) => p.sku).filter(Boolean))];
+      let skuIndex = currentSkuList.indexOf(sku);
 
-  const handleCanvasClick = useCallback((e) => {
-    if (placementMode && e.target === e.target.getStage()) {
+      if (skuIndex === -1) {
+        skuIndex = currentSkuList.length;
+      }
+
+      return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
+    },
+    [products],
+  );
+
+  const createProductFromTemplate = useCallback(
+    (template, x, y) => {
+      const strokeColor = determineStrokeColorForSku(template.sku);
+
+      return {
+        id: `product-${Date.now()}-${Math.random()}`,
+        x,
+        y,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+        baseScaleX: 1,
+        baseScaleY: 1,
+        color: null,
+        strokeColor: strokeColor,
+        name: template.name,
+        sku: template.sku,
+        brand: template.brand,
+        product_type: template.product_type_unigram,
+        price: parseFloat(template.price) || 0,
+        msrp: parseFloat(template.msrp) || 0,
+        imageUrl: template.imageUrl,
+        thumbnailUrl: template.thumbnailImageUrl,
+        category: template.top_web_category,
+        categories: template.category_hierarchy || [],
+        description: template.short_description,
+        colors: template.item_colours || [],
+        inStock: template.ss_in_stock === "1",
+        stockQty: parseInt(template.stock_qty) || 0,
+        metadata: template,
+        quantity: 1,
+        notes: "",
+        customLabel: "",
+        sublayerId: activeLayer?.defaultSublayerId || null,
+      };
+    },
+    [determineStrokeColorForSku, activeLayer],
+  );
+
+  const handleCanvasClick = useCallback(
+    (e) => {
+      if (placementMode && e.target === e.target.getStage()) {
+        const stage = e.target.getStage();
+        const pointerPosition = stage.getPointerPosition();
+        const canvasPos = {
+          x: (pointerPosition.x - stagePosition.x) / stageScale,
+          y: (pointerPosition.y - stagePosition.y) / stageScale,
+        };
+
+        const newProduct = createProductFromTemplate(
+          placementMode.template,
+          canvasPos.x,
+          canvasPos.y,
+        );
+        updateHistory([...products, newProduct]);
+      }
+    },
+    [placementMode, stagePosition, stageScale, createProductFromTemplate, products, updateHistory],
+  );
+
+  const handleCanvasMouseMove = useCallback(
+    (e) => {
+      if (!placementMode && !measureMode) return;
+
       const stage = e.target.getStage();
       const pointerPosition = stage.getPointerPosition();
-      const canvasPos = {
-        x: (pointerPosition.x - stagePosition.x) / stageScale,
-        y: (pointerPosition.y - stagePosition.y) / stageScale,
-      };
-      
-      const newProduct = createProductFromTemplate(placementMode.template, canvasPos.x, canvasPos.y);
-      updateHistory([...products, newProduct]);
-    }
-  }, [placementMode, stagePosition, stageScale, createProductFromTemplate, products, updateHistory]);
-
-  const handleCanvasMouseMove = useCallback((e) => {
-    if (!placementMode && !measureMode) return;
-    
-    const stage = e.target.getStage();
-    const pointerPosition = stage.getPointerPosition();
-    if (pointerPosition) {
-      const canvasPos = {
-        x: (pointerPosition.x - stagePosition.x) / stageScale,
-        y: (pointerPosition.y - stagePosition.y) / stageScale,
-      };
-      setCursorPosition(canvasPos);
-    }
-  }, [placementMode, measureMode, stagePosition, stageScale]);
+      if (pointerPosition) {
+        const canvasPos = {
+          x: (pointerPosition.x - stagePosition.x) / stageScale,
+          y: (pointerPosition.y - stagePosition.y) / stageScale,
+        };
+        setCursorPosition(canvasPos);
+      }
+    },
+    [placementMode, measureMode, stagePosition, stageScale],
+  );
 
   const handleStopPlacement = useCallback(() => {
     setPlacementMode(null);
     setSelectedTool("select");
   }, []);
 
-  const checkDeselect = useCallback((e) => {
-    if (e.evt.button !== 0) return;
-    
-    if (selectedTool === "pan") return;
-    
-    if (placementMode) {
-      handleCanvasClick(e);
-      return;
-    }
-    
-    const clickedOnEmpty = e.target === e.target.getStage();
-    if (clickedOnEmpty) {
-      const transformed = applyGroupTransform();
-      if (transformed) updateHistory(transformed);
-      clearSelection();
-    }
-  }, [selectedTool, placementMode, applyGroupTransform, updateHistory, clearSelection, handleCanvasClick]);
+  const checkDeselect = useCallback(
+    (e) => {
+      if (e.evt.button !== 0) return;
+
+      if (selectedTool === "pan") return;
+
+      if (placementMode) {
+        handleCanvasClick(e);
+        return;
+      }
+
+      const clickedOnEmpty = e.target === e.target.getStage();
+      if (clickedOnEmpty) {
+        const transformed = applyGroupTransform();
+        if (transformed) updateHistory(transformed);
+        clearSelection();
+      }
+    },
+    [
+      selectedTool,
+      placementMode,
+      applyGroupTransform,
+      updateHistory,
+      clearSelection,
+      handleCanvasClick,
+    ],
+  );
 
   const handleDisconnectCable = useCallback(() => setConnectSequence([]), []);
 
@@ -747,12 +805,14 @@ const Page = () => {
     <>
       {/* Loading indicator */}
       {(designData.isLoading || productsData.isLoading) && (
-        <Box sx={{ 
-          display: "flex", 
-          justifyContent: "center", 
-          alignItems: "center", 
-          height: "calc(100vh - 80px)" 
-        }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "calc(100vh - 80px)",
+          }}
+        >
           <Box sx={{ textAlign: "center" }}>
             <CircularProgress />
             <Typography variant="body1" sx={{ mt: 2 }}>
@@ -764,223 +824,251 @@ const Page = () => {
 
       {/* Main design interface */}
       {!designData.isLoading && !productsData.isLoading && (
-        <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 80px)", minHeight: 0 }}>
-          <Container maxWidth={false} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            height: "calc(100vh - 80px)",
+            minHeight: 0,
+          }}
+        >
+          <Container
+            maxWidth={false}
+            sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}
+          >
+            <div style={{ height: 4 }} />
 
-          <div style={{ height: 4 }} />
-
-          <DesignerToolbarRow
-            mainProps={{
-              onUploadFloorPlan: handleUploadFloorPlan,
-              onSave: handleSave,
-              onExport: handleExport,
-              onUndo: handleUndo,
-              onRedo: handleRedo,
-              canUndo: canUndo,
-              canRedo: canRedo,
-              onMeasure: handleMeasure,
-            }}
-            viewProps={{
-              showGrid: showGrid,
-              onToggleGrid: () => setShowGrid(!showGrid),
-              showLayers: showLayers,
-              onToggleLayers: () => setShowLayers(!showLayers),
-              onZoomIn: handleZoomIn,
-              onZoomOut: handleZoomOut,
-              onResetView: handleResetView,
-              zoomLevel: stageScale,
-              rotationSnaps: rotationSnaps,
-              onRotationSnapsChange: setRotationSnaps,
-            }}
-            toolsProps={{
-              selectedTool: selectedTool,
-              onToolChange: (tool) => {
-                // If leaving connect mode, clear connectSequence
-                if (selectedTool === 'connect' && tool !== 'connect') {
-                  setConnectSequence([]);
-                }
-                // Clear selections when changing tools
-                applyGroupTransform();
-                setSelectedIds([]);
-                setSelectedConnectorId(null);
-                setGroupKey(k => k + 1);
-                setSelectedTool(tool);
-              },
-              placementMode: placementMode,
-              onStopPlacement: handleStopPlacement,
-              onDisconnectCable: handleDisconnectCable,
-            }}
-          />
-
-          <Box sx={{ mb: 0.75 }}>
-            {/* Display API response messages */}
-            <CippApiResults apiObject={saveDesignMutation} floating={true} autoCloseSeconds={5} hideResultsButtons={true}/>
-            
-            <ProductSelectionDrawer 
-              onProductSelect={handleProductAdd}
-              visible={productDrawerVisible}
-              onOpen={() => setProductDrawerVisible(true)}
-              onClose={() => {
-                setProductDrawerVisible(false);
-                pendingInsertPosition.current = null;
+            <DesignerToolbarRow
+              mainProps={{
+                onUploadFloorPlan: handleUploadFloorPlan,
+                onSave: handleSave,
+                onExport: handleExport,
+                onUndo: handleUndo,
+                onRedo: handleRedo,
+                canUndo: canUndo,
+                canRedo: canRedo,
+                onMeasure: handleMeasure,
+              }}
+              viewProps={{
+                showGrid: showGrid,
+                onToggleGrid: () => setShowGrid(!showGrid),
+                showLayers: showLayers,
+                onToggleLayers: () => setShowLayers(!showLayers),
+                onZoomIn: handleZoomIn,
+                onZoomOut: handleZoomOut,
+                onResetView: handleResetView,
+                zoomLevel: stageScale,
+                rotationSnaps: rotationSnaps,
+                onRotationSnapsChange: setRotationSnaps,
+              }}
+              toolsProps={{
+                selectedTool: selectedTool,
+                onToolChange: (tool) => {
+                  // If leaving connect mode, clear connectSequence
+                  if (selectedTool === "connect" && tool !== "connect") {
+                    setConnectSequence([]);
+                  }
+                  // Clear selections when changing tools
+                  applyGroupTransform();
+                  setSelectedIds([]);
+                  setSelectedConnectorId(null);
+                  setGroupKey((k) => k + 1);
+                  setSelectedTool(tool);
+                },
+                placementMode: placementMode,
+                onStopPlacement: handleStopPlacement,
+                onDisconnectCable: handleDisconnectCable,
               }}
             />
-          </Box>
 
-          <Card sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-            <CardContent sx={{ p: 0, "&:last-child": { pb: 0 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-              <Box
-                ref={canvasContainerRef}
+            <Box sx={{ mb: 0.75 }}>
+              {/* Display API response messages */}
+              <CippApiResults
+                apiObject={saveDesignMutation}
+                floating={true}
+                autoCloseSeconds={5}
+                hideResultsButtons={true}
+              />
+
+              <ProductSelectionDrawer
+                onProductSelect={handleProductAdd}
+                visible={productDrawerVisible}
+                onOpen={() => setProductDrawerVisible(true)}
+                onClose={() => {
+                  setProductDrawerVisible(false);
+                  pendingInsertPosition.current = null;
+                }}
+              />
+            </Box>
+
+            <Card sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+              <CardContent
                 sx={{
+                  p: 0,
+                  "&:last-child": { pb: 0 },
                   flex: 1,
-                  width: "100%",
-                  height: "100%",
-                  position: "relative",
-                  overflow: "hidden", // prevents scrollbars
+                  display: "flex",
+                  flexDirection: "column",
                   minHeight: 0,
                 }}
               >
-                <DesignerCanvas
-                  width={canvasWidth}
-                  height={canvasHeight}
-                  stageScale={stageScale}
-                  stagePosition={stagePosition}
-                  showGrid={showGrid}
-                  onWheel={handleWheel}
-                  onDragEnd={handleStageDragEnd}
-                  draggable={selectedTool === "pan" && !placementMode}
-                  onMouseDown={measureMode ? handleCanvasMeasureClick : checkDeselect}
-                  onTouchStart={checkDeselect}
-                  onMouseMove={handleCanvasMouseMove}
-                  onContextMenu={contextMenus.handleStageContextMenu}
-                  selectedCount={selectedIds.length}
-                  backgroundImage={backgroundImage}
-                  backgroundImageNaturalSize={backgroundImageNaturalSize}
-                  scaleFactor={scaleFactor}
-                  onPan={handleCanvasPan}
+                <Box
+                  ref={canvasContainerRef}
+                  sx={{
+                    flex: 1,
+                    width: "100%",
+                    height: "100%",
+                    position: "relative",
+                    overflow: "hidden", // prevents scrollbars
+                    minHeight: 0,
+                  }}
                 >
-                  <ConnectorsLayer
-                    connectors={connectors}
-                    products={products}
-                    selectedConnectorId={selectedConnectorId}
-                    selectedTool={selectedTool}
-                    theme={theme}
-                    onConnectorSelect={(e) => {
-                      e.cancelBubble = true;
-                      const transformed = applyGroupTransform();
-                      if (transformed) updateHistory(transformed);
-                      setSelectedConnectorId(e.target.id());
-                      setSelectedIds([]);
-                      forceGroupUpdate();
-                    }}
-                    onConnectorChange={setConnectors}
-                    onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
-                  />
-
-                  <ProductsLayer
-                    products={filterProductsBySublayers(products, activeLayerId)}
-                    selectedIds={selectedIds}
-                    selectedTool={selectedTool}
-                    selectionSnapshot={selectionSnapshot}
-                    selectionGroupRef={selectionGroupRef}
-                    transformerRef={transformerRef}
-                    rotationSnaps={rotationSnaps}
-                    theme={theme}
-                    groupKey={groupKey}
-                    placementMode={placementMode}
-                    onProductClick={handleProductClick}
-                    onProductDragStart={handleProductDragStart}
-                    onProductDragEnd={handleProductDragEnd}
-                    onContextMenu={contextMenus.handleContextMenu}
-                    onGroupTransformEnd={handleGroupTransformEnd}
-                  />
-
-                  {/* Ghost product preview in placement mode */}
-                  {placementMode && (
-                    <ProductShape
-                      product={{
-                        ...createProductFromTemplate(placementMode.template, cursorPosition.x, cursorPosition.y),
-                        x: cursorPosition.x,
-                        y: cursorPosition.y,
-                      }}
-                      config={(() => {
-                        const productType = placementMode.template.product_type_unigram?.toLowerCase() || "default";
-                        return productTypesConfig[productType] || productTypesConfig.default;
-                      })()}
-                      isSelected={false}
-                      draggable={false}
-                      customStroke="#2196f3"
+                  <DesignerCanvas
+                    width={canvasWidth}
+                    height={canvasHeight}
+                    stageScale={stageScale}
+                    stagePosition={stagePosition}
+                    showGrid={showGrid}
+                    onWheel={handleWheel}
+                    onDragEnd={handleStageDragEnd}
+                    draggable={selectedTool === "pan" && !placementMode}
+                    onMouseDown={measureMode ? handleCanvasMeasureClick : checkDeselect}
+                    onTouchStart={checkDeselect}
+                    onMouseMove={handleCanvasMouseMove}
+                    onContextMenu={contextMenus.handleStageContextMenu}
+                    selectedCount={selectedIds.length}
+                    backgroundImage={backgroundImage}
+                    backgroundImageNaturalSize={backgroundImageNaturalSize}
+                    scaleFactor={scaleFactor}
+                    onPan={handleCanvasPan}
+                  >
+                    <ConnectorsLayer
+                      connectors={connectors}
+                      products={products}
+                      selectedConnectorId={selectedConnectorId}
+                      selectedTool={selectedTool}
                       theme={theme}
-                      opacity={0.6}
-                      listening={false}
-                      onMouseDown={() => {}}
-                      onContextMenu={() => {}}
+                      onConnectorSelect={(e) => {
+                        e.cancelBubble = true;
+                        const transformed = applyGroupTransform();
+                        if (transformed) updateHistory(transformed);
+                        setSelectedConnectorId(e.target.id());
+                        setSelectedIds([]);
+                        forceGroupUpdate();
+                      }}
+                      onConnectorChange={setConnectors}
+                      onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
                     />
-                  )}
 
-                  <MeasurementLayer
-                    measureMode={measureMode}
+                    <ProductsLayer
+                      products={filterProductsBySublayers(products, activeLayerId)}
+                      selectedIds={selectedIds}
+                      selectedTool={selectedTool}
+                      selectionSnapshot={selectionSnapshot}
+                      selectionGroupRef={selectionGroupRef}
+                      transformerRef={transformerRef}
+                      rotationSnaps={rotationSnaps}
+                      theme={theme}
+                      groupKey={groupKey}
+                      placementMode={placementMode}
+                      onProductClick={handleProductClick}
+                      onProductDragStart={handleProductDragStart}
+                      onProductDragEnd={handleProductDragEnd}
+                      onContextMenu={contextMenus.handleContextMenu}
+                      onGroupTransformEnd={handleGroupTransformEnd}
+                    />
+
+                    {/* Ghost product preview in placement mode */}
+                    {placementMode && (
+                      <ProductShape
+                        product={{
+                          ...createProductFromTemplate(
+                            placementMode.template,
+                            cursorPosition.x,
+                            cursorPosition.y,
+                          ),
+                          x: cursorPosition.x,
+                          y: cursorPosition.y,
+                        }}
+                        config={(() => {
+                          const productType =
+                            placementMode.template.product_type_unigram?.toLowerCase() || "default";
+                          return productTypesConfig[productType] || productTypesConfig.default;
+                        })()}
+                        isSelected={false}
+                        draggable={false}
+                        customStroke="#2196f3"
+                        theme={theme}
+                        opacity={0.6}
+                        listening={false}
+                        onMouseDown={() => {}}
+                        onContextMenu={() => {}}
+                      />
+                    )}
+
+                    <MeasurementLayer
+                      measureMode={measureMode}
+                      measurePoints={measurePoints}
+                      cursorPosition={cursorPosition}
+                      theme={theme}
+                      stagePosition={stagePosition}
+                      stageScale={stageScale}
+                      onMeasurePointAdd={(point) => {
+                        setMeasurePoints((points) => {
+                          if (points.length >= 2) return points;
+                          const newPoints = [...points, point];
+                          if (newPoints.length === 2) {
+                            setMeasureDialogOpen(true);
+                          }
+                          return newPoints;
+                        });
+                      }}
+                    />
+                  </DesignerCanvas>
+
+                  {/* Inline measurement confirmation */}
+                  <MeasurementConfirmation
+                    open={measureDialogOpen}
                     measurePoints={measurePoints}
-                    cursorPosition={cursorPosition}
-                    theme={theme}
                     stagePosition={stagePosition}
                     stageScale={stageScale}
-                    onMeasurePointAdd={(point) => {
-                      setMeasurePoints(points => {
-                        if (points.length >= 2) return points;
-                        const newPoints = [...points, point];
-                        if (newPoints.length === 2) {
-                          setMeasureDialogOpen(true);
-                        }
-                        return newPoints;
-                      });
-                    }}
+                    onConfirm={handleMeasureConfirm}
+                    onCancel={handleMeasureCancel}
+                    calculateDistance={calculateDistance}
+                    scaleFactor={scaleFactor}
                   />
-                </DesignerCanvas>
-                
-                {/* Inline measurement confirmation */}
-                <MeasurementConfirmation
-                  open={measureDialogOpen}
-                  measurePoints={measurePoints}
-                  stagePosition={stagePosition}
-                  stageScale={stageScale}
-                  onConfirm={handleMeasureConfirm}
-                  onCancel={handleMeasureCancel}
-                  calculateDistance={calculateDistance}
-                  scaleFactor={scaleFactor}
-                />
 
-                {/* Layer management panels */}
-                {showLayers && (
-                  <>
-                    <LayerSwitcher
-                      layers={layers}
-                      activeLayerId={activeLayerId}
-                      onLayerSelect={setActiveLayerId}
-                      onLayerAdd={addLayer}
-                      onLayerDelete={deleteLayer}
-                      onClose={() => setShowLayers(false)}
-                      subLayerControlsRef={subLayerControlsRef}
-                    />
-                    <SubLayerControls
-                      ref={subLayerControlsRef}
-                      sublayers={activeLayer?.sublayers || []}
-                      layerId={activeLayerId}
-                      defaultSublayerId={activeLayer?.defaultSublayerId}
-                      onSublayerToggle={toggleSublayerVisibility}
-                      onSublayerAdd={addSublayer}
-                      onSublayerRemove={removeSublayer}
-                      onSublayerRename={renameSublayer}
-                      onSetDefaultSublayer={setDefaultSublayer}
-                      onClose={() => setShowLayers(false)}
-                    />
-                  </>
-                )}
-              </Box>
-            </CardContent>
-          </Card>
-        </Container>
-      </Box>
+                  {/* Layer management panels */}
+                  {showLayers && (
+                    <>
+                      <LayerSwitcher
+                        layers={layers}
+                        activeLayerId={activeLayerId}
+                        onLayerSelect={setActiveLayerId}
+                        onLayerAdd={addLayer}
+                        onLayerDelete={deleteLayer}
+                        onClose={() => setShowLayers(false)}
+                        subLayerControlsRef={subLayerControlsRef}
+                      />
+                      <SubLayerControls
+                        ref={subLayerControlsRef}
+                        sublayers={activeLayer?.sublayers || []}
+                        layerId={activeLayerId}
+                        defaultSublayerId={activeLayer?.defaultSublayerId}
+                        onSublayerToggle={toggleSublayerVisibility}
+                        onSublayerAdd={addSublayer}
+                        onSublayerRemove={removeSublayer}
+                        onSublayerRename={renameSublayer}
+                        onSetDefaultSublayer={setDefaultSublayer}
+                        onClose={() => setShowLayers(false)}
+                      />
+                    </>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Container>
+        </Box>
       )}
 
       <ContextMenus
@@ -1007,12 +1095,12 @@ const Page = () => {
             handleScaleConfirm(data.scale);
             setScaleValue(data.scale);
           },
-          form: scaleForm
+          form: scaleForm,
         }}
       >
         <TextField
-          {...scaleForm.register('scale', {
-            onChange: (e) => setScaleValue(Number(e.target.value))
+          {...scaleForm.register("scale", {
+            onChange: (e) => setScaleValue(Number(e.target.value)),
           })}
           label="Scale"
           type="number"

@@ -40,13 +40,13 @@ export const SideNavItem = (props) => {
           : [...bookmarks, { label: title, path }],
       });
     },
-    [isBookmarked, bookmarks, handleUpdate, path, title]
+    [isBookmarked, bookmarks, handleUpdate, path, title],
   );
 
   // Dynamic spacing and font sizing based on depth
   const indent = depth > 0 ? depth * 1.5 : 0.5;
   const fontSize = depth === 0 ? 14 : 13;
-  
+
   // Use consistent 16px padding to keep icons aligned
   // This centers icons in collapsed state (56px width) and keeps them at same position when expanded
   const horizontalPadding = "16px";

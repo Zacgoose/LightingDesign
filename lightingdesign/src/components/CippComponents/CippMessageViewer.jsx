@@ -69,9 +69,7 @@ export const CippMessageViewer = ({ emailSource }) => {
   const currentTheme = useSettings()?.currentTheme?.value;
   const [darkMode, setDarkMode] = useState(currentTheme === "dark");
 
-  const emailStyle = (
-    <GlobalStyles styles={{ a: { color: darkMode ? "#bb86fc" : "#1a73e8" } }} />
-  );
+  const emailStyle = <GlobalStyles styles={{ a: { color: darkMode ? "#bb86fc" : "#1a73e8" } }} />;
 
   const theme = createTheme({
     palette: {
@@ -133,7 +131,7 @@ export const CippMessageViewer = ({ emailSource }) => {
       fileBytes = new Uint8Array(
         atob(attachment.data64)
           .split("")
-          .map((c) => c.charCodeAt(0))
+          .map((c) => c.charCodeAt(0)),
       );
     }
 
@@ -163,7 +161,7 @@ export const CippMessageViewer = ({ emailSource }) => {
       } else if (contentType.includes("text")) {
         const textContent = fileBytes;
         setDialogContent(
-          <CippCodeBlock code={textContent} language="plain" showLineNumbers={false} />
+          <CippCodeBlock code={textContent} language="plain" showLineNumbers={false} />,
         );
         setDialogTitle(fileName);
         setDialogOpen(true);
@@ -276,7 +274,7 @@ export const CippMessageViewer = ({ emailSource }) => {
                         return React.cloneElement(element, {
                           children: React.Children.map(
                             element.props.children,
-                            replaceCidWithBase64
+                            replaceCidWithBase64,
                           ),
                         });
                       }
@@ -354,10 +352,10 @@ export const CippMessageViewer = ({ emailSource }) => {
                         const color = noResults
                           ? ""
                           : allPass
-                          ? "green"
-                          : somePass
-                          ? "orange"
-                          : "red";
+                            ? "green"
+                            : somePass
+                              ? "orange"
+                              : "red";
                         const icon = noResults ? (
                           <ShieldExclamationIcon />
                         ) : allPass ? (
@@ -377,8 +375,8 @@ export const CippMessageViewer = ({ emailSource }) => {
                                     allPass
                                       ? "All authentication checks successful"
                                       : somePass
-                                      ? "Some authentication checks failed"
-                                      : "None of the authentication checks passed"
+                                        ? "Some authentication checks failed"
+                                        : "None of the authentication checks passed"
                                   } - DMARC: ${dmarcPass ? "pass" : "fail"}, DKIM: ${
                                     dkimPass ? "pass" : "fail"
                                   }, SPF: ${spfPass ? "pass" : "fail"}, ARC: ${

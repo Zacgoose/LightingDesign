@@ -114,9 +114,7 @@ export const Wizard = (props) => {
             <Grid size={{ md: 4, xs: 12 }}>
               <WizardSteps activeStep={activeStep} orientation={orientation} steps={steps} />
             </Grid>
-            <Grid size={{ md: 8, xs: 12 }}>
-              {content}
-            </Grid>
+            <Grid size={{ md: 8, xs: 12 }}>{content}</Grid>
           </Grid>
         </CardContent>
       ) : (

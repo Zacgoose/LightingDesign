@@ -59,10 +59,12 @@ export const CippTablePage = (props) => {
                 offCanvas={offCanvas}
                 filters={tableFilters}
                 initialState={{
-                  columnFilters: filters ? filters.map(filter => ({
-                    id: filter.id || filter.columnId,
-                    value: filter.value
-                  })) : []
+                  columnFilters: filters
+                    ? filters.map((filter) => ({
+                        id: filter.id || filter.columnId,
+                        value: filter.value,
+                      }))
+                    : [],
                 }}
                 {...other}
               />

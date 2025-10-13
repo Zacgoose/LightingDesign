@@ -267,7 +267,7 @@ const Page = () => {
             downloadContent = `// CIPP Backup Validation Report\n// ${JSON.stringify(
               report,
               null,
-              2
+              2,
             )}\n\n${finalJsonString}`;
           }
 
@@ -281,7 +281,7 @@ const Page = () => {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         },
-      }
+      },
     );
   };
 

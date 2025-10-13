@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 export const useKeyboardShortcuts = ({
   products,
@@ -40,51 +40,54 @@ export const useKeyboardShortcuts = ({
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
 
       // Copy
-      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && selectedIdsRef.current.length > 0) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "c" && selectedIdsRef.current.length > 0) {
         e.preventDefault();
         onCopyRef.current();
       }
-      
+
       // Paste
-      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboard.current.products?.length > 0) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "v" && clipboard.current.products?.length > 0) {
         e.preventDefault();
         onPasteRef.current();
       }
 
       // Delete
-      if ((e.key === 'Delete' || e.key === 'Backspace') && (selectedIdsRef.current.length > 0 || selectedConnectorIdRef.current)) {
+      if (
+        (e.key === "Delete" || e.key === "Backspace") &&
+        (selectedIdsRef.current.length > 0 || selectedConnectorIdRef.current)
+      ) {
         e.preventDefault();
         onDeleteRef.current();
       }
 
       // Select all
-      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
         e.preventDefault();
         onSelectAllRef.current();
       }
 
       // Escape
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         onEscapeRef.current();
       }
 
       // Undo
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         onUndoRef.current();
       }
 
       // Redo
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "z") {
         e.preventDefault();
         onRedoRef.current();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []); // Empty dependency array - only register once
 };

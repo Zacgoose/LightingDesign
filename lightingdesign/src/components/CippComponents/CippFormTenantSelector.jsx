@@ -101,7 +101,7 @@ export const CippFormTenantSelector = ({
       type={componentType}
       name={name}
       formControl={formControl}
-      preselectedValue={preselectedEnabled ?? currentTenant ? currentTenant : null}
+      preselectedValue={(preselectedEnabled ?? currentTenant) ? currentTenant : null}
       label="Select a tenant"
       creatable={false}
       multiple={type === "single" ? false : true}

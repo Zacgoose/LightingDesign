@@ -1,6 +1,6 @@
 /**
  * Canvas State Management Hook
- * 
+ *
  * Manages canvas-related state including:
  * - Stage scale and position
  * - Canvas dimensions
@@ -8,16 +8,16 @@
  * - Tool selection
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from "react";
 
 export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   // Canvas state
   const [stageScale, setStageScale] = useState(1);
   const [canvasWidth, setCanvasWidth] = useState(initialWidth);
   const [canvasHeight, setCanvasHeight] = useState(initialHeight);
-  const [stagePosition, setStagePosition] = useState({ 
-    x: initialWidth / 2, 
-    y: initialHeight / 2 
+  const [stagePosition, setStagePosition] = useState({
+    x: initialWidth / 2,
+    y: initialHeight / 2,
   });
 
   // View options
@@ -60,23 +60,23 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   }, []);
 
   const handleCanvasPan = useCallback((dx, dy) => {
-    setStagePosition(pos => ({ x: pos.x + dx, y: pos.y + dy }));
+    setStagePosition((pos) => ({ x: pos.x + dx, y: pos.y + dy }));
   }, []);
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {
-    setStageScale(scale => Math.min(scale * 1.5, 100));
+    setStageScale((scale) => Math.min(scale * 1.5, 100));
   }, []);
-  
+
   const handleZoomOut = useCallback(() => {
-    setStageScale(scale => Math.max(scale / 1.5, 0.01));
+    setStageScale((scale) => Math.max(scale / 1.5, 0.01));
   }, []);
-  
+
   const handleResetView = useCallback(() => {
     setStageScale(1);
-    setStagePosition({ 
-      x: canvasWidth / 2, 
-      y: canvasHeight / 2 
+    setStagePosition({
+      x: canvasWidth / 2,
+      y: canvasHeight / 2,
     });
   }, [canvasWidth, canvasHeight]);
 
@@ -109,7 +109,7 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
     selectedTool,
     rotationSnaps,
     canvasContainerRef,
-    
+
     // Setters
     setStageScale,
     setStagePosition,
@@ -117,7 +117,7 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
     setShowLayers,
     setSelectedTool,
     setRotationSnaps,
-    
+
     // Handlers
     handleWheel,
     handleStageDragEnd,

@@ -4,10 +4,8 @@ import { CippFormComponent } from "../CippComponents/CippFormComponent";
 import { CippFormDomainSelector } from "../CippComponents/CippFormDomainSelector";
 
 const CippAddRoomListForm = ({ formControl }) => {
-
   return (
     <Grid container spacing={2}>
-      
       <Grid size={{ md: 12, xs: 12 }}>
         <CippFormComponent
           type="textField"
@@ -24,12 +22,13 @@ const CippAddRoomListForm = ({ formControl }) => {
           formControl={formControl}
           name="username"
           label="Username"
-          validators={{ 
+          validators={{
             required: "Username is required",
             pattern: {
               value: /^[a-zA-Z0-9\-_\.]+$/,
-              message: "Username can only contain letters, numbers, hyphens, underscores, and periods"
-            }
+              message:
+                "Username can only contain letters, numbers, hyphens, underscores, and periods",
+            },
           }}
           InputProps={{
             endAdornment: <InputAdornment position="end">@</InputAdornment>,
@@ -45,10 +44,8 @@ const CippAddRoomListForm = ({ formControl }) => {
           validators={{ required: "Domain is required" }}
         />
       </Grid>
-
-
     </Grid>
   );
 };
 
-export default CippAddRoomListForm; 
+export default CippAddRoomListForm;

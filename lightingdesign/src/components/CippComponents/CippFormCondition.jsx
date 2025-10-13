@@ -157,7 +157,7 @@ export const CippFormCondition = (props) => {
         return (
           Array.isArray(watcher) &&
           watcher.some(
-            (item) => typeof item?.label === "string" && item.label.includes(compareValue)
+            (item) => typeof item?.label === "string" && item.label.includes(compareValue),
           )
         );
       case "valueEq":
@@ -178,14 +178,14 @@ export const CippFormCondition = (props) => {
         return (
           Array.isArray(watcher) &&
           watcher.some(
-            (item) => typeof item?.value === "string" && item.value.includes(compareValue)
+            (item) => typeof item?.value === "string" && item.value.includes(compareValue),
           )
         );
       case "isOneOf":
         // Check if the watched value is one of the values in the compareValue array
         if (!Array.isArray(compareValue)) {
           console.warn(
-            "CippFormCondition: isOneOf compareType requires compareValue to be an array"
+            "CippFormCondition: isOneOf compareType requires compareValue to be an array",
           );
           return false;
         }
@@ -194,7 +194,7 @@ export const CippFormCondition = (props) => {
         // Check if the watched value is NOT one of the values in the compareValue array
         if (!Array.isArray(compareValue)) {
           console.warn(
-            "CippFormCondition: isNotOneOf compareType requires compareValue to be an array"
+            "CippFormCondition: isNotOneOf compareType requires compareValue to be an array",
           );
           return false;
         }

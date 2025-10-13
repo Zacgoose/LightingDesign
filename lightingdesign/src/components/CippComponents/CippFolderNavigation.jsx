@@ -136,7 +136,7 @@ export const CippFolderNavigation = ({
 
     // When searching, show all matching files across all folders
     const allFiles = data.filter((file) =>
-      file.path.toLowerCase().includes(searchTerm.toLowerCase())
+      file.path.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
     return {

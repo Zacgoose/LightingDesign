@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState } from "react";
 
 export const useHistory = (initialState = []) => {
   const [state, setState] = useState(initialState);

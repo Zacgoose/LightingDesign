@@ -1,11 +1,11 @@
 /**
  * Design Loader Hook
- * 
+ *
  * Optimized design loading with batched state updates
  * to prevent performance issues when loading existing designs
  */
 
-import { useEffect, useRef, useCallback, startTransition } from 'react';
+import { useEffect, useRef, useCallback, startTransition } from "react";
 
 export const useDesignLoader = ({
   designData,
@@ -49,16 +49,19 @@ export const useDesignLoader = ({
   }, []);
 
   // Helper function to strip background images and unnecessary data from layers
-  const stripLayersForSave = useCallback((layersToSave) => {
-    return layersToSave.map(layer => ({
-      ...layer,
-      products: layer.products.map(stripProductMetadata),
-    }));
-  }, [stripProductMetadata]);
+  const stripLayersForSave = useCallback(
+    (layersToSave) => {
+      return layersToSave.map((layer) => ({
+        ...layer,
+        products: layer.products.map(stripProductMetadata),
+      }));
+    },
+    [stripProductMetadata],
+  );
 
   // Enrich a single product with API data
   const enrichProduct = useCallback((savedProduct, productsApiData) => {
-    const apiProduct = productsApiData?.find(p => p.sku === savedProduct.sku);
+    const apiProduct = productsApiData?.find((p) => p.sku === savedProduct.sku);
     if (apiProduct) {
       // Merge saved canvas data with fresh API data
       return {
@@ -97,8 +100,9 @@ export const useDesignLoader = ({
     }
 
     // Check if we need to wait for products data
-    const hasProductsToEnrich = (loadedDesign.products && loadedDesign.products.length > 0) ||
-      (loadedDesign.layers && loadedDesign.layers.some(l => l.products && l.products.length > 0));
+    const hasProductsToEnrich =
+      (loadedDesign.products && loadedDesign.products.length > 0) ||
+      (loadedDesign.layers && loadedDesign.layers.some((l) => l.products && l.products.length > 0));
 
     // If there are products to enrich, wait for products API
     if (hasProductsToEnrich && !productsData.isSuccess) {
@@ -119,11 +123,11 @@ export const useDesignLoader = ({
 
         // 2. Load layers with enriched products (if present)
         if (loadedDesign.layers && loadedDesign.layers.length > 0) {
-          const enrichedLayers = loadedDesign.layers.map(layer => ({
+          const enrichedLayers = loadedDesign.layers.map((layer) => ({
             ...layer,
-            products: layer.products.map(savedProduct => 
-              enrichProduct(savedProduct, productsData.data)
-            )
+            products: layer.products.map((savedProduct) =>
+              enrichProduct(savedProduct, productsData.data),
+            ),
           }));
 
           // Load all layers at once
@@ -132,8 +136,8 @@ export const useDesignLoader = ({
 
         // 3. Load root-level products (legacy support)
         if (loadedDesign.products !== undefined) {
-          const enrichedProducts = loadedDesign.products.map(savedProduct =>
-            enrichProduct(savedProduct, productsData.data)
+          const enrichedProducts = loadedDesign.products.map((savedProduct) =>
+            enrichProduct(savedProduct, productsData.data),
           );
           updateHistory(enrichedProducts);
         }

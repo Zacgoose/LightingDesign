@@ -1,33 +1,33 @@
-import { useCallback, useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
-import { DragDropContext } from 'react-beautiful-dnd';
-import { Box } from '@mui/material';
-import { ResourceError } from '../../../components/resource-error';
-import { ResourceLoading } from '../../../components/resource-loading';
-import { ResourceUnavailable } from '../../../components/resource-unavailable';
-import { OrdersDndDroppable } from './orders-dnd-droppable';
+import { useCallback, useEffect, useState } from "react";
+import PropTypes from "prop-types";
+import { DragDropContext } from "react-beautiful-dnd";
+import { Box } from "@mui/material";
+import { ResourceError } from "../../../components/resource-error";
+import { ResourceLoading } from "../../../components/resource-loading";
+import { ResourceUnavailable } from "../../../components/resource-unavailable";
+import { OrdersDndDroppable } from "./orders-dnd-droppable";
 
 const statusMap = {
   complete: {
-    color: 'success.main',
-    label: 'Complete'
+    color: "success.main",
+    label: "Complete",
   },
   created: {
-    color: 'neutral.500',
-    label: 'Created'
+    color: "neutral.500",
+    label: "Created",
   },
   delivered: {
-    color: 'warning.main',
-    label: 'Delivered'
+    color: "warning.main",
+    label: "Delivered",
   },
   placed: {
-    color: 'info.main',
-    label: 'Placed'
+    color: "info.main",
+    label: "Placed",
   },
   processed: {
-    color: 'error.main',
-    label: 'Processed'
-  }
+    color: "error.main",
+    label: "Processed",
+  },
 };
 
 const createColumns = (orders) => {
@@ -36,14 +36,14 @@ const createColumns = (orders) => {
   // Here we order and limit the columns to a specific list.
   // You can add/remove to match your any available status.
 
-  const statuses = ['placed', 'processed', 'delivered', 'complete'];
+  const statuses = ["placed", "processed", "delivered", "complete"];
 
   statuses.forEach((status) => {
     columns.push({
       id: status,
       color: statusMap[status].color,
       items: orders.filter((order) => order.status === status),
-      label: statusMap[status].label
+      label: statusMap[status].label,
     });
   });
 
@@ -69,7 +69,7 @@ const reorder = (columns, srcLocation, destLocation, draggableId) => {
 
       return {
         ...column,
-        items: updatedItems
+        items: updatedItems,
       };
     }
 
@@ -111,12 +111,12 @@ const move = (columns, srcLocation, destLocation, draggableId) => {
 
   updatedColumns[srcColumnIdx] = {
     ...srcColumn,
-    items: updatedSrcItems
+    items: updatedSrcItems,
   };
 
   updatedColumns[destColumnIdx] = {
     ...destColumn,
-    items: updatedDestItems
+    items: updatedDestItems,
   };
 
   return updatedColumns;
@@ -124,14 +124,14 @@ const move = (columns, srcLocation, destLocation, draggableId) => {
 
 const getResourcesState = (params) => {
   if (params.isLoading) {
-    return 'loading';
+    return "loading";
   }
 
   if (params.error) {
-    return 'error';
+    return "error";
   }
 
-  return params.items.length > 0 ? 'available' : 'unavailable';
+  return params.items.length > 0 ? "available" : "unavailable";
 };
 
 export const OrdersDnd = (props) => {
@@ -139,7 +139,6 @@ export const OrdersDnd = (props) => {
   const [columns, setColumns] = useState([]);
 
   const handleDragEnd = useCallback(async ({ source, destination, draggableId }) => {
-
     // Dropped outside the column
     if (!destination) {
       return;
@@ -169,55 +168,54 @@ export const OrdersDnd = (props) => {
   const resourcesState = getResourcesState({
     isLoading,
     error,
-    items
+    items,
   });
 
   switch (resourcesState) {
-    case 'loading':
+    case "loading":
       return (
         <ResourceLoading
           message="Loading resources"
           sx={{
             mb: 2,
-            mx: 2
+            mx: 2,
           }}
         />
       );
 
-    case 'error':
+    case "error":
       return (
         <ResourceError
           message="Something went wrong"
           sx={{
             mb: 2,
-            mx: 2
+            mx: 2,
           }}
         />
       );
 
-    case 'unavailable':
+    case "unavailable":
       return (
         <ResourceUnavailable
           message="Resources are not available"
           sx={{
             mb: 2,
-            mx: 2
+            mx: 2,
           }}
         />
       );
 
-    case 'available':
+    case "available":
       return (
         <Box
           sx={{
-            backgroundColor: (theme) => theme.palette.mode === 'dark'
-              ? 'neutral.900'
-              : 'neutral.50',
-            display: 'flex',
+            backgroundColor: (theme) =>
+              theme.palette.mode === "dark" ? "neutral.900" : "neutral.50",
+            display: "flex",
             flexGrow: 1,
             mb: 2,
             mx: 2,
-            overflow: 'auto'
+            overflow: "auto",
           }}
         >
           <DragDropContext onDragEnd={handleDragEnd}>
@@ -242,5 +240,5 @@ export const OrdersDnd = (props) => {
 OrdersDnd.propTypes = {
   error: PropTypes.string,
   isLoading: PropTypes.bool,
-  items: PropTypes.array
+  items: PropTypes.array,
 };

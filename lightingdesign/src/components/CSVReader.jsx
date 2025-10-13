@@ -7,7 +7,7 @@ import { CloudUpload } from "@mui/icons-material";
  * These colors define our remove button states. The light version is
  * calculated rather than hardcoded - a small touch that ensures
  * consistent color relationships no matter what base color we use.
- * 
+ *
  * Sometimes it's these little details that make a component feel polished.
  */
 const DEFAULT_REMOVE_HOVER_COLOR = "#A01919";
@@ -18,7 +18,7 @@ const REMOVE_HOVER_COLOR_LIGHT = lightenDarkenColor(DEFAULT_REMOVE_HOVER_COLOR, 
  * upload zone that maintains state between wizard steps. It's a good
  * example of how components grow with requirements while trying to
  * keep their core purpose clear.
- * 
+ *
  * The journey to this version taught us about:
  * - Proper event handling with third-party libraries
  * - State persistence in multi-step forms
@@ -34,19 +34,19 @@ export default function CSVReader({ config, onDrop, onRemove }) {
   /*
    * On mount, we check sessionStorage for file details. This lets us
    * restore the preview when users navigate back to this step.
-   * 
+   *
    * It's a simple solution that works well - sometimes the best
    * approaches don't need complex state management. The fact that
    * it "just works" is a feature, not a bug.
    */
   useEffect(() => {
-    const fileName = sessionStorage.getItem('csvFileName');
-    const fileSize = sessionStorage.getItem('csvFileSize');
+    const fileName = sessionStorage.getItem("csvFileName");
+    const fileSize = sessionStorage.getItem("csvFileSize");
     if (fileName && fileSize) {
-      console.log('Restoring file preview:', fileName);
+      console.log("Restoring file preview:", fileName);
       setStoredFile({
         name: fileName,
-        size: parseInt(fileSize, 10)
+        size: parseInt(fileSize, 10),
       });
     }
   }, []);
@@ -55,13 +55,13 @@ export default function CSVReader({ config, onDrop, onRemove }) {
     <CSVReader
       config={config}
       onUploadAccepted={(results, file) => {
-        console.log('File accepted:', file.name);
+        console.log("File accepted:", file.name);
         onDrop(results.data);
         setZoneHover(false);
         setStoredFile(file);
         // Store file details for persistence between steps
-        sessionStorage.setItem('csvFileName', file.name);
-        sessionStorage.setItem('csvFileSize', file.size.toString());
+        sessionStorage.setItem("csvFileName", file.name);
+        sessionStorage.setItem("csvFileSize", file.size.toString());
       }}
       onDragOver={(event) => {
         event.preventDefault();
@@ -76,38 +76,36 @@ export default function CSVReader({ config, onDrop, onRemove }) {
         <Box
           {...getRootProps()}
           sx={{
-            border: '2px dashed',
-            borderColor: zoneHover ? '#f5a815' : 'rgba(255, 255, 255, 0.1)',
+            border: "2px dashed",
+            borderColor: zoneHover ? "#f5a815" : "rgba(255, 255, 255, 0.1)",
             borderRadius: 1,
             p: 3,
             minHeight: 150,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.2)',
-            cursor: 'pointer',
-            transition: 'border-color 0.2s ease-in-out',
-            position: 'relative',
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.2)",
+            cursor: "pointer",
+            transition: "border-color 0.2s ease-in-out",
+            position: "relative",
           }}
         >
-          {(acceptedFile || storedFile) ? (
-            <Box sx={{ textAlign: 'center', position: 'relative', width: '100%' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
-                <CloudUpload sx={{ color: '#f5a815', fontSize: 24, mr: 1 }} />
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography variant="body2" sx={{ color: '#fff' }}>
+          {acceptedFile || storedFile ? (
+            <Box sx={{ textAlign: "center", position: "relative", width: "100%" }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", mb: 1 }}>
+                <CloudUpload sx={{ color: "#f5a815", fontSize: 24, mr: 1 }} />
+                <Box sx={{ textAlign: "left" }}>
+                  <Typography variant="body2" sx={{ color: "#fff" }}>
                     {acceptedFile?.name || storedFile?.name}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.7)" }}>
                     {formatFileSize(acceptedFile?.size || storedFile?.size)}
                   </Typography>
                 </Box>
               </Box>
-              <Box sx={{ width: '100%', px: 2 }}>
-                {acceptedFile && <ProgressBar />}
-              </Box>
-              {/* 
+              <Box sx={{ width: "100%", px: 2 }}>{acceptedFile && <ProgressBar />}</Box>
+              {/*
                * The remove button's event handling taught us about working with
                * third-party libraries. Instead of fighting the library's patterns,
                * we adapted to work with them. A good reminder that sometimes
@@ -115,43 +113,43 @@ export default function CSVReader({ config, onDrop, onRemove }) {
                */}
               <Box
                 sx={{
-                  position: 'absolute',
+                  position: "absolute",
                   right: -8,
                   top: -8,
-                  cursor: 'pointer',
+                  cursor: "pointer",
                   color: removeHoverColor,
-                  transition: 'color 0.2s ease-in-out',
-                  '&:hover': { color: REMOVE_HOVER_COLOR_LIGHT },
+                  transition: "color 0.2s ease-in-out",
+                  "&:hover": { color: REMOVE_HOVER_COLOR_LIGHT },
                 }}
                 {...getRemoveFileProps({
                   onClick: (e) => {
-                    console.log('Removing file');
+                    console.log("Removing file");
                     setStoredFile(null);
-                    sessionStorage.removeItem('csvFileName');
-                    sessionStorage.removeItem('csvFileSize');
+                    sessionStorage.removeItem("csvFileName");
+                    sessionStorage.removeItem("csvFileSize");
                     // Notify parent that file was removed
                     onRemove?.();
-                  }
+                  },
                 })}
               >
                 <Remove />
               </Box>
             </Box>
           ) : (
-            <Box sx={{ textAlign: 'center' }}>
+            <Box sx={{ textAlign: "center" }}>
               <CloudUpload
                 sx={{
                   fontSize: 40,
-                  color: 'rgba(255, 255, 255, 0.5)',
+                  color: "rgba(255, 255, 255, 0.5)",
                   mb: 1,
-                  transition: 'color 0.2s ease-in-out',
-                  ...(zoneHover && { color: '#f5a815' })
+                  transition: "color 0.2s ease-in-out",
+                  ...(zoneHover && { color: "#f5a815" }),
                 }}
               />
-              <Typography variant="body1" sx={{ color: '#fff' }}>
+              <Typography variant="body1" sx={{ color: "#fff" }}>
                 Drop CSV file here
               </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+              <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.5)" }}>
                 or click to browse
               </Typography>
             </Box>

@@ -1,11 +1,11 @@
-import { useCallback } from 'react';
-import PropTypes from 'prop-types';
-import AdjustmentsHorizontalIcon from '@heroicons/react/24/outline/AdjustmentsHorizontalIcon';
-import { Box, Button, Divider, Stack, SvgIcon, Tab, Tabs } from '@mui/material';
-import { BulkActionsMenu } from '../../../components/bulk-actions-menu';
-import { QueryField } from '../../../components/query-field';
-import { FilterDialog } from '../../../components/filter-dialog';
-import { useDialog } from '../../../hooks/use-dialog';
+import { useCallback } from "react";
+import PropTypes from "prop-types";
+import AdjustmentsHorizontalIcon from "@heroicons/react/24/outline/AdjustmentsHorizontalIcon";
+import { Box, Button, Divider, Stack, SvgIcon, Tab, Tabs } from "@mui/material";
+import { BulkActionsMenu } from "../../../components/bulk-actions-menu";
+import { QueryField } from "../../../components/query-field";
+import { FilterDialog } from "../../../components/filter-dialog";
+import { useDialog } from "../../../hooks/use-dialog";
 import {
   containsOperator,
   endsWithOperator,
@@ -18,69 +18,69 @@ import {
   lessThanOperator,
   notContainsOperator,
   notEqualOperator,
-  startsWithOperator
-} from '../../../utils/filter-operators';
+  startsWithOperator,
+} from "../../../utils/filter-operators";
 
 const viewOptions = [
   {
-    label: 'All',
-    value: 'all'
+    label: "All",
+    value: "all",
   },
   {
-    label: 'Returning',
-    value: 'isReturning'
+    label: "Returning",
+    value: "isReturning",
   },
   {
-    label: 'Ordered recently',
-    value: 'orderedRecently'
-  }
+    label: "Ordered recently",
+    value: "orderedRecently",
+  },
 ];
 
 const filterProperties = [
   {
-    label: 'Name',
-    name: 'name',
+    label: "Name",
+    name: "name",
     operators: [
-      'contains',
-      'endsWith',
-      'equals',
-      'notContains',
-      'startsWith',
-      'isBlank',
-      'isPresent'
-    ]
+      "contains",
+      "endsWith",
+      "equals",
+      "notContains",
+      "startsWith",
+      "isBlank",
+      "isPresent",
+    ],
   },
   {
-    label: 'Email',
-    name: 'email',
+    label: "Email",
+    name: "email",
     operators: [
-      'contains',
-      'endsWith',
-      'equals',
-      'notContains',
-      'startsWith',
-      'isBlank',
-      'isPresent'
-    ]
+      "contains",
+      "endsWith",
+      "equals",
+      "notContains",
+      "startsWith",
+      "isBlank",
+      "isPresent",
+    ],
   },
   {
-    label: 'Phone',
-    name: 'phone',
+    label: "Phone",
+    name: "phone",
     operators: [
-      'contains',
-      'endsWith',
-      'equals',
-      'notContains',
-      'startsWith',
-      'isBlank',
-      'isPresent'
-    ]
+      "contains",
+      "endsWith",
+      "equals",
+      "notContains",
+      "startsWith",
+      "isBlank",
+      "isPresent",
+    ],
   },
   {
-    label: 'Created',
-    name: 'createdAt',
-    operators: ['isAfter', 'isBefore', 'isBlank', 'isPresent']
-  }
+    label: "Created",
+    name: "createdAt",
+    operators: ["isAfter", "isBefore", "isBlank", "isPresent"],
+  },
 ];
 
 const filterOperators = [
@@ -95,7 +95,7 @@ const filterOperators = [
   lessThanOperator,
   notContainsOperator,
   notEqualOperator,
-  startsWithOperator
+  startsWithOperator,
 ];
 
 export const CustomersSearch = (props) => {
@@ -106,16 +106,19 @@ export const CustomersSearch = (props) => {
     onFiltersClear,
     onQueryChange,
     onViewChange,
-    query = '',
+    query = "",
     selected = [],
-    view = 'all'
+    view = "all",
   } = props;
   const filterDialog = useDialog();
 
-  const handleFiltersApply = useCallback((filters) => {
-    filterDialog.handleClose();
-    onFiltersApply?.(filters);
-  }, [filterDialog, onFiltersApply]);
+  const handleFiltersApply = useCallback(
+    (filters) => {
+      filterDialog.handleClose();
+      onFiltersApply?.(filters);
+    },
+    [filterDialog, onFiltersApply],
+  );
 
   const handleFiltersClear = useCallback(() => {
     filterDialog.handleClose();
@@ -131,8 +134,8 @@ export const CustomersSearch = (props) => {
         <Box
           sx={{
             px: {
-              sm: 3
-            }
+              sm: 3,
+            },
           }}
         >
           <Tabs
@@ -151,13 +154,7 @@ export const CustomersSearch = (props) => {
           </Tabs>
         </Box>
         <Divider />
-        <Stack
-          alignItems="center"
-          direction="row"
-          flexWrap="wrap"
-          gap={3}
-          sx={{ p: 2 }}
-        >
+        <Stack alignItems="center" direction="row" flexWrap="wrap" gap={3} sx={{ p: 2 }}>
           {hasSelection && (
             <BulkActionsMenu
               disabled={disabled}
@@ -165,8 +162,8 @@ export const CustomersSearch = (props) => {
               sx={{
                 order: {
                   xs: 3,
-                  sm: 1
-                }
+                  sm: 1,
+                },
               }}
             />
           )}
@@ -178,8 +175,8 @@ export const CustomersSearch = (props) => {
               flexGrow: 1,
               order: {
                 xs: 1,
-                sm: 2
-              }
+                sm: 2,
+              },
             }}
             value={query}
           />
@@ -187,13 +184,13 @@ export const CustomersSearch = (props) => {
             disabled={disabled}
             onClick={filterDialog.handleOpen}
             size="large"
-            startIcon={(
+            startIcon={
               <SvgIcon fontSize="small">
                 <AdjustmentsHorizontalIcon />
               </SvgIcon>
-            )}
+            }
             sx={{ order: 2 }}
-            variant={hasFilters ? 'contained' : 'text'}
+            variant={hasFilters ? "contained" : "text"}
           >
             Filter
           </Button>
@@ -221,5 +218,5 @@ CustomersSearch.propTypes = {
   onViewChange: PropTypes.func,
   query: PropTypes.string,
   selected: PropTypes.array,
-  view: PropTypes.oneOf(['all', 'isReturning', 'orderedRecently'])
+  view: PropTypes.oneOf(["all", "isReturning", "orderedRecently"]),
 };

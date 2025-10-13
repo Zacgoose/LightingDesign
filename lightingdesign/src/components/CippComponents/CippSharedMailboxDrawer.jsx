@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Button } from "@mui/material";
+import { Button, Divider } from "@mui/material";
 import { useForm } from "react-hook-form";
-import { Divider } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { CippOffCanvas } from "./CippOffCanvas";
 import CippFormComponent from "./CippFormComponent";
@@ -82,8 +81,8 @@ export const CippSharedMailboxDrawer = ({
               {createSharedMailbox.isLoading
                 ? "Creating Mailbox..."
                 : createSharedMailbox.isSuccess
-                ? "Create Another Mailbox"
-                : "Create Shared Mailbox"}
+                  ? "Create Another Mailbox"
+                  : "Create Shared Mailbox"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

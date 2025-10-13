@@ -1,9 +1,9 @@
-import { 
-  HomeIcon, 
+import {
+  HomeIcon,
   BriefcaseIcon,
   UsersIcon,
   DocumentChartBarIcon,
-  WrenchIcon 
+  WrenchIcon,
 } from "@heroicons/react/24/outline";
 import { SvgIcon } from "@mui/material";
 

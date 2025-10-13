@@ -132,7 +132,10 @@ export const Layout = (props) => {
             }
 
             // If neither roles nor permissions are specified, or if no access granted
-            if ((!item.roles || item.roles.length === 0) && (!item.permissions || item.permissions.length === 0)) {
+            if (
+              (!item.roles || item.roles.length === 0) &&
+              (!item.permissions || item.permissions.length === 0)
+            ) {
               return null;
             }
 
@@ -259,7 +262,7 @@ export const Layout = (props) => {
               message: alert.Alert,
               title: alert.title,
               toastError: alert,
-            })
+            }),
           );
         });
       }

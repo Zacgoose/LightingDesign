@@ -14,14 +14,14 @@ const Page = () => {
   });
 
   const [loadingImage, setLoadingImage] = useState(
-    "/assets/illustrations/undraw_analysis_dq08.svg"
+    "/assets/illustrations/undraw_analysis_dq08.svg",
   );
 
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!orgData.isSuccess) {
         setLoadingText(
-          "The function app may be experiencing a cold start currently, this can take a little longer than usual..."
+          "The function app may be experiencing a cold start currently, this can take a little longer than usual...",
         );
         setLoadingImage("/assets/illustrations/undraw-into-the-night-nd84.svg");
       }

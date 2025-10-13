@@ -192,7 +192,7 @@ const CippSpeedDial = ({
               </Button>
               <Button
                 onClick={formControls[action.id]?.handleSubmit((data) =>
-                  handleSubmit(action.id, data)
+                  handleSubmit(action.id, data),
                 )}
                 variant="contained"
                 color="primary"

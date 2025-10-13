@@ -1,7 +1,7 @@
-import PropTypes from 'prop-types';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import toast from 'react-hot-toast';
+import PropTypes from "prop-types";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import toast from "react-hot-toast";
 import {
   Button,
   Dialog,
@@ -11,57 +11,44 @@ import {
   FormHelperText,
   MenuItem,
   Stack,
-  TextField
-} from '@mui/material';
+  TextField,
+} from "@mui/material";
 
-const countryOptions = ['USA', 'Germany', 'Spain', 'Italy'];
+const countryOptions = ["USA", "Germany", "Spain", "Italy"];
 
 const getInitialValues = (customer) => {
   return {
-    address: customer?.street || '',
-    country: customer?.country || '',
-    email: customer?.email || '',
-    name: customer?.name || '',
-    phone: customer?.phone || '',
-    submit: null
+    address: customer?.street || "",
+    country: customer?.country || "",
+    email: customer?.email || "",
+    name: customer?.name || "",
+    phone: customer?.phone || "",
+    submit: null,
   };
 };
 
 const validationSchema = Yup.object({
-  address: Yup
-    .string()
-    .max(255),
-  country: Yup
-    .string()
-    .oneOf(countryOptions),
-  email: Yup
-    .string()
-    .max(255)
-    .email('Must be a valid email')
-    .required('Email is required'),
-  name: Yup
-    .string()
-    .max(255)
-    .required('Name is required'),
-  phone: Yup
-    .string()
-    .max(255)
+  address: Yup.string().max(255),
+  country: Yup.string().oneOf(countryOptions),
+  email: Yup.string().max(255).email("Must be a valid email").required("Email is required"),
+  name: Yup.string().max(255).required("Name is required"),
+  phone: Yup.string().max(255),
 });
 
 export const CustomerDialog = (props) => {
-  const { action = 'create', customer, open = false, onClose } = props;
+  const { action = "create", customer, open = false, onClose } = props;
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: getInitialValues(customer),
     validationSchema,
     onSubmit: async (values, helpers) => {
       try {
-        if (action === 'update') {
+        if (action === "update") {
           // Do API call
-          toast.success('Customer updated');
+          toast.success("Customer updated");
         } else {
           // Do API call
-          toast.success('Customer created');
+          toast.success("Customer created");
         }
 
         helpers.resetForm();
@@ -78,10 +65,10 @@ export const CustomerDialog = (props) => {
         helpers.setErrors({ submit: err.message });
         helpers.setSubmitting(false);
       }
-    }
+    },
   });
 
-  if (action === 'update' && !customer) {
+  if (action === "update" && !customer) {
     return null;
   }
 
@@ -92,12 +79,10 @@ export const CustomerDialog = (props) => {
       onClose={onClose}
       open={open}
       TransitionProps={{
-        onExited: () => formik.resetForm()
+        onExited: () => formik.resetForm(),
       }}
     >
-      <DialogTitle>
-        {action === 'update' ? 'Update Customer' : 'Create Customer'}
-      </DialogTitle>
+      <DialogTitle>{action === "update" ? "Update Customer" : "Create Customer"}</DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
           <TextField
@@ -145,10 +130,7 @@ export const CustomerDialog = (props) => {
             value={formik.values.country}
           >
             {countryOptions.map((option) => (
-              <MenuItem
-                key={option}
-                value={option}
-              >
+              <MenuItem key={option} value={option}>
                 {option}
               </MenuItem>
             ))}
@@ -165,27 +147,23 @@ export const CustomerDialog = (props) => {
           />
         </Stack>
         {formik.errors.submit && (
-          <FormHelperText
-            error
-            sx={{ mt: 2 }}
-          >
+          <FormHelperText error sx={{ mt: 2 }}>
             {formik.errors.submit}
           </FormHelperText>
         )}
       </DialogContent>
       <DialogActions>
-        <Button
-          color="inherit"
-          onClick={onClose}
-        >
+        <Button color="inherit" onClick={onClose}>
           Cancel
         </Button>
         <Button
           disabled={formik.isSubmitting}
-          onClick={() => { formik.handleSubmit(); }}
+          onClick={() => {
+            formik.handleSubmit();
+          }}
           variant="contained"
         >
-          {action === 'update' ? 'Update' : 'Create'}
+          {action === "update" ? "Update" : "Create"}
         </Button>
       </DialogActions>
     </Dialog>
@@ -193,8 +171,8 @@ export const CustomerDialog = (props) => {
 };
 
 CustomerDialog.propTypes = {
-  action: PropTypes.oneOf(['create', 'update']),
+  action: PropTypes.oneOf(["create", "update"]),
   customer: PropTypes.object,
   onClose: PropTypes.func,
-  open: PropTypes.bool
+  open: PropTypes.bool,
 };

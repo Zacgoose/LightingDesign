@@ -94,12 +94,7 @@ const Page = () => {
       simpleColumns={simpleColumns}
       filters={filterList}
       cardButton={
-        <Button
-          component={Link}
-          href="/jobs/new"
-          startIcon={<Add />}
-          variant="contained"
-        >
+        <Button component={Link} href="/jobs/new" startIcon={<Add />} variant="contained">
           New Job
         </Button>
       }

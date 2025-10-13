@@ -140,8 +140,8 @@ export const CippBackupScheduleDrawer = ({
               {createBackup.isPending
                 ? "Creating Schedule..."
                 : createBackup.isSuccess
-                ? "Create Another Schedule"
-                : "Create Schedule"}
+                  ? "Create Another Schedule"
+                  : "Create Schedule"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

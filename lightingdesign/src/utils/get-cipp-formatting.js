@@ -235,14 +235,14 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
         unit === "d"
           ? "day"
           : unit === "h"
-          ? "hour"
-          : unit === "w"
-          ? "week"
-          : unit === "m"
-          ? "minutes"
-          : unit === "y"
-          ? "year"
-          : unit;
+            ? "hour"
+            : unit === "w"
+              ? "week"
+              : unit === "m"
+                ? "minutes"
+                : unit === "y"
+                  ? "year"
+                  : unit;
       return isText ? `Every ${value} ${unitText}` : `Every ${value} ${unitText}`;
     }
   }
@@ -338,7 +338,7 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
                 icon: icon,
                 key: key,
               };
-            })
+            }),
           );
     } else {
       // Handle null/undefined single element
@@ -432,7 +432,7 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
         : renderChipList(
             data
               .filter((item) => item)
-              .map((item) => (typeof item === "object" && item?.label ? item.label : item))
+              .map((item) => (typeof item === "object" && item?.label ? item.label : item)),
           );
     }
   }
@@ -468,8 +468,8 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
       data === "enabled"
         ? "Enabled"
         : data === "enabledForReportingButNotEnforced"
-        ? "Report Only"
-        : data;
+          ? "Report Only"
+          : data;
     return isText ? data : <Chip variant="outlined" label={data} size="small" color="info" />;
   }
 
@@ -491,8 +491,8 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
     const accessRights = Array.isArray(data)
       ? data.flatMap((item) => (typeof item === "string" ? item.split(", ") : []))
       : typeof data === "string"
-      ? data.split(", ")
-      : [];
+        ? data.split(", ")
+        : [];
     return isText ? accessRights.join(", ") : renderChipList(accessRights);
   }
 
@@ -573,8 +573,8 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
         ? translatedLicenses.join(", ")
         : translatedLicenses
       : Array.isArray(translatedLicenses)
-      ? renderChipList(translatedLicenses)
-      : translatedLicenses;
+        ? renderChipList(translatedLicenses)
+        : translatedLicenses;
   }
 
   if (cellName === "unifiedRoles") {
@@ -747,7 +747,7 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
       },
       {
         fallbackLocale: "en",
-      }
+      },
     );
     const duration = isoDuration(data);
     return duration.humanize("en");
@@ -802,7 +802,7 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
             return {
               label: item.label,
             };
-          })
+          }),
         );
   }
 

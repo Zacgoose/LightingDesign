@@ -63,8 +63,8 @@ const AppApprovalTemplateForm = ({
           (templateData[0].GalleryTemplateId
             ? "GalleryTemplate"
             : templateData[0].ApplicationManifest
-            ? "ApplicationManifest"
-            : "EnterpriseApp");
+              ? "ApplicationManifest"
+              : "EnterpriseApp");
         formControl.setValue("appType", appType);
 
         if (appType === "GalleryTemplate") {
@@ -83,7 +83,7 @@ const AppApprovalTemplateForm = ({
           if (templateData[0].ApplicationManifest) {
             formControl.setValue(
               "applicationManifest",
-              JSON.stringify(templateData[0].ApplicationManifest, null, 2)
+              JSON.stringify(templateData[0].ApplicationManifest, null, 2),
             );
           }
         } else {
@@ -126,8 +126,8 @@ const AppApprovalTemplateForm = ({
           (templateData[0].GalleryTemplateId
             ? "GalleryTemplate"
             : templateData[0].ApplicationManifest
-            ? "ApplicationManifest"
-            : "EnterpriseApp");
+              ? "ApplicationManifest"
+              : "EnterpriseApp");
         formControl.setValue("appType", appType);
 
         if (appType === "GalleryTemplate") {
@@ -146,7 +146,7 @@ const AppApprovalTemplateForm = ({
           if (templateData[0].ApplicationManifest) {
             formControl.setValue(
               "applicationManifest",
-              JSON.stringify(templateData[0].ApplicationManifest, null, 2)
+              JSON.stringify(templateData[0].ApplicationManifest, null, 2),
             );
           }
         } else {
@@ -404,7 +404,7 @@ const AppApprovalTemplateForm = ({
                       return data.filter(
                         (item) =>
                           item.addedFields?.signInAudience === "AzureADMultipleOrgs" ||
-                          item.addedFields?.signInAudience === "AzureADandPersonalMicrosoftAccount"
+                          item.addedFields?.signInAudience === "AzureADandPersonalMicrosoftAccount",
                       );
                     },
                     showRefresh: true,
@@ -554,8 +554,8 @@ const AppApprovalTemplateForm = ({
             selectedAppType === "GalleryTemplate"
               ? "Gallery Template Info"
               : selectedAppType === "ApplicationManifest"
-              ? "Application Manifest"
-              : "Permission Preview"
+                ? "Application Manifest"
+                : "Permission Preview"
           }
           galleryTemplate={selectedAppType === "GalleryTemplate" ? selectedGalleryTemplate : null}
           applicationManifest={

@@ -149,182 +149,187 @@ function DomainResultCard({ title, data, isFetching, info, type }) {
           extendedData: data,
         }
       : type === "MTA-STS"
-      ? {
-          children: (
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12 }}>
-                {info}
+        ? {
+            children: (
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12 }}>{info}</Grid>
               </Grid>
-            </Grid>
-          ),
-        }
-      : type === "DNSSEC"
-      ? {
-          children: <CippCodeBlock language="JSON" code={JSON.stringify(data)} />,
-        }
-      : type === "DKIM"
-      ? {
-          children: data?.Records?.map((record, index) => (
-            <div key={index}>
-              <Typography variant="h6" gutterBottom>
-                Selector: {record?.Selector}
-              </Typography>
-              <CippCodeBlock code={record?.Record} />
-              <ResultList
-                passes={record?.ValidationPasses}
-                warns={record?.ValidationWarns}
-                fails={record?.ValidationFails}
-              />
-            </div>
-          )),
-        }
-      : type === "DMARC"
-      ? {
-          children: (
-            //4 headers, "Record" and then  <CippCodeBlock code={record?.Record} /> under it.
-            <>
-              <Typography variant="h6" gutterBottom>
-                Record:
-              </Typography>
-              <CippCodeBlock code={data?.Record} />
-              <CippPropertyListCard
-                title="Settings"
-                copyItems={true}
-                propertyItems={[
-                  {
-                    label: "Version",
-                    value: data?.Version,
-                  },
-                  {
-                    label: "Policy",
-                    value: getCippFormatting(data?.Policy, "DMARCPolicy", "text"),
-                  },
-                  {
-                    label: "Subdomain Policy",
-                    value: getCippFormatting(data?.SubdomainPolicy, "DMARCPolicy", "text"),
-                  },
-                  {
-                    label: "Percentage",
-                    value: data?.Percentage,
-                  },
-                  {
-                    label: "SPF Alignment",
-                    value: getCippFormatting(data?.SpfAlignment, "DMARCPolicy", "text"),
-                  },
-                  {
-                    label: "Report Interval",
-                    value: getCippFormatting(data?.ReportInterval, "ReportInterval", "text"),
-                  },
-                  {
-                    label: "Report Format",
-                    value: getCippFormatting(data?.ReportFormat, "DMARCPolicy", "text"),
-                  },
-                ]}
-              />
-              <CippPropertyListCard
-                title="Reporting Emails"
-                copyItems={true}
-                propertyItems={data?.ReportingEmails.map((email) => ({
-                  label: "Reporting Email(s)",
-                  value: email,
-                }))}
-              />
-              <CippPropertyListCard
-                title="Forensic Emails"
-                copyItems={true}
-                propertyItems={data?.ForensicEmails.map((email) => ({
-                  label: "Forensic Email(s)",
-                  value: email,
-                }))}
-              />
-            </>
-          ),
-        }
-      : type === "SPF"
-      ? {
-          children: (
-            <>
-              <Typography variant="h6" gutterBottom>
-                Record:
-              </Typography>
-              <CippCodeBlock code={data?.Record} />
-              {data?.Recommendations && (
-                <>
-                  <CippPropertyListCard
-                    title="Recommendations"
-                    copyItems={true}
-                    propertyItems={data?.Recommendations.map((rec) => ({
-                      label: "Recommendation",
-                      value: rec.Message,
-                    }))}
-                  />
-                </>
-              )}
+            ),
+          }
+        : type === "DNSSEC"
+          ? {
+              children: <CippCodeBlock language="JSON" code={JSON.stringify(data)} />,
+            }
+          : type === "DKIM"
+            ? {
+                children: data?.Records?.map((record, index) => (
+                  <div key={index}>
+                    <Typography variant="h6" gutterBottom>
+                      Selector: {record?.Selector}
+                    </Typography>
+                    <CippCodeBlock code={record?.Record} />
+                    <ResultList
+                      passes={record?.ValidationPasses}
+                      warns={record?.ValidationWarns}
+                      fails={record?.ValidationFails}
+                    />
+                  </div>
+                )),
+              }
+            : type === "DMARC"
+              ? {
+                  children: (
+                    //4 headers, "Record" and then  <CippCodeBlock code={record?.Record} /> under it.
+                    <>
+                      <Typography variant="h6" gutterBottom>
+                        Record:
+                      </Typography>
+                      <CippCodeBlock code={data?.Record} />
+                      <CippPropertyListCard
+                        title="Settings"
+                        copyItems={true}
+                        propertyItems={[
+                          {
+                            label: "Version",
+                            value: data?.Version,
+                          },
+                          {
+                            label: "Policy",
+                            value: getCippFormatting(data?.Policy, "DMARCPolicy", "text"),
+                          },
+                          {
+                            label: "Subdomain Policy",
+                            value: getCippFormatting(data?.SubdomainPolicy, "DMARCPolicy", "text"),
+                          },
+                          {
+                            label: "Percentage",
+                            value: data?.Percentage,
+                          },
+                          {
+                            label: "SPF Alignment",
+                            value: getCippFormatting(data?.SpfAlignment, "DMARCPolicy", "text"),
+                          },
+                          {
+                            label: "Report Interval",
+                            value: getCippFormatting(
+                              data?.ReportInterval,
+                              "ReportInterval",
+                              "text",
+                            ),
+                          },
+                          {
+                            label: "Report Format",
+                            value: getCippFormatting(data?.ReportFormat, "DMARCPolicy", "text"),
+                          },
+                        ]}
+                      />
+                      <CippPropertyListCard
+                        title="Reporting Emails"
+                        copyItems={true}
+                        propertyItems={data?.ReportingEmails.map((email) => ({
+                          label: "Reporting Email(s)",
+                          value: email,
+                        }))}
+                      />
+                      <CippPropertyListCard
+                        title="Forensic Emails"
+                        copyItems={true}
+                        propertyItems={data?.ForensicEmails.map((email) => ({
+                          label: "Forensic Email(s)",
+                          value: email,
+                        }))}
+                      />
+                    </>
+                  ),
+                }
+              : type === "SPF"
+                ? {
+                    children: (
+                      <>
+                        <Typography variant="h6" gutterBottom>
+                          Record:
+                        </Typography>
+                        <CippCodeBlock code={data?.Record} />
+                        {data?.Recommendations && (
+                          <>
+                            <CippPropertyListCard
+                              title="Recommendations"
+                              copyItems={true}
+                              propertyItems={data?.Recommendations.map((rec) => ({
+                                label: "Recommendation",
+                                value: rec.Message,
+                              }))}
+                            />
+                          </>
+                        )}
 
-              <Typography variant="h6" gutterBottom>
-                IP Addresses
-              </Typography>
-              <CippCodeBlock
-                code={data?.RecordList.map((record) => record.IPAddresses).join("\n")}
-              />
-            </>
-          ),
-        }
-      : type === "HTTPS"
-      ? {
-          children: (
-            <>
-              {data?.Tests?.map((test, index) => (
-                <>
-                  <CippPropertyListCard
-                    key={index}
-                    title={`Certificate info for ${test.Hostname}`}
-                    copyItems={true}
-                    showDivider={false}
-                    propertyItems={[
-                      {
-                        label: "Issuer",
-                        value:
-                          test.Certificate.Issuer.match(/O=([^,]+)/)?.[1] ||
-                          test.Certificate.Issuer,
-                      },
-                      {
-                        label: "Subject",
-                        value:
-                          test.Certificate.Subject.match(/CN=([^,]+)/)?.[1] ||
-                          test.Certificate.Subject,
-                      },
-                      {
-                        label: "Created",
-                        value: getCippFormatting(test.Certificate.NotBefore, "NotBefore"),
-                      },
-                      {
-                        label: "Expires",
-                        value: getCippFormatting(test.Certificate.NotAfter, "NotAfter"),
-                      },
-                      { label: "Serial Number", value: test.Certificate.SerialNumber },
-                      { label: "Thumbprint", value: test.Certificate.Thumbprint },
-                      {
-                        label: "DNS Names",
-                        value: getCippFormatting(
-                          test.Certificate.DnsNameList.map((dns) => dns.Unicode),
-                          "DNSName"
-                        ),
-                      },
-                    ]}
-                  />
-                  <ResultList
-                    passes={test.ValidationPasses}
-                    warns={test.ValidationWarns}
-                    fails={test.ValidationFails}
-                  />
-                  <Divider />
-                </>
-              ))}
-            </>
-          ),
-        }
-      : {};
+                        <Typography variant="h6" gutterBottom>
+                          IP Addresses
+                        </Typography>
+                        <CippCodeBlock
+                          code={data?.RecordList.map((record) => record.IPAddresses).join("\n")}
+                        />
+                      </>
+                    ),
+                  }
+                : type === "HTTPS"
+                  ? {
+                      children: (
+                        <>
+                          {data?.Tests?.map((test, index) => (
+                            <>
+                              <CippPropertyListCard
+                                key={index}
+                                title={`Certificate info for ${test.Hostname}`}
+                                copyItems={true}
+                                showDivider={false}
+                                propertyItems={[
+                                  {
+                                    label: "Issuer",
+                                    value:
+                                      test.Certificate.Issuer.match(/O=([^,]+)/)?.[1] ||
+                                      test.Certificate.Issuer,
+                                  },
+                                  {
+                                    label: "Subject",
+                                    value:
+                                      test.Certificate.Subject.match(/CN=([^,]+)/)?.[1] ||
+                                      test.Certificate.Subject,
+                                  },
+                                  {
+                                    label: "Created",
+                                    value: getCippFormatting(
+                                      test.Certificate.NotBefore,
+                                      "NotBefore",
+                                    ),
+                                  },
+                                  {
+                                    label: "Expires",
+                                    value: getCippFormatting(test.Certificate.NotAfter, "NotAfter"),
+                                  },
+                                  { label: "Serial Number", value: test.Certificate.SerialNumber },
+                                  { label: "Thumbprint", value: test.Certificate.Thumbprint },
+                                  {
+                                    label: "DNS Names",
+                                    value: getCippFormatting(
+                                      test.Certificate.DnsNameList.map((dns) => dns.Unicode),
+                                      "DNSName",
+                                    ),
+                                  },
+                                ]}
+                              />
+                              <ResultList
+                                passes={test.ValidationPasses}
+                                warns={test.ValidationWarns}
+                                fails={test.ValidationFails}
+                              />
+                              <Divider />
+                            </>
+                          ))}
+                        </>
+                      ),
+                    }
+                  : {};
 
   return (
     <CippButtonCard
@@ -361,9 +366,7 @@ function DomainResultCard({ title, data, isFetching, info, type }) {
       }
       isFetching={isFetching}
     >
-      <Grid size={{ xs: 12 }}>
-        {info}
-      </Grid>
+      <Grid size={{ xs: 12 }}>{info}</Grid>
       <CippOffCanvas visible={visible} onClose={() => setVisible(false)} {...offCanvasData} />
     </CippButtonCard>
   );

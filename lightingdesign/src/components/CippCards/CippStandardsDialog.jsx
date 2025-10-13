@@ -19,6 +19,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  SvgIcon,
 } from "@mui/material";
 import {
   Close as CloseIcon,
@@ -35,7 +36,6 @@ import {
   PhoneAndroid as PhoneAndroidIcon,
   ExpandMore as ExpandMoreIcon,
 } from "@mui/icons-material";
-import { SvgIcon } from "@mui/material";
 import standards from "../../data/standards.json";
 
 const getCategoryIcon = (category) => {
@@ -288,9 +288,9 @@ export const CippStandardsDialog = ({ open, onClose, standardsData, currentTenan
                                               action.value?.toLowerCase() === "remediate"
                                                 ? "error"
                                                 : action.value?.toLowerCase() === "alert" ||
-                                                  action.value?.toLowerCase() === "warn"
-                                                ? "warning"
-                                                : "info"
+                                                    action.value?.toLowerCase() === "warn"
+                                                  ? "warning"
+                                                  : "info"
                                             }
                                           />
                                         ))
@@ -397,9 +397,9 @@ export const CippStandardsDialog = ({ open, onClose, standardsData, currentTenan
                                             action.value?.toLowerCase() === "remediate"
                                               ? "error"
                                               : action.value?.toLowerCase() === "alert" ||
-                                                action.value?.toLowerCase() === "warn"
-                                              ? "warning"
-                                              : "info"
+                                                  action.value?.toLowerCase() === "warn"
+                                                ? "warning"
+                                                : "info"
                                           }
                                         />
                                       ))
@@ -452,7 +452,7 @@ export const CippStandardsDialog = ({ open, onClose, standardsData, currentTenan
                                               const fieldPath = pathParts.slice(2).join(".");
                                               extractedValue = _.get(
                                                 config.standards,
-                                                `${standardName}.${fieldPath}`
+                                                `${standardName}.${fieldPath}`,
                                               );
                                             }
                                           }

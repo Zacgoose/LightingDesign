@@ -12,12 +12,11 @@ import {
   Button,
   keyframes,
 } from "@mui/material";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { getCippError } from "../../utils/get-cipp-error";
 import { CippCopyToClipBoard } from "./CippCopyToClipboard";
 import { CippDocsLookup } from "./CippDocsLookup";
 import { CippCodeBlock } from "./CippCodeBlock";
-import React from "react";
 import { CippTableDialog } from "./CippTableDialog";
 import { EyeIcon } from "@heroicons/react/24/outline";
 import { useDialog } from "../../hooks/use-dialog";
@@ -188,7 +187,7 @@ export const CippApiResults = (props) => {
             severity: res.severity,
             visible: true,
             ...res,
-          }))
+          })),
         );
       } else {
         setFinalResults([]);
@@ -219,7 +218,7 @@ export const CippApiResults = (props) => {
 
     const headers = Object.keys(finalResults[0]);
     const rows = finalResults.map((item) =>
-      headers.map((header) => `"${item[header] || ""}"`).join(",")
+      headers.map((header) => `"${item[header] || ""}"`).join(","),
     );
     const csvContent = [headers.join(","), ...rows].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -342,7 +341,7 @@ export const CippApiResults = (props) => {
                           startIcon={<Help />}
                           onClick={() => {
                             const searchUrl = `https://docs.cipp.app/?q=Help+with:+${encodeURIComponent(
-                              resultObj.copyField || resultObj.text
+                              resultObj.copyField || resultObj.text,
                             )}&ask=true`;
                             window.open(searchUrl, "_blank");
                           }}

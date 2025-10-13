@@ -54,7 +54,7 @@ export const CippCodeBlock = (props) => {
           options={{
             wordWrap: true,
             lineNumbers: showLineNumbers ? "on" : "off",
-            minimap: { enabled: showLineNumbers},
+            minimap: { enabled: showLineNumbers },
           }}
           {...other}
         />

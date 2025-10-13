@@ -1,4 +1,4 @@
-import { ArrowDropDown } from "@mui/icons-material";
+import { ArrowDropDown, Sync } from "@mui/icons-material";
 import {
   Autocomplete,
   CircularProgress,
@@ -6,13 +6,11 @@ import {
   TextField,
   IconButton,
 } from "@mui/material";
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useSettings } from "../../hooks/use-settings";
 import { getCippError } from "../../utils/get-cipp-error";
 import { ApiGetCallWithPagination } from "../../api/ApiCall";
-import { Sync } from "@mui/icons-material";
 import { Stack } from "@mui/system";
-import React from "react";
 
 const MemoTextField = React.memo(function MemoTextField({
   params,
@@ -163,10 +161,10 @@ export const CippAutoComplete = (props) => {
               typeof api?.labelField === "function"
                 ? api.labelField(option)
                 : option[api?.labelField]
-                ? option[api?.labelField]
-                : option[api?.altLabelField] ||
-                  option[api?.valueField] ||
-                  "No label found - Are you missing a labelField?",
+                  ? option[api?.labelField]
+                  : option[api?.altLabelField] ||
+                    option[api?.valueField] ||
+                    "No label found - Are you missing a labelField?",
             value:
               typeof api?.valueField === "function"
                 ? api.valueField(option)
@@ -272,7 +270,7 @@ export const CippAutoComplete = (props) => {
       const foundOption = memoizedOptions.find((option) => option.value === value);
       return foundOption || { label: value, value: value };
     },
-    [memoizedOptions]
+    [memoizedOptions],
   );
 
   return (
@@ -299,7 +297,7 @@ export const CippAutoComplete = (props) => {
         const isExisting =
           options?.length > 0 &&
           options.some(
-            (option) => params.inputValue === option.value || params.inputValue === option.label
+            (option) => params.inputValue === option.value || params.inputValue === option.label,
           );
         if (params.inputValue !== "" && creatable && !isExisting) {
           const newOption = {
@@ -318,13 +316,13 @@ export const CippAutoComplete = (props) => {
       defaultValue={
         Array.isArray(defaultValue)
           ? defaultValue.map((item) =>
-              typeof item === "string" ? lookupOptionByValue(item) : item
+              typeof item === "string" ? lookupOptionByValue(item) : item,
             )
           : typeof defaultValue === "object" && multiple
-          ? [defaultValue]
-          : typeof defaultValue === "string"
-          ? lookupOptionByValue(defaultValue)
-          : defaultValue
+            ? [defaultValue]
+            : typeof defaultValue === "string"
+              ? lookupOptionByValue(defaultValue)
+              : defaultValue
       }
       name={name}
       onChange={(event, newValue) => {
@@ -343,7 +341,8 @@ export const CippAutoComplete = (props) => {
             return item;
           });
           newValue = newValue.filter(
-            (item) => item.value && item.value !== "" && item.value !== "error" && item.value !== -1
+            (item) =>
+              item.value && item.value !== "" && item.value !== "error" && item.value !== -1,
           );
         } else {
           if (newValue?.manual || !newValue?.label) {
@@ -391,7 +390,7 @@ export const CippAutoComplete = (props) => {
           // Fallback for any edge cases
           return option.label || option.value || "";
         },
-        [api]
+        [api],
       )}
       onKeyDown={(event) => {
         // Handle Tab key to select highlighted option

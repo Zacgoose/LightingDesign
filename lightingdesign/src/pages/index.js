@@ -30,9 +30,9 @@ const Page = () => {
 
   // Top bar info - User details
   const userInfoBar = [
-    { 
-      name: "Active Stores", 
-      data: assignedStores.data?.length || 0 
+    {
+      name: "Active Stores",
+      data: assignedStores.data?.length || 0,
     },
   ];
 
@@ -48,12 +48,7 @@ const Page = () => {
             <Grid size={{ md: 12, xs: 12 }}>
               <Card>
                 <CardContent sx={{ display: "flex", alignItems: "center", gap: 2, p: 2 }}>
-                  <Button
-                    component={Link}
-                    href="/jobs"
-                    variant="contained"
-                    startIcon={<Add />}
-                  >
+                  <Button component={Link} href="/jobs" variant="contained" startIcon={<Add />}>
                     New Job
                   </Button>
                   <Button
@@ -78,10 +73,7 @@ const Page = () => {
 
             {/* User Info Bar */}
             <Grid size={{ md: 12, xs: 12 }}>
-              <CippInfoBar 
-                data={userInfoBar} 
-                isFetching={userInfo.isFetching} 
-              />
+              <CippInfoBar data={userInfoBar} isFetching={userInfo.isFetching} />
             </Grid>
 
             {/* Job Status Chart */}

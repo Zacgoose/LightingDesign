@@ -33,7 +33,7 @@ export const CippCsvExportButton = ({ rawData, reportName = "Export", includeFie
               filteredRow[field] = row[field];
             }
             return filteredRow;
-          }, {})
+          }, {}),
         )
       : flattenedData;
 

@@ -181,7 +181,7 @@ export const CippCustomRoles = () => {
   const ApiPermissionRow = ({ obj, cat }) => {
     const [offcanvasVisible, setOffcanvasVisible] = useState(false);
     const [descriptionOffcanvasVisible, setDescriptionOffcanvasVisible] = useState(false);
-    const [selectedDescription, setSelectedDescription] = useState({ name: '', description: '' });
+    const [selectedDescription, setSelectedDescription] = useState({ name: "", description: "" });
 
     const handleDescriptionClick = (name, description) => {
       setSelectedDescription({ name, description });
@@ -231,16 +231,16 @@ export const CippCustomRoles = () => {
         >
           <Stack spacing={2}>
             <Typography variant="body1" sx={{ mx: 3 }}>
-              Listed below are the available API endpoints based on permission level.
-              ReadWrite level includes endpoints under Read.
+              Listed below are the available API endpoints based on permission level. ReadWrite
+              level includes endpoints under Read.
             </Typography>
             {Object.keys(apiPermissions[cat][obj]).map((type, typeIndex) => {
               var items = [];
               for (var api in apiPermissions[cat][obj][type]) {
                 const apiFunction = apiPermissions[cat][obj][type][api];
-                items.push({ 
-                  name: apiFunction.Name, 
-                  description: apiFunction.Description?.[0]?.Text || null
+                items.push({
+                  name: apiFunction.Name,
+                  description: apiFunction.Description?.[0]?.Text || null,
                 });
               }
               return (
@@ -249,14 +249,14 @@ export const CippCustomRoles = () => {
                   <Stack spacing={1}>
                     {items.map((item, idx) => (
                       <Stack key={`${type}-${idx}`} direction="row" alignItems="center" spacing={1}>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold', flexGrow: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: "bold", flexGrow: 1 }}>
                           {item.name}
                         </Typography>
                         {item.description && (
-                          <Button 
-                            size="small" 
+                          <Button
+                            size="small"
                             onClick={() => handleDescriptionClick(item.name, item.description)}
-                            sx={{ minWidth: 'auto', p: 0.5 }}
+                            sx={{ minWidth: "auto", p: 0.5 }}
                           >
                             <SvgIcon fontSize="small" color="info">
                               <InformationCircleIcon />
@@ -279,12 +279,10 @@ export const CippCustomRoles = () => {
           title="Function Description"
         >
           <Stack spacing={2} sx={{ p: 2 }}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="h5" sx={{ fontWeight: "bold" }}>
               {selectedDescription.name}
             </Typography>
-            <Typography variant="body1">
-              {selectedDescription.description}
-            </Typography>
+            <Typography variant="body1">{selectedDescription.description}</Typography>
           </Stack>
         </CippOffCanvas>
       </Stack>

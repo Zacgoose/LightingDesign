@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const emptyFilter = {
   operator: undefined,
-  property: '',
-  value: undefined
+  property: "",
+  value: undefined,
 };
 
 const validateFilter = (filter) => {
@@ -13,12 +13,12 @@ const validateFilter = (filter) => {
   }
 
   // isBlank and isPresent operators cannot have a value
-  if (filter.operator === 'isBlank' || filter.operator === 'isPresent') {
-    return typeof filter.value === 'undefined';
+  if (filter.operator === "isBlank" || filter.operator === "isPresent") {
+    return typeof filter.value === "undefined";
   }
 
   // Other operators require a value
-  if (typeof filter.value === 'undefined') {
+  if (typeof filter.value === "undefined") {
     return false;
   }
 
@@ -29,9 +29,7 @@ export const useFilters = (operators = [], properties = [], initialFilters = [])
   const [filters, setFilters] = useState([]);
 
   useEffect(() => {
-    setFilters(initialFilters.length > 0
-      ? initialFilters
-      : [emptyFilter]);
+    setFilters(initialFilters.length > 0 ? initialFilters : [emptyFilter]);
   }, [initialFilters]);
 
   const valid = useMemo(() => {
@@ -59,48 +57,54 @@ export const useFilters = (operators = [], properties = [], initialFilters = [])
     });
   }, []);
 
-  const handleOperatorChange = useCallback((index, name) => {
-    // Ensure operator is allowed
+  const handleOperatorChange = useCallback(
+    (index, name) => {
+      // Ensure operator is allowed
 
-    const operator = operators.find((operator) => operator.name === name);
+      const operator = operators.find((operator) => operator.name === name);
 
-    if (!operator) {
-      return;
-    }
+      if (!operator) {
+        return;
+      }
 
-    setFilters((prevState) => {
-      const filters = [...prevState];
+      setFilters((prevState) => {
+        const filters = [...prevState];
 
-      filters[index] = {
-        ...filters[index],
-        operator: name
-      };
+        filters[index] = {
+          ...filters[index],
+          operator: name,
+        };
 
-      return filters;
-    });
-  }, [operators]);
+        return filters;
+      });
+    },
+    [operators],
+  );
 
-  const handlePropertyChange = useCallback((index, name) => {
-    // Ensure property is allowed
+  const handlePropertyChange = useCallback(
+    (index, name) => {
+      // Ensure property is allowed
 
-    const property = properties.find((property) => property.name === name);
+      const property = properties.find((property) => property.name === name);
 
-    if (!property) {
-      return;
-    }
+      if (!property) {
+        return;
+      }
 
-    setFilters((prevState) => {
-      const filters = [...prevState];
+      setFilters((prevState) => {
+        const filters = [...prevState];
 
-      filters[index] = {
-        operator: undefined,
-        property: name,
-        value: undefined
-      };
+        filters[index] = {
+          operator: undefined,
+          property: name,
+          value: undefined,
+        };
 
-      return filters;
-    });
-  }, [properties]);
+        return filters;
+      });
+    },
+    [properties],
+  );
 
   const handleValueChange = useCallback((index, value) => {
     setFilters((prevState) => {
@@ -108,7 +112,7 @@ export const useFilters = (operators = [], properties = [], initialFilters = [])
 
       filters[index] = {
         ...filters[index],
-        value
+        value,
       };
 
       return filters;
@@ -119,16 +123,19 @@ export const useFilters = (operators = [], properties = [], initialFilters = [])
     setFilters([emptyFilter]);
   }, []);
 
-  const handleFilterRemove = useCallback((index) => {
-    if (filters.length === 1) {
-      setFilters([emptyFilter]);
-      return;
-    }
+  const handleFilterRemove = useCallback(
+    (index) => {
+      if (filters.length === 1) {
+        setFilters([emptyFilter]);
+        return;
+      }
 
-    setFilters((prevState) => {
-      return prevState.filter((filter, _index) => _index !== index);
-    });
-  }, [filters]);
+      setFilters((prevState) => {
+        return prevState.filter((filter, _index) => _index !== index);
+      });
+    },
+    [filters],
+  );
 
   return {
     filters,
@@ -138,6 +145,6 @@ export const useFilters = (operators = [], properties = [], initialFilters = [])
     handleOperatorChange,
     handlePropertyChange,
     handleValueChange,
-    valid
+    valid,
   };
 };

@@ -1,8 +1,8 @@
-import PropTypes from 'prop-types';
-import NextLink from 'next/link';
-import { format } from 'date-fns';
-import StarOutlineIcon from '@heroicons/react/24/outline/StarIcon';
-import StarSolidIcon from '@heroicons/react/24/solid/StarIcon';
+import PropTypes from "prop-types";
+import NextLink from "next/link";
+import { format } from "date-fns";
+import StarOutlineIcon from "@heroicons/react/24/outline/StarIcon";
+import StarSolidIcon from "@heroicons/react/24/solid/StarIcon";
 import {
   Avatar,
   Box,
@@ -18,49 +18,49 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  TableSortLabel
-} from '@mui/material';
-import { Pagination } from '../../../components/pagination';
-import { ResourceError } from '../../../components/resource-error';
-import { ResourceUnavailable } from '../../../components/resource-unavailable';
-import { Scrollbar } from '../../../components/scrollbar';
-import { paths } from '../../../paths';
-import { CustomersTableMenu } from './customers-table-menu';
+  TableSortLabel,
+} from "@mui/material";
+import { Pagination } from "../../../components/pagination";
+import { ResourceError } from "../../../components/resource-error";
+import { ResourceUnavailable } from "../../../components/resource-unavailable";
+import { Scrollbar } from "../../../components/scrollbar";
+import { paths } from "../../../paths";
+import { CustomersTableMenu } from "./customers-table-menu";
 
 const columns = [
   {
-    id: 'name',
+    id: "name",
     disablePadding: true,
-    label: 'Name',
-    sortable: true
+    label: "Name",
+    sortable: true,
   },
   {
-    id: 'phone',
-    label: 'Phone',
-    sortable: true
+    id: "phone",
+    label: "Phone",
+    sortable: true,
   },
   {
-    id: 'email',
-    label: 'Email',
-    sortable: true
+    id: "email",
+    label: "Email",
+    sortable: true,
   },
   {
-    id: 'createdAt',
-    label: 'Created',
-    sortable: true
-  }
+    id: "createdAt",
+    label: "Created",
+    sortable: true,
+  },
 ];
 
 const getResourcesState = (params) => {
   if (params.isLoading) {
-    return 'loading';
+    return "loading";
   }
 
   if (params.error) {
-    return 'error';
+    return "error";
   }
 
-  return params.items.length > 0 ? 'available' : 'unavailable';
+  return params.items.length > 0 ? "available" : "unavailable";
 };
 
 export const CustomersTable = (props) => {
@@ -78,25 +78,25 @@ export const CustomersTable = (props) => {
     page = 0,
     rowsPerPage = 0,
     selected = [],
-    sortBy = 'createdAt',
-    sortDir = 'desc'
+    sortBy = "createdAt",
+    sortDir = "desc",
   } = props;
 
   const resourcesState = getResourcesState({
     isLoading,
     error,
-    items
+    items,
   });
 
-  const selectedSome = (selected.length > 0) && (selected.length < items.length);
-  const selectedAll = (items.length > 0) && (selected.length === items.length);
+  const selectedSome = selected.length > 0 && selected.length < items.length;
+  const selectedAll = items.length > 0 && selected.length === items.length;
 
   return (
     <Box
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        flexGrow: 1
+        display: "flex",
+        flexDirection: "column",
+        flexGrow: 1,
       }}
     >
       <Scrollbar>
@@ -106,7 +106,7 @@ export const CustomersTable = (props) => {
               <TableCell padding="checkbox">
                 <Checkbox
                   checked={selectedAll}
-                  disabled={!(resourcesState === 'available')}
+                  disabled={!(resourcesState === "available")}
                   indeterminate={selectedSome}
                   onChange={(event) => {
                     if (event.target.checked) {
@@ -119,39 +119,32 @@ export const CustomersTable = (props) => {
               </TableCell>
               <TableCell />
               {columns.map((column) => (
-                <TableCell
-                  key={column.id}
-                  padding={column.disablePadding ? 'none' : 'normal'}
-                >
-                  {column.sortable
-                    ? (
-                      <TableSortLabel
-                        active={sortBy === column.id}
-                        direction={sortBy === column.id ? sortDir : 'asc'}
-                        disabled={!(resourcesState === 'available')}
-                        onClick={() => onSortChange?.(column.id)}
-                      >
-                        {column.label}
-                      </TableSortLabel>
-                    )
-                    : column.label}
+                <TableCell key={column.id} padding={column.disablePadding ? "none" : "normal"}>
+                  {column.sortable ? (
+                    <TableSortLabel
+                      active={sortBy === column.id}
+                      direction={sortBy === column.id ? sortDir : "asc"}
+                      disabled={!(resourcesState === "available")}
+                      onClick={() => onSortChange?.(column.id)}
+                    >
+                      {column.label}
+                    </TableSortLabel>
+                  ) : (
+                    column.label
+                  )}
                 </TableCell>
               ))}
               <TableCell />
             </TableRow>
           </TableHead>
-          {resourcesState === 'available' && (
+          {resourcesState === "available" && (
             <TableBody>
               {items.map((customer) => {
                 const isSelected = !!selected.find((customerId) => customerId === customer.id);
-                const createdAt = format(customer.createdAt, 'dd/MM/yyyy HH:mm');
+                const createdAt = format(customer.createdAt, "dd/MM/yyyy HH:mm");
 
                 return (
-                  <TableRow
-                    hover
-                    key={customer.id}
-                    selected={isSelected}
-                  >
+                  <TableRow hover key={customer.id} selected={isSelected}>
                     <TableCell padding="checkbox">
                       <Checkbox
                         checked={isSelected}
@@ -167,20 +160,15 @@ export const CustomersTable = (props) => {
                     <TableCell padding="none">
                       <Box
                         sx={{
-                          display: 'flex',
-                          justifyContent: 'center'
+                          display: "flex",
+                          justifyContent: "center",
                         }}
                       >
-                        <IconButton
-                          onClick={() => { }}
-                          size="small"
-                        >
+                        <IconButton onClick={() => {}} size="small">
                           <SvgIcon
                             fontSize="small"
                             sx={{
-                              color: customer.isFavorite
-                                ? 'warning.main'
-                                : 'action.disabled'
+                              color: customer.isFavorite ? "warning.main" : "action.disabled",
                             }}
                           >
                             {customer.isFavorite ? <StarSolidIcon /> : <StarOutlineIcon />}
@@ -189,16 +177,12 @@ export const CustomersTable = (props) => {
                       </Box>
                     </TableCell>
                     <TableCell padding="none">
-                      <Stack
-                        alignItems="center"
-                        direction="row"
-                        spacing={1}
-                      >
+                      <Stack alignItems="center" direction="row" spacing={1}>
                         <Avatar
                           src={customer.avatar}
                           sx={{
                             height: 36,
-                            width: 36
+                            width: 36,
                           }}
                           variant="rounded"
                         />
@@ -213,15 +197,9 @@ export const CustomersTable = (props) => {
                         </Link>
                       </Stack>
                     </TableCell>
-                    <TableCell>
-                      {customer.phone}
-                    </TableCell>
-                    <TableCell>
-                      {customer.email}
-                    </TableCell>
-                    <TableCell>
-                      {createdAt}
-                    </TableCell>
+                    <TableCell>{customer.phone}</TableCell>
+                    <TableCell>{customer.email}</TableCell>
+                    <TableCell>{createdAt}</TableCell>
                     <TableCell align="right">
                       <CustomersTableMenu />
                     </TableCell>
@@ -232,9 +210,9 @@ export const CustomersTable = (props) => {
           )}
         </Table>
       </Scrollbar>
-      {resourcesState === 'available' && (
+      {resourcesState === "available" && (
         <>
-          <Divider sx={{ mt: 'auto' }} />
+          <Divider sx={{ mt: "auto" }} />
           <Pagination
             onPageChange={onPageChange}
             page={page}
@@ -243,28 +221,28 @@ export const CustomersTable = (props) => {
           />
         </>
       )}
-      {resourcesState === 'loading' && (
+      {resourcesState === "loading" && (
         <Box sx={{ p: 2 }}>
           <Skeleton height={42} />
           <Skeleton height={42} />
           <Skeleton height={42} />
         </Box>
       )}
-      {resourcesState === 'error' && (
+      {resourcesState === "error" && (
         <ResourceError
           message="Something went wrong"
           sx={{
             flexGrow: 1,
-            m: 2
+            m: 2,
           }}
         />
       )}
-      {resourcesState === 'unavailable' && (
+      {resourcesState === "unavailable" && (
         <ResourceUnavailable
           message="Resources are not available"
           sx={{
             flexGrow: 1,
-            m: 2
+            m: 2,
           }}
         />
       )}
@@ -287,5 +265,5 @@ CustomersTable.propTypes = {
   rowsPerPage: PropTypes.number,
   selected: PropTypes.array,
   sortBy: PropTypes.string,
-  sortDir: PropTypes.oneOf(['asc', 'desc'])
+  sortDir: PropTypes.oneOf(["asc", "desc"]),
 };

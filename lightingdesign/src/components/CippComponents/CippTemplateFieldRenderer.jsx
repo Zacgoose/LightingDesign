@@ -300,7 +300,7 @@ const CippTemplateFieldRenderer = ({
                 if (settingInstance.choiceSettingValue) {
                   // Find the setting definition in the intune collection
                   const intuneObj = intuneCollection.find(
-                    (item) => item.id === settingInstance.settingDefinitionId
+                    (item) => item.id === settingInstance.settingDefinitionId,
                   );
 
                   const label = intuneObj?.displayName || `Setting ${index + 1}`;
@@ -328,7 +328,7 @@ const CippTemplateFieldRenderer = ({
                 if (settingInstance.simpleSettingValue) {
                   // Find the setting definition in the intune collection
                   const intuneObj = intuneCollection.find(
-                    (item) => item.id === settingInstance.settingDefinitionId
+                    (item) => item.id === settingInstance.settingDefinitionId,
                   );
 
                   const label = intuneObj?.displayName || `Setting ${index + 1}`;
@@ -351,7 +351,7 @@ const CippTemplateFieldRenderer = ({
                 if (settingInstance.groupSettingCollectionValue) {
                   // Find the setting definition in the intune collection
                   const intuneObj = intuneCollection.find(
-                    (item) => item.id === settingInstance.settingDefinitionId
+                    (item) => item.id === settingInstance.settingDefinitionId,
                   );
 
                   const label = intuneObj?.displayName || `Group Setting Collection ${index + 1}`;
@@ -440,7 +440,7 @@ const CippTemplateFieldRenderer = ({
               {Object.entries(value)
                 .filter(([deviceKey]) => !isFieldBlacklisted(deviceKey))
                 .map(([deviceKey, deviceValue]) =>
-                  renderFormField(deviceKey, deviceValue, fieldPath)
+                  renderFormField(deviceKey, deviceValue, fieldPath),
                 )}
             </Grid>
           </Grid>
@@ -473,7 +473,7 @@ const CippTemplateFieldRenderer = ({
               item === null ||
               item === undefined ||
               (typeof item === "string" && item.trim() === "") ||
-              (typeof item === "object" && item !== null && Object.keys(item).length === 0)
+              (typeof item === "object" && item !== null && Object.keys(item).length === 0),
           ))
       ) {
         return null;
@@ -493,7 +493,7 @@ const CippTemplateFieldRenderer = ({
                     item !== null &&
                     item !== undefined &&
                     !(typeof item === "string" && item.trim() === "") &&
-                    !(typeof item === "object" && item !== null && Object.keys(item).length === 0)
+                    !(typeof item === "object" && item !== null && Object.keys(item).length === 0),
                 )
                 .map((item, index) => (
                   <Grid size={{ xs: 12 }} key={`${fieldPath}.${index}`}>
@@ -503,7 +503,7 @@ const CippTemplateFieldRenderer = ({
                     <Grid container spacing={2}>
                       {typeof item === "object" && item !== null ? (
                         Object.entries(item).map(([subKey, subValue]) =>
-                          renderFormField(subKey, subValue, `${fieldPath}.${index}`)
+                          renderFormField(subKey, subValue, `${fieldPath}.${index}`),
                         )
                       ) : (
                         <Grid size={{ xs: 12, md: 6 }}>
@@ -561,7 +561,7 @@ const CippTemplateFieldRenderer = ({
       ];
 
       const isAlwaysTextField = alwaysTextFields.some(
-        (field) => key.toLowerCase() === field.toLowerCase()
+        (field) => key.toLowerCase() === field.toLowerCase(),
       );
 
       // Check if this looks like an enum value (common patterns in device policies)
@@ -580,7 +580,7 @@ const CippTemplateFieldRenderer = ({
       ];
 
       const looksLikeEnum = enumPatterns.some((pattern) =>
-        value.toLowerCase().includes(pattern.toLowerCase())
+        value.toLowerCase().includes(pattern.toLowerCase()),
       );
 
       if (!isAlwaysTextField && looksLikeEnum) {
@@ -601,7 +601,7 @@ const CippTemplateFieldRenderer = ({
             // Only include options that make sense for this field
             option.value === value ||
             key.toLowerCase().includes(option.value.toLowerCase()) ||
-            option.value === "notConfigured" // Always include notConfigured
+            option.value === "notConfigured", // Always include notConfigured
         );
 
         return (
@@ -657,7 +657,7 @@ const CippTemplateFieldRenderer = ({
           <Divider sx={{ mb: 2 }} />
           <Grid container spacing={2}>
             {Object.entries(value).map(([subKey, subValue]) =>
-              renderFormField(subKey, subValue, fieldPath)
+              renderFormField(subKey, subValue, fieldPath),
             )}
           </Grid>
         </Grid>
@@ -691,7 +691,7 @@ const CippTemplateFieldRenderer = ({
       {priorityFields.map(
         (fieldName) =>
           processedData[fieldName] !== undefined &&
-          renderFormField(fieldName, processedData[fieldName])
+          renderFormField(fieldName, processedData[fieldName]),
       )}
 
       {/* Render all other fields except priority fields */}

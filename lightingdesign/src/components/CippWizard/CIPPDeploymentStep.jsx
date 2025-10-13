@@ -7,14 +7,14 @@ import { CIPPDeploymentUpdateTokens } from "./CIPPDeploymentUpdateTokens";
 export const CippDeploymentStep = (props) => {
   const { formControl, onPreviousStep, onNextStep, currentStep } = props;
   const values = formControl.getValues();
-  
+
   // Use useEffect to set form values instead of doing it during render
   useEffect(() => {
     if (values.selectedOption === "Manual") {
       formControl.setValue("setKeys", true);
     }
   }, [values.selectedOption, formControl]);
-  
+
   return (
     <Stack spacing={3}>
       <Stack spacing={2}>

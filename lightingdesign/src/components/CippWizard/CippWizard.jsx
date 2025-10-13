@@ -5,13 +5,8 @@ import { WizardSteps } from "./wizard-steps";
 import { useForm, useWatch } from "react-hook-form";
 
 export const CippWizard = (props) => {
-  const { 
-    postUrl, 
-    orientation = "horizontal", 
-    steps,
-    contentMaxWidth = "md",
-  } = props;
-  
+  const { postUrl, orientation = "horizontal", steps, contentMaxWidth = "md" } = props;
+
   const formControl = useForm({ mode: "onChange", defaultValues: props.initialState });
   const formWatcher = useWatch({
     control: formControl.control,
@@ -78,9 +73,7 @@ export const CippWizard = (props) => {
                 steps={stepsWithVisibility}
               />
             </Grid>
-            <Grid size={{ md: 8, xs: 12 }}>
-              {content}
-            </Grid>
+            <Grid size={{ md: 8, xs: 12 }}>{content}</Grid>
           </Grid>
         </CardContent>
       ) : (

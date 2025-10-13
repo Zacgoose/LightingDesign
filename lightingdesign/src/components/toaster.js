@@ -1,7 +1,6 @@
 import { CloseSharp } from "@mui/icons-material";
 import { Alert, IconButton, Snackbar } from "@mui/material";
-import { useSelector } from "react-redux";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { closeToast } from "../store/toasts";
 
 const Toasts = () => {

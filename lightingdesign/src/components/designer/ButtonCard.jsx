@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardHeader,
@@ -11,7 +11,6 @@ import {
   AccordionDetails,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { useState } from "react";
 
 export default function CippButtonCard({
   title,
@@ -50,7 +49,7 @@ export default function CippButtonCard({
             title={title}
             sx={{
               width: "100%",
-              '& .MuiCardHeader-action': {
+              "& .MuiCardHeader-action": {
                 justifyContent: cardHeaderActionsAlign === "left" ? "flex-start" : "flex-end",
                 display: "flex",
                 width: "100%",
@@ -63,9 +62,7 @@ export default function CippButtonCard({
             </CardContent>
           )}
           {CardButton && (
-            <CardActions
-              sx={cardActionsAlign === "left" ? { justifyContent: "flex-start" } : {}}
-            >
+            <CardActions sx={cardActionsAlign === "left" ? { justifyContent: "flex-start" } : {}}>
               {CardButton}
             </CardActions>
           )}
@@ -84,7 +81,7 @@ export default function CippButtonCard({
                 pl: 1,
                 py: 0,
                 width: "100%",
-                '& .MuiCardHeader-action': {
+                "& .MuiCardHeader-action": {
                   justifyContent: cardHeaderActionsAlign === "left" ? "flex-start" : "flex-end",
                   display: "flex",
                   width: "100%",
@@ -100,9 +97,7 @@ export default function CippButtonCard({
               </CardContent>
             )}
             {CardButton && (
-              <CardActions
-                sx={cardActionsAlign === "left" ? { justifyContent: "flex-start" } : {}}
-              >
+              <CardActions sx={cardActionsAlign === "left" ? { justifyContent: "flex-start" } : {}}>
                 {CardButton}
               </CardActions>
             )}

@@ -1,4 +1,4 @@
-import { Card, CardHeader } from '@mui/material';
+import { Card, CardHeader } from "@mui/material";
 
 export const CardHeading1 = () => (
   <Card>

@@ -1,32 +1,17 @@
-import PlusIcon from '@heroicons/react/24/outline/PlusIcon';
-import { Breadcrumbs, Button, Link, Stack, SvgIcon, Typography } from '@mui/material';
+import PlusIcon from "@heroicons/react/24/outline/PlusIcon";
+import { Breadcrumbs, Button, Link, Stack, SvgIcon, Typography } from "@mui/material";
 
 export const PageHeading3 = () => (
-  <Stack
-    spacing={2}
-    sx={{ p: 4 }}
-  >
+  <Stack spacing={2} sx={{ p: 4 }}>
     <div>
       <Breadcrumbs separator="•">
-        <Link
-          color="text.secondary"
-          href="#"
-          underline="hover"
-          variant="subtitle2"
-        >
+        <Link color="text.secondary" href="#" underline="hover" variant="subtitle2">
           Home
         </Link>
-        <Link
-          color="text.secondary"
-          href="#"
-          underline="hover"
-          variant="subtitle2"
-        >
+        <Link color="text.secondary" href="#" underline="hover" variant="subtitle2">
           Customers
         </Link>
-        <Typography variant="body2">
-          Pending
-        </Typography>
+        <Typography variant="body2">Pending</Typography>
       </Breadcrumbs>
     </div>
     <Stack
@@ -37,17 +22,15 @@ export const PageHeading3 = () => (
       justifyContent="space-between"
     >
       <div>
-        <Typography variant="h4">
-          Natalie Rusell
-        </Typography>
+        <Typography variant="h4">Natalie Rusell</Typography>
       </div>
       <div>
         <Button
-          startIcon={(
+          startIcon={
             <SvgIcon fontSize="small">
               <PlusIcon />
             </SvgIcon>
-          )}
+          }
           variant="contained"
           size="large"
         >

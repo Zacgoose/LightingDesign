@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
-import PropTypes from 'prop-types';
-import AdjustmentsHorizontalIcon from '@heroicons/react/24/outline/AdjustmentsHorizontalIcon';
-import ListBulletIcon from '@heroicons/react/24/outline/ListBulletIcon';
-import Squares2X2Icon from '@heroicons/react/24/outline/Squares2X2Icon';
+import { useCallback } from "react";
+import PropTypes from "prop-types";
+import AdjustmentsHorizontalIcon from "@heroicons/react/24/outline/AdjustmentsHorizontalIcon";
+import ListBulletIcon from "@heroicons/react/24/outline/ListBulletIcon";
+import Squares2X2Icon from "@heroicons/react/24/outline/Squares2X2Icon";
 import {
   Box,
   Button,
@@ -13,12 +13,12 @@ import {
   Tabs,
   ToggleButton,
   toggleButtonClasses,
-  ToggleButtonGroup
-} from '@mui/material';
-import { BulkActionsMenu } from '../../../components/bulk-actions-menu';
-import { FilterDialog } from '../../../components/filter-dialog';
-import { QueryField } from '../../../components/query-field';
-import { useDialog } from '../../../hooks/use-dialog';
+  ToggleButtonGroup,
+} from "@mui/material";
+import { BulkActionsMenu } from "../../../components/bulk-actions-menu";
+import { FilterDialog } from "../../../components/filter-dialog";
+import { QueryField } from "../../../components/query-field";
+import { useDialog } from "../../../hooks/use-dialog";
 import {
   containsOperator,
   endsWithOperator,
@@ -31,96 +31,96 @@ import {
   lessThanOperator,
   notContainsOperator,
   notEqualOperator,
-  startsWithOperator
-} from '../../../utils/filter-operators';
+  startsWithOperator,
+} from "../../../utils/filter-operators";
 
 const viewOptions = [
   {
-    label: 'All',
-    value: 'all'
+    label: "All",
+    value: "all",
   },
   {
-    label: 'Processed',
-    value: 'processed'
+    label: "Processed",
+    value: "processed",
   },
   {
-    label: 'Delivered',
-    value: 'delivered'
+    label: "Delivered",
+    value: "delivered",
   },
   {
-    label: 'Complete',
-    value: 'complete'
-  }
+    label: "Complete",
+    value: "complete",
+  },
 ];
 
 const filterProperties = [
   {
-    label: 'ID',
-    name: 'id',
+    label: "ID",
+    name: "id",
     operators: [
-      'contains',
-      'endsWith',
-      'equals',
-      'notContains',
-      'startsWith',
-      'isBlank',
-      'isPresent'
-    ]
+      "contains",
+      "endsWith",
+      "equals",
+      "notContains",
+      "startsWith",
+      "isBlank",
+      "isPresent",
+    ],
   },
   {
-    label: 'Status',
-    name: 'status',
+    label: "Status",
+    name: "status",
     operators: [
-      'contains',
-      'endsWith',
-      'equals',
-      'notContains',
-      'startsWith',
-      'isBlank',
-      'isPresent'
-    ]
+      "contains",
+      "endsWith",
+      "equals",
+      "notContains",
+      "startsWith",
+      "isBlank",
+      "isPresent",
+    ],
   },
   {
-    label: 'Created',
-    name: 'createdAt',
-    operators: ['isAfter', 'isBefore', 'isBlank', 'isPresent']
+    label: "Created",
+    name: "createdAt",
+    operators: ["isAfter", "isBefore", "isBlank", "isPresent"],
   },
   {
-    label: 'Updated',
-    name: 'updatedAt',
-    operators: ['isAfter', 'isBefore', 'isBlank', 'isPresent']
+    label: "Updated",
+    name: "updatedAt",
+    operators: ["isAfter", "isBefore", "isBlank", "isPresent"],
   },
   {
-    label: 'Courier',
-    name: 'courier',
+    label: "Courier",
+    name: "courier",
     operators: [
-      'contains',
-      'endsWith',
-      'equals',
-      'notContains',
-      'startsWith',
-      'isBlank',
-      'isPresent'
-    ]
+      "contains",
+      "endsWith",
+      "equals",
+      "notContains",
+      "startsWith",
+      "isBlank",
+      "isPresent",
+    ],
   },
   {
-    label: 'Payment Method',
-    name: 'paymentMethod',
+    label: "Payment Method",
+    name: "paymentMethod",
     operators: [
-      'contains',
-      'endsWith',
-      'equals',
-      'notContains',
-      'startsWith',
-      'isBlank',
-      'isPresent'
-    ]
+      "contains",
+      "endsWith",
+      "equals",
+      "notContains",
+      "startsWith",
+      "isBlank",
+      "isPresent",
+    ],
   },
   {
-    label: 'Total',
-    name: 'totalAmount',
-    operators: ['equals', 'greaterThan', 'lessThan', 'notEqual', 'isBlank', 'isPresent']
-  }
+    label: "Total",
+    name: "totalAmount",
+    operators: ["equals", "greaterThan", "lessThan", "notEqual", "isBlank", "isPresent"],
+  },
 ];
 
 const filterOperators = [
@@ -135,36 +135,39 @@ const filterOperators = [
   lessThanOperator,
   notContainsOperator,
   notEqualOperator,
-  startsWithOperator
+  startsWithOperator,
 ];
 
 export const OrdersSearch = (props) => {
   const {
     disabled = false,
     filters = [],
-    mode = 'table',
+    mode = "table",
     onFiltersApply,
     onFiltersClear,
     onModeChange,
     onQueryChange,
     onViewChange,
-    query = '',
+    query = "",
     selected = [],
-    view = 'all'
+    view = "all",
   } = props;
   const filterDialog = useDialog();
 
-  const handleFiltersApply = useCallback((filters) => {
-    filterDialog.handleClose();
-    onFiltersApply?.(filters);
-  }, [filterDialog, onFiltersApply]);
+  const handleFiltersApply = useCallback(
+    (filters) => {
+      filterDialog.handleClose();
+      onFiltersApply?.(filters);
+    },
+    [filterDialog, onFiltersApply],
+  );
 
   const handleFiltersClear = useCallback(() => {
     filterDialog.handleClose();
     onFiltersClear?.();
   }, [filterDialog, onFiltersClear]);
 
-  const hasSelection = mode === 'table' && selected.length > 0;
+  const hasSelection = mode === "table" && selected.length > 0;
   const hasFilters = filters.length > 0;
 
   return (
@@ -173,8 +176,8 @@ export const OrdersSearch = (props) => {
         <Box
           sx={{
             px: {
-              sm: 3
-            }
+              sm: 3,
+            },
           }}
         >
           <Tabs
@@ -193,13 +196,7 @@ export const OrdersSearch = (props) => {
           </Tabs>
         </Box>
         <Divider />
-        <Stack
-          alignItems="center"
-          direction="row"
-          flexWrap="wrap"
-          gap={2}
-          sx={{ p: 3 }}
-        >
+        <Stack alignItems="center" direction="row" flexWrap="wrap" gap={2} sx={{ p: 3 }}>
           {hasSelection && (
             <BulkActionsMenu
               disabled={disabled}
@@ -207,8 +204,8 @@ export const OrdersSearch = (props) => {
               sx={{
                 order: {
                   xs: 4,
-                  sm: 1
-                }
+                  sm: 1,
+                },
               }}
             />
           )}
@@ -220,8 +217,8 @@ export const OrdersSearch = (props) => {
               flexGrow: 1,
               order: {
                 xs: 1,
-                sm: 2
-              }
+                sm: 2,
+              },
             }}
             value={query}
           />
@@ -239,14 +236,14 @@ export const OrdersSearch = (props) => {
               order: 2,
               [`& .${toggleButtonClasses.root}`]: {
                 border: 0,
-                '&:not(:first-of-type)': {
-                  borderRadius: 1
-                },
-                '&:first-of-type': {
+                "&:not(:first-of-type)": {
                   borderRadius: 1,
-                  mr: 0.5
-                }
-              }
+                },
+                "&:first-of-type": {
+                  borderRadius: 1,
+                  mr: 0.5,
+                },
+              },
             }}
             value={mode}
           >
@@ -265,13 +262,13 @@ export const OrdersSearch = (props) => {
             disabled={disabled}
             onClick={filterDialog.handleOpen}
             size="large"
-            startIcon={(
+            startIcon={
               <SvgIcon fontSize="small">
                 <AdjustmentsHorizontalIcon />
               </SvgIcon>
-            )}
+            }
             sx={{ order: 3 }}
-            variant={hasFilters ? 'contained' : 'text'}
+            variant={hasFilters ? "contained" : "text"}
           >
             Filter
           </Button>
@@ -293,7 +290,7 @@ export const OrdersSearch = (props) => {
 OrdersSearch.propTypes = {
   disabled: PropTypes.bool,
   filters: PropTypes.array,
-  mode: PropTypes.oneOf(['dnd', 'table']),
+  mode: PropTypes.oneOf(["dnd", "table"]),
   onFiltersApply: PropTypes.func,
   onFiltersClear: PropTypes.func,
   onModeChange: PropTypes.func,
@@ -301,5 +298,5 @@ OrdersSearch.propTypes = {
   onViewChange: PropTypes.func,
   query: PropTypes.string,
   selected: PropTypes.array,
-  view: PropTypes.oneOf(['all', 'complete', 'delivered', 'processed'])
+  view: PropTypes.oneOf(["all", "complete", "delivered", "processed"]),
 };

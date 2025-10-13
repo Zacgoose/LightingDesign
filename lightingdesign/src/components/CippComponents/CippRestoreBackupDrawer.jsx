@@ -174,8 +174,8 @@ export const CippRestoreBackupDrawer = ({
               {restoreBackup.isPending
                 ? "Creating Restore Task..."
                 : restoreBackup.isSuccess
-                ? "Create Another Restore Task"
-                : "Restore Backup"}
+                  ? "Create Another Restore Task"
+                  : "Restore Backup"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

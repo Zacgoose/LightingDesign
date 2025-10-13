@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Alert,
-  Button,
-  Typography,
-  CircularProgress,
-  Box,
-} from "@mui/material";
+import { Alert, Button, Typography, CircularProgress, Box } from "@mui/material";
 import { ApiGetCall } from "../../api/ApiCall";
 
 /**
@@ -67,17 +61,17 @@ export const CIPPDeviceCodeButton = ({
       setAuthError(null);
       setDeviceCodeInfo(null);
       setCurrentStep(1);
-      
+
       // Call the API to start device code flow
       const response = await fetch(`/api/ExecSAMSetup?CreateSAM=true`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.code) {
         // Store device code info
         setDeviceCodeInfo({
@@ -85,7 +79,7 @@ export const CIPPDeviceCodeButton = ({
           verification_uri: data.url,
           expires_in: 900, // Default to 15 minutes if not provided
         });
-        
+
         // Start polling for token
         const interval = setInterval(checkAuthStatus, 5000);
         setPollInterval(interval);
@@ -116,20 +110,20 @@ export const CIPPDeviceCodeButton = ({
     try {
       // Call the API to check auth status
       const response = await fetch(`/api/ExecSAMSetup?CheckSetupProcess=true&step=1`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         if (data.step === 2) {
           // Authentication successful
           clearInterval(pollInterval);
           setPollInterval(null);
-          
+
           // Process token data
           const tokenData = {
             accessToken: "Successfully authenticated",
@@ -140,15 +134,15 @@ export const CIPPDeviceCodeButton = ({
             tenantId: data.tenantId || "unknown",
             onmicrosoftDomain: null,
           };
-          
+
           // Store tokens in component state
           setTokens(tokenData);
           setDeviceCodeInfo(null);
           setCurrentStep(2);
-          
+
           // Call the onAuthSuccess callback if provided
           if (onAuthSuccess) onAuthSuccess(tokenData);
-          
+
           // Update UI state
           setAuthInProgress(false);
         }
@@ -156,18 +150,19 @@ export const CIPPDeviceCodeButton = ({
         // Error checking auth status
         clearInterval(pollInterval);
         setPollInterval(null);
-        
+
         setAuthError({
           errorCode: "auth_status_error",
           errorMessage: data.message || "Failed to check authentication status",
           timestamp: new Date().toISOString(),
         });
         setAuthInProgress(false);
-        if (onAuthError) onAuthError({
-          errorCode: "auth_status_error",
-          errorMessage: data.message || "Failed to check authentication status",
-          timestamp: new Date().toISOString(),
-        });
+        if (onAuthError)
+          onAuthError({
+            errorCode: "auth_status_error",
+            errorMessage: data.message || "Failed to check authentication status",
+            timestamp: new Date().toISOString(),
+          });
       }
     } catch (error) {
       console.error("Error checking auth status:", error);
@@ -179,11 +174,7 @@ export const CIPPDeviceCodeButton = ({
     <div>
       <Button
         variant="contained"
-        disabled={
-          appIdInfo.isLoading ||
-          authInProgress ||
-          (!appIdInfo?.data?.applicationId)
-        }
+        disabled={appIdInfo.isLoading || authInProgress || !appIdInfo?.data?.applicationId}
         onClick={startDeviceCodeAuth}
         color="primary"
       >
@@ -197,13 +188,11 @@ export const CIPPDeviceCodeButton = ({
         )}
       </Button>
 
-      {!appIdInfo.isLoading && 
-        !appIdInfo?.data?.applicationId && (
-          <Alert severity="warning" sx={{ mt: 1 }}>
-            The Application ID is not valid. Please check your configuration.
-          </Alert>
-        )
-      }
+      {!appIdInfo.isLoading && !appIdInfo?.data?.applicationId && (
+        <Alert severity="warning" sx={{ mt: 1 }}>
+          The Application ID is not valid. Please check your configuration.
+        </Alert>
+      )}
 
       {showResults && (
         <Box mt={2}>
@@ -211,7 +200,9 @@ export const CIPPDeviceCodeButton = ({
             <Alert severity="info">
               <Typography variant="subtitle2">Device Code Authentication</Typography>
               <Typography variant="body2" gutterBottom>
-                To sign in, use a web browser to open the page <strong>{deviceCodeInfo.verification_uri}</strong> and enter the code <strong>{deviceCodeInfo.user_code}</strong> to authenticate.
+                To sign in, use a web browser to open the page{" "}
+                <strong>{deviceCodeInfo.verification_uri}</strong> and enter the code{" "}
+                <strong>{deviceCodeInfo.user_code}</strong> to authenticate.
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 Code expires in {Math.round(deviceCodeInfo.expires_in / 60)} minutes
@@ -231,7 +222,9 @@ export const CIPPDeviceCodeButton = ({
             </Alert>
           ) : authError ? (
             <Alert severity="error">
-              <Typography variant="subtitle2">Authentication Error: {authError.errorCode}</Typography>
+              <Typography variant="subtitle2">
+                Authentication Error: {authError.errorCode}
+              </Typography>
               <Typography variant="body2">{authError.errorMessage}</Typography>
               <Typography variant="caption" color="text.secondary">
                 Time: {authError.timestamp}

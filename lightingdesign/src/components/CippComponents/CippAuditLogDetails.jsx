@@ -234,8 +234,8 @@ const CippAuditLogDetails = ({ row }) => {
               {typeof item === "string" && isGuid(item)
                 ? renderGuidValue(item)
                 : typeof item === "string"
-                ? replaceGuidsInString(item)
-                : getCippFormatting(item, `item-${index}`)}
+                  ? replaceGuidsInString(item)
+                  : getCippFormatting(item, `item-${index}`)}
             </div>
           ))}
         </div>
@@ -260,8 +260,8 @@ const CippAuditLogDetails = ({ row }) => {
               {typeof objVal === "string" && isGuid(objVal)
                 ? renderGuidValue(objVal)
                 : typeof objVal === "string"
-                ? replaceGuidsInString(objVal)
-                : getCippFormatting(objVal, objKey)}
+                  ? replaceGuidsInString(objVal)
+                  : getCippFormatting(objVal, objKey)}
             </div>
           ))}
         </div>

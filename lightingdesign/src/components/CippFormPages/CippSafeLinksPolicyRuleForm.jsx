@@ -15,9 +15,12 @@ import { useSettings } from "/src/hooks/use-settings";
 export const safeLinksDataUtils = {
   // Process arrays for string inputs
   formatStringToArray: (value) => {
-    if (!value || value === '') return [];
-    if (typeof value === 'string') {
-      return value.split(',').map(item => item.trim()).filter(item => item !== '');
+    if (!value || value === "") return [];
+    if (typeof value === "string") {
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => item !== "");
     }
     return value;
   },
@@ -26,16 +29,16 @@ export const safeLinksDataUtils = {
   processDomainField: (field) => {
     if (!field) return [];
 
-    if (typeof field === 'string') {
+    if (typeof field === "string") {
       // Handle comma-separated string
       return safeLinksDataUtils.formatStringToArray(field);
     } else if (Array.isArray(field)) {
       // If already an array of strings, return it
-      if (field.length > 0 && typeof field[0] === 'string') {
+      if (field.length > 0 && typeof field[0] === "string") {
         return field;
       }
       // If an array of objects from the domain selector, extract the ids
-      return field.map(item => item.id || item);
+      return field.map((item) => item.id || item);
     }
     return [];
   },
@@ -44,17 +47,17 @@ export const safeLinksDataUtils = {
   processGroupField: (field) => {
     if (Array.isArray(field)) {
       // If the field is already an array of IDs, return it
-      if (field.length > 0 && typeof field[0] === 'string') {
+      if (field.length > 0 && typeof field[0] === "string") {
         return field;
       }
       // If the field is an array of objects, extract the IDs
-      return field.map(item => item.id || item);
+      return field.map((item) => item.id || item);
     }
     return [];
   },
 
   // Create custom data formatter for different form types
-  createDataFormatter: (formControl, formType = 'add', additionalFields = {}) => {
+  createDataFormatter: (formControl, formType = "add", additionalFields = {}) => {
     return (values) => {
       const ruleValues = formControl.getValues();
 
@@ -88,26 +91,30 @@ export const safeLinksDataUtils = {
         SentTo: ruleValues.SentTo,
         ExceptIfSentTo: ruleValues.ExceptIfSentTo,
         SentToMemberOf: safeLinksDataUtils.processGroupField(ruleValues.SentToMemberOf),
-        ExceptIfSentToMemberOf: safeLinksDataUtils.processGroupField(ruleValues.ExceptIfSentToMemberOf),
+        ExceptIfSentToMemberOf: safeLinksDataUtils.processGroupField(
+          ruleValues.ExceptIfSentToMemberOf,
+        ),
         RecipientDomainIs: safeLinksDataUtils.processDomainField(ruleValues.RecipientDomainIs),
-        ExceptIfRecipientDomainIs: safeLinksDataUtils.processDomainField(ruleValues.ExceptIfRecipientDomainIs),
+        ExceptIfRecipientDomainIs: safeLinksDataUtils.processDomainField(
+          ruleValues.ExceptIfRecipientDomainIs,
+        ),
       };
 
       // Add form-specific fields
       switch (formType) {
-        case 'add':
+        case "add":
           return {
             ...baseData,
             State: ruleValues.State,
           };
-        
-        case 'edit':
+
+        case "edit":
           return {
             ...baseData,
             State: ruleValues.State,
           };
-        
-        case 'template':
+
+        case "template":
           return {
             ...baseData,
             ID: additionalFields.ID,
@@ -115,8 +122,8 @@ export const safeLinksDataUtils = {
             TemplateDescription: values.TemplateDescription,
             State: ruleValues.State ? "Enabled" : "Disabled",
           };
-        
-        case 'createTemplate':
+
+        case "createTemplate":
           return {
             ...baseData,
             TemplateName: values.TemplateName,
@@ -125,7 +132,7 @@ export const safeLinksDataUtils = {
             AdminDisplayName: values.AdminDisplayName || values.Description,
             State: ruleValues.State,
           };
-        
+
         default:
           return baseData;
       }
@@ -133,7 +140,7 @@ export const safeLinksDataUtils = {
   },
 
   // Helper to populate form with existing data
-  populateFormData: (formControl, data, userSettingsDefaults, formType = 'edit' ) => {
+  populateFormData: (formControl, data, userSettingsDefaults, formType = "edit") => {
     const baseData = {
       tenantFilter: userSettingsDefaults.currentTenant,
       PolicyName: data.PolicyName,
@@ -163,7 +170,7 @@ export const safeLinksDataUtils = {
     };
 
     // Add template-specific fields
-    if (formType === 'template') {
+    if (formType === "template") {
       baseData.TemplateName = data.TemplateName;
       baseData.TemplateDescription = data.TemplateDescription;
     }
@@ -198,23 +205,27 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
   // Create validator for checking duplicate policy names
   const validatePolicyName = (value) => {
     if (!shouldFetchPolicies || !value) return true;
-  
+
     // If still loading, allow validation to pass (it will re-validate when data loads)
     if (existingPolicies.isFetching) return true;
-  
+
     // If API call failed, allow validation to pass (don't block user due to API issues)
     if (existingPolicies.error) return true;
-  
+
     if (existingPolicies.isSuccess && existingPolicies.data) {
-      const existingNames = existingPolicies.data.map(policy => policy.PolicyName?.toLowerCase()).filter(Boolean);
+      const existingNames = existingPolicies.data
+        .map((policy) => policy.PolicyName?.toLowerCase())
+        .filter(Boolean);
       if (existingNames.includes(value.toLowerCase())) {
         return "A policy with this name already exists";
       }
-      
+
       const lowerValue = value.toLowerCase();
-      if (lowerValue.startsWith("built-in protection policy") ||
-          lowerValue.startsWith("standard preset security policy") ||
-          lowerValue.startsWith("strict preset security policy")) {
+      if (
+        lowerValue.startsWith("built-in protection policy") ||
+        lowerValue.startsWith("standard preset security policy") ||
+        lowerValue.startsWith("strict preset security policy")
+      ) {
         return "This name is reserved for built-in policies";
       }
     }
@@ -224,15 +235,17 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
   // Create validator for checking duplicate template names
   const validateTemplateName = (value) => {
     if (!shouldFetchTemplates || !value) return true;
-    
+
     // If still loading, allow validation to pass (it will re-validate when data loads)
     if (existingTemplates.isFetching) return true;
-    
+
     // If API call failed, allow validation to pass (don't block user due to API issues)
     if (existingTemplates.error) return true;
-    
+
     if (existingTemplates.isSuccess && existingTemplates.data) {
-      const existingNames = existingTemplates.data.map(template => template.name?.toLowerCase()).filter(Boolean);
+      const existingNames = existingTemplates.data
+        .map((template) => template.name?.toLowerCase())
+        .filter(Boolean);
       if (existingNames.includes(value.toLowerCase())) {
         return "A template with this name already exists";
       }
@@ -245,7 +258,7 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
     if (!entry) return true;
 
     // For entries with wildcards, use wildcard validators
-    if (entry.includes('*') || entry.includes('~')) {
+    if (entry.includes("*") || entry.includes("~")) {
       const wildcardUrlResult = getCippValidator(entry, "wildcardUrl");
       const wildcardDomainResult = getCippValidator(entry, "wildcardDomain");
 
@@ -270,16 +283,28 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
   // Re-validate policy name when existing policies data changes
   useEffect(() => {
     if (shouldFetchPolicies && (existingPolicies.isSuccess || existingPolicies.error)) {
-      formControl.trigger('PolicyName');
+      formControl.trigger("PolicyName");
     }
-  }, [existingPolicies.isSuccess, existingPolicies.error, existingPolicies.data, shouldFetchPolicies, formControl]);
+  }, [
+    existingPolicies.isSuccess,
+    existingPolicies.error,
+    existingPolicies.data,
+    shouldFetchPolicies,
+    formControl,
+  ]);
 
   // Re-validate template name when existing templates data changes
   useEffect(() => {
     if (shouldFetchTemplates && (existingTemplates.isSuccess || existingTemplates.error)) {
-      formControl.trigger('TemplateName');
+      formControl.trigger("TemplateName");
     }
-  }, [existingTemplates.isSuccess, existingTemplates.error, existingTemplates.data, shouldFetchTemplates, formControl]);
+  }, [
+    existingTemplates.isSuccess,
+    existingTemplates.error,
+    existingTemplates.data,
+    shouldFetchTemplates,
+    formControl,
+  ]);
 
   // Validate URLs in useEffect and update the validation Enabled
   useEffect(() => {
@@ -292,7 +317,7 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
     let hasInvalidEntry = false;
 
     for (const item of doNotRewriteUrls) {
-      const entry = typeof item === 'string' ? item : (item?.value || item?.label || '');
+      const entry = typeof item === "string" ? item : item?.value || item?.label || "";
       if (!entry) continue;
 
       const isValid = validateDoNotRewriteUrl(entry);
@@ -303,9 +328,9 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
     }
 
     if (hasInvalidEntry) {
-      setError("DoNotRewriteUrls", { 
-        type: "validate", 
-        message: "Not a valid URL, domain, or pattern" 
+      setError("DoNotRewriteUrls", {
+        type: "validate",
+        message: "Not a valid URL, domain, or pattern",
       });
       setIsUrlsValid(false);
     } else {
@@ -318,12 +343,12 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
   useEffect(() => {
     if (policyName) {
       // Always set SafeLinksPolicy to match the policy name
-      formControl.setValue('SafeLinksPolicy', policyName);
+      formControl.setValue("SafeLinksPolicy", policyName);
 
       // Only auto-generate the rule name for new policies
       if (formType === "add" || formType === "createTemplate") {
         const ruleName = `${policyName}_Rule`;
-        formControl.setValue('RuleName', ruleName);
+        formControl.setValue("RuleName", ruleName);
       }
     }
   }, [policyName, formType, formControl]);
@@ -337,7 +362,9 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
       {showTemplateFields && (
         <>
           <Grid size={{ xs: 12 }}>
-            <Typography variant="h5" sx={{ mb: 2 }}>Template Information</Typography>
+            <Typography variant="h5" sx={{ mb: 2 }}>
+              Template Information
+            </Typography>
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
             <CippFormComponent
@@ -347,12 +374,16 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
               name="TemplateName"
               required={true}
               formControl={formControl}
-              helperText={existingTemplates.isFetching && shouldFetchTemplates ? "Checking for duplicate names..." : undefined}
-              validators={{ 
+              helperText={
+                existingTemplates.isFetching && shouldFetchTemplates
+                  ? "Checking for duplicate names..."
+                  : undefined
+              }
+              validators={{
                 required: "Template name is required",
                 validate: {
-                  duplicateName: validateTemplateName
-                }
+                  duplicateName: validateTemplateName,
+                },
               }}
             />
           </Grid>
@@ -371,7 +402,9 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
 
       {/* Policy Settings Section */}
       <Grid size={{ xs: 12 }}>
-        <Typography variant="h5" sx={{ mb: 2 }}>Safe Links Policy Configuration</Typography>
+        <Typography variant="h5" sx={{ mb: 2 }}>
+          Safe Links Policy Configuration
+        </Typography>
       </Grid>
       <Grid size={{ xs: 12 }}>
         <Typography variant="h6">Policy Settings</Typography>
@@ -385,10 +418,10 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
           required={true}
           formControl={formControl}
           disabled={formType === "edit" || formType === "template"}
-          validators={{ 
+          validators={{
             required: "Policy name is required",
-            validate: { validatePolicyName: validatePolicyName}
-         }}
+            validate: { validatePolicyName: validatePolicyName },
+          }}
         />
       </Grid>
       <Grid size={{ xs: 12, md: 6 }}>
@@ -492,7 +525,7 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
       </Grid>
       <Grid size={{ xs: 12, md: 9 }}>
         <CippFormComponent
-          type="textField" 
+          type="textField"
           fullWidth
           label="Custom Notification Text"
           name="CustomNotificationText"
@@ -511,17 +544,19 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
           label="Do Not Rewrite URLs"
           placeholder="Enter domain patterns (one per line for multiple entries)"
           helperText="Enter URLs, domains, or wildcard patterns (e.g., *.example.com, https://example.com)"
-          validators={{ 
+          validators={{
             validate: {
-              format: () => isUrlsValid || "Not a valid URL, domain, or pattern"
-            }
+              format: () => isUrlsValid || "Not a valid URL, domain, or pattern",
+            },
           }}
         />
       </Grid>
 
       {/* Rule Settings Section */}
       <Grid size={{ xs: 12 }}>
-        <Typography variant="h5" sx={{ mb: 2 }}>Safe Links Rule Configuration</Typography>
+        <Typography variant="h5" sx={{ mb: 2 }}>
+          Safe Links Rule Configuration
+        </Typography>
       </Grid>
       <Grid size={{ xs: 12 }}>
         <Typography variant="h6">Rule Information</Typography>
@@ -547,7 +582,7 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
             type: "number",
             min: {
               value: 0,
-              message: "Priority must be a non-negative number"
+              message: "Priority must be a non-negative number",
             },
           }}
           helperText="Lower numbers have higher priority"
@@ -637,8 +672,8 @@ export const SafeLinksForm = ({ formControl, formType = "add" }) => {
       </Grid>
 
       {/* Information Cards */}
-      <Grid size={{ xs:12 }}>
-        <CippInfoCard 
+      <Grid size={{ xs: 12 }}>
+        <CippInfoCard
           icon={<InformationCircleIcon />}
           label="Propagation Time"
           value="Changes to Safe Links policies and rules may take up to 6 hours to propagate throughout your organization."

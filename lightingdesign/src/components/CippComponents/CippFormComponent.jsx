@@ -273,7 +273,7 @@ export const CippFormComponent = (props) => {
                     checked={Boolean(field.value)}
                     {...other}
                     {...formControl.register(convertedName, { ...validators })}
-                  />
+                  />,
                 )
               }
             />
@@ -486,7 +486,7 @@ export const CippFormComponent = (props) => {
               acc[csvHeader] = internalKey;
               return acc;
             },
-            {}
+            {},
           );
 
           return data.map((row) => {

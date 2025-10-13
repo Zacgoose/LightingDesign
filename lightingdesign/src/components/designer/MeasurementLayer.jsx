@@ -1,5 +1,5 @@
-import React from 'react';
-import { Circle, Line } from 'react-konva';
+import React from "react";
+import { Circle, Line } from "react-konva";
 
 export const MeasurementLayer = ({
   measureMode,
@@ -18,7 +18,7 @@ export const MeasurementLayer = ({
       x: (pointerPosition.x - stagePosition.x) / stageScale,
       y: (pointerPosition.y - stagePosition.y) / stageScale,
     };
-    
+
     if (measurePoints.length < 2) {
       onMeasurePointAdd(canvasPos);
     }
@@ -30,39 +30,23 @@ export const MeasurementLayer = ({
     <>
       {/* Points */}
       {measurePoints.map((point, i) => (
-        <Circle
-          key={i}
-          x={point.x}
-          y={point.y}
-          radius={4}
-          fill={theme.palette.primary.main}
-        />
+        <Circle key={i} x={point.x} y={point.y} radius={4} fill={theme.palette.primary.main} />
       ))}
-      
+
       {/* Line between points */}
       {measurePoints.length === 2 && (
         <Line
-          points={[
-            measurePoints[0].x,
-            measurePoints[0].y,
-            measurePoints[1].x,
-            measurePoints[1].y
-          ]}
+          points={[measurePoints[0].x, measurePoints[0].y, measurePoints[1].x, measurePoints[1].y]}
           stroke={theme.palette.primary.main}
           strokeWidth={2}
           dash={[5, 5]}
         />
       )}
-      
+
       {/* Preview line to cursor */}
       {measurePoints.length === 1 && (
         <Line
-          points={[
-            measurePoints[0].x,
-            measurePoints[0].y,
-            cursorPosition.x,
-            cursorPosition.y
-          ]}
+          points={[measurePoints[0].x, measurePoints[0].y, cursorPosition.x, cursorPosition.y]}
           stroke={theme.palette.primary.main}
           strokeWidth={2}
           dash={[5, 5]}

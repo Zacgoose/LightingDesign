@@ -121,7 +121,7 @@ const CippGraphExplorerFilter = ({
       .filter(
         (item) =>
           !endpointFilter ||
-          normalizeEndpoint(item.params.endpoint) === normalizeEndpoint(endpointFilter)
+          normalizeEndpoint(item.params.endpoint) === normalizeEndpoint(endpointFilter),
       )
       .forEach((item) => {
         presetOptionList.push({
@@ -151,7 +151,7 @@ const CippGraphExplorerFilter = ({
         propertyList.refetch();
       }
     }, 1000),
-    [currentEndpoint] // Dependencies that the debounce function depends on
+    [currentEndpoint], // Dependencies that the debounce function depends on
   );
 
   useEffect(() => {
@@ -185,7 +185,7 @@ const CippGraphExplorerFilter = ({
       Object.keys(selectedPresets.addedFields.params).forEach(
         (key) =>
           selectedPresets.addedFields.params[key] == null &&
-          delete selectedPresets.addedFields.params[key]
+          delete selectedPresets.addedFields.params[key],
       );
       //if $select is a blank array, set it to a string.
       if (
@@ -354,7 +354,7 @@ const CippGraphExplorerFilter = ({
           Schedule Graph Explorer Report
         </Typography>
         <CippSchedulerForm fullWidth formControl={schedulerForm} />
-      </>
+      </>,
     );
     setOffCanvasOpen(true);
   };

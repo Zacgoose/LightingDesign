@@ -1,5 +1,5 @@
-import PropTypes from 'prop-types';
-import { List } from '@mui/material';
+import PropTypes from "prop-types";
+import { List } from "@mui/material";
 
 export const ActionList = (props) => {
   const { children } = props;
@@ -8,9 +8,7 @@ export const ActionList = (props) => {
     <List
       dense
       sx={{
-        backgroundColor: (theme) => theme.palette.mode === 'dark'
-          ? 'neutral.900'
-          : 'neutral.50'
+        backgroundColor: (theme) => (theme.palette.mode === "dark" ? "neutral.900" : "neutral.50"),
       }}
     >
       {children}
@@ -19,5 +17,5 @@ export const ActionList = (props) => {
 };
 
 ActionList.propTypes = {
-  children: PropTypes.node
+  children: PropTypes.node,
 };

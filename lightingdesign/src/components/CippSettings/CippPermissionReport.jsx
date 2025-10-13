@@ -114,12 +114,12 @@ export const CippPermissionReport = (props) => {
       customerProps.forEach((prop) => {
         if (report?.Permissions?.Results?.AccessTokenDetails?.[prop]) {
           report.Permissions.Results.AccessTokenDetails[prop] = redactString(
-            report.Permissions.Results.AccessTokenDetails[prop]
+            report.Permissions.Results.AccessTokenDetails[prop],
           );
         }
         if (report?.Permissions?.Results?.ApplicationTokenDetails?.[prop]) {
           report.Permissions.Results.ApplicationTokenDetails[prop] = redactString(
-            report.Permissions.Results.ApplicationTokenDetails[prop]
+            report.Permissions.Results.ApplicationTokenDetails[prop],
           );
         }
       });

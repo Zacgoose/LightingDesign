@@ -10,7 +10,8 @@ export const CippUserInfoCard = (props) => {
   const { user, tenant, isFetching = false, ...other } = props;
 
   // Helper function to check if a section has any data
-  const hasWorkInfo = user?.jobTitle || user?.department || user?.manager?.displayName || user?.companyName;
+  const hasWorkInfo =
+    user?.jobTitle || user?.department || user?.manager?.displayName || user?.companyName;
   const hasAddressInfo =
     user?.streetAddress || user?.postalCode || user?.city || user?.country || user?.officeLocation;
   const hasContactInfo =

@@ -13,10 +13,10 @@ export const ConnectorsLayer = ({
   return (
     <>
       {connectors.map((connector) => {
-        const fromProduct = products.find(p => p.id === connector.from);
-        const toProduct = products.find(p => p.id === connector.to);
+        const fromProduct = products.find((p) => p.id === connector.from);
+        const toProduct = products.find((p) => p.id === connector.to);
         if (!fromProduct || !toProduct) return null;
-        
+
         return (
           <ConnectorLine
             key={connector.id}
@@ -26,8 +26,8 @@ export const ConnectorsLayer = ({
             isSelected={selectedConnectorId === connector.id}
             onSelect={onConnectorSelect}
             onChange={(updatedConnector) => {
-              const newConnectors = connectors.map(c =>
-                c.id === connector.id ? updatedConnector : c
+              const newConnectors = connectors.map((c) =>
+                c.id === connector.id ? updatedConnector : c,
               );
               onConnectorChange(newConnectors);
             }}

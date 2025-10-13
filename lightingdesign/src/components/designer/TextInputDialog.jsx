@@ -1,4 +1,11 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+} from "@mui/material";
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
 
@@ -9,8 +16,8 @@ export const TextInputDialog = ({ open, onClose, onConfirm, title, label, defaul
   const form = useForm({
     mode: "onChange",
     defaultValues: {
-      value: defaultValue
-    }
+      value: defaultValue,
+    },
   });
 
   // Reset form with new defaultValue when dialog opens

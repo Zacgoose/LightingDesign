@@ -37,8 +37,8 @@ export const getCippUniqueLicenses = (dataArray) => {
 
   // Convert map to array and sort by display name
   return Array.from(uniqueLicensesMap.values()).sort((a, b) => {
-    const nameA = a?.displayName || '';
-    const nameB = b?.displayName || '';
+    const nameA = a?.displayName || "";
+    const nameB = b?.displayName || "";
     return nameA.localeCompare(nameB);
   });
 };

@@ -13,7 +13,7 @@ export const CertificateCredentialRemovalForm = ({ formHook, row }) => {
       options={
         row?.keyCredentials?.map((cred) => ({
           label: `${cred.displayName || "Unnamed"} (Expiration: ${new Date(
-            cred.endDateTime
+            cred.endDateTime,
           ).toLocaleDateString()})`,
           value: cred.keyId,
         })) || []

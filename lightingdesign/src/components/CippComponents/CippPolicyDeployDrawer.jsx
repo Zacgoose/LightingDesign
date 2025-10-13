@@ -102,8 +102,8 @@ export const CippPolicyDeployDrawer = ({
               {deployPolicy.isLoading
                 ? "Deploying..."
                 : deployPolicy.isSuccess
-                ? "Redeploy Policy"
-                : "Deploy Policy"}
+                  ? "Redeploy Policy"
+                  : "Deploy Policy"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close
@@ -201,8 +201,8 @@ export const CippPolicyDeployDrawer = ({
                         placeholder === "tenantid"
                           ? tenant?.addedFields?.customerId
                           : placeholder === "tenantdomain"
-                          ? tenant?.addedFields?.defaultDomainName
-                          : ""
+                            ? tenant?.addedFields?.defaultDomainName
+                            : ""
                       }
                       name={`replacemap.${tenant.value}.%${placeholder}%`}
                       label={`Value for '${placeholder}' in Tenant '${tenant.addedFields.defaultDomainName}'`}

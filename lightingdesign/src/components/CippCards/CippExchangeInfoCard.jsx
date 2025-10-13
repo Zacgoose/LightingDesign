@@ -89,7 +89,7 @@ export const CippExchangeInfoCard = (props) => {
                   <Typography variant="inherit">
                     {getCippFormatting(
                       exchangeData?.HiddenFromAddressLists,
-                      "HiddenFromAddressLists"
+                      "HiddenFromAddressLists",
                     )}
                   </Typography>
                 </Grid>
@@ -124,13 +124,13 @@ export const CippExchangeInfoCard = (props) => {
                 sx={{ width: "100%" }}
                 variant="determinate"
                 addedLabel={`(${Math.round(exchangeData.TotalItemSize)} GB of ${Math.round(
-                  exchangeData?.ProhibitSendReceiveQuota
+                  exchangeData?.ProhibitSendReceiveQuota,
                 )}GB)`}
                 value={
                   Math.round(
                     (exchangeData?.TotalItemSize / exchangeData?.ProhibitSendReceiveQuota) *
                       100 *
-                      100
+                      100,
                   ) / 100
                 }
               />
@@ -225,7 +225,7 @@ export const CippExchangeInfoCard = (props) => {
                       <Typography variant="inherit">
                         {getCippFormatting(
                           exchangeData?.AutoExpandingArchive,
-                          "AutoExpandingArchive"
+                          "AutoExpandingArchive",
                         )}
                       </Typography>
                     </Grid>

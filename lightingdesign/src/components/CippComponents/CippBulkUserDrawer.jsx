@@ -141,8 +141,8 @@ export const CippBulkUserDrawer = ({
               {createBulkUsers.isLoading
                 ? "Creating Users..."
                 : createBulkUsers.isSuccess
-                ? "Create More Users"
-                : "Create Users"}
+                  ? "Create More Users"
+                  : "Create Users"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close
@@ -179,7 +179,7 @@ export const CippBulkUserDrawer = ({
           <Grid size={{ xs: 12 }}>
             <Link
               href={`data:text/csv;charset=utf-8,%EF%BB%BF${encodeURIComponent(
-                fields.join(",") + "\n"
+                fields.join(",") + "\n",
               )}`}
               download="BulkUser.csv"
             >

@@ -77,8 +77,8 @@ export const CippAutopilotStatusPageDrawer = ({
               {createStatusPage.isLoading
                 ? "Creating..."
                 : createStatusPage.isSuccess
-                ? "Create Another"
-                : "Create Status Page"}
+                  ? "Create Another"
+                  : "Create Status Page"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

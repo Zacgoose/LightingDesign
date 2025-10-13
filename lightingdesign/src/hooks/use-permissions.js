@@ -27,7 +27,7 @@ export const usePermissions = () => {
       if (!isAuthenticated) return false;
       return hasPermission(userPermissions, requiredPermissions);
     },
-    [userPermissions, isAuthenticated]
+    [userPermissions, isAuthenticated],
   );
 
   /**
@@ -40,7 +40,7 @@ export const usePermissions = () => {
       if (!isAuthenticated) return false;
       return hasRole(userRoles, requiredRoles);
     },
-    [userRoles, isAuthenticated]
+    [userRoles, isAuthenticated],
   );
 
   /**
@@ -63,7 +63,7 @@ export const usePermissions = () => {
         requiredRoles,
       });
     },
-    [userPermissions, userRoles, isAuthenticated]
+    [userPermissions, userRoles, isAuthenticated],
   );
 
   return {

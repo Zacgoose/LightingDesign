@@ -82,8 +82,8 @@ export const CippHVEUserDrawer = ({
               {createHVEUser.isLoading
                 ? "Creating User..."
                 : createHVEUser.isSuccess
-                ? "Create Another User"
-                : "Create HVE User"}
+                  ? "Create Another User"
+                  : "Create HVE User"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

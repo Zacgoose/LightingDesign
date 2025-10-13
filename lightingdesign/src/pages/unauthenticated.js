@@ -22,9 +22,7 @@ const Page = () => {
   // Use useMemo to derive userRoles directly
   const userRoles = useMemo(() => {
     if (orgData.isSuccess && orgData.data?.clientPrincipal?.userRoles) {
-      return orgData.data.clientPrincipal.userRoles.filter(
-        (role) => !blockedRoles.includes(role)
-      );
+      return orgData.data.clientPrincipal.userRoles.filter((role) => !blockedRoles.includes(role));
     }
     return [];
   }, [orgData.isSuccess, orgData.data?.clientPrincipal?.userRoles]);
@@ -65,7 +63,7 @@ const Page = () => {
                       swaStatus?.data?.clientPrincipal !== null && userRoles.length > 0
                         ? "/"
                         : `/.auth/login/aad?post_login_redirect_uri=${encodeURIComponent(
-                            window.location.href
+                            window.location.href,
                           )}`
                     }
                   />

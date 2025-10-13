@@ -1,10 +1,10 @@
-import { useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
-import EllipsisVerticalIcon from '@heroicons/react/24/outline/EllipsisVerticalIcon';
-import { IconButton, Menu, MenuItem, SvgIcon } from '@mui/material';
-import { usePopover } from '../../../hooks/use-popover';
-import { paths } from '../../../paths';
+import { useCallback } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import EllipsisVerticalIcon from "@heroicons/react/24/outline/EllipsisVerticalIcon";
+import { IconButton, Menu, MenuItem, SvgIcon } from "@mui/material";
+import { usePopover } from "../../../hooks/use-popover";
+import { paths } from "../../../paths";
 
 export const InvoicesTableMenu = () => {
   const router = useRouter();
@@ -17,20 +17,17 @@ export const InvoicesTableMenu = () => {
 
   const handleReport = useCallback(() => {
     popover.handleClose();
-    toast.error('This action is not available on demo');
+    toast.error("This action is not available on demo");
   }, [popover]);
 
   const handleDelete = useCallback(() => {
     popover.handleClose();
-    toast.error('This action is not available on demo');
+    toast.error("This action is not available on demo");
   }, [popover]);
 
   return (
     <>
-      <IconButton
-        onClick={popover.handleOpen}
-        ref={popover.anchorRef}
-      >
+      <IconButton onClick={popover.handleOpen} ref={popover.anchorRef}>
         <SvgIcon fontSize="small">
           <EllipsisVerticalIcon />
         </SvgIcon>
@@ -38,26 +35,20 @@ export const InvoicesTableMenu = () => {
       <Menu
         anchorEl={popover.anchorRef.current}
         anchorOrigin={{
-          horizontal: 'right',
-          vertical: 'bottom'
+          horizontal: "right",
+          vertical: "bottom",
         }}
         disableScrollLock
         open={popover.open}
         onClose={popover.handleClose}
         transformOrigin={{
-          horizontal: 'right',
-          vertical: 'top'
+          horizontal: "right",
+          vertical: "top",
         }}
       >
-        <MenuItem onClick={handleEdit}>
-          View
-        </MenuItem>
-        <MenuItem onClick={handleReport}>
-          Duplicate
-        </MenuItem>
-        <MenuItem onClick={handleDelete}>
-          Delete
-        </MenuItem>
+        <MenuItem onClick={handleEdit}>View</MenuItem>
+        <MenuItem onClick={handleReport}>Duplicate</MenuItem>
+        <MenuItem onClick={handleDelete}>Delete</MenuItem>
       </Menu>
     </>
   );

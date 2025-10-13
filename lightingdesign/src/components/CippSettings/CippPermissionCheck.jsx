@@ -14,10 +14,9 @@ import { ApiGetCall } from "/src/api/ApiCall";
 import { useEffect, useState } from "react";
 import { CippPermissionResults } from "./CippPermissionResults";
 import { CippGDAPResults } from "./CippGDAPResults";
-import { Close, Sync } from "@mui/icons-material";
+import { Close, Sync, Description } from "@mui/icons-material";
 import { CippTenantResults } from "./CippTenantResults";
 import { CippTimeAgo } from "../CippComponents/CippTimeAgo";
-import { Description } from "@mui/icons-material";
 
 const CippPermissionCheck = (props) => {
   const { type, importReport = false, variant } = props;

@@ -36,10 +36,7 @@ const CippTemplateEditor = ({
   ];
 
   // Combine default and custom blacklist patterns
-  const blacklistedFields = [
-    ...defaultBlacklistPatterns,
-    ...(blacklistConfig?.patterns || []),
-  ];
+  const blacklistedFields = [...defaultBlacklistPatterns, ...(blacklistConfig?.patterns || [])];
 
   const formControl = useForm({ mode: "onChange" });
 
@@ -52,13 +49,11 @@ const CippTemplateEditor = ({
 
   // Function to check if a field matches any blacklisted pattern (including wildcards)
   const isFieldBlacklisted = (fieldName) => {
-    return blacklistedFields.some(pattern => {
-      if (pattern.includes('*')) {
+    return blacklistedFields.some((pattern) => {
+      if (pattern.includes("*")) {
         // Convert wildcard pattern to regex
-        const regexPattern = pattern
-          .replace(/\*/g, '.*')
-          .replace(/\./g, '\\.');
-        const regex = new RegExp(`^${regexPattern}$`, 'i');
+        const regexPattern = pattern.replace(/\*/g, ".*").replace(/\./g, "\\.");
+        const regex = new RegExp(`^${regexPattern}$`, "i");
         return regex.test(fieldName);
       }
       return pattern === fieldName;
@@ -111,9 +106,11 @@ const CippTemplateEditor = ({
     }
 
     // Special handling for complex array fields (like LocationInfo and GroupInfo)
-    if (schemaConfig?.complexArrayFields?.some(pattern => 
-      key.toLowerCase().includes(pattern.toLowerCase())
-    )) {
+    if (
+      schemaConfig?.complexArrayFields?.some((pattern) =>
+        key.toLowerCase().includes(pattern.toLowerCase()),
+      )
+    ) {
       // Don't render if value is null, undefined, empty array, or contains only null/empty items
       if (
         !value ||
@@ -124,7 +121,7 @@ const CippTemplateEditor = ({
               item === null ||
               item === undefined ||
               (typeof item === "string" && item.trim() === "") ||
-              (typeof item === "object" && item !== null && Object.keys(item).length === 0)
+              (typeof item === "object" && item !== null && Object.keys(item).length === 0),
           ))
       ) {
         return null;
@@ -144,7 +141,7 @@ const CippTemplateEditor = ({
                     item !== null &&
                     item !== undefined &&
                     !(typeof item === "string" && item.trim() === "") &&
-                    !(typeof item === "object" && item !== null && Object.keys(item).length === 0)
+                    !(typeof item === "object" && item !== null && Object.keys(item).length === 0),
                 )
                 .map((item, index) => (
                   <Grid size={{ xs: 12 }} key={`${fieldPath}.${index}`}>
@@ -154,7 +151,7 @@ const CippTemplateEditor = ({
                     <Grid container spacing={2}>
                       {typeof item === "object" && item !== null ? (
                         Object.entries(item).map(([subKey, subValue]) =>
-                          renderFormField(subKey, subValue, `${fieldPath}.${index}`)
+                          renderFormField(subKey, subValue, `${fieldPath}.${index}`),
                         )
                       ) : (
                         <Grid size={{ xs: 12, md: 6 }}>
@@ -185,11 +182,11 @@ const CippTemplateEditor = ({
     if (typeof value === "boolean") {
       return (
         <Grid size={{ xs: 12, md: 6 }} key={fieldPath}>
-          <CippFormComponent 
-            type="switch" 
-            label={getCippTranslation(key)} 
-            name={fieldPath} 
-            formControl={formControl} 
+          <CippFormComponent
+            type="switch"
+            label={getCippTranslation(key)}
+            name={fieldPath}
+            formControl={formControl}
           />
         </Grid>
       );
@@ -233,7 +230,7 @@ const CippTemplateEditor = ({
           <Divider sx={{ mb: 2 }} />
           <Grid container spacing={2}>
             {Object.entries(value).map(([subKey, subValue]) =>
-              renderFormField(subKey, subValue, fieldPath)
+              renderFormField(subKey, subValue, fieldPath),
             )}
           </Grid>
         </Grid>
@@ -271,9 +268,7 @@ const CippTemplateEditor = ({
   if (templateQuery.isError || !templateData) {
     return (
       <Box sx={{ p: 3 }}>
-        <Typography color="error">
-          Error loading template or template not found.
-        </Typography>
+        <Typography color="error">Error loading template or template not found.</Typography>
       </Box>
     );
   }
@@ -297,9 +292,10 @@ const CippTemplateEditor = ({
           {templateData && (
             <>
               {/* Render priority fields first */}
-              {priorityFields.map(fieldName => 
-                templateData[fieldName] !== undefined && 
-                renderFormField(fieldName, templateData[fieldName])
+              {priorityFields.map(
+                (fieldName) =>
+                  templateData[fieldName] !== undefined &&
+                  renderFormField(fieldName, templateData[fieldName]),
               )}
 
               {/* Render all other fields except priority fields */}

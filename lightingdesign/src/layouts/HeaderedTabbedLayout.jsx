@@ -14,9 +14,9 @@ import {
   Tab,
   Tabs,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
 import { ActionsMenu } from "/src/components/actions-menu";
-import { useMediaQuery } from "@mui/material";
 
 export const HeaderedTabbedLayout = (props) => {
   const {
@@ -43,10 +43,10 @@ export const HeaderedTabbedLayout = (props) => {
           query: queryParams,
         },
         undefined,
-        { shallow: true }
+        { shallow: true },
       );
     },
-    [router]
+    [router],
   );
 
   const currentTab = tabOptions.find((option) => option.path === pathname);
@@ -142,20 +142,20 @@ HeaderedTabbedLayout.propTypes = {
     PropTypes.shape({
       label: PropTypes.string.isRequired,
       path: PropTypes.string.isRequired,
-    })
+    }),
   ).isRequired,
   title: PropTypes.string.isRequired,
   subtitle: PropTypes.arrayOf(
     PropTypes.shape({
       icon: PropTypes.node.isRequired,
       text: PropTypes.string.isRequired,
-    })
+    }),
   ),
   actions: PropTypes.arrayOf(
     PropTypes.shape({
       label: PropTypes.string.isRequired,
       handler: PropTypes.func.isRequired,
-    })
+    }),
   ),
   isFetching: PropTypes.bool,
 };

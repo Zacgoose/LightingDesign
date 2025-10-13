@@ -68,7 +68,10 @@ export const PrivateRoute = ({ children, routeType }) => {
     const blockedRoles = ["anonymous", "authenticated"];
     const userRoles = roles?.filter((role) => !blockedRoles.includes(role)) ?? [];
     const isAuthenticated = userRoles.length > 0 && !apiRoles?.error;
-    const isAdmin = roles?.includes("admin") || roles?.includes("superadmin") || roles?.includes("lightingdesigner");
+    const isAdmin =
+      roles?.includes("admin") ||
+      roles?.includes("superadmin") ||
+      roles?.includes("lightingdesigner");
     if (routeType === "admin") {
       return !isAdmin ? <UnauthenticatedPage /> : children;
     } else {

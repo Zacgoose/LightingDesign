@@ -64,7 +64,7 @@ const CippAddEditUser = (props) => {
       const tenantGroupsList = tenantGroups?.data || [];
 
       return tenantGroupsList.filter(
-        (tenantGroup) => !userGroups?.data?.some((userGroup) => userGroup.id === tenantGroup.id)
+        (tenantGroup) => !userGroups?.data?.some((userGroup) => userGroup.id === tenantGroup.id),
       );
     }
     return [];

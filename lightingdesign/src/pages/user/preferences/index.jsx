@@ -1,8 +1,8 @@
 import Head from "next/head";
-import { 
-  Box, 
-  Container, 
-  Stack, 
+import {
+  Box,
+  Container,
+  Stack,
   Alert,
   Button,
   Card,
@@ -293,9 +293,9 @@ const Page = () => {
                       </Stack>
                     </CardContent>
                     <CardActions>
-                      <Button 
-                        variant="contained" 
-                        disabled={!isValid || !isDirty} 
+                      <Button
+                        variant="contained"
+                        disabled={!isValid || !isDirty}
                         onClick={handleSaveChanges}
                       >
                         Save Preferences

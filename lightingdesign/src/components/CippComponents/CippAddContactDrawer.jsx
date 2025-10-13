@@ -152,8 +152,8 @@ export const CippAddContactDrawer = ({
               {addContact.isLoading
                 ? "Creating..."
                 : addContact.isSuccess
-                ? "Create Another"
-                : "Create Contact"}
+                  ? "Create Another"
+                  : "Create Contact"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

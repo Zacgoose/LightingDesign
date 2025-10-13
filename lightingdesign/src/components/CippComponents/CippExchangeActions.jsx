@@ -38,7 +38,7 @@ export const CippExchangeActions = () => {
         $top: 999,
       },
     }),
-    [tenant]
+    [tenant],
   );
 
   return [

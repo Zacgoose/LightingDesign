@@ -1,6 +1,6 @@
 // eslint-disable-next-line consistent-return
 export function deepCopy(obj) {
-  if (typeof obj !== 'object' || obj === null) {
+  if (typeof obj !== "object" || obj === null) {
     return obj;
   }
 

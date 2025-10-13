@@ -1,44 +1,41 @@
-import { Fragment } from 'react';
-import { formatDistanceToNow, subMinutes } from 'date-fns';
-import { Card, CardContent, CardHeader, Divider, Typography } from '@mui/material';
-import { Timeline, TimelineConnector, TimelineContent, TimelineDot, TimelineItem } from '@mui/lab';
+import { Fragment } from "react";
+import { formatDistanceToNow, subMinutes } from "date-fns";
+import { Card, CardContent, CardHeader, Divider, Typography } from "@mui/material";
+import { Timeline, TimelineConnector, TimelineContent, TimelineDot, TimelineItem } from "@mui/lab";
 
 const now = new Date();
 
 const logs = [
   {
-    id: '2aa78a34a87c148865744f62',
-    chargeId: 'th_2JCleBj4vHz',
+    id: "2aa78a34a87c148865744f62",
+    chargeId: "th_2JCleBj4vHz",
     createdAt: subMinutes(now, 15).getTime(),
-    type: 'chargeComplete'
+    type: "chargeComplete",
   },
   {
-    id: 'cca161770fa1ae35541abab7',
+    id: "cca161770fa1ae35541abab7",
     createdAt: subMinutes(now, 53).getTime(),
-    currentStatus: 'complete',
-    previousStatus: 'pending',
-    type: 'statusChanged'
-  }
+    currentStatus: "complete",
+    previousStatus: "pending",
+    type: "statusChanged",
+  },
 ];
 
 const getContent = (log) => {
   switch (log.type) {
-    case 'chargeComplete':
+    case "chargeComplete":
       return (
         <>
-          <Typography variant="body2">
-            Stripe charge complete
-          </Typography>
-          <Typography variant="body2">
-            Charge ID: {log.chargeId}
-          </Typography>
+          <Typography variant="body2">Stripe charge complete</Typography>
+          <Typography variant="body2">Charge ID: {log.chargeId}</Typography>
         </>
       );
 
-    case 'statusChanged':
+    case "statusChanged":
       return (
         <Typography variant="body2">
-          Status changed from <strong>{log.previousStatus}</strong> payment to <strong>{log.currentStatus}</strong>.
+          Status changed from <strong>{log.previousStatus}</strong> payment to{" "}
+          <strong>{log.currentStatus}</strong>.
         </Typography>
       );
 
@@ -55,7 +52,7 @@ export const InvoicePaymentHistory = () => (
       <Timeline
         sx={{
           my: 0,
-          p: 0
+          p: 0,
         }}
       >
         {logs.map((log, index) => {
@@ -66,19 +63,19 @@ export const InvoicePaymentHistory = () => (
             <Fragment key={log.id}>
               <TimelineItem
                 sx={{
-                  alignItems: 'center',
-                  minHeight: 'auto',
-                  '&::before': {
-                    display: 'none'
-                  }
+                  alignItems: "center",
+                  minHeight: "auto",
+                  "&::before": {
+                    display: "none",
+                  },
                 }}
               >
                 <TimelineDot
                   sx={{
-                    alignSelf: 'center',
-                    boxShadow: 'none',
+                    alignSelf: "center",
+                    boxShadow: "none",
                     flexShrink: 0,
-                    m: 0
+                    m: 0,
                   }}
                   variant="outlined"
                 />
@@ -87,7 +84,7 @@ export const InvoicePaymentHistory = () => (
                   <Typography
                     component="p"
                     color="text.secondary"
-                    sx={{ whiteSpace: 'nowrap' }}
+                    sx={{ whiteSpace: "nowrap" }}
                     variant="caption"
                   >
                     {ago} ago
@@ -97,12 +94,11 @@ export const InvoicePaymentHistory = () => (
               {hasConnector && (
                 <TimelineConnector
                   sx={{
-                    backgroundColor: (theme) => theme.palette.mode === 'dark'
-                      ? 'neutral.800'
-                      : 'neutral.200',
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === "dark" ? "neutral.800" : "neutral.200",
                     height: 22,
-                    ml: '5px',
-                    my: 1
+                    ml: "5px",
+                    my: 1,
                   }}
                 />
               )}

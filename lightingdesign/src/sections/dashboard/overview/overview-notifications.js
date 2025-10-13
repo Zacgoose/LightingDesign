@@ -124,7 +124,6 @@ export const OverviewNotifications = (props) => {
         {notifications.map((notification, index) => {
           const hasDivider = notifications.length > index + 1;
 
-          
           return (
             <ListItem key={notification.id} divider={hasDivider}>
               {getContent(notification)}

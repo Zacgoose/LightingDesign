@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
-import PropTypes from 'prop-types';
-import PlusIcon from '@heroicons/react/24/outline/PlusIcon';
-import { Button, FilledInput, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers';
+import { useMemo } from "react";
+import PropTypes from "prop-types";
+import PlusIcon from "@heroicons/react/24/outline/PlusIcon";
+import { Button, FilledInput, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers";
 
 export const FilterDialogItem = (props) => {
   const {
@@ -16,7 +16,7 @@ export const FilterDialogItem = (props) => {
     onRemoveFilter,
     onValueChange,
     operators = [],
-    properties = []
+    properties = [],
   } = props;
 
   const property = useMemo(() => {
@@ -35,25 +35,16 @@ export const FilterDialogItem = (props) => {
 
   return (
     <Stack spacing={1}>
-      <Typography variant="caption">
-        Where
-      </Typography>
+      <Typography variant="caption">Where</Typography>
       <Stack spacing={2}>
-        <Stack
-          alignItems="center"
-          direction="row"
-          spacing={2}
-        >
+        <Stack alignItems="center" direction="row" spacing={2}>
           <Select
             fullWidth
             onChange={(event) => onPropertyChange?.(index, event.target.value)}
-            value={filter.property || ''}
+            value={filter.property || ""}
           >
             {properties.map((property) => (
-              <MenuItem
-                key={property.name}
-                value={property.name}
-              >
+              <MenuItem key={property.name} value={property.name}>
                 {property.label}
               </MenuItem>
             ))}
@@ -62,55 +53,43 @@ export const FilterDialogItem = (props) => {
             disabled={operatorOptions.length < 1}
             fullWidth
             onChange={(event) => onOperatorChange?.(index, event.target.value)}
-            value={operator?.name || ''}
+            value={operator?.name || ""}
           >
             {operatorOptions.map((operator) => (
-              <MenuItem
-                key={operator.name}
-                value={operator.name}
-              >
+              <MenuItem key={operator.name} value={operator.name}>
                 {operator.label}
               </MenuItem>
             ))}
           </Select>
         </Stack>
-        {operator?.field === 'date' && (
+        {operator?.field === "date" && (
           <DatePicker
             onChange={(date) => {
               if (date) {
                 onValueChange?.(index, date);
               }
             }}
-            renderInput={(inputProps) => (
-              <TextField
-                fullWidth
-                {...inputProps} />
-            )}
+            renderInput={(inputProps) => <TextField fullWidth {...inputProps} />}
             value={filter.value || null}
           />
         )}
-        {operator?.field === 'string' && (
+        {operator?.field === "string" && (
           <FilledInput
             fullWidth
             onChange={(event) => onValueChange?.(index, event.target.value)}
-            value={filter.value || ''}
+            value={filter.value || ""}
           />
         )}
-        {operator?.field === 'number' && (
+        {operator?.field === "number" && (
           <FilledInput
             fullWidth
             type="number"
             onChange={(event) => onValueChange?.(index, event.target.value)}
-            value={filter.value || ''}
+            value={filter.value || ""}
           />
         )}
       </Stack>
-      <Stack
-        alignItems="center"
-        direction="row"
-        spacing={2}
-        justifyContent="flex-end"
-      >
+      <Stack alignItems="center" direction="row" spacing={2} justifyContent="flex-end">
         {displayAdd && (
           <Button
             disabled={disableAdd}
@@ -121,11 +100,7 @@ export const FilterDialogItem = (props) => {
             Add
           </Button>
         )}
-        <Button
-          color="inherit"
-          onClick={() => onRemoveFilter?.(index)}
-          size="small"
-        >
+        <Button color="inherit" onClick={() => onRemoveFilter?.(index)} size="small">
           Remove
         </Button>
       </Stack>
@@ -144,5 +119,5 @@ FilterDialogItem.propTypes = {
   onRemoveFilter: PropTypes.func,
   onValueChange: PropTypes.func,
   operators: PropTypes.array,
-  properties: PropTypes.array
+  properties: PropTypes.array,
 };

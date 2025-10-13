@@ -107,22 +107,24 @@ export const CippChartCard = ({
       setBarSeries(
         labels.map((label, index) => ({
           data: [{ x: label, y: chartSeries[index] }],
-        }))
+        })),
       );
     }
   }, [chartType, chartSeries.length, labels]);
 
   return (
-    <Card 
+    <Card
       style={{ width: "100%", height: "100%" }}
       onClick={onClick}
       sx={{
         cursor: onClick ? "pointer" : "default",
         transition: "all 0.2s ease-in-out",
-        "&:hover": onClick ? {
-          boxShadow: (theme) => theme.shadows[8],
-          transform: "translateY(-2px)",
-        } : {},
+        "&:hover": onClick
+          ? {
+              boxShadow: (theme) => theme.shadows[8],
+              transform: "translateY(-2px)",
+            }
+          : {},
       }}
     >
       <CardHeader

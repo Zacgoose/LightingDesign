@@ -1,5 +1,5 @@
-import { Fragment, useCallback, useState } from 'react';
-import numeral from 'numeral';
+import { Fragment, useCallback, useState } from "react";
+import numeral from "numeral";
 import {
   Button,
   Card,
@@ -12,42 +12,42 @@ import {
   Stack,
   ToggleButton,
   ToggleButtonGroup,
-  Typography
-} from '@mui/material';
+  Typography,
+} from "@mui/material";
 
 const planOptions = [
   {
-    id: 'free',
-    description: 'Up to 2 team members',
-    label: 'Free',
+    id: "free",
+    description: "Up to 2 team members",
+    label: "Free",
     price: {
       monthly: 0,
-      yearly: 0
-    }
+      yearly: 0,
+    },
   },
   {
-    id: 'essential',
-    description: 'Best for simple projects or applications.',
-    label: 'Essential',
+    id: "essential",
+    description: "Best for simple projects or applications.",
+    label: "Essential",
     price: {
       monthly: 120,
-      yearly: 1320
-    }
+      yearly: 1320,
+    },
   },
   {
-    id: 'professional',
-    description: 'Best for teams and multiple projects that need added security.',
-    label: 'Professional',
+    id: "professional",
+    description: "Best for teams and multiple projects that need added security.",
+    label: "Professional",
     price: {
       monthly: 480,
-      yearly: 5280
-    }
-  }
+      yearly: 5280,
+    },
+  },
 ];
 
 export const OrganizationBillingPlan = () => {
-  const [plan, setPlan] = useState('essential');
-  const [period, setPeriod] = useState('monthly');
+  const [plan, setPlan] = useState("essential");
+  const [period, setPeriod] = useState("monthly");
 
   const handlePlanChange = useCallback((event, value) => {
     setPlan(value);
@@ -69,67 +69,45 @@ export const OrganizationBillingPlan = () => {
         spacing={3}
         sx={{
           px: 3,
-          py: 2
+          py: 2,
         }}
       >
-        <Typography variant="subtitle2">
-          Billing
-        </Typography>
-        <ToggleButtonGroup
-          exclusive
-          onChange={handlePeriodChange}
-          size="small"
-          value={period}
-        >
-          <ToggleButton value="monthly">
-            Monthly
-          </ToggleButton>
-          <ToggleButton value="yearly">
-            Yearly
-          </ToggleButton>
+        <Typography variant="subtitle2">Billing</Typography>
+        <ToggleButtonGroup exclusive onChange={handlePeriodChange} size="small" value={period}>
+          <ToggleButton value="monthly">Monthly</ToggleButton>
+          <ToggleButton value="yearly">Yearly</ToggleButton>
         </ToggleButtonGroup>
       </Stack>
       <Divider />
-      <RadioGroup
-        name="plan"
-        onChange={handlePlanChange}
-        value={plan}
-      >
+      <RadioGroup name="plan" onChange={handlePlanChange} value={plan}>
         {planOptions.map((option) => {
-          const amount = numeral(option.price[period]).format('$0,0');
+          const amount = numeral(option.price[period]).format("$0,0");
 
           return (
             <Fragment key={option.id}>
               <FormControlLabel
                 disableTypography
                 control={<Radio />}
-                label={(
+                label={
                   <Stack
                     alignItems="center"
                     direction="row"
                     justifyContent="space-between"
-                    sx={{ width: '100%' }}
+                    sx={{ width: "100%" }}
                   >
                     <div>
-                      <Typography>
-                        {option.label}
-                      </Typography>
-                      <Typography
-                        color="text.secondary"
-                        variant="caption"
-                      >
+                      <Typography>{option.label}</Typography>
+                      <Typography color="text.secondary" variant="caption">
                         {option.description}
                       </Typography>
                     </div>
-                    <Typography variant="h5">
-                      {amount}
-                    </Typography>
+                    <Typography variant="h5">{amount}</Typography>
                   </Stack>
-                )}
+                }
                 sx={{
                   m: 0,
                   px: 3,
-                  py: 1.5
+                  py: 1.5,
                 }}
                 value={option.id}
               />
@@ -139,9 +117,7 @@ export const OrganizationBillingPlan = () => {
         })}
       </RadioGroup>
       <CardActions>
-        <Button variant="contained">
-          Upgrade Plan
-        </Button>
+        <Button variant="contained">Upgrade Plan</Button>
       </CardActions>
     </Card>
   );

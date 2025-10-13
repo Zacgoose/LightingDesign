@@ -1,7 +1,7 @@
-import PropTypes from 'prop-types';
-import NextLink from 'next/link';
-import { format } from 'date-fns';
-import numeral from 'numeral';
+import PropTypes from "prop-types";
+import NextLink from "next/link";
+import { format } from "date-fns";
+import numeral from "numeral";
 import {
   Box,
   Checkbox,
@@ -15,78 +15,78 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
-  Typography
-} from '@mui/material';
-import { Pagination } from '../../../components/pagination';
-import { ResourceError } from '../../../components/resource-error';
-import { ResourceUnavailable } from '../../../components/resource-unavailable';
-import { Scrollbar } from '../../../components/scrollbar';
-import { paths } from '../../../paths';
-import { InvoicesTableMenu } from './invoices-table-menu';
+  Typography,
+} from "@mui/material";
+import { Pagination } from "../../../components/pagination";
+import { ResourceError } from "../../../components/resource-error";
+import { ResourceUnavailable } from "../../../components/resource-unavailable";
+import { Scrollbar } from "../../../components/scrollbar";
+import { paths } from "../../../paths";
+import { InvoicesTableMenu } from "./invoices-table-menu";
 
 const statusMap = {
   draft: {
-    color: 'warning.main',
-    label: 'Draft'
+    color: "warning.main",
+    label: "Draft",
   },
   ongoing: {
-    color: 'info.main',
-    label: 'Ongoing'
+    color: "info.main",
+    label: "Ongoing",
   },
   overdue: {
-    color: 'error.main',
-    label: 'Overdue'
+    color: "error.main",
+    label: "Overdue",
   },
   paid: {
-    color: 'success.main',
-    label: 'Paid'
-  }
+    color: "success.main",
+    label: "Paid",
+  },
 };
 
 const columns = [
   {
-    id: 'ref',
+    id: "ref",
     disablePadding: true,
-    label: 'Invoice Ref',
-    sortable: true
+    label: "Invoice Ref",
+    sortable: true,
   },
   {
-    id: 'issueDate',
-    label: 'Issue Date',
-    sortable: true
+    id: "issueDate",
+    label: "Issue Date",
+    sortable: true,
   },
   {
-    id: 'dueDate',
-    label: 'Due Date',
-    sortable: true
+    id: "dueDate",
+    label: "Due Date",
+    sortable: true,
   },
   {
-    id: 'totalAmount',
-    label: 'Total',
-    sortable: true
+    id: "totalAmount",
+    label: "Total",
+    sortable: true,
   },
   {
-    id: 'paymentMethod',
-    label: 'Payment Method',
-    sortable: true
+    id: "paymentMethod",
+    label: "Payment Method",
+    sortable: true,
   },
   {
-    id: 'status',
-    label: 'Status',
-    sortable: true
-  }
+    id: "status",
+    label: "Status",
+    sortable: true,
+  },
 ];
 
 const getResourcesState = (params) => {
   if (params.isLoading) {
-    return 'loading';
+    return "loading";
   }
 
   if (params.error) {
-    return 'error';
+    return "error";
   }
 
-  return params.items.length > 0 ? 'available' : 'unavailable';
+  return params.items.length > 0 ? "available" : "unavailable";
 };
 
 export const InvoicesTable = (props) => {
@@ -104,25 +104,25 @@ export const InvoicesTable = (props) => {
     page = 0,
     rowsPerPage = 0,
     selected = [],
-    sortBy = 'issueDate',
-    sortDir = 'desc'
+    sortBy = "issueDate",
+    sortDir = "desc",
   } = props;
 
   const resourcesState = getResourcesState({
     isLoading,
     error,
-    items
+    items,
   });
 
-  const selectedSome = (selected.length > 0) && (selected.length < items.length);
-  const selectedAll = (items.length > 0) && (selected.length === items.length);
+  const selectedSome = selected.length > 0 && selected.length < items.length;
+  const selectedAll = items.length > 0 && selected.length === items.length;
 
   return (
     <Box
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        flexGrow: 1
+        display: "flex",
+        flexDirection: "column",
+        flexGrow: 1,
       }}
     >
       <Scrollbar>
@@ -132,7 +132,7 @@ export const InvoicesTable = (props) => {
               <TableCell padding="checkbox">
                 <Checkbox
                   checked={selectedAll}
-                  disabled={!(resourcesState === 'available')}
+                  disabled={!(resourcesState === "available")}
                   indeterminate={selectedSome}
                   onChange={(event) => {
                     if (event.target.checked) {
@@ -145,38 +145,36 @@ export const InvoicesTable = (props) => {
               </TableCell>
               {columns.map((column) => (
                 <TableCell key={column.id}>
-                  {column.sortable
-                    ? (
-                      <TableSortLabel
-                        active={sortBy === column.id}
-                        direction={sortBy === column.id ? sortDir : 'asc'}
-                        disabled={!(resourcesState === 'available')}
-                        onClick={() => onSortChange?.(column.id)}
-                      >
-                        {column.label}
-                      </TableSortLabel>
-                    )
-                    : column.label}
+                  {column.sortable ? (
+                    <TableSortLabel
+                      active={sortBy === column.id}
+                      direction={sortBy === column.id ? sortDir : "asc"}
+                      disabled={!(resourcesState === "available")}
+                      onClick={() => onSortChange?.(column.id)}
+                    >
+                      {column.label}
+                    </TableSortLabel>
+                  ) : (
+                    column.label
+                  )}
                 </TableCell>
               ))}
               <TableCell />
             </TableRow>
           </TableHead>
-          {resourcesState === 'available' && (
+          {resourcesState === "available" && (
             <TableBody>
               {items.map((invoice) => {
                 const isSelected = !!selected.find((invoiceId) => invoiceId === invoice.id);
                 const status = statusMap[invoice.status];
-                const issueDate = format(invoice.issueDate, 'dd MMM yyyy');
-                const dueDate = format(invoice.dueDate, 'dd MMM yyyy');
-                const totalAmount = numeral(invoice.totalAmount).format(`${invoice.currency}0,0.00`);
+                const issueDate = format(invoice.issueDate, "dd MMM yyyy");
+                const dueDate = format(invoice.dueDate, "dd MMM yyyy");
+                const totalAmount = numeral(invoice.totalAmount).format(
+                  `${invoice.currency}0,0.00`,
+                );
 
                 return (
-                  <TableRow
-                    hover
-                    key={invoice.id}
-                    selected={isSelected}
-                  >
+                  <TableRow hover key={invoice.id} selected={isSelected}>
                     <TableCell padding="checkbox">
                       <Checkbox
                         checked={isSelected}
@@ -200,35 +198,21 @@ export const InvoicesTable = (props) => {
                         {invoice.ref}
                       </Link>
                     </TableCell>
+                    <TableCell>{issueDate}</TableCell>
+                    <TableCell>{dueDate}</TableCell>
+                    <TableCell>{totalAmount}</TableCell>
+                    <TableCell>{invoice.paymentMethod}</TableCell>
                     <TableCell>
-                      {issueDate}
-                    </TableCell>
-                    <TableCell>
-                      {dueDate}
-                    </TableCell>
-                    <TableCell>
-                      {totalAmount}
-                    </TableCell>
-                    <TableCell>
-                      {invoice.paymentMethod}
-                    </TableCell>
-                    <TableCell>
-                      <Stack
-                        alignItems="center"
-                        direction="row"
-                        spacing={1}
-                      >
+                      <Stack alignItems="center" direction="row" spacing={1}>
                         <Box
                           sx={{
                             backgroundColor: status.color,
-                            borderRadius: '50%',
+                            borderRadius: "50%",
                             height: 8,
-                            width: 8
+                            width: 8,
                           }}
                         />
-                        <Typography variant="body2">
-                          {status.label}
-                        </Typography>
+                        <Typography variant="body2">{status.label}</Typography>
                       </Stack>
                     </TableCell>
                     <TableCell>
@@ -241,9 +225,9 @@ export const InvoicesTable = (props) => {
           )}
         </Table>
       </Scrollbar>
-      {resourcesState === 'available' && (
+      {resourcesState === "available" && (
         <>
-          <Divider sx={{ mt: 'auto' }} />
+          <Divider sx={{ mt: "auto" }} />
           <Pagination
             onPageChange={onPageChange}
             page={page}
@@ -252,28 +236,28 @@ export const InvoicesTable = (props) => {
           />
         </>
       )}
-      {resourcesState === 'loading' && (
+      {resourcesState === "loading" && (
         <Box sx={{ m: 2 }}>
           <Skeleton height={42} />
           <Skeleton height={42} />
           <Skeleton height={42} />
         </Box>
       )}
-      {resourcesState === 'error' && (
+      {resourcesState === "error" && (
         <ResourceError
           message="Something went wrong"
           sx={{
             flexGrow: 1,
-            m: 2
+            m: 2,
           }}
         />
       )}
-      {resourcesState === 'unavailable' && (
+      {resourcesState === "unavailable" && (
         <ResourceUnavailable
           message="Resources are not available"
           sx={{
             flexGrow: 1,
-            m: 2
+            m: 2,
           }}
         />
       )}
@@ -296,5 +280,5 @@ InvoicesTable.propTypes = {
   rowsPerPage: PropTypes.number,
   selected: PropTypes.array,
   sortBy: PropTypes.string,
-  sortDir: PropTypes.oneOf(['asc', 'desc'])
+  sortDir: PropTypes.oneOf(["asc", "desc"]),
 };

@@ -141,7 +141,7 @@ export const CippTextFieldWithVariables = ({
 
       closeAutocomplete();
     },
-    [value, cursorPosition, onChange, closeAutocomplete]
+    [value, cursorPosition, onChange, closeAutocomplete],
   );
 
   // Handle key events

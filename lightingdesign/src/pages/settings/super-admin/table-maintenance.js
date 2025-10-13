@@ -228,7 +228,7 @@ const Page = () => {
       (table) =>
         tableFilter === "" ||
         tableFilter === undefined ||
-        table.toLowerCase().includes(tableFilter.toLowerCase())
+        table.toLowerCase().includes(tableFilter.toLowerCase()),
     )
     .map((table) => ({
       label: `${table}`,

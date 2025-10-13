@@ -1,8 +1,8 @@
-import { useCallback, useState } from 'react';
-import toast from 'react-hot-toast';
-import PropTypes from 'prop-types';
-import DocumentDuplicateIcon from '@heroicons/react/24/outline/DocumentDuplicateIcon';
-import EyeIcon from '@heroicons/react/24/outline/EyeIcon';
+import { useCallback, useState } from "react";
+import toast from "react-hot-toast";
+import PropTypes from "prop-types";
+import DocumentDuplicateIcon from "@heroicons/react/24/outline/DocumentDuplicateIcon";
+import EyeIcon from "@heroicons/react/24/outline/EyeIcon";
 import {
   Box,
   Button,
@@ -13,24 +13,24 @@ import {
   MenuItem,
   Select,
   Stack,
-  SvgIcon
-} from '@mui/material';
-import { ActionList } from '../../../components/action-list';
-import { ActionListItem } from '../../../components/action-list-item';
-import { ConfirmationDialog } from '../../../components/confirmation-dialog';
-import { useDialog } from '../../../hooks/use-dialog';
+  SvgIcon,
+} from "@mui/material";
+import { ActionList } from "../../../components/action-list";
+import { ActionListItem } from "../../../components/action-list-item";
+import { ConfirmationDialog } from "../../../components/confirmation-dialog";
+import { useDialog } from "../../../hooks/use-dialog";
 
 const statusOptions = [
   {
-    color: 'info.main',
-    label: 'Draft',
-    value: 'draft'
+    color: "info.main",
+    label: "Draft",
+    value: "draft",
   },
   {
-    color: 'success.main',
-    label: 'Published',
-    value: 'published'
-  }
+    color: "success.main",
+    label: "Published",
+    value: "published",
+  },
 ];
 
 export const ProductQuickActions = (props) => {
@@ -43,16 +43,16 @@ export const ProductQuickActions = (props) => {
   }, []);
 
   const handleSave = useCallback(() => {
-    toast.success('Changes saved');
+    toast.success("Changes saved");
   }, []);
 
   const handlePreview = useCallback(() => {
-    toast.error('This action is not available on demo');
+    toast.error("This action is not available on demo");
   }, []);
 
   const handleDuplicate = useCallback(() => {
     duplicateDialog.handleClose();
-    toast.error('This action is not available on demo');
+    toast.error("This action is not available on demo");
   }, [duplicateDialog]);
 
   return (
@@ -66,9 +66,9 @@ export const ProductQuickActions = (props) => {
               fullWidth
               inputProps={{
                 sx: {
-                  alignItems: 'center',
-                  display: 'flex'
-                }
+                  alignItems: "center",
+                  display: "flex",
+                },
               }}
               onChange={handleStatusChange}
               value={status}
@@ -77,18 +77,18 @@ export const ProductQuickActions = (props) => {
                 <MenuItem
                   key={option.value}
                   sx={{
-                    alignItems: 'center',
-                    display: 'flex'
+                    alignItems: "center",
+                    display: "flex",
                   }}
                   value={option.value}
                 >
                   <Box
                     sx={{
                       backgroundColor: option.color,
-                      borderRadius: '50%',
+                      borderRadius: "50%",
                       height: 8,
                       width: 8,
-                      mr: 1
+                      mr: 1,
                     }}
                   />
                   {option.label}
@@ -96,10 +96,7 @@ export const ProductQuickActions = (props) => {
               ))}
             </Select>
             <div>
-              <Button
-                onClick={handleSave}
-                variant="contained"
-              >
+              <Button onClick={handleSave} variant="contained">
                 Save Changes
               </Button>
             </div>
@@ -108,20 +105,20 @@ export const ProductQuickActions = (props) => {
         <Divider />
         <ActionList>
           <ActionListItem
-            icon={(
+            icon={
               <SvgIcon fontSize="small">
                 <EyeIcon />
               </SvgIcon>
-            )}
+            }
             label="Preview"
             onClick={handlePreview}
           />
           <ActionListItem
-            icon={(
+            icon={
               <SvgIcon fontSize="small">
                 <DocumentDuplicateIcon />
               </SvgIcon>
-            )}
+            }
             label="Duplicate"
             onClick={duplicateDialog.handleOpen}
           />
@@ -140,5 +137,5 @@ export const ProductQuickActions = (props) => {
 };
 
 ProductQuickActions.propTypes = {
-  product: PropTypes.object
+  product: PropTypes.object,
 };

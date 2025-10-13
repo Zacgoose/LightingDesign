@@ -90,8 +90,8 @@ export const CippDeployContactTemplateDrawer = ({
               {deployTemplate.isLoading
                 ? "Deploying..."
                 : deployTemplate.isSuccess
-                ? "Deploy Another"
-                : "Deploy Templates"}
+                  ? "Deploy Another"
+                  : "Deploy Templates"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

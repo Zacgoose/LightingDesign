@@ -223,22 +223,36 @@ const Page = () => {
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
   // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
   useEffect(() => {
-    if (isLoadingLayerData.current) {
-      console.log('Background sync blocked - loading layer data');
-      return;
-    }
-    if (
+    // Check if values have changed from what we last synced
+    const hasChanged =
       backgroundImage !== lastSyncedBackgroundImage.current ||
-      backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current
-    ) {
-      console.log('Syncing background to layer:', activeLayerIdRef.current, {
-        hasImage: !!backgroundImage,
-        imageLength: backgroundImage?.length || 0
-      });
-      updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
-      lastSyncedBackgroundImage.current = backgroundImage;
-      lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
+      backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current;
+    
+    if (!hasChanged) {
+      return; // No changes to sync
     }
+    
+    if (isLoadingLayerData.current) {
+      console.log('Background sync deferred - loading layer data');
+      // Schedule a retry after the loading completes
+      const retryTimer = setTimeout(() => {
+        if (!isLoadingLayerData.current) {
+          console.log('Retrying background sync after layer load');
+          updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
+          lastSyncedBackgroundImage.current = backgroundImage;
+          lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
+        }
+      }, 150); // Wait a bit longer than the layer load timeout (100ms)
+      return () => clearTimeout(retryTimer);
+    }
+    
+    console.log('Syncing background to layer:', activeLayerIdRef.current, {
+      hasImage: !!backgroundImage,
+      imageLength: backgroundImage?.length || 0
+    });
+    updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
+    lastSyncedBackgroundImage.current = backgroundImage;
+    lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
   }, [backgroundImage, backgroundImageNaturalSize, updateLayer]);
 
   // Keep scale factor in sync with active layer

@@ -303,8 +303,30 @@ const Page = () => {
     if (transformed) updateHistory(transformed);
     setIsSaving(true);
 
+    // Log layers before stripping to check for corruption
+    console.log('=== SAVE: Layers before stripping ===');
+    layers.forEach((layer, idx) => {
+      console.log(`Layer ${idx} (${layer.id}):`, {
+        name: layer.name,
+        hasBackground: !!layer.backgroundImage,
+        backgroundLength: layer.backgroundImage?.length || 0,
+        backgroundImageNaturalSize: layer.backgroundImageNaturalSize
+      });
+    });
+
     // Strip metadata from all layers (products and connectors are already in layers)
     const strippedLayers = stripLayersForSave(layers);
+
+    // Log after stripping
+    console.log('=== SAVE: Layers after stripping ===');
+    strippedLayers.forEach((layer, idx) => {
+      console.log(`Layer ${idx} (${layer.id}):`, {
+        name: layer.name,
+        hasBackground: !!layer.backgroundImage,
+        backgroundLength: layer.backgroundImage?.length || 0,
+        backgroundImageNaturalSize: layer.backgroundImageNaturalSize
+      });
+    });
 
     // Use new format: only save layers (not root products/connectors)
     // Products and connectors are stored within their respective layers

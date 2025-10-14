@@ -130,8 +130,18 @@ const Page = () => {
   const lastSyncedBackgroundImage = useRef(null);
   const lastSyncedBackgroundImageNaturalSize = useRef(null);
   const lastSyncedScaleFactor = useRef(null);
+  
+  // Ref to always have current activeLayerId for sync effects
+  // We use a ref instead of putting activeLayerId in dependencies to avoid
+  // the sync effects running when switching layers (which would cause race conditions)
+  const activeLayerIdRef = useRef(activeLayerId);
 
   const [connectors, setConnectors] = useState(activeLayer?.connectors || []);
+
+  // Keep activeLayerIdRef in sync with activeLayerId
+  useEffect(() => {
+    activeLayerIdRef.current = activeLayerId;
+  }, [activeLayerId]);
 
   // Background and Scale - now derived from active layer
   const [backgroundImage, setBackgroundImage] = useState(activeLayer?.backgroundImage || null);
@@ -191,27 +201,37 @@ const Page = () => {
   // Keep products in sync with active layer (save to layer when products change)
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
   // The isLoadingLayerData guard prevents syncing during layer load
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
   useEffect(() => {
     if (isLoadingLayerData.current) return;
-    updateLayer(activeLayerId, { products });
+    updateLayer(activeLayerIdRef.current, { products });
   }, [products, updateLayer]);
 
   // Keep connectors in sync with active layer
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
   useEffect(() => {
     if (isLoadingLayerData.current) return;
-    updateLayer(activeLayerId, { connectors });
+    updateLayer(activeLayerIdRef.current, { connectors });
   }, [connectors, updateLayer]);
 
   // Keep background image in sync with active layer
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
   useEffect(() => {
-    if (isLoadingLayerData.current) return;
+    if (isLoadingLayerData.current) {
+      console.log('Background sync blocked - loading layer data');
+      return;
+    }
     if (
       backgroundImage !== lastSyncedBackgroundImage.current ||
       backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current
     ) {
-      updateLayer(activeLayerId, { backgroundImage, backgroundImageNaturalSize });
+      console.log('Syncing background to layer:', activeLayerIdRef.current, {
+        hasImage: !!backgroundImage,
+        imageLength: backgroundImage?.length || 0
+      });
+      updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
       lastSyncedBackgroundImage.current = backgroundImage;
       lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
     }
@@ -219,10 +239,11 @@ const Page = () => {
 
   // Keep scale factor in sync with active layer
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
   useEffect(() => {
     if (isLoadingLayerData.current) return;
     if (scaleFactor !== lastSyncedScaleFactor.current) {
-      updateLayer(activeLayerId, { scaleFactor });
+      updateLayer(activeLayerIdRef.current, { scaleFactor });
       lastSyncedScaleFactor.current = scaleFactor;
     }
   }, [scaleFactor, updateLayer]);
@@ -282,8 +303,30 @@ const Page = () => {
     if (transformed) updateHistory(transformed);
     setIsSaving(true);
 
+    // Log layers before stripping to check for corruption
+    console.log('=== SAVE: Layers before stripping ===');
+    layers.forEach((layer, idx) => {
+      console.log(`Layer ${idx} (${layer.id}):`, {
+        name: layer.name,
+        hasBackground: !!layer.backgroundImage,
+        backgroundLength: layer.backgroundImage?.length || 0,
+        backgroundImageNaturalSize: layer.backgroundImageNaturalSize
+      });
+    });
+
     // Strip metadata from all layers (products and connectors are already in layers)
     const strippedLayers = stripLayersForSave(layers);
+
+    // Log after stripping
+    console.log('=== SAVE: Layers after stripping ===');
+    strippedLayers.forEach((layer, idx) => {
+      console.log(`Layer ${idx} (${layer.id}):`, {
+        name: layer.name,
+        hasBackground: !!layer.backgroundImage,
+        backgroundLength: layer.backgroundImage?.length || 0,
+        backgroundImageNaturalSize: layer.backgroundImageNaturalSize
+      });
+    });
 
     // Use new format: only save layers (not root products/connectors)
     // Products and connectors are stored within their respective layers
@@ -375,6 +418,13 @@ const Page = () => {
 
   // Update local state when switching layers
   useEffect(() => {
+    console.log('Layer switch effect triggered', {
+      activeLayerId,
+      lastLoadedLayerId: lastLoadedLayerId.current,
+      hasActiveLayer: !!activeLayer,
+      condition: activeLayerId !== lastLoadedLayerId.current && activeLayer
+    });
+    
     if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
       console.log(`Switching to layer ${activeLayerId}`, {
         hasBackgroundImage: !!activeLayer.backgroundImage,
@@ -383,6 +433,10 @@ const Page = () => {
 
       lastLoadedLayerId.current = activeLayerId;
       isLoadingLayerData.current = true;
+      console.log('isLoadingLayerData set to TRUE');
+      
+      // Update activeLayerIdRef immediately to ensure sync effects use correct layer
+      activeLayerIdRef.current = activeLayerId;
 
       // Load the new layer's data
       updateHistory(activeLayer.products || []);
@@ -396,20 +450,25 @@ const Page = () => {
       lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
       lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
 
+      // Re-enable sync after layer data is loaded
+      console.log('Setting up timeout to re-enable sync in 100ms...');
       const timer = setTimeout(() => {
         isLoadingLayerData.current = false;
+        console.log('Layer switch complete - sync effects re-enabled');
       }, 100);
 
-      return () => clearTimeout(timer);
+      return () => {
+        console.log('Layer switch effect cleanup - clearing timeout');
+        clearTimeout(timer);
+      };
     }
   }, [
     activeLayerId,
     activeLayer,
-    updateHistory,
-    setConnectors,
-    setBackgroundImage,
-    setBackgroundImageNaturalSize,
-    setScaleFactor,
+    // Note: updateHistory is not memoized in useHistory hook, so it changes every render
+    // We don't include it here to prevent infinite re-runs
+    // Note: setConnectors, setBackgroundImage, setBackgroundImageNaturalSize, setScaleFactor
+    // are stable setState functions and don't need to be in dependencies
   ]);
 
   // Context menus hook

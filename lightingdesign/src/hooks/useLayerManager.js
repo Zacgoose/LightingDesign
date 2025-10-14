@@ -86,9 +86,24 @@ export const useLayerManager = (initialLayers = null) => {
 
   // Update layer properties
   const updateLayer = useCallback((layerId, updates) => {
-    setLayers((prev) =>
-      prev.map((layer) => (layer.id === layerId ? { ...layer, ...updates } : layer)),
-    );
+    console.log('updateLayer called:', { layerId, updates: Object.keys(updates) });
+    setLayers((prev) => {
+      const updated = prev.map((layer) => {
+        if (layer.id === layerId) {
+          const newLayer = { ...layer, ...updates };
+          if (updates.backgroundImage !== undefined) {
+            console.log('Layer background updated:', {
+              layerId,
+              hasImage: !!newLayer.backgroundImage,
+              imageLength: newLayer.backgroundImage?.length || 0
+            });
+          }
+          return newLayer;
+        }
+        return layer;
+      });
+      return updated;
+    });
   }, []);
 
   // Update active layer

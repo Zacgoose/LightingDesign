@@ -28,7 +28,7 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
   ];
 
   // Columns to display
-  const simpleColumns = ["name", "sku", "thumbnailImageUrl", "product_type_unigram"];
+  const simpleColumns = ["name", "thumbnailImageUrl", "sku"];
 
   // Actions - use customFunction with noConfirm for immediate execution
   const actions = [

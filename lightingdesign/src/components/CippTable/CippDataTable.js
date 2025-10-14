@@ -74,7 +74,7 @@ export const CippDataTable = (props) => {
     incorrectDataMessage = "Data not in correct format",
     onChange,
     filters,
-    maxHeightOffset = "150px",
+    maxHeightOffset = "330px",
     defaultSorting = [],
     enableRowSelection = true,
     imageColumn = null
@@ -247,6 +247,7 @@ export const CippDataTable = (props) => {
   };
 
   const table = useMaterialReactTable({
+    ...modeInfo,
     enableRowSelection,
     muiTableBodyCellProps: {
       onCopy: (e) => {
@@ -372,7 +373,6 @@ export const CippDataTable = (props) => {
         </Box>
       ) : undefined,
     onColumnVisibilityChange: setColumnVisibility,
-    ...modeInfo,
     renderRowActionMenuItems: actions
       ? ({ closeMenu, row }) => [
           actions.map((action, index) => (

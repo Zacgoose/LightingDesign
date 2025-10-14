@@ -452,6 +452,13 @@ const Page = () => {
 
   // Update local state when switching layers OR when layers are loaded
   useEffect(() => {
+    // Skip if router query is not ready yet - this prevents loading empty layer data
+    // when we're on a page that has an ID in the URL but router.query.id is not yet populated
+    if (!router.isReady) {
+      console.log('Layer switch effect skipped - router not ready');
+      return;
+    }
+
     // Skip initial render if design data is still loading
     // This prevents loading the default empty layer before the actual design data arrives
     if (designData.isLoading) {
@@ -459,20 +466,18 @@ const Page = () => {
       return;
     }
     
-    // CRITICAL FIX: On page refresh/mount, if we haven't loaded layers yet,
+    // CRITICAL FIX: On page refresh/mount, if we haven't loaded layers yet and there's a design ID,
     // wait for the design to load before initializing the canvas with empty layer data.
     // This prevents the canvas from being initialized with wrong dimensions on refresh.
     // We skip if:
-    // 1. layersVersion is 0 (loadLayers() hasn't been called yet)
-    // 2. No layer has been loaded yet (lastLoadedLayerId is null)
-    // 3. designData query is waiting/enabled (which means we expect data to load)
-    // The waiting prop is set to !!id, so if enabled, we know we're loading a design
-    if (layersVersion === 0 && lastLoadedLayerId.current === null && designData.fetchStatus !== 'idle') {
+    // 1. We have a design ID (loading existing design, not creating new)
+    // 2. layersVersion is 0 (loadLayers() hasn't been called yet)
+    // 3. No layer has been loaded yet (lastLoadedLayerId is null)
+    if (id && layersVersion === 0 && lastLoadedLayerId.current === null) {
       console.log('Layer switch effect skipped - waiting for initial design data to load', {
         id,
         layersVersion,
         lastLoadedLayerId: lastLoadedLayerId.current,
-        fetchStatus: designData.fetchStatus,
         isLoading: designData.isLoading,
         isSuccess: designData.isSuccess
       });
@@ -525,6 +530,7 @@ const Page = () => {
       };
     }
   }, [
+    router.isReady,
     id,
     activeLayerId,
     activeLayer,

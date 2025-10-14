@@ -8,9 +8,13 @@
  * - Tool selection
  */
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
+  // Refs
+  const canvasContainerRef = useRef();
+  const isInitializedRef = useRef(false);
+
   // Canvas state
   const [stageScale, setStageScale] = useState(1);
   const [canvasWidth, setCanvasWidth] = useState(initialWidth);
@@ -26,8 +30,31 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   const [selectedTool, setSelectedTool] = useState("select");
   const [rotationSnaps, setRotationSnaps] = useState(8);
 
-  // Refs
-  const canvasContainerRef = useRef();
+  // Resize handler function
+  const handleResize = useCallback(() => {
+    if (canvasContainerRef.current) {
+      const rect = canvasContainerRef.current.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setCanvasWidth(rect.width);
+        setCanvasHeight(rect.height);
+        // Only reset position on initial load
+        // This prevents resetting position when loading layer data or on window resize
+        if (!isInitializedRef.current) {
+          setStagePosition({
+            x: rect.width / 2,
+            y: rect.height / 2,
+          });
+          isInitializedRef.current = true;
+        } else {
+          // On window resize, adjust position to keep centered
+          setStagePosition({
+            x: rect.width / 2,
+            y: rect.height / 2,
+          });
+        }
+      }
+    }
+  }, []);
 
   // Canvas interaction handlers
   const handleWheel = useCallback((e) => {
@@ -80,23 +107,29 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
     });
   }, [canvasWidth, canvasHeight]);
 
-  // Handle canvas resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (canvasContainerRef.current) {
-        const rect = canvasContainerRef.current.getBoundingClientRect();
-        setCanvasWidth(rect.width);
-        setCanvasHeight(rect.height);
-        setStagePosition({
-          x: rect.width / 2,
-          y: rect.height / 2,
-        });
-      }
-    };
-    window.addEventListener("resize", handleResize);
+  // Handle canvas resize - using useLayoutEffect to run synchronously before paint
+  // This is CRITICAL for preventing race conditions on page refresh where layer data
+  // might load before canvas dimensions are properly set
+  useLayoutEffect(() => {
+    // Call immediately to ensure dimensions are set BEFORE any layer loading occurs
     handleResize();
+    
+    window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [handleResize]);
+
+  // Callback ref to handle initial dimension calculation
+  // This ensures dimensions are set as soon as the container is mounted in the DOM
+  const setCanvasContainerRef = useCallback(
+    (node) => {
+      canvasContainerRef.current = node;
+      if (node && !isInitializedRef.current) {
+        // Force an immediate resize calculation when the ref is first attached
+        handleResize();
+      }
+    },
+    [handleResize],
+  );
 
   return {
     // State
@@ -108,7 +141,7 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
     showLayers,
     selectedTool,
     rotationSnaps,
-    canvasContainerRef,
+    canvasContainerRef: setCanvasContainerRef, // Use callback ref instead of regular ref
 
     // Setters
     setStageScale,

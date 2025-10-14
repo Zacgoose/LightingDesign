@@ -78,7 +78,6 @@ const Page = () => {
     selectedTool,
     rotationSnaps,
     canvasContainerRef,
-    canvasScaleAdjustment,
     setStageScale,
     setShowGrid,
     setShowLayers,
@@ -156,6 +155,15 @@ const Page = () => {
     activeLayer?.backgroundImageNaturalSize || null,
   );
   const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100);
+
+  // Calculate image scale to match background image scaling
+  // This ensures objects scale proportionally with the background image
+  const imageScale = backgroundImageNaturalSize
+    ? Math.min(
+        canvasWidth / backgroundImageNaturalSize.width,
+        canvasHeight / backgroundImageNaturalSize.height
+      )
+    : 1;
 
   // Selection state management using custom hook
   const selectionState = useSelectionState(products);
@@ -1123,7 +1131,6 @@ const Page = () => {
                     backgroundImage={backgroundImage}
                     backgroundImageNaturalSize={backgroundImageNaturalSize}
                     scaleFactor={scaleFactor}
-                    canvasScaleAdjustment={canvasScaleAdjustment}
                     onPan={handleCanvasPan}
                   >
                     <ConnectorsLayer
@@ -1155,7 +1162,7 @@ const Page = () => {
                       theme={theme}
                       groupKey={groupKey}
                       placementMode={placementMode}
-                      canvasScaleAdjustment={canvasScaleAdjustment}
+                      imageScale={imageScale}
                       onProductClick={handleProductClick}
                       onProductDragStart={handleProductDragStart}
                       onProductDragEnd={handleProductDragEnd}
@@ -1186,7 +1193,7 @@ const Page = () => {
                         theme={theme}
                         opacity={0.6}
                         listening={false}
-                        canvasScaleAdjustment={canvasScaleAdjustment}
+                        imageScale={imageScale}
                         onMouseDown={() => {}}
                         onContextMenu={() => {}}
                       />

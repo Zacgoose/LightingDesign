@@ -13,7 +13,6 @@ export const DesignerCanvas = memo(
     showGrid,
     gridSize = 100,
     scaleFactor = 100,
-    canvasScaleAdjustment = 1,
     onWheel,
     onDragEnd,
     onMouseDown,
@@ -161,7 +160,7 @@ export const DesignerCanvas = memo(
             width={width}
             height={height}
             gridSize={gridSize}
-            scaleFactor={scaleFactor * canvasScaleAdjustment}
+            scaleFactor={scaleFactor * imageScale}
             backgroundImageNaturalSize={backgroundImageNaturalSize}
             imageScale={imageScale}
             gridColor={gridColor}
@@ -201,7 +200,6 @@ export const DesignerCanvas = memo(
       prevProps.showGrid === nextProps.showGrid &&
       prevProps.gridSize === nextProps.gridSize &&
       prevProps.scaleFactor === nextProps.scaleFactor &&
-      prevProps.canvasScaleAdjustment === nextProps.canvasScaleAdjustment &&
       prevProps.draggable === nextProps.draggable &&
       prevProps.backgroundImage === nextProps.backgroundImage &&
       prevProps.backgroundImageNaturalSize === nextProps.backgroundImageNaturalSize &&

@@ -16,7 +16,7 @@ export const ProductShape = memo(
     draggable = false,
     opacity = 1,
     listening,
-    canvasScaleAdjustment = 1,
+    imageScale = 1,
   }) => {
     // Performance monitoring
     const renderCount = useRef(0);
@@ -63,7 +63,7 @@ export const ProductShape = memo(
           realWorldWidth={product.realWorldWidth}
           realWorldHeight={product.realWorldHeight}
           realWorldSize={product.realWorldSize}
-          scaleFactor={(product.scaleFactor || 100) * canvasScaleAdjustment}
+          scaleFactor={(product.scaleFactor || 100) * imageScale}
         />
 
         {product.sku && (

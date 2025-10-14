@@ -48,12 +48,14 @@ export const useDesignLoader = ({
     };
   }, []);
 
-  // Helper function to strip background images and unnecessary data from layers
+  // Helper function to strip unnecessary metadata from layers before saving
   const stripLayersForSave = useCallback(
     (layersToSave) => {
       return layersToSave.map((layer) => ({
         ...layer,
         products: layer.products.map(stripProductMetadata),
+        // Connectors are already in the correct format, just ensure they're included
+        connectors: layer.connectors || [],
       }));
     },
     [stripProductMetadata],
@@ -101,8 +103,7 @@ export const useDesignLoader = ({
 
     // Check if we need to wait for products data
     const hasProductsToEnrich =
-      (loadedDesign.products && loadedDesign.products.length > 0) ||
-      (loadedDesign.layers && loadedDesign.layers.some((l) => l.products && l.products.length > 0));
+      loadedDesign.layers && loadedDesign.layers.some((l) => l.products && l.products.length > 0);
 
     // If there are products to enrich, wait for products API
     if (hasProductsToEnrich && !productsData.isSuccess) {
@@ -121,33 +122,21 @@ export const useDesignLoader = ({
           setStageScale(loadedDesign.canvasSettings.scale);
         }
 
-        // 2. Load layers with enriched products (if present)
+        // 2. Load layers with enriched products
         if (loadedDesign.layers && loadedDesign.layers.length > 0) {
           const enrichedLayers = loadedDesign.layers.map((layer) => ({
             ...layer,
-            products: layer.products.map((savedProduct) =>
+            products: (layer.products || []).map((savedProduct) =>
               enrichProduct(savedProduct, productsData.data),
             ),
+            connectors: layer.connectors || [],
           }));
 
           // Load all layers at once
           loadLayers(enrichedLayers);
         }
 
-        // 3. Load root-level products (legacy support)
-        if (loadedDesign.products !== undefined) {
-          const enrichedProducts = loadedDesign.products.map((savedProduct) =>
-            enrichProduct(savedProduct, productsData.data),
-          );
-          updateHistory(enrichedProducts);
-        }
-
-        // 4. Load connectors
-        if (loadedDesign.connectors !== undefined) {
-          setConnectors(loadedDesign.connectors);
-        }
-
-        // 5. Update metadata
+        // 3. Update metadata
         setLastSaved(designData.data.lastModified);
         setHasUnsavedChanges(false);
 

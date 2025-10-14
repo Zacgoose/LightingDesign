@@ -451,6 +451,13 @@ const Page = () => {
 
   // Update local state when switching layers OR when layers are loaded
   useEffect(() => {
+    // Skip initial render if design data is still loading
+    // This prevents loading the default empty layer before the actual design data arrives
+    if (designData.isLoading) {
+      console.log('Layer switch effect skipped - design data still loading');
+      return;
+    }
+    
     console.log('Layer switch effect triggered', {
       activeLayerId,
       lastLoadedLayerId: lastLoadedLayerId.current,
@@ -500,6 +507,7 @@ const Page = () => {
     activeLayerId,
     activeLayer,
     layersVersion,
+    designData.isLoading,
     // Note: updateHistory is not memoized in useHistory hook, so it changes every render
     // We don't include it here to prevent infinite re-runs
     // Note: setConnectors, setBackgroundImage, setBackgroundImageNaturalSize, setScaleFactor

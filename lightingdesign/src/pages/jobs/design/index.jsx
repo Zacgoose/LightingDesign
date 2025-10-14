@@ -777,6 +777,31 @@ const Page = () => {
     [products, selectedIds, selectedConnectorId, connectors, applyGroupTransform, updateHistory, contextMenus, setConnectors],
   );
 
+  const determineStrokeColorForSku = useCallback(
+    (sku) => {
+      if (!sku) return null;
+
+      const existingProductsWithSku = products.filter((p) => p.sku === sku);
+
+      if (existingProductsWithSku.length > 0) {
+        const existingWithColor = existingProductsWithSku.find((p) => p.strokeColor);
+        if (existingWithColor) {
+          return existingWithColor.strokeColor;
+        }
+      }
+
+      const currentSkuList = [...new Set(products.map((p) => p.sku).filter(Boolean))];
+      let skuIndex = currentSkuList.indexOf(sku);
+
+      if (skuIndex === -1) {
+        skuIndex = currentSkuList.length;
+      }
+
+      return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
+    },
+    [products],
+  );
+
   const handleSwapPlacementProduct = useCallback(() => {
     setProductDrawerVisible(true);
     contextMenus.handleCloseContextMenu();
@@ -838,31 +863,6 @@ const Page = () => {
     pendingInsertPosition.current = null;
     setSwapMode(false);
   }, [swapMode, selectedIds, products, applyGroupTransform, updateHistory, determineStrokeColorForSku, setGroupKey]);
-
-  const determineStrokeColorForSku = useCallback(
-    (sku) => {
-      if (!sku) return null;
-
-      const existingProductsWithSku = products.filter((p) => p.sku === sku);
-
-      if (existingProductsWithSku.length > 0) {
-        const existingWithColor = existingProductsWithSku.find((p) => p.strokeColor);
-        if (existingWithColor) {
-          return existingWithColor.strokeColor;
-        }
-      }
-
-      const currentSkuList = [...new Set(products.map((p) => p.sku).filter(Boolean))];
-      let skuIndex = currentSkuList.indexOf(sku);
-
-      if (skuIndex === -1) {
-        skuIndex = currentSkuList.length;
-      }
-
-      return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
-    },
-    [products],
-  );
 
   const createProductFromTemplate = useCallback(
     (template, x, y) => {

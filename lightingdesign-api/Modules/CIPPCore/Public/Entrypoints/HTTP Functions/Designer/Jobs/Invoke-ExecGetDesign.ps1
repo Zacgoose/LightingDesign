@@ -22,19 +22,20 @@ function Invoke-ExecGetDesign {
     try {
         # Lookup design by JobId
         # Note: Get-CIPPAzDataTableEntity handles chunked properties automatically by reassembling them
-        $Filter = "JobId eq '{0}'" -f $JobId
+        $Filter = "JobId eq '$JobId'"
         $Row = Get-CIPPAzDataTableEntity @Table -Filter $Filter
+
+        write-host $Row | ConvertFrom-Json -Depth 20
 
         if ($Row) {
             # Parse the JSON
             # The DesignData property is already reassembled by Get-CIPPAzDataTableEntity
-            $DesignData = if ($Row.DesignData -and (Test-Json -Json $Row.DesignData -ErrorAction SilentlyContinue)) {
+            $DesignData = if ($Row.DesignData) {
                 $Row.DesignData | ConvertFrom-Json -Depth 20
             } else {
                 # Return empty design structure if no data
                 @{
-                    products = @()
-                    connectors = @()
+                    canvasSettings = @()
                     layers = @()
                 }
             }
@@ -52,8 +53,7 @@ function Invoke-ExecGetDesign {
                 designId     = $null
                 jobId        = $JobId
                 designData   = @{
-                    products = @()
-                    connectors = @()
+                    canvasSettings = @()
                     layers = @()
                 }
                 lastModified = $null

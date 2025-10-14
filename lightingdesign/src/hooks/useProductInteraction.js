@@ -19,6 +19,7 @@ export const useProductInteraction = ({
   setConnectSequence,
   updateHistory,
   applyGroupTransform,
+  activeLayer,
 }) => {
   const handleProductClick = useCallback(
     (e, productId) => {
@@ -39,6 +40,9 @@ export const useProductInteraction = ({
           // If at least two, create connector
           if (newSeq.length >= 2) {
             const prevId = newSeq[newSeq.length - 2];
+            // Get default cabling sublayer from active layer
+            const defaultCablingSublayerId = activeLayer?.defaultCablingSublayerId || 
+                                             activeLayer?.sublayers?.find(s => s.name === "Cabling")?.id;
             setConnectors((conns) => [
               ...conns,
               {
@@ -48,6 +52,7 @@ export const useProductInteraction = ({
                 controlX: null,
                 controlY: null,
                 color: null,
+                sublayerId: defaultCablingSublayerId,
               },
             ]);
           }

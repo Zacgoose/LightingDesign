@@ -129,6 +129,25 @@ export const ContextMenus = ({
               </ListItemIcon>
               <ListItemText>Change Color...</ListItemText>
             </MenuItem>
+            {sublayers && sublayers.length > 0 && (
+              <MenuItem>
+                <ListItemIcon>
+                  <Layers fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Assign to Sublayer</ListItemText>
+              </MenuItem>
+            )}
+            {sublayers &&
+              sublayers.length > 0 &&
+              sublayers.map((sublayer) => (
+                <MenuItem
+                  key={sublayer.id}
+                  onClick={() => onAssignToSublayer(sublayer.id)}
+                  sx={{ pl: 5 }}
+                >
+                  <ListItemText inset>{sublayer.name}</ListItemText>
+                </MenuItem>
+              ))}
             <MenuItem onClick={onDelete}>
               <ListItemIcon>
                 <Delete fontSize="small" />

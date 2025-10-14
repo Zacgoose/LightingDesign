@@ -104,6 +104,7 @@ const Page = () => {
     updateLayer,
     toggleSublayerVisibility,
     filterProductsBySublayers,
+    filterConnectorsBySublayers,
     loadLayers,
     addSublayer,
     removeSublayer,
@@ -560,6 +561,7 @@ const Page = () => {
     setConnectSequence,
     updateHistory,
     applyGroupTransform,
+    activeLayer,
   });
 
   const {
@@ -734,6 +736,17 @@ const Page = () => {
 
   const handleAssignToSublayer = useCallback(
     (sublayerId) => {
+      // Handle connector assignment
+      if (selectedConnectorId) {
+        const newConnectors = connectors.map((connector) =>
+          connector.id === selectedConnectorId ? { ...connector, sublayerId } : connector,
+        );
+        setConnectors(newConnectors);
+        contextMenus.handleCloseContextMenu();
+        return;
+      }
+      
+      // Handle product assignment
       const transformed = applyGroupTransform();
       const baseProducts = transformed || products;
       const newProducts = baseProducts.map((product) =>
@@ -742,7 +755,7 @@ const Page = () => {
       updateHistory(newProducts);
       contextMenus.handleCloseContextMenu();
     },
-    [products, selectedIds, applyGroupTransform, updateHistory, contextMenus],
+    [products, selectedIds, selectedConnectorId, connectors, applyGroupTransform, updateHistory, contextMenus, setConnectors],
   );
 
   const handleSwapPlacementProduct = useCallback(() => {
@@ -1044,16 +1057,16 @@ const Page = () => {
                     onPan={handleCanvasPan}
                   >
                     <ConnectorsLayer
-                      connectors={connectors}
+                      connectors={filterConnectorsBySublayers(connectors, activeLayerId)}
                       products={products}
                       selectedConnectorId={selectedConnectorId}
                       selectedTool={selectedTool}
                       theme={theme}
-                      onConnectorSelect={(e) => {
+                      onConnectorSelect={(e, connectorId) => {
                         e.cancelBubble = true;
                         const transformed = applyGroupTransform();
                         if (transformed) updateHistory(transformed);
-                        setSelectedConnectorId(e.target.id());
+                        setSelectedConnectorId(connectorId);
                         setSelectedIds([]);
                         forceGroupUpdate();
                       }}

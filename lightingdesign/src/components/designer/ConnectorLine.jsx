@@ -32,13 +32,14 @@ export const ConnectorLine = ({
   // Calculate if mouse is near the curve
   const handleLineClick = (e) => {
     e.cancelBubble = true;
-    onSelect(e);
+    onSelect(e, connector.id);
   };
 
   return (
     <Group>
       {/* The curved line */}
       <Shape
+        id={connector.id}
         sceneFunc={(ctx, shape) => {
           ctx.beginPath();
           ctx.moveTo(fromProduct.x, fromProduct.y);

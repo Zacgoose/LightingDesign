@@ -8,6 +8,8 @@ export const DesignerCanvas = memo(
   ({
     width = 4200,
     height = 2970,
+    viewportWidth, // Optional: actual visible viewport width (overrides width for Stage)
+    viewportHeight, // Optional: actual visible viewport height (overrides height for Stage)
     stageScale = 1,
     stagePosition,
     showGrid,
@@ -28,6 +30,10 @@ export const DesignerCanvas = memo(
   }) => {
     const theme = useTheme();
     const [bgImage, setBgImage] = useState(null);
+
+    // Use viewport dimensions for Stage if provided, otherwise use virtual canvas dimensions
+    const stageWidth = viewportWidth || width;
+    const stageHeight = viewportHeight || height;
 
     // Performance monitoring
     const renderCount = useRef(0);
@@ -131,7 +137,7 @@ export const DesignerCanvas = memo(
       <Box
         sx={{
           width: "100%",
-          height: height,
+          height: "100%",
           overflow: "hidden",
           position: "relative",
           backgroundColor: backgroundColor,
@@ -139,8 +145,8 @@ export const DesignerCanvas = memo(
       >
         <Stage
           ref={stageRef}
-          width={width}
-          height={height}
+          width={stageWidth}
+          height={stageHeight}
           scaleX={stageScale}
           scaleY={stageScale}
           x={stagePosition.x}
@@ -194,6 +200,8 @@ export const DesignerCanvas = memo(
     return (
       prevProps.width === nextProps.width &&
       prevProps.height === nextProps.height &&
+      prevProps.viewportWidth === nextProps.viewportWidth &&
+      prevProps.viewportHeight === nextProps.viewportHeight &&
       prevProps.stageScale === nextProps.stageScale &&
       prevProps.stagePosition.x === nextProps.stagePosition.x &&
       prevProps.stagePosition.y === nextProps.stagePosition.y &&

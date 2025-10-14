@@ -72,6 +72,8 @@ const Page = () => {
     stageScale,
     canvasWidth,
     canvasHeight,
+    viewportWidth,
+    viewportHeight,
     stagePosition,
     showGrid,
     showLayers,
@@ -1108,6 +1110,8 @@ const Page = () => {
                   <DesignerCanvas
                     width={canvasWidth}
                     height={canvasHeight}
+                    viewportWidth={viewportWidth}
+                    viewportHeight={viewportHeight}
                     stageScale={stageScale}
                     stagePosition={stagePosition}
                     showGrid={showGrid}

@@ -3,9 +3,15 @@
  *
  * Manages canvas-related state including:
  * - Stage scale and position
- * - Canvas dimensions
+ * - Virtual canvas dimensions (fixed coordinate space)
+ * - Viewport dimensions (actual visible area that changes with window size)
  * - View options (grid, layers)
  * - Tool selection
+ * 
+ * Key Concept: This hook maintains a fixed virtual coordinate space (VIRTUAL_WIDTH x VIRTUAL_HEIGHT)
+ * that never changes regardless of window size. The viewport dimensions (viewportWidth/viewportHeight)
+ * represent the actual visible area and change with window resizing. This separation ensures that
+ * object positions remain stable when the window is resized.
  */
 
 import { useState, useCallback, useEffect, useLayoutEffect, useRef } from "react";
@@ -15,10 +21,16 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   const canvasContainerRef = useRef();
   const isInitializedRef = useRef(false);
 
+  // Fixed virtual canvas dimensions - this never changes regardless of window size
+  // This creates a stable coordinate space for all objects
+  const VIRTUAL_WIDTH = 10000;
+  const VIRTUAL_HEIGHT = 10000;
+
   // Canvas state
   const [stageScale, setStageScale] = useState(1);
-  const [canvasWidth, setCanvasWidth] = useState(initialWidth);
-  const [canvasHeight, setCanvasHeight] = useState(initialHeight);
+  // viewportWidth and viewportHeight represent the actual visible area (window size)
+  const [viewportWidth, setViewportWidth] = useState(initialWidth);
+  const [viewportHeight, setViewportHeight] = useState(initialHeight);
   const [stagePosition, setStagePosition] = useState({
     x: initialWidth / 2,
     y: initialHeight / 2,
@@ -35,10 +47,13 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
     if (canvasContainerRef.current) {
       const rect = canvasContainerRef.current.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
-        setCanvasWidth(rect.width);
-        setCanvasHeight(rect.height);
+        const oldViewportWidth = viewportWidth;
+        const oldViewportHeight = viewportHeight;
+        
+        setViewportWidth(rect.width);
+        setViewportHeight(rect.height);
+        
         // Only reset position on initial load
-        // This prevents resetting position when loading layer data or on window resize
         if (!isInitializedRef.current) {
           setStagePosition({
             x: rect.width / 2,
@@ -46,15 +61,19 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
           });
           isInitializedRef.current = true;
         } else {
-          // On window resize, adjust position to keep centered
-          setStagePosition({
-            x: rect.width / 2,
-            y: rect.height / 2,
-          });
+          // On window resize, adjust stage position to maintain the same view
+          // Calculate the delta in viewport size and adjust position proportionally
+          const deltaX = (rect.width - oldViewportWidth) / 2;
+          const deltaY = (rect.height - oldViewportHeight) / 2;
+          
+          setStagePosition((pos) => ({
+            x: pos.x + deltaX,
+            y: pos.y + deltaY,
+          }));
         }
       }
     }
-  }, []);
+  }, [viewportWidth, viewportHeight]);
 
   // Canvas interaction handlers
   const handleWheel = useCallback((e) => {
@@ -102,10 +121,10 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   const handleResetView = useCallback(() => {
     setStageScale(1);
     setStagePosition({
-      x: canvasWidth / 2,
-      y: canvasHeight / 2,
+      x: viewportWidth / 2,
+      y: viewportHeight / 2,
     });
-  }, [canvasWidth, canvasHeight]);
+  }, [viewportWidth, viewportHeight]);
 
   // Handle canvas resize - using useLayoutEffect to run synchronously before paint
   // This is CRITICAL for preventing race conditions on page refresh where layer data
@@ -134,8 +153,10 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   return {
     // State
     stageScale,
-    canvasWidth,
-    canvasHeight,
+    canvasWidth: VIRTUAL_WIDTH, // Virtual canvas width (fixed coordinate space)
+    canvasHeight: VIRTUAL_HEIGHT, // Virtual canvas height (fixed coordinate space)
+    viewportWidth, // Actual visible viewport width
+    viewportHeight, // Actual visible viewport height
     stagePosition,
     showGrid,
     showLayers,

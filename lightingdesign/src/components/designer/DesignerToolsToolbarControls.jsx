@@ -76,11 +76,6 @@ const DesignerToolsToolbarControls = ({
           Click on canvas to place {selectedTool}
         </Typography>
       )}
-    {selectedTool === "connect" && (
-      <Typography variant="body2" color="info.main">
-        Click objects to string together, right-click to split
-      </Typography>
-    )}
     {placementMode && (
       <Typography variant="body2" color="text.secondary">
         Click on canvas to place items

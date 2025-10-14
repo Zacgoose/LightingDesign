@@ -247,6 +247,7 @@ export const CippDataTable = (props) => {
   };
 
   const table = useMaterialReactTable({
+    ...modeInfo,
     enableRowSelection,
     muiTableBodyCellProps: {
       onCopy: (e) => {
@@ -372,7 +373,6 @@ export const CippDataTable = (props) => {
         </Box>
       ) : undefined,
     onColumnVisibilityChange: setColumnVisibility,
-    ...modeInfo,
     renderRowActionMenuItems: actions
       ? ({ closeMenu, row }) => [
           actions.map((action, index) => (

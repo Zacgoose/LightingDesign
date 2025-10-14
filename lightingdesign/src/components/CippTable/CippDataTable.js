@@ -26,6 +26,26 @@ import { Box } from "@mui/system";
 import { useSettings } from "../../hooks/use-settings";
 import { isEqual } from "lodash"; // Import lodash for deep comparison
 
+/**
+ * CippDataTable - A flexible data table component with advanced features
+ * 
+ * @param {Object} props - Component props
+ * @param {string|Array<string>} props.imageColumn - Column name(s) that should render images from URLs
+ *   - Pass a single column name as a string: imageColumn="logoUrl"
+ *   - Pass multiple column names as an array: imageColumn={["logoUrl", "avatarUrl"]}
+ *   - The specified column(s) will render any URL values as images (40x40px by default)
+ *   - Arrays of URLs in a column will render multiple images side by side
+ * 
+ * Example usage:
+ * ```jsx
+ * <CippDataTable
+ *   title="Products"
+ *   api={{ url: "api/ListProducts" }}
+ *   imageColumn="productImageUrl"
+ *   simpleColumns={["name", "productImageUrl", "price"]}
+ * />
+ * ```
+ */
 export const CippDataTable = (props) => {
   const {
     queryKey,

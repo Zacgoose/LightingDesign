@@ -97,6 +97,15 @@ function Add-CIPPAzDataTableEntity {
                         $originalRowKey = $SingleEnt.RowKey
                         $entityIndex = 0
 
+                        # Identify properties that should be replicated across all rows for filtering/querying
+                        $metadataProperties = @('JobId', 'TenantFilter', 'Tenant')
+                        $replicatedProperties = @{}
+                        foreach ($metaProp in $metadataProperties) {
+                            if ($SingleEnt.ContainsKey($metaProp)) {
+                                $replicatedProperties[$metaProp] = $SingleEnt[$metaProp]
+                            }
+                        }
+
                         while ($entitySize -gt $MaxRowSize) {
                             Write-Information "Entity size is $entitySize. Splitting entity into multiple parts."
                             $newEntity = @{}
@@ -104,6 +113,12 @@ function Add-CIPPAzDataTableEntity {
                             $newEntity['RowKey'] = if ($entityIndex -eq 0) { $originalRowKey } else { "$($originalRowKey)-part$entityIndex" }
                             $newEntity['OriginalEntityId'] = $originalRowKey
                             $newEntity['PartIndex'] = $entityIndex
+                            
+                            # Add replicated properties to ensure all rows can be filtered/queried
+                            foreach ($metaProp in $replicatedProperties.Keys) {
+                                $newEntity[$metaProp] = $replicatedProperties[$metaProp]
+                            }
+                            
                             $entityIndex++
 
                             $propertiesToRemove = [System.Collections.Generic.List[object]]::new()
@@ -111,6 +126,11 @@ function Add-CIPPAzDataTableEntity {
                             $sortedKeys = $SingleEnt.Keys | Sort-Object
                             foreach ($key in $sortedKeys) {
                                 if ($key -in @('RowKey', 'PartitionKey')) { continue }
+                                # Skip replicated properties as they're already added
+                                if ($replicatedProperties.ContainsKey($key)) { 
+                                    $propertiesToRemove.Add($key)
+                                    continue 
+                                }
                                 $newEntitySize = [System.Text.Encoding]::UTF8.GetByteCount($($newEntity | ConvertTo-Json -Compress))
                                 if ($newEntitySize -lt $MaxRowSize) {
                                     $propertySize = [System.Text.Encoding]::UTF8.GetByteCount($SingleEnt[$key].ToString())
@@ -152,6 +172,14 @@ function Add-CIPPAzDataTableEntity {
                             $SingleEnt['OriginalEntityId'] = $originalRowKey
                             $SingleEnt['PartIndex'] = $entityIndex
                             $SingleEnt['PartitionKey'] = $originalPartitionKey
+                            
+                            # Add replicated properties to the final row as well
+                            foreach ($metaProp in $replicatedProperties.Keys) {
+                                if (-not $SingleEnt.ContainsKey($metaProp)) {
+                                    $SingleEnt[$metaProp] = $replicatedProperties[$metaProp]
+                                }
+                            }
+                            
                             $rows.Add($SingleEnt)
                         }
 

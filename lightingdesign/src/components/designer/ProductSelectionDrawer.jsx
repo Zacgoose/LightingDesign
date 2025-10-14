@@ -51,13 +51,14 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
   return (
     <>
       <CippOffCanvas
-        title="Product Catalog - Use row actions menu to add to canvas"
+        hideTitle={true}
         visible={visible}
         onClose={onClose}
         size="xl"
       >
         <CippTablePage
           title="Products List"
+          hideTitle={true}
           apiUrl="/api/ExecListBeaconProducts"
           simpleColumns={simpleColumns}
           filters={filterList}
@@ -66,6 +67,7 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
           tenantInTitle={false}
           enableRowSelection={false}
           imageColumn="thumbnailImageUrl"
+          exportEnabled={false}
         />
       </CippOffCanvas>
     </>

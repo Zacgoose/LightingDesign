@@ -1,4 +1,4 @@
-import { Alert, Card, Divider } from "@mui/material";
+import { Card, Divider } from "@mui/material";
 import { Box, Container, Stack } from "@mui/system";
 import { CippDataTable } from "../CippTable/CippDataTable";
 import { useSettings } from "../../hooks/use-settings";
@@ -24,6 +24,7 @@ export const CippTablePage = (props) => {
     tableFilter,
     filters,
     sx = { flexGrow: 1, py: 4 },
+    enableRowSelection,
     ...other
   } = props;
   const tenant = useSettings().currentTenant;
@@ -33,7 +34,7 @@ export const CippTablePage = (props) => {
       <CippHead title={title} />
       <Box sx={sx}>
         <Container maxWidth={false} sx={{ height: "100%" }}>
-          <Stack spacing={2} sx={{ height: "100%" }}>
+          <Stack spacing={1} sx={{ height: "100%" }}>
             {tableFilter}
             <Card
               sx={{
@@ -58,6 +59,7 @@ export const CippTablePage = (props) => {
                 columnsFromApi={columnsFromApi}
                 offCanvas={offCanvas}
                 filters={tableFilters}
+                enableRowSelection={enableRowSelection}
                 initialState={{
                   columnFilters: filters
                     ? filters.map((filter) => ({

@@ -17,6 +17,7 @@ export const CippOffCanvas = (props) => {
     children,
     size = "sm",
     footer,
+    hideTitle = false,
   } = props;
 
   const mdDown = useMediaQuery((theme) => theme.breakpoints.down("md"));
@@ -80,15 +81,19 @@ export const CippOffCanvas = (props) => {
         open={visible}
         onClose={onClose}
       >
-        <Box
-          sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1.5 }}
-        >
-          <Typography variant="h5">{title}</Typography>
-          <IconButton onClick={onClose}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <Divider />
+          {!hideTitle ? (
+            <Box
+              sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1.5 }}
+            >
+            <>
+              <Typography variant="h5">{title}</Typography>
+              <IconButton onClick={onClose}>
+                <CloseIcon />
+              </IconButton>
+            </>
+            <Divider />
+            </Box>
+          ) : null}
         <Box
           sx={{
             display: "flex",

@@ -10,7 +10,7 @@ import {
   PrecisionManufacturing,
   BarChart,
 } from "@mui/icons-material";
-import { Chip, Link, SvgIcon } from "@mui/material";
+import { Chip, Link, SvgIcon, Popover } from "@mui/material";
 import { Box } from "@mui/system";
 import { CippCopyToClipBoard } from "../components/CippComponents/CippCopyToClipboard";
 import { getCippLicenseTranslation } from "./get-cipp-license-translation";
@@ -31,6 +31,64 @@ import { getCippTranslation } from "./get-cipp-translation";
 import DOMPurify from "dompurify";
 import { getSignInErrorCodeTranslation } from "./get-cipp-signin-errorcode-translation";
 import { CollapsibleChipList } from "../components/CippComponents/CollapsibleChipList";
+import { useState } from "react";
+
+// Image component with hover preview
+const ImageWithHoverPreview = ({ src, alt, style }) => {
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleMouseEnter = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMouseLeave = () => {
+    setAnchorEl(null);
+  };
+
+  const open = Boolean(anchorEl);
+
+  return (
+    <>
+      <img
+        src={src}
+        alt={alt}
+        style={{ ...style, cursor: "pointer" }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      />
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={handleMouseLeave}
+        anchorOrigin={{
+          vertical: "center",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "center",
+          horizontal: "left",
+        }}
+        disableRestoreFocus
+        sx={{
+          pointerEvents: "none",
+        }}
+      >
+        <Box sx={{ p: 1, maxWidth: "400px", maxHeight: "400px" }}>
+          <img
+            src={src}
+            alt={alt}
+            style={{
+              maxWidth: "400px",
+              maxHeight: "400px",
+              objectFit: "contain",
+              display: "block",
+            }}
+          />
+        </Box>
+      </Popover>
+    </>
+  );
+};
 
 export const getCippFormatting = (data, cellName, type, canReceive, flatten = true, imageColumn = null) => {
   const isText = type === "text";
@@ -55,11 +113,11 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
         <Box component="span" sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
           {data.map((url, index) => (
             url ? (
-              <img 
+              <ImageWithHoverPreview
                 key={index}
-                src={url} 
-                alt={`Image ${index + 1}`} 
-                style={{ width: "40px", height: "40px", objectFit: "contain" }} 
+                src={url}
+                alt={`Image ${index + 1}`}
+                style={{ width: "60px", height: "60px", objectFit: "contain" }}
               />
             ) : null
           ))}
@@ -72,10 +130,10 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
       return isText ? (
         data
       ) : (
-        <img 
-          src={data} 
-          alt="Image" 
-          style={{ width: "60px", height: "60px", objectFit: "contain" }} 
+        <ImageWithHoverPreview
+          src={data}
+          alt="Image"
+          style={{ width: "60px", height: "60px", objectFit: "contain" }}
         />
       );
     }

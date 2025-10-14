@@ -64,6 +64,7 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
           cardButton={null}
           actions={actions}
           tenantInTitle={false}
+          enableRowSelection={false}
         />
       </CippOffCanvas>
     </>

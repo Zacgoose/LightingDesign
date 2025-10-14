@@ -56,6 +56,7 @@ export const CippDataTable = (props) => {
     filters,
     maxHeightOffset = "380px",
     defaultSorting = [],
+    enableRowSelection = true
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
@@ -589,6 +590,7 @@ export const CippDataTable = (props) => {
         </MenuItem>
       ));
     },
+    enableRowSelection:{enableRowSelection},
   });
 
   useEffect(() => {

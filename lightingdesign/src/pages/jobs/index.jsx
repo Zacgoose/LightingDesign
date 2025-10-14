@@ -2,7 +2,7 @@ import { Layout as DashboardLayout } from "/src/layouts/index";
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage";
 import { Button } from "@mui/material";
 import Link from "next/link";
-import { Add, Edit, Delete, Visibility } from "@mui/icons-material";
+import { Add, Feed, Delete, DesignServices } from "@mui/icons-material";
 
 const Page = () => {
   const pageTitle = "Jobs";
@@ -10,16 +10,16 @@ const Page = () => {
   // Define actions for each job row
   const actions = [
     {
-      label: "View Job Details",
+      label: "Job Details",
       link: "/jobs/info?id=[RowKey]",
-      icon: <Visibility />,
+      icon: <Feed />,
       color: "primary",
       target: "_self",
     },
     {
-      label: "Edit Job",
-      link: "/jobs/info?id=[RowKey]",
-      icon: <Edit />,
+      label: "Design",
+      link: "/jobs/design?id=[RowKey]",
+      icon: <DesignServices />,
       color: "success",
       target: "_self",
     },

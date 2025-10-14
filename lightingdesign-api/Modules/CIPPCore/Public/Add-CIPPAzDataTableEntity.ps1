@@ -141,6 +141,20 @@ function Add-CIPPAzDataTableEntity {
                         $originalRowKey = $SingleEnt.RowKey
                         $entityIndex = 0
 
+                        # Store critical properties that must be in all row parts for querying
+                        $criticalProperties = @{}
+                        foreach ($key in $SingleEnt.Keys) {
+                            # Keep small, queryable properties like JobId, TenantId, etc. in all parts
+                            if ($key -notin @('RowKey', 'PartitionKey', 'Timestamp', 'ETag', 'OriginalEntityId', 'PartIndex', 'SplitOverProps')) {
+                                $propertySize = [System.Text.Encoding]::UTF8.GetByteCount($SingleEnt[$key].ToString())
+                                # Only include properties that are small (< 1KB) and likely to be used in queries
+                                if ($propertySize -lt 1024 -and $key -notlike '*_Part*') {
+                                    $criticalProperties[$key] = $SingleEnt[$key]
+                                    Write-Host "Preserving critical property '$key' for all row parts (size: $propertySize bytes)"
+                                }
+                            }
+                        }
+
                         while ($entitySize -gt $MaxRowSize) {
                             Write-Information "Entity size is $entitySize. Splitting entity into multiple parts."
                             $newEntity = @{}
@@ -148,6 +162,13 @@ function Add-CIPPAzDataTableEntity {
                             $newEntity['RowKey'] = if ($entityIndex -eq 0) { $originalRowKey } else { "$($originalRowKey)-part$entityIndex" }
                             $newEntity['OriginalEntityId'] = $originalRowKey
                             $newEntity['PartIndex'] = $entityIndex
+                            
+                            # Add critical properties to this row part so it can be queried
+                            foreach ($key in $criticalProperties.Keys) {
+                                $newEntity[$key] = $criticalProperties[$key]
+                                Write-Host "Added critical property '$key' to row part $entityIndex"
+                            }
+                            
                             $entityIndex++
 
                             $propertiesToRemove = [System.Collections.Generic.List[object]]::new()
@@ -193,6 +214,15 @@ function Add-CIPPAzDataTableEntity {
                             $SingleEnt['OriginalEntityId'] = $originalRowKey
                             $SingleEnt['PartIndex'] = $entityIndex
                             $SingleEnt['PartitionKey'] = $originalPartitionKey
+                            
+                            # Add critical properties to the final row part as well
+                            foreach ($key in $criticalProperties.Keys) {
+                                if (-not $SingleEnt.ContainsKey($key)) {
+                                    $SingleEnt[$key] = $criticalProperties[$key]
+                                    Write-Host "Added critical property '$key' to final row part $entityIndex"
+                                }
+                            }
+                            
                             $rows.Add($SingleEnt)
                         }
 

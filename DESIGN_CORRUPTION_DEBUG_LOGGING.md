@@ -1,5 +1,17 @@
 # Design Save/Load Corruption - Debug Logging
 
+## Critical Fix Applied
+
+**Issue Found:** Part 7 missing during retrieval causing 30KB data loss
+
+**Root Cause:** When entities were split into multiple rows (due to exceeding 500KB), only the first row contained queryable properties like `JobId`. Subsequent rows (e.g., `rowkey-part1`, `rowkey-part2`) did not have these properties, so they were not returned by queries like `JobId eq 'xxx'`.
+
+**Fix:** Modified `Add-CIPPAzDataTableEntity.ps1` to preserve critical queryable properties (< 1KB, non-part properties like `JobId`, `TenantId`, etc.) in ALL row parts. This ensures all parts can be retrieved by the same query filter.
+
+**Result:** All row parts now contain critical properties, allowing queries to retrieve all parts of a split entity.
+
+---
+
 ## Overview
 This document describes the debug logging added to track down image corruption issues when saving and loading designs. The corruption appears to affect background images, particularly when data is stored in and retrieved from Azure Table Storage.
 

@@ -1,5 +1,14 @@
 # Quick Reference: Debug Logging for Design Corruption Issue
 
+## Critical Fix Applied ✅
+
+**Issue:** Part 7 missing during retrieval (30KB data loss)
+**Cause:** Split row parts missing queryable properties like `JobId`
+**Fix:** All row parts now include critical properties for querying
+**File:** `Add-CIPPAzDataTableEntity.ps1`
+
+---
+
 ## Purpose
 Added comprehensive debug logging to track down image corruption issues during design save/load operations. The logging helps identify where data corruption occurs in the save-to-table and retrieve-from-table pipeline.
 

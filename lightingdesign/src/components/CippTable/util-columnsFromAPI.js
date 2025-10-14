@@ -74,7 +74,7 @@ const mergeKeys = (dataArray) => {
   }, {});
 };
 
-export const utilColumnsFromAPI = (dataArray) => {
+export const utilColumnsFromAPI = (dataArray, imageColumn = null) => {
   // Add safety check for dataArray
   if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) {
     return [];
@@ -112,7 +112,7 @@ export const utilColumnsFromAPI = (dataArray) => {
           id: accessorKey,
           accessorFn: (row) => {
             const value = resolveValue(row);
-            return getCippFormatting(value, accessorKey, "text");
+            return getCippFormatting(value, accessorKey, "text", false, true, imageColumn);
           },
           ...getCippFilterVariant(accessorKey, {
             sampleValue,
@@ -122,7 +122,7 @@ export const utilColumnsFromAPI = (dataArray) => {
           }),
           Cell: ({ row }) => {
             const value = resolveValue(row.original);
-            return getCippFormatting(value, accessorKey);
+            return getCippFormatting(value, accessorKey, undefined, undefined, true, imageColumn);
           },
         };
 

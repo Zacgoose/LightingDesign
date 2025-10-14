@@ -156,15 +156,6 @@ const Page = () => {
   );
   const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100);
 
-  // Calculate image scale to match background image scaling
-  // This ensures objects scale proportionally with the background image
-  const imageScale = backgroundImageNaturalSize
-    ? Math.min(
-        canvasWidth / backgroundImageNaturalSize.width,
-        canvasHeight / backgroundImageNaturalSize.height
-      )
-    : 1;
-
   // Selection state management using custom hook
   const selectionState = useSelectionState(products);
   const {
@@ -1162,7 +1153,6 @@ const Page = () => {
                       theme={theme}
                       groupKey={groupKey}
                       placementMode={placementMode}
-                      imageScale={imageScale}
                       onProductClick={handleProductClick}
                       onProductDragStart={handleProductDragStart}
                       onProductDragEnd={handleProductDragEnd}
@@ -1193,7 +1183,6 @@ const Page = () => {
                         theme={theme}
                         opacity={0.6}
                         listening={false}
-                        imageScale={imageScale}
                         onMouseDown={() => {}}
                         onContextMenu={() => {}}
                       />

@@ -397,6 +397,9 @@ const Page = () => {
 
       lastLoadedLayerId.current = activeLayerId;
       isLoadingLayerData.current = true;
+      
+      // Update activeLayerIdRef immediately to ensure sync effects use correct layer
+      activeLayerIdRef.current = activeLayerId;
 
       // Load the new layer's data
       updateHistory(activeLayer.products || []);

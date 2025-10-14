@@ -459,17 +459,23 @@ const Page = () => {
       return;
     }
     
-    // CRITICAL FIX: On page refresh/mount, if we have a design ID but haven't loaded layers yet,
+    // CRITICAL FIX: On page refresh/mount, if we haven't loaded layers yet,
     // wait for the design to load before initializing the canvas with empty layer data.
     // This prevents the canvas from being initialized with wrong dimensions on refresh.
     // We skip if:
-    // 1. We have a design ID (loading existing design)
-    // 2. layersVersion is 0 (loadLayers() hasn't been called yet)
-    // 3. No layer has been loaded yet (lastLoadedLayerId is null)
-    // This handles both the case where designData is still loading AND where it just loaded
-    // but loadLayers() hasn't executed yet (due to startTransition delay)
-    if (id && layersVersion === 0 && lastLoadedLayerId.current === null) {
-      console.log('Layer switch effect skipped - waiting for initial design data to load');
+    // 1. layersVersion is 0 (loadLayers() hasn't been called yet)
+    // 2. No layer has been loaded yet (lastLoadedLayerId is null)
+    // 3. designData query is waiting/enabled (which means we expect data to load)
+    // The waiting prop is set to !!id, so if enabled, we know we're loading a design
+    if (layersVersion === 0 && lastLoadedLayerId.current === null && designData.fetchStatus !== 'idle') {
+      console.log('Layer switch effect skipped - waiting for initial design data to load', {
+        id,
+        layersVersion,
+        lastLoadedLayerId: lastLoadedLayerId.current,
+        fetchStatus: designData.fetchStatus,
+        isLoading: designData.isLoading,
+        isSuccess: designData.isSuccess
+      });
       return;
     }
     

@@ -412,12 +412,6 @@ const Page = () => {
       lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
       lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
       lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
-
-      const timer = setTimeout(() => {
-        isLoadingLayerData.current = false;
-      }, 100);
-
-      return () => clearTimeout(timer);
     }
   }, [
     activeLayerId,

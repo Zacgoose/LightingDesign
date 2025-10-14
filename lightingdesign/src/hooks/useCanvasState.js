@@ -35,21 +35,35 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
     if (canvasContainerRef.current) {
       const rect = canvasContainerRef.current.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
-        setCanvasWidth(rect.width);
-        setCanvasHeight(rect.height);
         // Only reset position on initial load
         // This prevents resetting position when loading layer data or on window resize
         if (!isInitializedRef.current) {
+          setCanvasWidth(rect.width);
+          setCanvasHeight(rect.height);
           setStagePosition({
             x: rect.width / 2,
             y: rect.height / 2,
           });
           isInitializedRef.current = true;
         } else {
-          // On window resize, adjust position to keep centered
-          setStagePosition({
-            x: rect.width / 2,
-            y: rect.height / 2,
+          // On window resize, adjust position proportionally to maintain viewport position
+          // This prevents objects from appearing to move when the window is resized
+          setCanvasWidth((prevWidth) => {
+            setCanvasHeight((prevHeight) => {
+              setStagePosition((prevPosition) => {
+                // Calculate the proportional change in dimensions
+                const widthRatio = rect.width / prevWidth;
+                const heightRatio = rect.height / prevHeight;
+                
+                // Adjust position proportionally to maintain viewport position
+                return {
+                  x: prevPosition.x * widthRatio,
+                  y: prevPosition.y * heightRatio,
+                };
+              });
+              return rect.height;
+            });
+            return rect.width;
           });
         }
       }

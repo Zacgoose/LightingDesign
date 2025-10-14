@@ -443,7 +443,8 @@ const Page = () => {
   }, [
     activeLayerId,
     activeLayer,
-    updateHistory,
+    // Note: updateHistory is not memoized in useHistory hook, so it changes every render
+    // We don't include it here to prevent infinite re-runs
     // Note: setConnectors, setBackgroundImage, setBackgroundImageNaturalSize, setScaleFactor
     // are stable setState functions and don't need to be in dependencies
   ]);

@@ -62,7 +62,8 @@ function Add-CIPPAzDataTableEntity {
                             $splitData = [System.Collections.Generic.List[object]]::new()
                             for ($i = 0; $i -lt $splitCount; $i++) {
                                 $start = $i * $MaxSize
-                                $splitData.Add($dataString.Substring($start, [Math]::Min($MaxSize, $dataString.Length - $start))) > $null
+                                $length = [Math]::Min($MaxSize, $dataString.Length - $start)
+                                $splitData.Add($dataString.Substring($start, $length)) > $null
                             }
                             $splitDataCount = $splitData.Count
                             $splitPropertyNames = [System.Collections.Generic.List[object]]::new()

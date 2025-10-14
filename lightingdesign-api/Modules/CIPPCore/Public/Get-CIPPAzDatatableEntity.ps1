@@ -56,14 +56,20 @@ function Get-CIPPAzDataTableEntity {
         foreach ($entityId in $mergedResults[$partitionKey].Keys) {
             $entityData = $mergedResults[$partitionKey][$entityId]
             if (($entityData.Parts | Measure-Object).Count -gt 0) {
+                Write-Information "Reassembling entity from $($entityData.Parts.Count) row parts"
                 $fullEntity = [PSCustomObject]@{}
                 $parts = $entityData.Parts | Sort-Object PartIndex
                 foreach ($part in $parts) {
+                    Write-Information "  Processing row part $($part.PartIndex)"
                     foreach ($key in $part.PSObject.Properties.Name) {
                         if ($key -notin @('OriginalEntityId', 'PartIndex', 'PartitionKey', 'RowKey', 'Timestamp')) {
                             if ($fullEntity.PSObject.Properties[$key]) {
+                                $oldLength = $fullEntity.$key.Length
+                                $newLength = $part.$key.Length
                                 $fullEntity | Add-Member -MemberType NoteProperty -Name $key -Value ($fullEntity.$key + $part.$key) -Force
+                                Write-Information "    Concatenating $key : $oldLength + $newLength = $($fullEntity.$key.Length)"
                             } else {
+                                Write-Information "    Adding $key : length = $($part.$key.Length)"
                                 $fullEntity | Add-Member -MemberType NoteProperty -Name $key -Value $part.$key
                             }
                         }
@@ -83,7 +89,20 @@ function Get-CIPPAzDataTableEntity {
         if ($entity.SplitOverProps) {
             $splitInfoList = $entity.SplitOverProps | ConvertFrom-Json
             foreach ($splitInfo in $splitInfoList) {
-                $mergedData = [string]::Join('', ($splitInfo.SplitHeaders | ForEach-Object { $entity.$_ }))
+                Write-Information "Reassembling property: $($splitInfo.OriginalHeader) from $($splitInfo.SplitHeaders.Count) parts"
+                $parts = @()
+                foreach ($header in $splitInfo.SplitHeaders) {
+                    $partValue = $entity.$header
+                    if ($null -eq $partValue) {
+                        Write-Warning "Missing part: $header for property $($splitInfo.OriginalHeader)"
+                        $parts += ''
+                    } else {
+                        Write-Information "  $header : length = $($partValue.Length)"
+                        $parts += $partValue
+                    }
+                }
+                $mergedData = [string]::Join('', $parts)
+                Write-Information "Reassembled $($splitInfo.OriginalHeader): total length = $($mergedData.Length)"
                 $entity | Add-Member -NotePropertyName $splitInfo.OriginalHeader -NotePropertyValue $mergedData -Force
                 $propsToRemove = $splitInfo.SplitHeaders
                 foreach ($prop in $propsToRemove) {

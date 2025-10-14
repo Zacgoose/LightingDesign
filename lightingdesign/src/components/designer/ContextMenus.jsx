@@ -17,6 +17,7 @@ export const ContextMenus = ({
   onDelete,
   onInsertProduct,
   onSwapPlacementProduct,
+  onSwapProduct,
   onScale,
   onAssignToSublayer,
   sublayers = [],
@@ -71,6 +72,12 @@ export const ContextMenus = ({
                 />
               </ListItemIcon>
               <ListItemText>Change Color...</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={onSwapProduct}>
+              <ListItemIcon>
+                <SwapHoriz fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Swap Product...</ListItemText>
             </MenuItem>
             <MenuItem onClick={onScale}>
               <ListItemIcon>

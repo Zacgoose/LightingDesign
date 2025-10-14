@@ -127,9 +127,11 @@ const Page = () => {
   // Ref to track if we're loading data from a layer (vs user editing)
   const isLoadingLayerData = useRef(false);
   const lastLoadedLayerId = useRef(null); // Initialize to null so first layer loads properly
-  const lastSyncedBackgroundImage = useRef(null);
-  const lastSyncedBackgroundImageNaturalSize = useRef(null);
-  const lastSyncedScaleFactor = useRef(null);
+  // Initialize sync refs to match the initial active layer values
+  // This prevents false positives in sync effects on initial load
+  const lastSyncedBackgroundImage = useRef(activeLayer?.backgroundImage || null);
+  const lastSyncedBackgroundImageNaturalSize = useRef(activeLayer?.backgroundImageNaturalSize || null);
+  const lastSyncedScaleFactor = useRef(activeLayer?.scaleFactor || 100);
   
   // Ref to always have current activeLayerId for sync effects
   // We use a ref instead of putting activeLayerId in dependencies to avoid

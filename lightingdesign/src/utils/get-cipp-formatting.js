@@ -75,7 +75,7 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
         <img 
           src={data} 
           alt="Image" 
-          style={{ width: "40px", height: "40px", objectFit: "contain" }} 
+          style={{ width: "60px", height: "60px", objectFit: "contain" }} 
         />
       );
     }

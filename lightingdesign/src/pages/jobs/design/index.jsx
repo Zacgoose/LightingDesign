@@ -130,8 +130,18 @@ const Page = () => {
   const lastSyncedBackgroundImage = useRef(null);
   const lastSyncedBackgroundImageNaturalSize = useRef(null);
   const lastSyncedScaleFactor = useRef(null);
+  
+  // Ref to always have current activeLayerId for sync effects
+  // We use a ref instead of putting activeLayerId in dependencies to avoid
+  // the sync effects running when switching layers (which would cause race conditions)
+  const activeLayerIdRef = useRef(activeLayerId);
 
   const [connectors, setConnectors] = useState(activeLayer?.connectors || []);
+
+  // Keep activeLayerIdRef in sync with activeLayerId
+  useEffect(() => {
+    activeLayerIdRef.current = activeLayerId;
+  }, [activeLayerId]);
 
   // Background and Scale - now derived from active layer
   const [backgroundImage, setBackgroundImage] = useState(activeLayer?.backgroundImage || null);
@@ -191,27 +201,30 @@ const Page = () => {
   // Keep products in sync with active layer (save to layer when products change)
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
   // The isLoadingLayerData guard prevents syncing during layer load
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
   useEffect(() => {
     if (isLoadingLayerData.current) return;
-    updateLayer(activeLayerId, { products });
+    updateLayer(activeLayerIdRef.current, { products });
   }, [products, updateLayer]);
 
   // Keep connectors in sync with active layer
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
   useEffect(() => {
     if (isLoadingLayerData.current) return;
-    updateLayer(activeLayerId, { connectors });
+    updateLayer(activeLayerIdRef.current, { connectors });
   }, [connectors, updateLayer]);
 
   // Keep background image in sync with active layer
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
   useEffect(() => {
     if (isLoadingLayerData.current) return;
     if (
       backgroundImage !== lastSyncedBackgroundImage.current ||
       backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current
     ) {
-      updateLayer(activeLayerId, { backgroundImage, backgroundImageNaturalSize });
+      updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
       lastSyncedBackgroundImage.current = backgroundImage;
       lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
     }
@@ -219,10 +232,11 @@ const Page = () => {
 
   // Keep scale factor in sync with active layer
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
   useEffect(() => {
     if (isLoadingLayerData.current) return;
     if (scaleFactor !== lastSyncedScaleFactor.current) {
-      updateLayer(activeLayerId, { scaleFactor });
+      updateLayer(activeLayerIdRef.current, { scaleFactor });
       lastSyncedScaleFactor.current = scaleFactor;
     }
   }, [scaleFactor, updateLayer]);

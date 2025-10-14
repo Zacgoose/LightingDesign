@@ -321,6 +321,17 @@ const Page = () => {
     if (transformed) updateHistory(transformed);
     setIsSaving(true);
 
+    // Force sync of background image if it hasn't been synced yet
+    if (
+      backgroundImage !== lastSyncedBackgroundImage.current ||
+      backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current
+    ) {
+      console.log('Forcing background sync before save');
+      updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
+      lastSyncedBackgroundImage.current = backgroundImage;
+      lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
+    }
+
     // Log layers before stripping to check for corruption
     console.log('=== SAVE: Layers before stripping ===');
     layers.forEach((layer, idx) => {
@@ -374,6 +385,9 @@ const Page = () => {
     updateHistory,
     stripLayersForSave,
     saveDesignMutation,
+    backgroundImage,
+    backgroundImageNaturalSize,
+    updateLayer,
   ]);
 
   // Auto-save functionality

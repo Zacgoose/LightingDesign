@@ -39,6 +39,10 @@ export const useLayerManager = (initialLayers = null) => {
   const [activeLayerId, setActiveLayerId] = useState(() => {
     return initialLayers && initialLayers.length > 0 ? initialLayers[0].id : "layer-1";
   });
+  
+  // Version counter that increments when layers are loaded
+  // This helps trigger effects that need to respond to layer data changes
+  const [layersVersion, setLayersVersion] = useState(0);
 
   // Get active layer - memoized to prevent unnecessary re-renders
   const activeLayer = useMemo(() => {
@@ -286,6 +290,8 @@ export const useLayerManager = (initialLayers = null) => {
         if (!layerIds.includes(activeLayerId)) {
           setActiveLayerId(newLayers[0].id);
         }
+        // Increment version to signal that layers were loaded
+        setLayersVersion(v => v + 1);
       }
     },
     [activeLayerId],
@@ -295,6 +301,7 @@ export const useLayerManager = (initialLayers = null) => {
     layers,
     activeLayerId,
     activeLayer,
+    layersVersion,
     setActiveLayerId,
     addLayer,
     deleteLayer,

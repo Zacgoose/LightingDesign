@@ -1,4 +1,4 @@
-import { Group, Shape, Circle, Line } from "react-konva";
+import { Group, Circle, Line } from "react-konva";
 import { useState } from "react";
 
 export const ConnectorLine = ({
@@ -14,73 +14,29 @@ export const ConnectorLine = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
-  // Default control point if not set
-  const defaultControlX = (fromProduct.x + toProduct.x) / 2;
-  const defaultControlY = Math.min(fromProduct.y, toProduct.y) - 80;
+  // Initialize waypoints if not present
+  // Default waypoints: start -> waypoint1 -> waypoint2 -> end
+  const defaultWaypoint1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.33;
+  const defaultWaypoint1Y = Math.min(fromProduct.y, toProduct.y) - 60;
+  const defaultWaypoint2X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.67;
+  const defaultWaypoint2Y = Math.min(fromProduct.y, toProduct.y) - 60;
 
-  const controlX = connector.controlX ?? defaultControlX;
-  const controlY = connector.controlY ?? defaultControlY;
+  const waypoints = connector.waypoints ?? [
+    { x: defaultWaypoint1X, y: defaultWaypoint1Y },
+    { x: defaultWaypoint2X, y: defaultWaypoint2Y },
+  ];
 
-  // Calculate a point on the quadratic Bezier curve at parameter t
-  // B(t) = (1-t)²P0 + 2(1-t)tP1 + t²P2
-  const getPointOnCurve = (t) => {
-    const t1 = 1 - t;
-    const x = t1 * t1 * fromProduct.x + 2 * t1 * t * controlX + t * t * toProduct.x;
-    const y = t1 * t1 * fromProduct.y + 2 * t1 * t * controlY + t * t * toProduct.y;
-    return { x, y };
-  };
-
-  // Calculate the derivative (tangent) at parameter t for curve adjustment
-  const getTangentAtPoint = (t) => {
-    const t1 = 1 - t;
-    const dx = 2 * t1 * (controlX - fromProduct.x) + 2 * t * (toProduct.x - controlX);
-    const dy = 2 * t1 * (controlY - fromProduct.y) + 2 * t * (toProduct.y - controlY);
-    return { dx, dy };
-  };
-
-  // Handle dragging control points on the curve
-  const handleCurvePointDrag = (t, e) => {
-    const newX = e.target.x();
-    const newY = e.target.y();
-    
-    // Calculate the current point on curve and tangent
-    const currentPoint = getPointOnCurve(t);
-    const tangent = getTangentAtPoint(t);
-    
-    // Calculate the offset from the curve
-    const offsetX = newX - currentPoint.x;
-    const offsetY = newY - currentPoint.y;
-    
-    // Calculate the perpendicular to the tangent
-    const tangentLength = Math.sqrt(tangent.dx * tangent.dx + tangent.dy * tangent.dy);
-    if (tangentLength === 0) return;
-    
-    const perpX = -tangent.dy / tangentLength;
-    const perpY = tangent.dx / tangentLength;
-    
-    // Project the offset onto the perpendicular to get the distance from curve
-    const distance = offsetX * perpX + offsetY * perpY;
-    
-    // Adjust the control point to create the desired curve shape
-    const newControlX = controlX + distance * perpX;
-    const newControlY = controlY + distance * perpY;
-    
+  // Handle waypoint drag
+  const handleWaypointDrag = (index, e) => {
+    const newWaypoints = [...waypoints];
+    newWaypoints[index] = { x: e.target.x(), y: e.target.y() };
     onChange({
       ...connector,
-      controlX: newControlX,
-      controlY: newControlY,
+      waypoints: newWaypoints,
     });
   };
 
-  const handleControlDrag = (e) => {
-    onChange({
-      ...connector,
-      controlX: e.target.x(),
-      controlY: e.target.y(),
-    });
-  };
-
-  // Calculate if mouse is near the curve
+  // Calculate if mouse is near the line
   const handleLineClick = (e) => {
     e.cancelBubble = true;
     onSelect(e, connector.id);
@@ -88,115 +44,81 @@ export const ConnectorLine = ({
 
   return (
     <Group>
-      {/* The curved line */}
-      <Shape
+      {/* The polyline connector */}
+      <Line
         id={connector.id}
-        sceneFunc={(ctx, shape) => {
-          ctx.beginPath();
-          ctx.moveTo(fromProduct.x, fromProduct.y);
-          ctx.quadraticCurveTo(controlX, controlY, toProduct.x, toProduct.y);
-          ctx.fillStrokeShape(shape);
-        }}
+        points={[
+          fromProduct.x, fromProduct.y,
+          ...waypoints.flatMap(wp => [wp.x, wp.y]),
+          toProduct.x, toProduct.y
+        ]}
         stroke={
           connector.color ||
           (isSelected ? theme.palette.secondary.main : theme.palette.primary.main)
         }
         strokeWidth={isSelected ? 3 : 2}
         lineCap="round"
+        lineJoin="round"
         hitStrokeWidth={20} // Makes it easier to click
         onClick={handleLineClick}
         onTap={handleLineClick}
         onContextMenu={onContextMenu}
       />
 
-      {/* Show control point and guide lines when selected */}
+      {/* Show waypoints and guide lines when selected */}
       {isSelected && selectedTool === "select" && (
         <>
-          {/* Guide line from start to control point */}
+          {/* Draw guide lines connecting segments */}
+          {waypoints.map((wp, index) => {
+            const prevPoint = index === 0 
+              ? { x: fromProduct.x, y: fromProduct.y }
+              : waypoints[index - 1];
+            
+            return (
+              <Line
+                key={`guide-${index}`}
+                points={[prevPoint.x, prevPoint.y, wp.x, wp.y]}
+                stroke={theme.palette.action.disabled}
+                strokeWidth={1}
+                dash={[3, 3]}
+                listening={false}
+              />
+            );
+          })}
+          
+          {/* Last segment guide line */}
           <Line
-            points={[fromProduct.x, fromProduct.y, controlX, controlY]}
+            points={[
+              waypoints[waypoints.length - 1].x,
+              waypoints[waypoints.length - 1].y,
+              toProduct.x,
+              toProduct.y
+            ]}
             stroke={theme.palette.action.disabled}
             strokeWidth={1}
-            dash={[5, 5]}
+            dash={[3, 3]}
             listening={false}
           />
 
-          {/* Guide line from control point to end */}
-          <Line
-            points={[controlX, controlY, toProduct.x, toProduct.y]}
-            stroke={theme.palette.action.disabled}
-            strokeWidth={1}
-            dash={[5, 5]}
-            listening={false}
-          />
-
-          {/* Draggable control point (off-curve, traditional Bezier control) */}
-          <Circle
-            x={controlX}
-            y={controlY}
-            radius={6}
-            fill={theme.palette.secondary.main}
-            stroke={theme.palette.background.paper}
-            strokeWidth={2}
-            draggable
-            onDragStart={() => setIsDragging(true)}
-            onDragEnd={(e) => {
-              setIsDragging(false);
-              handleControlDrag(e);
-            }}
-            onDragMove={handleControlDrag}
-          />
-
-          {/* Control point at 1/4 of the curve (near start) */}
-          <Circle
-            x={getPointOnCurve(0.25).x}
-            y={getPointOnCurve(0.25).y}
-            radius={7}
-            fill={theme.palette.info.main}
-            stroke={theme.palette.background.paper}
-            strokeWidth={2}
-            draggable
-            onDragStart={() => setIsDragging(true)}
-            onDragEnd={(e) => {
-              setIsDragging(false);
-              handleCurvePointDrag(0.25, e);
-            }}
-            onDragMove={(e) => handleCurvePointDrag(0.25, e)}
-          />
-
-          {/* Control point at 1/2 of the curve (middle) */}
-          <Circle
-            x={getPointOnCurve(0.5).x}
-            y={getPointOnCurve(0.5).y}
-            radius={8}
-            fill={theme.palette.secondary.main}
-            stroke={theme.palette.background.paper}
-            strokeWidth={2}
-            draggable
-            onDragStart={() => setIsDragging(true)}
-            onDragEnd={(e) => {
-              setIsDragging(false);
-              handleCurvePointDrag(0.5, e);
-            }}
-            onDragMove={(e) => handleCurvePointDrag(0.5, e)}
-          />
-
-          {/* Control point at 3/4 of the curve (near end) */}
-          <Circle
-            x={getPointOnCurve(0.75).x}
-            y={getPointOnCurve(0.75).y}
-            radius={7}
-            fill={theme.palette.info.main}
-            stroke={theme.palette.background.paper}
-            strokeWidth={2}
-            draggable
-            onDragStart={() => setIsDragging(true)}
-            onDragEnd={(e) => {
-              setIsDragging(false);
-              handleCurvePointDrag(0.75, e);
-            }}
-            onDragMove={(e) => handleCurvePointDrag(0.75, e)}
-          />
+          {/* Draggable waypoints */}
+          {waypoints.map((wp, index) => (
+            <Circle
+              key={`waypoint-${index}`}
+              x={wp.x}
+              y={wp.y}
+              radius={7}
+              fill={theme.palette.info.main}
+              stroke={theme.palette.background.paper}
+              strokeWidth={2}
+              draggable
+              onDragStart={() => setIsDragging(true)}
+              onDragEnd={(e) => {
+                setIsDragging(false);
+                handleWaypointDrag(index, e);
+              }}
+              onDragMove={(e) => handleWaypointDrag(index, e)}
+            />
+          ))}
 
           {/* Start point indicator */}
           <Circle

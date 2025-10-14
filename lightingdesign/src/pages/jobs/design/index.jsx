@@ -219,11 +219,18 @@ const Page = () => {
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
   // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
   useEffect(() => {
-    if (isLoadingLayerData.current) return;
+    if (isLoadingLayerData.current) {
+      console.log('Background sync blocked - loading layer data');
+      return;
+    }
     if (
       backgroundImage !== lastSyncedBackgroundImage.current ||
       backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current
     ) {
+      console.log('Syncing background to layer:', activeLayerIdRef.current, {
+        hasImage: !!backgroundImage,
+        imageLength: backgroundImage?.length || 0
+      });
       updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
       lastSyncedBackgroundImage.current = backgroundImage;
       lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
@@ -412,6 +419,14 @@ const Page = () => {
       lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
       lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
       lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
+
+      // Re-enable sync after layer data is loaded
+      const timer = setTimeout(() => {
+        isLoadingLayerData.current = false;
+        console.log('Layer switch complete - sync effects re-enabled');
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
   }, [
     activeLayerId,

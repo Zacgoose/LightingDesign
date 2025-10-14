@@ -458,6 +458,15 @@ const Page = () => {
       return;
     }
     
+    // Also skip if we're on the initial default layer and waiting for loadLayers() to be called
+    // layersVersion === 0 means loadLayers() has never been called yet
+    // We check for both designData.isSuccess and layersVersion to handle the race condition
+    // where designData.isLoading becomes false but loadLayers() hasn't executed yet (due to startTransition)
+    if (designData.isSuccess && layersVersion === 0 && designData.data?.designData?.layers) {
+      console.log('Layer switch effect skipped - waiting for loadLayers() to execute');
+      return;
+    }
+    
     console.log('Layer switch effect triggered', {
       activeLayerId,
       lastLoadedLayerId: lastLoadedLayerId.current,
@@ -508,6 +517,8 @@ const Page = () => {
     activeLayer,
     layersVersion,
     designData.isLoading,
+    designData.isSuccess,
+    designData.data,
     // Note: updateHistory is not memoized in useHistory hook, so it changes every render
     // We don't include it here to prevent infinite re-runs
     // Note: setConnectors, setBackgroundImage, setBackgroundImageNaturalSize, setScaleFactor

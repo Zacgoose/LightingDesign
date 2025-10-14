@@ -180,6 +180,7 @@ const Page = () => {
 
   // UI state
   const [productDrawerVisible, setProductDrawerVisible] = useState(false);
+  const [swapMode, setSwapMode] = useState(false);
 
   // Refs
   const clipboard = useRef({ products: [], connectors: [] });
@@ -781,14 +782,62 @@ const Page = () => {
     contextMenus.handleCloseContextMenu();
   }, [contextMenus]);
 
+  const handleSwapSelectedProducts = useCallback(() => {
+    setSwapMode(true);
+    setProductDrawerVisible(true);
+    contextMenus.handleCloseContextMenu();
+  }, [contextMenus]);
+
   const handleProductAdd = useCallback((product) => {
+    // Handle swap mode - replace selected products with new product
+    if (swapMode && selectedIds.length > 0) {
+      const transformed = applyGroupTransform();
+      const baseProducts = transformed || products;
+      
+      // Replace each selected product with the new product template
+      const newProducts = baseProducts.map((p) => {
+        if (selectedIds.includes(p.id)) {
+          // Create new product from template but preserve position, rotation, scale, etc.
+          const strokeColor = determineStrokeColorForSku(product.sku);
+          return {
+            ...p,
+            name: product.name,
+            sku: product.sku,
+            brand: product.brand,
+            product_type: product.product_type_unigram,
+            price: parseFloat(product.price) || 0,
+            msrp: parseFloat(product.msrp) || 0,
+            imageUrl: product.imageUrl,
+            thumbnailUrl: product.thumbnailImageUrl,
+            category: product.top_web_category,
+            categories: product.category_hierarchy || [],
+            description: product.short_description,
+            colors: product.item_colours || [],
+            inStock: product.ss_in_stock === "1",
+            stockQty: parseInt(product.stock_qty) || 0,
+            metadata: product,
+            strokeColor: strokeColor,
+          };
+        }
+        return p;
+      });
+      
+      updateHistory(newProducts);
+      setSwapMode(false);
+      setProductDrawerVisible(false);
+      setGroupKey(k => k + 1);
+      return;
+    }
+    
+    // Normal add mode - enter placement mode with the selected product
     setPlacementMode({
       template: product,
     });
     setSelectedTool("placement");
     setProductDrawerVisible(false);
     pendingInsertPosition.current = null;
-  }, []);
+    setSwapMode(false);
+  }, [swapMode, selectedIds, products, applyGroupTransform, updateHistory, determineStrokeColorForSku, setGroupKey]);
 
   const determineStrokeColorForSku = useCallback(
     (sku) => {
@@ -1028,6 +1077,7 @@ const Page = () => {
                 onOpen={() => setProductDrawerVisible(true)}
                 onClose={() => {
                   setProductDrawerVisible(false);
+                  setSwapMode(false);
                   pendingInsertPosition.current = null;
                 }}
               />
@@ -1212,6 +1262,7 @@ const Page = () => {
         onDelete={contextMenus.handleDeleteSelected}
         onInsertProduct={contextMenus.handleInsertProductAtPosition}
         onSwapPlacementProduct={handleSwapPlacementProduct}
+        onSwapProduct={handleSwapSelectedProducts}
         onScale={handleOpenScaleDialog}
         onAssignToSublayer={handleAssignToSublayer}
         sublayers={activeLayer?.sublayers || []}

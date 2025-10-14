@@ -396,6 +396,13 @@ const Page = () => {
 
   // Update local state when switching layers
   useEffect(() => {
+    console.log('Layer switch effect triggered', {
+      activeLayerId,
+      lastLoadedLayerId: lastLoadedLayerId.current,
+      hasActiveLayer: !!activeLayer,
+      condition: activeLayerId !== lastLoadedLayerId.current && activeLayer
+    });
+    
     if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
       console.log(`Switching to layer ${activeLayerId}`, {
         hasBackgroundImage: !!activeLayer.backgroundImage,
@@ -404,6 +411,7 @@ const Page = () => {
 
       lastLoadedLayerId.current = activeLayerId;
       isLoadingLayerData.current = true;
+      console.log('isLoadingLayerData set to TRUE');
       
       // Update activeLayerIdRef immediately to ensure sync effects use correct layer
       activeLayerIdRef.current = activeLayerId;
@@ -421,12 +429,16 @@ const Page = () => {
       lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
 
       // Re-enable sync after layer data is loaded
+      console.log('Setting up timeout to re-enable sync in 100ms...');
       const timer = setTimeout(() => {
         isLoadingLayerData.current = false;
         console.log('Layer switch complete - sync effects re-enabled');
       }, 100);
 
-      return () => clearTimeout(timer);
+      return () => {
+        console.log('Layer switch effect cleanup - clearing timeout');
+        clearTimeout(timer);
+      };
     }
   }, [
     activeLayerId,

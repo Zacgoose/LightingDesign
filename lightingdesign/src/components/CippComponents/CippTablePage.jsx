@@ -24,6 +24,7 @@ export const CippTablePage = (props) => {
     tableFilter,
     filters,
     sx = { flexGrow: 1, py: 4 },
+    containerSx,
     enableRowSelection,
     ...other
   } = props;
@@ -33,7 +34,7 @@ export const CippTablePage = (props) => {
     <>
       <CippHead title={title} />
       <Box sx={sx}>
-        <Container maxWidth={false} sx={{ height: "100%" }}>
+        <Container maxWidth={false} sx={{ height: "100%", ...containerSx }}>
           <Stack spacing={1} sx={{ height: "100%" }}>
             {tableFilter}
             <Card

@@ -1,4 +1,5 @@
-import { Add } from "@mui/icons-material";
+import { Add, Close } from "@mui/icons-material";
+import { IconButton, Box } from "@mui/material";
 import { CippOffCanvas } from "../CippComponents/CippOffCanvas";
 import { CippTablePage } from "../CippComponents/CippTablePage";
 
@@ -55,7 +56,13 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
         visible={visible}
         onClose={onClose}
         size="xl"
+        contentPadding={0}
       >
+        <Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}>
+          <IconButton onClick={onClose} size="small">
+            <Close />
+          </IconButton>
+        </Box>
         <CippTablePage
           title="Products List"
           hideTitle={true}
@@ -68,6 +75,8 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
           enableRowSelection={false}
           imageColumn="thumbnailImageUrl"
           exportEnabled={false}
+          sx={{ flexGrow: 1, py: 0 }}
+          containerSx={{ px: 1, py: 1 }}
         />
       </CippOffCanvas>
     </>

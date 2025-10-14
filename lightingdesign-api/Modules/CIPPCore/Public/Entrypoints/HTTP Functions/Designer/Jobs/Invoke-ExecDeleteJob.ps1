@@ -39,7 +39,7 @@ function Invoke-ExecDeleteJob {
 
     # Also delete associated design if it exists
     $DesignTable = Get-CIPPTable -TableName 'Designs'
-    $DesignFilter = "JobId eq '{0}'" -f $JobId
+    $DesignFilter = "PartitionKey eq '$JobId'"
     $ExistingDesign = Get-CIPPAzDataTableEntity @DesignTable -Filter $DesignFilter
 
     if ($ExistingDesign) {

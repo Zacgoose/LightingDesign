@@ -22,7 +22,7 @@ function Invoke-ExecSaveDesign {
 
     try {
         # Check if design already exists for this job
-        $Filter = "JobId eq '{0}'" -f $JobId
+        $Filter = "PartitionKey eq '$JobId'"
         $ExistingDesign = Get-CIPPAzDataTableEntity @Table -Filter $Filter
 
         # Convert design data to JSON
@@ -37,7 +37,7 @@ function Invoke-ExecSaveDesign {
         if ($ExistingDesign) {
             # Update existing design
             $Entity = @{
-                PartitionKey = $ExistingDesign.PartitionKey
+                PartitionKey = [string]$JobId
                 RowKey       = $ExistingDesign.RowKey
                 JobId        = [string]$JobId
                 DesignData   = $DesignDataJson
@@ -46,7 +46,7 @@ function Invoke-ExecSaveDesign {
         } else {
             # Create new design
             $Entity = @{
-                PartitionKey = 'Design'
+                PartitionKey = [string]$JobId
                 RowKey       = [guid]::NewGuid().ToString()
                 JobId        = [string]$JobId
                 DesignData   = $DesignDataJson

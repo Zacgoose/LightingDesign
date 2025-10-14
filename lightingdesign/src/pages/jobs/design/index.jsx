@@ -126,7 +126,7 @@ const Page = () => {
 
   // Ref to track if we're loading data from a layer (vs user editing)
   const isLoadingLayerData = useRef(false);
-  const lastLoadedLayerId = useRef(activeLayerId);
+  const lastLoadedLayerId = useRef(null); // Initialize to null so first layer loads properly
   const lastSyncedBackgroundImage = useRef(null);
   const lastSyncedBackgroundImageNaturalSize = useRef(null);
   const lastSyncedScaleFactor = useRef(null);
@@ -371,32 +371,22 @@ const Page = () => {
   // Update local state when switching layers
   useEffect(() => {
     if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
-      // Before switching, ensure current layer's data is synced
-      if (
-        lastLoadedLayerId.current &&
-        (backgroundImage !== lastSyncedBackgroundImage.current ||
-          backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current ||
-          scaleFactor !== lastSyncedScaleFactor.current)
-      ) {
-        updateLayer(lastLoadedLayerId.current, {
-          backgroundImage,
-          backgroundImageNaturalSize,
-          scaleFactor,
-        });
-        lastSyncedBackgroundImage.current = backgroundImage;
-        lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
-        lastSyncedScaleFactor.current = scaleFactor;
-      }
+      console.log(`Switching to layer ${activeLayerId}`, {
+        hasBackgroundImage: !!activeLayer.backgroundImage,
+        backgroundImageLength: activeLayer.backgroundImage?.length || 0,
+      });
 
       lastLoadedLayerId.current = activeLayerId;
       isLoadingLayerData.current = true;
 
+      // Load the new layer's data
       updateHistory(activeLayer.products || []);
       setConnectors(activeLayer.connectors || []);
       setBackgroundImage(activeLayer.backgroundImage || null);
       setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
       setScaleFactor(activeLayer.scaleFactor || 100);
 
+      // Update sync refs to match the new layer's data
       lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
       lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
       lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
@@ -411,10 +401,6 @@ const Page = () => {
     activeLayerId,
     activeLayer,
     updateHistory,
-    backgroundImage,
-    backgroundImageNaturalSize,
-    scaleFactor,
-    updateLayer,
     setConnectors,
     setBackgroundImage,
     setBackgroundImageNaturalSize,

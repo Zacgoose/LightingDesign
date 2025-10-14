@@ -201,7 +201,7 @@ const Page = () => {
   const scaleForm = useForm({
     mode: "onChange",
     defaultValues: {
-      scale: 1,
+      realWorldSize: 1,
     },
   });
 
@@ -413,26 +413,27 @@ const Page = () => {
     contextMenus.handleCloseContextMenu();
   }, []);
 
-  // Handler for applying scale to selected products
+  // Handler for applying real-world size to selected products
   const handleScaleConfirm = useCallback(
-    (scaleValue) => {
-      scaleValue = Number(scaleValue);
-      if (isNaN(scaleValue) || scaleValue <= 0) return;
+    (realWorldSize) => {
+      realWorldSize = Number(realWorldSize);
+      if (isNaN(realWorldSize) || realWorldSize <= 0) return;
 
       const newProducts = products.map((product) => {
         if (!selectedIds.includes(product.id)) return product;
 
         let updated = { ...product };
-        const baseScaleX = product.baseScaleX || 1;
-        const baseScaleY = product.baseScaleY || 1;
-
-        if (!product.baseScaleX) {
-          updated.baseScaleX = product.scaleX || 1;
-          updated.baseScaleY = product.scaleY || 1;
+        
+        // Update the real-world size
+        // For products with separate width/height, scale proportionally
+        if (product.realWorldWidth && product.realWorldHeight) {
+          const currentSize = Math.max(product.realWorldWidth, product.realWorldHeight);
+          const sizeRatio = realWorldSize / currentSize;
+          updated.realWorldWidth = product.realWorldWidth * sizeRatio;
+          updated.realWorldHeight = product.realWorldHeight * sizeRatio;
+        } else if (product.realWorldSize) {
+          updated.realWorldSize = realWorldSize;
         }
-
-        updated.scaleX = baseScaleX * scaleValue;
-        updated.scaleY = baseScaleY * scaleValue;
 
         return updated;
       });
@@ -746,7 +747,19 @@ const Page = () => {
     const baseProducts = transformed || products;
     const newProducts = baseProducts.map((product) => {
       if (!selectedIds.includes(product.id)) return product;
-      return { ...product, scaleX: 1, scaleY: 1 };
+      
+      // Reset to original real-world dimensions from product type config
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      
+      return { 
+        ...product, 
+        scaleX: 1, 
+        scaleY: 1,
+        realWorldSize: config.realWorldSize,
+        realWorldWidth: config.realWorldWidth,
+        realWorldHeight: config.realWorldHeight,
+      };
     });
     updateHistory(newProducts);
     forceGroupUpdate();
@@ -867,6 +880,10 @@ const Page = () => {
   const createProductFromTemplate = useCallback(
     (template, x, y) => {
       const strokeColor = determineStrokeColorForSku(template.sku);
+      
+      // Get product type config to extract real-world dimensions
+      const productType = template.product_type_unigram?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
 
       return {
         id: `product-${Date.now()}-${Math.random()}`,
@@ -898,9 +915,15 @@ const Page = () => {
         notes: "",
         customLabel: "",
         sublayerId: activeLayer?.defaultSublayerId || null,
+        // Real-world dimensions in meters from product type config
+        realWorldSize: config.realWorldSize,
+        realWorldWidth: config.realWorldWidth,
+        realWorldHeight: config.realWorldHeight,
+        // Store the scaleFactor for this product (pixels per meter)
+        scaleFactor: scaleFactor,
       };
     },
-    [determineStrokeColorForSku, activeLayer],
+    [determineStrokeColorForSku, activeLayer, scaleFactor],
   );
 
   const handleCanvasClick = useCallback(
@@ -1270,26 +1293,27 @@ const Page = () => {
 
       <CippComponentDialog
         open={scaleDialogOpen}
-        title="Set Scale"
+        title="Set Object Size"
         createDialog={{
           open: scaleDialogOpen,
           handleClose: () => setScaleDialogOpen(false),
           handleSubmit: (data) => {
-            handleScaleConfirm(data.scale);
-            setScaleValue(data.scale);
+            handleScaleConfirm(data.realWorldSize);
+            setScaleValue(data.realWorldSize);
           },
           form: scaleForm,
         }}
       >
         <TextField
-          {...scaleForm.register("scale", {
+          {...scaleForm.register("realWorldSize", {
             onChange: (e) => setScaleValue(Number(e.target.value)),
           })}
-          label="Scale"
+          label="Size (meters)"
           type="number"
           defaultValue={scaleValue}
           fullWidth
-          inputProps={{ min: 0.001, step: 0.001 }}
+          inputProps={{ min: 0.001, step: 0.1 }}
+          helperText="Set the real-world size of the object in meters"
           autoFocus
         />
       </CippComponentDialog>

@@ -83,13 +83,13 @@ export const ContextMenus = ({
               <ListItemIcon>
                 <SettingsBackupRestore fontSize="small" />
               </ListItemIcon>
-              <ListItemText>Scale...</ListItemText>
+              <ListItemText>Set Size...</ListItemText>
             </MenuItem>
             <MenuItem onClick={onResetScale}>
               <ListItemIcon>
                 <SettingsBackupRestore fontSize="small" />
               </ListItemIcon>
-              <ListItemText>Reset Scale</ListItemText>
+              <ListItemText>Reset to Default Size</ListItemText>
             </MenuItem>
             {sublayers && sublayers.length > 0 && (
               <MenuItem>

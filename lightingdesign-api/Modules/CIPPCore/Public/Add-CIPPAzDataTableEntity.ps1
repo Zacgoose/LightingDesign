@@ -24,7 +24,12 @@ function Add-CIPPAzDataTableEntity {
     }
 
     $MaxRowSize = 500000 - 100
-    $MaxSize = 30kb
+    # Use 20KB chunks instead of 30KB to provide more safety margin for Azure Table Storage
+    # Azure Table limit is 64KB per property, but we use smaller chunks to account for:
+    # - Potential overhead in Azure's size calculation
+    # - Better distribution across rows for very large entities
+    # - Reduced risk of corruption at property boundaries
+    $MaxSize = 20kb
 
     foreach ($SingleEnt in @($Entity)) {
         try {
@@ -102,12 +107,15 @@ function Add-CIPPAzDataTableEntity {
                             $entityIndex++
 
                             $propertiesToRemove = [System.Collections.Generic.List[object]]::new()
-                            foreach ($key in $SingleEnt.Keys) {
+                            # Sort keys to ensure deterministic ordering when distributing properties across rows
+                            $sortedKeys = $SingleEnt.Keys | Sort-Object
+                            foreach ($key in $sortedKeys) {
                                 if ($key -in @('RowKey', 'PartitionKey')) { continue }
                                 $newEntitySize = [System.Text.Encoding]::UTF8.GetByteCount($($newEntity | ConvertTo-Json -Compress))
                                 if ($newEntitySize -lt $MaxRowSize) {
                                     $propertySize = [System.Text.Encoding]::UTF8.GetByteCount($SingleEnt[$key].ToString())
                                     if ($propertySize -gt $MaxRowSize) {
+                                        Write-Warning "Property $key is larger than MaxRowSize ($propertySize > $MaxRowSize). This should not happen if initial splitting worked correctly."
                                         $dataString = $SingleEnt[$key]
                                         $splitCount = [math]::Ceiling($dataString.Length / $MaxSize)
                                         $splitData = [System.Collections.Generic.List[object]]::new()

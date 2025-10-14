@@ -432,10 +432,8 @@ const Page = () => {
     activeLayerId,
     activeLayer,
     updateHistory,
-    setConnectors,
-    setBackgroundImage,
-    setBackgroundImageNaturalSize,
-    setScaleFactor,
+    // Note: setConnectors, setBackgroundImage, setBackgroundImageNaturalSize, setScaleFactor
+    // are stable setState functions and don't need to be in dependencies
   ]);
 
   // Context menus hook

@@ -19,8 +19,12 @@ export const createEmptyLayer = (id, name) => ({
   backgroundImageNaturalSize: null,
   products: [],
   connectors: [],
-  sublayers: [{ id: `${id}-default`, name: "Default", visible: true, isDefault: true }],
+  sublayers: [
+    { id: `${id}-default`, name: "Default", visible: true, isDefault: true },
+    { id: `${id}-cabling`, name: "Cabling", visible: true, isDefault: false },
+  ],
   defaultSublayerId: `${id}-default`, // Track which sublayer is default for new objects
+  defaultCablingSublayerId: `${id}-cabling`, // Track which sublayer is default for connectors
   scaleFactor: 100, // 100px per meter - each floor can have different scale
 });
 
@@ -161,6 +165,23 @@ export const useLayerManager = (initialLayers = null) => {
     [layers],
   );
 
+  // Filter connectors by visible sublayers
+  const filterConnectorsBySublayers = useCallback(
+    (connectors, layerId) => {
+      const layer = layers.find((l) => l.id === layerId);
+      if (!layer) return connectors;
+
+      const visibleSublayerIds = layer.sublayers.filter((sub) => sub.visible).map((sub) => sub.id);
+
+      return connectors.filter((connector) => {
+        // If connector doesn't have a sublayer assignment, show it in all visible sublayers
+        if (!connector.sublayerId) return true;
+        return visibleSublayerIds.includes(connector.sublayerId);
+      });
+    },
+    [layers],
+  );
+
   // Add a new sublayer to a layer
   const addSublayer = useCallback((layerId, name) => {
     const newSublayerId = `${layerId}-sublayer-${Date.now()}`;
@@ -270,6 +291,23 @@ export const useLayerManager = (initialLayers = null) => {
     );
   }, []);
 
+  // Assign connectors to a sublayer
+  const assignConnectorsToSublayer = useCallback((layerId, connectorIds, sublayerId) => {
+    setLayers((prev) =>
+      prev.map((layer) => {
+        if (layer.id === layerId) {
+          return {
+            ...layer,
+            connectors: layer.connectors.map((connector) =>
+              connectorIds.includes(connector.id) ? { ...connector, sublayerId } : connector,
+            ),
+          };
+        }
+        return layer;
+      }),
+    );
+  }, []);
+
   // Reorder layers
   const reorderLayers = useCallback((startIndex, endIndex) => {
     setLayers((prev) => {
@@ -310,6 +348,7 @@ export const useLayerManager = (initialLayers = null) => {
     toggleSublayerVisibility,
     getVisibleSublayers,
     filterProductsBySublayers,
+    filterConnectorsBySublayers,
     reorderLayers,
     loadLayers,
     addSublayer,
@@ -317,6 +356,7 @@ export const useLayerManager = (initialLayers = null) => {
     renameSublayer,
     setDefaultSublayer,
     assignProductsToSublayer,
+    assignConnectorsToSublayer,
   };
 };
 

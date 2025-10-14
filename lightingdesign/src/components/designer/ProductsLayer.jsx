@@ -51,6 +51,7 @@ export const ProductsLayer = memo(
     theme,
     groupKey,
     placementMode,
+    canvasScaleAdjustment = 1,
     onProductClick,
     onProductDragStart,
     onProductDragEnd,
@@ -91,6 +92,7 @@ export const ProductsLayer = memo(
                 config={config}
                 isSelected={false}
                 draggable={selectedTool === "select" && canInteract}
+                canvasScaleAdjustment={canvasScaleAdjustment}
                 onDragStart={(e) =>
                   selectedTool === "select" && canInteract && onProductDragStart(e, product.id)
                 }
@@ -164,6 +166,7 @@ export const ProductsLayer = memo(
                   config={config}
                   isSelected={true}
                   draggable={false}
+                  canvasScaleAdjustment={canvasScaleAdjustment}
                   onMouseDown={(e) =>
                     (canInteract || isConnectMode) && onProductClick(e, product.id)
                   }

@@ -78,6 +78,7 @@ const Page = () => {
     selectedTool,
     rotationSnaps,
     canvasContainerRef,
+    canvasScaleAdjustment,
     setStageScale,
     setShowGrid,
     setShowLayers,
@@ -1122,6 +1123,7 @@ const Page = () => {
                     backgroundImage={backgroundImage}
                     backgroundImageNaturalSize={backgroundImageNaturalSize}
                     scaleFactor={scaleFactor}
+                    canvasScaleAdjustment={canvasScaleAdjustment}
                     onPan={handleCanvasPan}
                   >
                     <ConnectorsLayer
@@ -1153,6 +1155,7 @@ const Page = () => {
                       theme={theme}
                       groupKey={groupKey}
                       placementMode={placementMode}
+                      canvasScaleAdjustment={canvasScaleAdjustment}
                       onProductClick={handleProductClick}
                       onProductDragStart={handleProductDragStart}
                       onProductDragEnd={handleProductDragEnd}
@@ -1183,6 +1186,7 @@ const Page = () => {
                         theme={theme}
                         opacity={0.6}
                         listening={false}
+                        canvasScaleAdjustment={canvasScaleAdjustment}
                         onMouseDown={() => {}}
                         onContextMenu={() => {}}
                       />

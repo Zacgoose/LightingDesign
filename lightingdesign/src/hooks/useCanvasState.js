@@ -14,6 +14,7 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   // Refs
   const canvasContainerRef = useRef();
   const isInitializedRef = useRef(false);
+  const referenceCanvasSizeRef = useRef({ width: initialWidth, height: initialHeight });
 
   // Canvas state
   const [stageScale, setStageScale] = useState(1);
@@ -44,6 +45,8 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
             x: rect.width / 2,
             y: rect.height / 2,
           });
+          // Store reference size for scale calculations
+          referenceCanvasSizeRef.current = { width: rect.width, height: rect.height };
           isInitializedRef.current = true;
         } else {
           // On window resize, adjust position proportionally to maintain viewport position
@@ -145,6 +148,13 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
     [handleResize],
   );
 
+  // Calculate canvas scale adjustment based on current size vs reference size
+  // This allows grid and objects to scale proportionally with canvas/window size
+  const canvasScaleAdjustment = Math.min(
+    canvasWidth / referenceCanvasSizeRef.current.width,
+    canvasHeight / referenceCanvasSizeRef.current.height
+  );
+
   return {
     // State
     stageScale,
@@ -156,6 +166,7 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
     selectedTool,
     rotationSnaps,
     canvasContainerRef: setCanvasContainerRef, // Use callback ref instead of regular ref
+    canvasScaleAdjustment, // Scale adjustment for grid and objects
 
     // Setters
     setStageScale,

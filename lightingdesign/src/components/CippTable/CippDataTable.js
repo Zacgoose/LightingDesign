@@ -26,6 +26,26 @@ import { Box } from "@mui/system";
 import { useSettings } from "../../hooks/use-settings";
 import { isEqual } from "lodash"; // Import lodash for deep comparison
 
+/**
+ * CippDataTable - A flexible data table component with advanced features
+ * 
+ * @param {Object} props - Component props
+ * @param {string|Array<string>} props.imageColumn - Column name(s) that should render images from URLs
+ *   - Pass a single column name as a string: imageColumn="logoUrl"
+ *   - Pass multiple column names as an array: imageColumn={["logoUrl", "avatarUrl"]}
+ *   - The specified column(s) will render any URL values as images (40x40px by default)
+ *   - Arrays of URLs in a column will render multiple images side by side
+ * 
+ * Example usage:
+ * ```jsx
+ * <CippDataTable
+ *   title="Products"
+ *   api={{ url: "api/ListProducts" }}
+ *   imageColumn="productImageUrl"
+ *   simpleColumns={["name", "productImageUrl", "price"]}
+ * />
+ * ```
+ */
 export const CippDataTable = (props) => {
   const {
     queryKey,
@@ -56,7 +76,8 @@ export const CippDataTable = (props) => {
     filters,
     maxHeightOffset = "380px",
     defaultSorting = [],
-    enableRowSelection = true
+    enableRowSelection = true,
+    imageColumn = null
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
@@ -147,7 +168,7 @@ export const CippDataTable = (props) => {
     ) {
       return;
     }
-    const apiColumns = utilColumnsFromAPI(usedData);
+    const apiColumns = utilColumnsFromAPI(usedData, imageColumn);
     let finalColumns = [];
     let newVisibility = { ...columnVisibility };
 
@@ -198,7 +219,7 @@ export const CippDataTable = (props) => {
     }
     setUsedColumns(finalColumns);
     setColumnVisibility(newVisibility);
-  }, [columns.length, usedData, queryKey, settings?.currentTenant]);
+  }, [columns.length, usedData, queryKey, settings?.currentTenant, imageColumn]);
 
   const createDialog = useDialog();
 

@@ -36,20 +36,19 @@ function Invoke-ExecDeleteJob {
         RowKey       = $ExistingJob.RowKey
     }
     Remove-AzDataTableEntity @Table -Entity $Entity -Force
-
-    # Also delete associated design if it exists
+    # Delete all associated designs
     $DesignTable = Get-CIPPTable -TableName 'Designs'
     $DesignFilter = "PartitionKey eq '$JobId'"
-    $ExistingDesign = Get-CIPPAzDataTableEntity @DesignTable -Filter $DesignFilter
-
-    if ($ExistingDesign) {
-        $DesignEntity = @{
-            PartitionKey = $ExistingDesign.PartitionKey
-            RowKey       = $ExistingDesign.RowKey
+    $ExistingDesigns = Get-AzDataTableEntity @DesignTable -Filter $DesignFilter
+    if ($ExistingDesigns) {
+        foreach ($Design in $ExistingDesigns) {
+            $DesignEntity = @{
+                PartitionKey = $Design.PartitionKey
+                RowKey       = $Design.RowKey
+            }
+            Remove-AzDataTableEntity @DesignTable -Entity $DesignEntity -Force
         }
-        Remove-AzDataTableEntity @DesignTable -Entity $DesignEntity -Force
     }
-
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::OK
         Body       = @{ Results = 'Job deleted successfully' }

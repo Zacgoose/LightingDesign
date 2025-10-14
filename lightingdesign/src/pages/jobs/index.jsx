@@ -76,13 +76,11 @@ const Page = () => {
 
   // Columns to display in the table
   const simpleColumns = [
-    "jobNumber",
-    "customerName",
-    "status",
+    "JobNumber",
+    "CustomerName",
+    "Status",
+    "User",
     "createdDate",
-    "dueDate",
-    "assignedTo",
-    "totalValue",
   ];
 
   return (

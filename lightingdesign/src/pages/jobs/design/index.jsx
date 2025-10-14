@@ -97,6 +97,7 @@ const Page = () => {
     layers,
     activeLayerId,
     activeLayer,
+    layersVersion,
     setActiveLayerId,
     addLayer,
     deleteLayer,
@@ -448,12 +449,13 @@ const Page = () => {
     [products, selectedIds, updateHistory, forceGroupUpdate, transformerRef, selectionGroupRef],
   );
 
-  // Update local state when switching layers
+  // Update local state when switching layers OR when layers are loaded
   useEffect(() => {
     console.log('Layer switch effect triggered', {
       activeLayerId,
       lastLoadedLayerId: lastLoadedLayerId.current,
       hasActiveLayer: !!activeLayer,
+      layersVersion,
       condition: activeLayerId !== lastLoadedLayerId.current && activeLayer
     });
     
@@ -497,6 +499,7 @@ const Page = () => {
   }, [
     activeLayerId,
     activeLayer,
+    layersVersion,
     // Note: updateHistory is not memoized in useHistory hook, so it changes every render
     // We don't include it here to prevent infinite re-runs
     // Note: setConnectors, setBackgroundImage, setBackgroundImageNaturalSize, setScaleFactor

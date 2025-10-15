@@ -1,4 +1,4 @@
-import { Card, Stack, Box, IconButton, Collapse } from "@mui/material";
+import { Card, Box, IconButton } from "@mui/material";
 import { ExpandMore, ExpandLess } from "@mui/icons-material";
 import { useState, useEffect, useRef } from "react";
 import DesignerMainToolbarControls from "./DesignerMainToolbarControls";
@@ -40,22 +40,22 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
   return (
     <Card sx={{ px: 1, py: 0, mb: 0 }}>
       <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-        <Collapse in={isExpanded} timeout={300} sx={{ flex: 1 }}>
-          <Box
-            ref={contentRef}
-            sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 1,
-              alignItems: 'center',
-              py: 0.5,
-            }}
-          >
-            <DesignerMainToolbarControls {...mainProps} />
-            <DesignerToolsToolbarControls {...toolsProps} />
-            <DesignerViewToolbarControls {...viewProps} />
-          </Box>
-        </Collapse>
+        <Box
+          ref={contentRef}
+          sx={{
+            display: 'flex',
+            flexWrap: isExpanded ? 'wrap' : 'nowrap',
+            gap: 1,
+            alignItems: 'center',
+            py: 0.5,
+            flex: 1,
+            overflow: isExpanded ? 'visible' : 'hidden',
+          }}
+        >
+          <DesignerMainToolbarControls {...mainProps} />
+          <DesignerToolsToolbarControls {...toolsProps} />
+          <DesignerViewToolbarControls {...viewProps} />
+        </Box>
         {isWrapped && (
           <IconButton
             size="small"

@@ -238,18 +238,10 @@ const Page = () => {
       return; // No changes to sync
     }
     
+    // Don't sync while loading layer data - this prevents writing stale state to new layer
     if (isLoadingLayerData.current) {
-      console.log('Background sync deferred - loading layer data');
-      // Schedule a retry after the loading completes
-      const retryTimer = setTimeout(() => {
-        if (!isLoadingLayerData.current) {
-          console.log('Retrying background sync after layer load');
-          updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
-          lastSyncedBackgroundImage.current = backgroundImage;
-          lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
-        }
-      }, 150); // Wait a bit longer than the layer load timeout (100ms)
-      return () => clearTimeout(retryTimer);
+      console.log('Background sync skipped - loading layer data');
+      return;
     }
     
     console.log('Syncing background to layer:', activeLayerIdRef.current, {

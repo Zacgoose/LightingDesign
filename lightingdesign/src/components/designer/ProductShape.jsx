@@ -55,8 +55,17 @@ export const ProductShape = memo(
     }
     
     const maxDimension = Math.max(renderedWidth, renderedHeight);
-    const textYOffset = maxDimension / 2 + 10;
-    const skuYOffset = -(maxDimension / 2 + 20);
+    
+    // Scale text size based on rendered dimensions
+    // Base font sizes: 11 for SKU, 10 for name (designed for ~50px objects)
+    // Scale proportionally with object size
+    const textScale = maxDimension / 50; // 50 is the baseline dimension from config
+    const skuFontSize = Math.max(11 * textScale, 8); // Min 8px
+    const nameFontSize = Math.max(10 * textScale, 7); // Min 7px
+    const textWidth = 120 * textScale;
+    
+    const textYOffset = maxDimension / 2 + 10 * textScale;
+    const skuYOffset = -(maxDimension / 2 + 20 * textScale);
 
     return (
       <Group
@@ -81,6 +90,8 @@ export const ProductShape = memo(
           strokeWidth={config.strokeWidth + 1}
           width={renderedWidth}
           height={renderedHeight}
+          offsetX={renderedWidth / 2}
+          offsetY={renderedHeight / 2}
           listening={listening}
           realWorldWidth={product.realWorldWidth}
           realWorldHeight={product.realWorldHeight}
@@ -91,25 +102,25 @@ export const ProductShape = memo(
         {product.sku && (
           <Text
             text={product.sku}
-            fontSize={11}
+            fontSize={skuFontSize}
             fill={theme.palette.text.primary}
             fontStyle="bold"
             align="center"
             y={skuYOffset}
-            x={-60}
-            width={120}
+            x={-textWidth / 2}
+            width={textWidth}
             listening={listening}
           />
         )}
 
         <Text
           text={product.customLabel || product.name}
-          fontSize={10}
+          fontSize={nameFontSize}
           fill={theme.palette.text.secondary}
           align="center"
           y={textYOffset}
-          x={-60}
-          width={120}
+          x={-textWidth / 2}
+          width={textWidth}
           listening={listening}
         />
 
@@ -117,8 +128,9 @@ export const ProductShape = memo(
           <>
             <Shape
               sceneFunc={(context, shape) => {
+                const badgeRadius = 12 * textScale;
                 context.beginPath();
-                context.arc(maxDimension * 0.6, -maxDimension * 0.4, 12, 0, Math.PI * 2);
+                context.arc(maxDimension * 0.6, -maxDimension * 0.4, badgeRadius, 0, Math.PI * 2);
                 context.fillStrokeShape(shape);
               }}
               fill={theme.palette.error.main}
@@ -128,13 +140,13 @@ export const ProductShape = memo(
             />
             <Text
               text={`${product.quantity}`}
-              fontSize={10}
+              fontSize={Math.max(10 * textScale, 8)}
               fill={theme.palette.error.contrastText}
               fontStyle="bold"
               align="center"
-              x={maxDimension * 0.6 - 6}
-              y={-maxDimension * 0.4 - 5}
-              width={12}
+              x={maxDimension * 0.6 - 6 * textScale}
+              y={-maxDimension * 0.4 - 5 * textScale}
+              width={12 * textScale}
               listening={listening}
             />
           </>

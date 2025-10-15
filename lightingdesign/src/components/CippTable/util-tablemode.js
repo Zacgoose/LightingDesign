@@ -29,7 +29,7 @@ export const utilTableMode = (
         density: "compact",
         pagination: {
           pageSize: settings?.tablePageSize?.value
-            ? parseInt(settings?.tablePageSize?.value, 10)
+            ? parseInt(settings?.tablePageSize?.value, 25)
             : 25,
           pageIndex: 0,
         },
@@ -74,7 +74,7 @@ export const utilTableMode = (
         density: "compact",
         pagination: {
           pageSize: settings?.tablePageSize?.value
-            ? parseInt(settings?.tablePageSize?.value, 10)
+            ? parseInt(settings?.tablePageSize?.value, 25)
             : 25,
           pageIndex: 0,
         },

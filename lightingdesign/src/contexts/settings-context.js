@@ -72,14 +72,10 @@ const initialSettings = {
   paletteMode: "light",
   currentTheme: { value: "light", label: "light" },
   pinNav: true,
-  currentTenant: null,
   showDevtools: false,
-  customBranding: {
-    colour: "#F77F00",
-    logo: null,
-  },
   persistFilters: false,
   lastUsedFilters: {},
+  tablePageSize: { value: "25", label: "25" },
 };
 
 const initialState = {

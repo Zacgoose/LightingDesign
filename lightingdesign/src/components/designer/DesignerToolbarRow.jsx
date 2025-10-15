@@ -20,6 +20,7 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
     return [...mainItems, ...toolsItems, ...viewItems];
   }, [mainProps, toolsProps, viewProps]);
 
+  // Check wrapping on mount, resize, and when items change
   useEffect(() => {
     const checkWrapping = () => {
       if (contentRef.current) {
@@ -54,51 +55,19 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
       }
     };
 
+    // Initial check
     checkWrapping();
+    
+    // Add resize listener
     window.addEventListener('resize', checkWrapping);
-    // Use a small delay to ensure layout is complete
+    
+    // Delayed check to ensure layout is complete
     const timeoutId = setTimeout(checkWrapping, 100);
 
     return () => {
       window.removeEventListener('resize', checkWrapping);
       clearTimeout(timeoutId);
     };
-  });
-
-  // Trigger wrapping check when items change
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (contentRef.current) {
-        const children = Array.from(contentRef.current.children);
-        if (children.length < 2) {
-          setIsWrapped(false);
-          setVisibleCount(null);
-          return;
-        }
-        
-        const firstChildTop = children[0].offsetTop;
-        let lastVisibleIndex = 0;
-        
-        for (let i = 0; i < children.length; i++) {
-          if (children[i].offsetTop === firstChildTop) {
-            lastVisibleIndex = i;
-          } else {
-            break;
-          }
-        }
-        
-        const hasWrapped = children.some(child => child.offsetTop !== firstChildTop);
-        setIsWrapped(hasWrapped);
-        
-        if (hasWrapped) {
-          setVisibleCount(lastVisibleIndex + 1);
-        } else {
-          setVisibleCount(null);
-        }
-      }
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
   }, [allItems.length]);
 
   // Determine which items to render based on collapsed state

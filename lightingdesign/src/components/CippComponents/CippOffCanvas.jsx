@@ -18,6 +18,7 @@ export const CippOffCanvas = (props) => {
     size = "sm",
     footer,
     hideTitle = false,
+    contentPadding = 2,
   } = props;
 
   const mdDown = useMediaQuery((theme) => theme.breakpoints.down("md"));
@@ -98,7 +99,7 @@ export const CippOffCanvas = (props) => {
           sx={{
             display: "flex",
             flexDirection: "column",
-            height: "calc(100vh - 73px)", // Account for header + divider
+            height: hideTitle ? "100vh" : "calc(100vh - 73px)", // Account for header + divider
             minHeight: 0,
           }}
         >
@@ -129,7 +130,7 @@ export const CippOffCanvas = (props) => {
                 sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
               >
                 <Box
-                  sx={{ display: "flex", flexDirection: "column", flexGrow: 1, minHeight: 0, p: 2 }}
+                  sx={{ display: "flex", flexDirection: "column", flexGrow: 1, minHeight: 0, p: contentPadding }}
                 >
                   {/* Render children if provided, otherwise render default content */}
                   {typeof children === "function" ? children(extendedData) : children}

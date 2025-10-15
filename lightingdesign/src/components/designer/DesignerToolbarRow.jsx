@@ -63,7 +63,7 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
       window.removeEventListener('resize', checkWrapping);
       clearTimeout(timeoutId);
     };
-  }, [allItems]);
+  }, [mainProps, toolsProps, viewProps]);
 
   // Determine which items to render based on collapsed state
   const itemsToRender = !isExpanded && isWrapped && visibleCount !== null

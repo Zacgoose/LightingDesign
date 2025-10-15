@@ -15,6 +15,8 @@ import {
   ListItemIcon,
   ListItemText,
   Radio,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -22,6 +24,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
+import CableIcon from "@mui/icons-material/Cable";
 import { TextInputDialog } from "/src/components/designer/TextInputDialog";
 import { ConfirmDialog } from "/src/components/designer/ConfirmDialog";
 
@@ -34,11 +37,13 @@ export const SubLayerControls = React.forwardRef(
       sublayers = [],
       layerId,
       defaultSublayerId,
+      defaultCablingSublayerId,
       onSublayerToggle,
       onSublayerAdd,
       onSublayerRemove,
       onSublayerRename,
       onSetDefaultSublayer,
+      onSetDefaultCablingSublayer,
       onClose,
     },
     ref,
@@ -49,10 +54,15 @@ export const SubLayerControls = React.forwardRef(
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [sublayerToDelete, setSublayerToDelete] = useState(null);
+    const [activeTab, setActiveTab] = useState(0);
 
     if (!sublayers || sublayers.length === 0) {
       return null;
     }
+
+    const handleTabChange = (event, newValue) => {
+      setActiveTab(newValue);
+    };
 
     const handleContextMenu = (e, sublayer) => {
       e.preventDefault();
@@ -105,6 +115,11 @@ export const SubLayerControls = React.forwardRef(
       handleCloseContextMenu();
     };
 
+    const handleSetDefaultCabling = (sublayerId) => {
+      onSetDefaultCablingSublayer(layerId, sublayerId);
+      handleCloseContextMenu();
+    };
+
     const handleAddSublayer = () => {
       setAddDialogOpen(true);
     };
@@ -139,7 +154,7 @@ export const SubLayerControls = React.forwardRef(
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
-              Object Layers
+              Sublayers
             </Typography>
             <Tooltip title="Add Sublayer">
               <IconButton size="small" onClick={handleAddSublayer} color="primary">
@@ -147,6 +162,11 @@ export const SubLayerControls = React.forwardRef(
               </IconButton>
             </Tooltip>
           </Box>
+          <Divider />
+          <Tabs value={activeTab} onChange={handleTabChange} sx={{ px: 2, minHeight: 40 }}>
+            <Tab label="Objects" sx={{ minHeight: 40, py: 1 }} />
+            <Tab label="Connections" sx={{ minHeight: 40, py: 1 }} />
+          </Tabs>
           <Divider />
           <Box sx={{ p: 2, pt: 1 }}>
             <FormGroup>
@@ -189,9 +209,14 @@ export const SubLayerControls = React.forwardRef(
                         label={
                           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                             <Typography variant="body2">{sublayer.name}</Typography>
-                            {defaultSublayerId === sublayer.id && (
+                            {activeTab === 0 && defaultSublayerId === sublayer.id && (
                               <Tooltip title="Default sublayer for new objects">
                                 <StarIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />
+                              </Tooltip>
+                            )}
+                            {activeTab === 1 && defaultCablingSublayerId === sublayer.id && (
+                              <Tooltip title="Default sublayer for cable connections">
+                                <CableIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />
                               </Tooltip>
                             )}
                           </Box>
@@ -217,16 +242,25 @@ export const SubLayerControls = React.forwardRef(
             contextMenu !== null ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined
           }
         >
-          <MenuItem onClick={() => handleSetDefault(contextMenu?.sublayer.id)}>
-            <ListItemIcon>
-              {defaultSublayerId === contextMenu?.sublayer.id ? (
-                <StarIcon fontSize="small" />
-              ) : (
-                <StarBorderIcon fontSize="small" />
-              )}
-            </ListItemIcon>
-            <ListItemText>Set as Default</ListItemText>
-          </MenuItem>
+          {activeTab === 0 ? (
+            <MenuItem onClick={() => handleSetDefault(contextMenu?.sublayer.id)}>
+              <ListItemIcon>
+                {defaultSublayerId === contextMenu?.sublayer.id ? (
+                  <StarIcon fontSize="small" />
+                ) : (
+                  <StarBorderIcon fontSize="small" />
+                )}
+              </ListItemIcon>
+              <ListItemText>Set as Default for Objects</ListItemText>
+            </MenuItem>
+          ) : (
+            <MenuItem onClick={() => handleSetDefaultCabling(contextMenu?.sublayer.id)}>
+              <ListItemIcon>
+                <CableIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Set as Default for Connections</ListItemText>
+            </MenuItem>
+          )}
           <MenuItem onClick={() => handleStartRename(contextMenu?.sublayer)}>
             <ListItemIcon>
               <EditIcon fontSize="small" />

@@ -8,6 +8,7 @@ export const utilTableMode = (
   offCanvas,
   onChange,
   maxHeightOffset = "380px",
+  actionsPosition = "right",
 ) => {
   const settings = useSettings();
   if (mode === true) {
@@ -79,8 +80,8 @@ export const utilTableMode = (
           pageIndex: 0,
         },
         columnPinning: {
-          left: ["mrt-row-select"],
-          right: ["mrt-row-actions"],
+          left: actionsPosition === "left" ? ["mrt-row-select", "mrt-row-actions"] : ["mrt-row-select"],
+          right: actionsPosition === "right" ? ["mrt-row-actions"] : [],
         },
       },
     };

@@ -77,7 +77,8 @@ export const CippDataTable = (props) => {
     maxHeightOffset = "330px",
     defaultSorting = [],
     enableRowSelection = true,
-    imageColumn = null
+    imageColumn = null,
+    actionsPosition = "right"
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
@@ -233,6 +234,7 @@ export const CippDataTable = (props) => {
       offCanvas,
       onChange,
       maxHeightOffset,
+      actionsPosition,
     ),
   );
   //create memoized version of usedColumns, and usedData

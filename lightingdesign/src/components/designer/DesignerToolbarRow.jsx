@@ -1,6 +1,6 @@
 import { Card, Box, IconButton } from "@mui/material";
 import { ExpandMore, ExpandLess } from "@mui/icons-material";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import DesignerMainToolbarControls from "./DesignerMainToolbarControls";
 import DesignerToolsToolbarControls from "./DesignerToolsToolbarControls";
 import DesignerViewToolbarControls from "./DesignerViewToolbarControls";
@@ -11,14 +11,11 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
   const [visibleCount, setVisibleCount] = useState(null);
   const contentRef = useRef(null);
 
-  // Get all toolbar items as a flat array, using useMemo to ensure proper updates
-  const allItems = useMemo(() => {
-    const mainItems = DesignerMainToolbarControls(mainProps);
-    const toolsItems = DesignerToolsToolbarControls(toolsProps);
-    const viewItems = DesignerViewToolbarControls(viewProps);
-    
-    return [...mainItems, ...toolsItems, ...viewItems];
-  }, [mainProps, toolsProps, viewProps]);
+  // Get all toolbar items as a flat array
+  const mainItems = DesignerMainToolbarControls(mainProps || {});
+  const toolsItems = DesignerToolsToolbarControls(toolsProps || {});
+  const viewItems = DesignerViewToolbarControls(viewProps || {});
+  const allItems = [...mainItems, ...toolsItems, ...viewItems];
 
   // Check wrapping on mount, resize, and when items change
   useEffect(() => {

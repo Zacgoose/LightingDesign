@@ -20,7 +20,9 @@ import {
   NearMe, 
   PanTool, 
   Close, 
-  Cable 
+  Cable,
+  ZoomIn,
+  ZoomOut
 } from "@mui/icons-material";
 import {
   enablePerformanceLogging,
@@ -147,7 +149,7 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
           <Button variant="outlined" size="small" onClick={onRedo} disabled={!canRedo}>
             <Redo />
           </Button>
-          <Button variant="outlined" startIcon={<Straighten />} size="small" onClick={onMeasure}>
+          <Button variant="outlined" startIcon={<Straighten />} size="small" onClick={onMeasure} minWidth={100}>
             Measure
           </Button>
 
@@ -219,15 +221,15 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
           </Button>
           {/* Group zoom controls together so they don't separate when wrapping */}
           <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexShrink: 0 }}>
-            <Button variant="outlined" size="small" onClick={onZoomOut}>
-              -
-            </Button>
+            <IconButton size="small" onClick={onZoomOut}>
+              <ZoomOut />
+            </IconButton>
             <Typography variant="body2" sx={{ maxWidth: 35, minWidth: 35, textAlign: "center" }}>
               {Math.round(zoomLevel * 100)}%
             </Typography>
-            <Button variant="outlined" size="small" onClick={onZoomIn}>
-              +
-            </Button>
+            <IconButton size="small" onClick={onZoomIn}>
+              <ZoomIn />
+            </IconButton>
           </Box>
           <Button variant="outlined" size="small" onClick={onResetView}>
             Reset

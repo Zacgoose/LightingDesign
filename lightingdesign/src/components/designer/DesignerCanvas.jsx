@@ -58,16 +58,16 @@ export const DesignerCanvas = memo(
 
       const img = new window.Image();
       img.onload = () => {
-        console.log('Background image loaded successfully', {
+        console.log("Background image loaded successfully", {
           width: img.width,
           height: img.height,
-          dataLength: backgroundImage?.length || 0
+          dataLength: backgroundImage?.length || 0,
         });
         setBgImage(img);
       };
-      
+
       img.onerror = (err) => {
-        console.error('Failed to load background image:', err);
+        console.error("Failed to load background image:", err);
         setBgImage(null);
       };
 

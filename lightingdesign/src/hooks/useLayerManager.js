@@ -43,7 +43,7 @@ export const useLayerManager = (initialLayers = null) => {
   const [activeLayerId, setActiveLayerId] = useState(() => {
     return initialLayers && initialLayers.length > 0 ? initialLayers[0].id : "layer-1";
   });
-  
+
   // Version counter that increments when layers are loaded
   // This helps trigger effects that need to respond to layer data changes
   const [layersVersion, setLayersVersion] = useState(0);
@@ -94,16 +94,16 @@ export const useLayerManager = (initialLayers = null) => {
 
   // Update layer properties
   const updateLayer = useCallback((layerId, updates) => {
-    console.log('updateLayer called:', { layerId, updates: Object.keys(updates) });
+    console.log("updateLayer called:", { layerId, updates: Object.keys(updates) });
     setLayers((prev) => {
       const updated = prev.map((layer) => {
         if (layer.id === layerId) {
           const newLayer = { ...layer, ...updates };
           if (updates.backgroundImage !== undefined) {
-            console.log('Layer background updated:', {
+            console.log("Layer background updated:", {
               layerId,
               hasImage: !!newLayer.backgroundImage,
-              imageLength: newLayer.backgroundImage?.length || 0
+              imageLength: newLayer.backgroundImage?.length || 0,
             });
           }
           return newLayer;
@@ -344,7 +344,7 @@ export const useLayerManager = (initialLayers = null) => {
           setActiveLayerId(newLayers[0].id);
         }
         // Increment version to signal that layers were loaded
-        setLayersVersion(v => v + 1);
+        setLayersVersion((v) => v + 1);
       }
     },
     [activeLayerId],

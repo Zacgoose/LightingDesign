@@ -55,7 +55,7 @@ export const ConnectorLine = ({
           const midY = (control1.y + control2.y) / 2;
           const mid2X = (control2.x + control3.x) / 2;
           const mid2Y = (control2.y + control3.y) / 2;
-          
+
           ctx.bezierCurveTo(control1.x, control1.y, midX, midY, control2.x, control2.y);
           ctx.bezierCurveTo(mid2X, mid2Y, control3.x, control3.y, toProduct.x, toProduct.y);
           ctx.fillStrokeShape(shape);
@@ -117,9 +117,9 @@ export const ConnectorLine = ({
             onDragStart={() => setIsDragging(true)}
             onDragEnd={(e) => {
               setIsDragging(false);
-              handleControlDrag('control1', e);
+              handleControlDrag("control1", e);
             }}
-            onDragMove={(e) => handleControlDrag('control1', e)}
+            onDragMove={(e) => handleControlDrag("control1", e)}
           />
           <Circle
             x={control2.x}
@@ -132,9 +132,9 @@ export const ConnectorLine = ({
             onDragStart={() => setIsDragging(true)}
             onDragEnd={(e) => {
               setIsDragging(false);
-              handleControlDrag('control2', e);
+              handleControlDrag("control2", e);
             }}
-            onDragMove={(e) => handleControlDrag('control2', e)}
+            onDragMove={(e) => handleControlDrag("control2", e)}
           />
           <Circle
             x={control3.x}
@@ -147,9 +147,9 @@ export const ConnectorLine = ({
             onDragStart={() => setIsDragging(true)}
             onDragEnd={(e) => {
               setIsDragging(false);
-              handleControlDrag('control3', e);
+              handleControlDrag("control3", e);
             }}
-            onDragMove={(e) => handleControlDrag('control3', e)}
+            onDragMove={(e) => handleControlDrag("control3", e)}
           />
 
           {/* Start point indicator */}

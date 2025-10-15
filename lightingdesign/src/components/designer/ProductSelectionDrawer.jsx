@@ -84,7 +84,7 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
           exportEnabled={false}
           sx={{ flexGrow: 1, py: 0 }}
           containerSx={{ px: 1, py: 1 }}
-          positionActionsColumn= 'start'
+          positionActionsColumn="start"
         />
       </CippOffCanvas>
     </>

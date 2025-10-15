@@ -129,13 +129,13 @@ export const useDesignLoader = ({
 
         // 2. Load layers with enriched products
         if (loadedDesign.layers && loadedDesign.layers.length > 0) {
-          console.log('=== LOAD: Design layers ===');
+          console.log("=== LOAD: Design layers ===");
           loadedDesign.layers.forEach((layer, idx) => {
             console.log(`Layer ${idx} (${layer.id}):`, {
               name: layer.name,
               hasBackground: !!layer.backgroundImage,
               backgroundLength: layer.backgroundImage?.length || 0,
-              backgroundImageNaturalSize: layer.backgroundImageNaturalSize
+              backgroundImageNaturalSize: layer.backgroundImageNaturalSize,
             });
           });
 
@@ -147,13 +147,13 @@ export const useDesignLoader = ({
             connectors: layer.connectors || [],
           }));
 
-          console.log('=== LOAD: Enriched layers ===');
+          console.log("=== LOAD: Enriched layers ===");
           enrichedLayers.forEach((layer, idx) => {
             console.log(`Layer ${idx} (${layer.id}):`, {
               name: layer.name,
               hasBackground: !!layer.backgroundImage,
               backgroundLength: layer.backgroundImage?.length || 0,
-              backgroundImageNaturalSize: layer.backgroundImageNaturalSize
+              backgroundImageNaturalSize: layer.backgroundImageNaturalSize,
             });
           });
 

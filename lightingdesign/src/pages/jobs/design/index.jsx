@@ -233,17 +233,17 @@ const Page = () => {
     const hasChanged =
       backgroundImage !== lastSyncedBackgroundImage.current ||
       backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current;
-    
+
     if (!hasChanged) {
       return; // No changes to sync
     }
-    
+
     if (isLoadingLayerData.current) {
-      console.log('Background sync deferred - loading layer data');
+      console.log("Background sync deferred - loading layer data");
       // Schedule a retry after the loading completes
       const retryTimer = setTimeout(() => {
         if (!isLoadingLayerData.current) {
-          console.log('Retrying background sync after layer load');
+          console.log("Retrying background sync after layer load");
           updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
           lastSyncedBackgroundImage.current = backgroundImage;
           lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
@@ -251,10 +251,10 @@ const Page = () => {
       }, 150); // Wait a bit longer than the layer load timeout (100ms)
       return () => clearTimeout(retryTimer);
     }
-    
-    console.log('Syncing background to layer:', activeLayerIdRef.current, {
+
+    console.log("Syncing background to layer:", activeLayerIdRef.current, {
       hasImage: !!backgroundImage,
-      imageLength: backgroundImage?.length || 0
+      imageLength: backgroundImage?.length || 0,
     });
     updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
     lastSyncedBackgroundImage.current = backgroundImage;
@@ -332,20 +332,20 @@ const Page = () => {
       backgroundImage !== lastSyncedBackgroundImage.current ||
       backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current
     ) {
-      console.log('Forcing background sync before save');
+      console.log("Forcing background sync before save");
       updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
       lastSyncedBackgroundImage.current = backgroundImage;
       lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
     }
 
     // Log layers before stripping to check for corruption
-    console.log('=== SAVE: Layers before stripping ===');
+    console.log("=== SAVE: Layers before stripping ===");
     layers.forEach((layer, idx) => {
       console.log(`Layer ${idx} (${layer.id}):`, {
         name: layer.name,
         hasBackground: !!layer.backgroundImage,
         backgroundLength: layer.backgroundImage?.length || 0,
-        backgroundImageNaturalSize: layer.backgroundImageNaturalSize
+        backgroundImageNaturalSize: layer.backgroundImageNaturalSize,
       });
     });
 
@@ -353,13 +353,13 @@ const Page = () => {
     const strippedLayers = stripLayersForSave(layers);
 
     // Log after stripping
-    console.log('=== SAVE: Layers after stripping ===');
+    console.log("=== SAVE: Layers after stripping ===");
     strippedLayers.forEach((layer, idx) => {
       console.log(`Layer ${idx} (${layer.id}):`, {
         name: layer.name,
         hasBackground: !!layer.backgroundImage,
         backgroundLength: layer.backgroundImage?.length || 0,
-        backgroundImageNaturalSize: layer.backgroundImageNaturalSize
+        backgroundImageNaturalSize: layer.backgroundImageNaturalSize,
       });
     });
 
@@ -459,17 +459,17 @@ const Page = () => {
     // Skip if router query is not ready yet - this prevents loading empty layer data
     // when we're on a page that has an ID in the URL but router.query.id is not yet populated
     if (!router.isReady) {
-      console.log('Layer switch effect skipped - router not ready');
+      console.log("Layer switch effect skipped - router not ready");
       return;
     }
 
     // Skip initial render if design data is still loading
     // This prevents loading the default empty layer before the actual design data arrives
     if (designData.isLoading) {
-      console.log('Layer switch effect skipped - design data still loading');
+      console.log("Layer switch effect skipped - design data still loading");
       return;
     }
-    
+
     // CRITICAL FIX: On page refresh/mount, if we haven't loaded layers yet and there's a design ID,
     // wait for the design to load before initializing the canvas with empty layer data.
     // This prevents the canvas from being initialized with wrong dimensions on refresh.
@@ -478,24 +478,24 @@ const Page = () => {
     // 2. layersVersion is 0 (loadLayers() hasn't been called yet)
     // 3. No layer has been loaded yet (lastLoadedLayerId is null)
     if (id && layersVersion === 0 && lastLoadedLayerId.current === null) {
-      console.log('Layer switch effect skipped - waiting for initial design data to load', {
+      console.log("Layer switch effect skipped - waiting for initial design data to load", {
         id,
         layersVersion,
         lastLoadedLayerId: lastLoadedLayerId.current,
         isLoading: designData.isLoading,
-        isSuccess: designData.isSuccess
+        isSuccess: designData.isSuccess,
       });
       return;
     }
-    
-    console.log('Layer switch effect triggered', {
+
+    console.log("Layer switch effect triggered", {
       activeLayerId,
       lastLoadedLayerId: lastLoadedLayerId.current,
       hasActiveLayer: !!activeLayer,
       layersVersion,
-      condition: activeLayerId !== lastLoadedLayerId.current && activeLayer
+      condition: activeLayerId !== lastLoadedLayerId.current && activeLayer,
     });
-    
+
     if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
       console.log(`Switching to layer ${activeLayerId}`, {
         hasBackgroundImage: !!activeLayer.backgroundImage,
@@ -504,8 +504,8 @@ const Page = () => {
 
       lastLoadedLayerId.current = activeLayerId;
       isLoadingLayerData.current = true;
-      console.log('isLoadingLayerData set to TRUE');
-      
+      console.log("isLoadingLayerData set to TRUE");
+
       // Update activeLayerIdRef immediately to ensure sync effects use correct layer
       activeLayerIdRef.current = activeLayerId;
 
@@ -522,14 +522,14 @@ const Page = () => {
       lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
 
       // Re-enable sync after layer data is loaded
-      console.log('Setting up timeout to re-enable sync in 100ms...');
+      console.log("Setting up timeout to re-enable sync in 100ms...");
       const timer = setTimeout(() => {
         isLoadingLayerData.current = false;
-        console.log('Layer switch complete - sync effects re-enabled');
+        console.log("Layer switch complete - sync effects re-enabled");
       }, 100);
 
       return () => {
-        console.log('Layer switch effect cleanup - clearing timeout');
+        console.log("Layer switch effect cleanup - clearing timeout");
         clearTimeout(timer);
       };
     }
@@ -767,7 +767,7 @@ const Page = () => {
         contextMenus.handleCloseContextMenu();
         return;
       }
-      
+
       // Handle product assignment
       const transformed = applyGroupTransform();
       const baseProducts = transformed || products;
@@ -777,7 +777,16 @@ const Page = () => {
       updateHistory(newProducts);
       contextMenus.handleCloseContextMenu();
     },
-    [products, selectedIds, selectedConnectorId, connectors, applyGroupTransform, updateHistory, contextMenus, setConnectors],
+    [
+      products,
+      selectedIds,
+      selectedConnectorId,
+      connectors,
+      applyGroupTransform,
+      updateHistory,
+      contextMenus,
+      setConnectors,
+    ],
   );
 
   const determineStrokeColorForSku = useCallback(
@@ -816,71 +825,83 @@ const Page = () => {
     contextMenus.handleCloseContextMenu();
   }, [contextMenus]);
 
-  const handleProductAdd = useCallback((product) => {
-    // Handle swap mode - replace selected products with new product
-    if (swapMode && selectedIds.length > 0) {
-      const transformed = applyGroupTransform();
-      const baseProducts = transformed || products;
-      
-      // Get product type configuration for real-world dimensions
-      const productType = product.product_type_unigram?.toLowerCase() || "default";
-      const config = productTypesConfig[productType] || productTypesConfig.default;
-      
-      // Replace each selected product with the new product template
-      const newProducts = baseProducts.map((p) => {
-        if (selectedIds.includes(p.id)) {
-          // Create new product from template but preserve position, rotation, scale, etc.
-          const strokeColor = determineStrokeColorForSku(product.sku);
-          return {
-            ...p,
-            name: product.name,
-            sku: product.sku,
-            brand: product.brand,
-            product_type: product.product_type_unigram,
-            price: parseFloat(product.price) || 0,
-            msrp: parseFloat(product.msrp) || 0,
-            imageUrl: product.imageUrl,
-            thumbnailUrl: product.thumbnailImageUrl,
-            category: product.top_web_category,
-            categories: product.category_hierarchy || [],
-            description: product.short_description,
-            colors: product.item_colours || [],
-            inStock: product.ss_in_stock === "1",
-            stockQty: parseInt(product.stock_qty) || 0,
-            metadata: product,
-            strokeColor: strokeColor,
-            // Update real-world dimensions for the new product type
-            realWorldSize: config.realWorldSize,
-            realWorldWidth: config.realWorldWidth,
-            realWorldHeight: config.realWorldHeight,
-            // Preserve the scaleFactor from the original product (or use current layer scale)
-            scaleFactor: p.scaleFactor || scaleFactor,
-          };
-        }
-        return p;
+  const handleProductAdd = useCallback(
+    (product) => {
+      // Handle swap mode - replace selected products with new product
+      if (swapMode && selectedIds.length > 0) {
+        const transformed = applyGroupTransform();
+        const baseProducts = transformed || products;
+
+        // Get product type configuration for real-world dimensions
+        const productType = product.product_type_unigram?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
+
+        // Replace each selected product with the new product template
+        const newProducts = baseProducts.map((p) => {
+          if (selectedIds.includes(p.id)) {
+            // Create new product from template but preserve position, rotation, scale, etc.
+            const strokeColor = determineStrokeColorForSku(product.sku);
+            return {
+              ...p,
+              name: product.name,
+              sku: product.sku,
+              brand: product.brand,
+              product_type: product.product_type_unigram,
+              price: parseFloat(product.price) || 0,
+              msrp: parseFloat(product.msrp) || 0,
+              imageUrl: product.imageUrl,
+              thumbnailUrl: product.thumbnailImageUrl,
+              category: product.top_web_category,
+              categories: product.category_hierarchy || [],
+              description: product.short_description,
+              colors: product.item_colours || [],
+              inStock: product.ss_in_stock === "1",
+              stockQty: parseInt(product.stock_qty) || 0,
+              metadata: product,
+              strokeColor: strokeColor,
+              // Update real-world dimensions for the new product type
+              realWorldSize: config.realWorldSize,
+              realWorldWidth: config.realWorldWidth,
+              realWorldHeight: config.realWorldHeight,
+              // Preserve the scaleFactor from the original product (or use current layer scale)
+              scaleFactor: p.scaleFactor || scaleFactor,
+            };
+          }
+          return p;
+        });
+
+        updateHistory(newProducts);
+        setSwapMode(false);
+        setProductDrawerVisible(false);
+        setGroupKey((k) => k + 1);
+        return;
+      }
+
+      // Normal add mode - enter placement mode with the selected product
+      setPlacementMode({
+        template: product,
       });
-      
-      updateHistory(newProducts);
-      setSwapMode(false);
+      setSelectedTool("placement");
       setProductDrawerVisible(false);
-      setGroupKey(k => k + 1);
-      return;
-    }
-    
-    // Normal add mode - enter placement mode with the selected product
-    setPlacementMode({
-      template: product,
-    });
-    setSelectedTool("placement");
-    setProductDrawerVisible(false);
-    pendingInsertPosition.current = null;
-    setSwapMode(false);
-  }, [swapMode, selectedIds, products, applyGroupTransform, updateHistory, determineStrokeColorForSku, setGroupKey, scaleFactor]);
+      pendingInsertPosition.current = null;
+      setSwapMode(false);
+    },
+    [
+      swapMode,
+      selectedIds,
+      products,
+      applyGroupTransform,
+      updateHistory,
+      determineStrokeColorForSku,
+      setGroupKey,
+      scaleFactor,
+    ],
+  );
 
   const createProductFromTemplate = useCallback(
     (template, x, y) => {
       const strokeColor = determineStrokeColorForSku(template.sku);
-      
+
       // Get product type configuration for real-world dimensions
       const productType = template.product_type_unigram?.toLowerCase() || "default";
       const config = productTypesConfig[productType] || productTypesConfig.default;

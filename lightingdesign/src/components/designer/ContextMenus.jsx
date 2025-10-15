@@ -115,10 +115,7 @@ export const ContextMenus = ({
               <ListItemText>Reset Scale</ListItemText>
             </MenuItem>
             {sublayers && sublayers.length > 0 && (
-              <MenuItem
-                ref={sublayerMenuItemRef}
-                onMouseEnter={handleSublayerMenuOpen}
-              >
+              <MenuItem ref={sublayerMenuItemRef} onMouseEnter={handleSublayerMenuOpen}>
                 <ListItemIcon>
                   <Layers fontSize="small" />
                 </ListItemIcon>
@@ -153,10 +150,7 @@ export const ContextMenus = ({
               <ListItemText>Change Color...</ListItemText>
             </MenuItem>
             {sublayers && sublayers.length > 0 && (
-              <MenuItem
-                ref={sublayerMenuItemRef}
-                onMouseEnter={handleSublayerMenuOpen}
-              >
+              <MenuItem ref={sublayerMenuItemRef} onMouseEnter={handleSublayerMenuOpen}>
                 <ListItemIcon>
                   <Layers fontSize="small" />
                 </ListItemIcon>
@@ -225,10 +219,7 @@ export const ContextMenus = ({
           }}
         >
           {sublayers.map((sublayer) => (
-            <MenuItem
-              key={sublayer.id}
-              onClick={() => handleSublayerSelect(sublayer.id)}
-            >
+            <MenuItem key={sublayer.id} onClick={() => handleSublayerSelect(sublayer.id)}>
               <ListItemText>{sublayer.name}</ListItemText>
             </MenuItem>
           ))}

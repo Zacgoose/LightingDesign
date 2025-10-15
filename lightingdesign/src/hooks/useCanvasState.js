@@ -7,7 +7,7 @@
  * - Viewport dimensions (actual visible area that changes with window size)
  * - View options (grid, layers)
  * - Tool selection
- * 
+ *
  * Key Concept: This hook maintains a fixed virtual coordinate space (VIRTUAL_WIDTH x VIRTUAL_HEIGHT)
  * that never changes regardless of window size. The viewport dimensions (viewportWidth/viewportHeight)
  * represent the actual visible area and change with window resizing. This separation ensures that
@@ -49,10 +49,10 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
       if (rect.width > 0 && rect.height > 0) {
         const oldViewportWidth = viewportWidth;
         const oldViewportHeight = viewportHeight;
-        
+
         setViewportWidth(rect.width);
         setViewportHeight(rect.height);
-        
+
         // Only reset position on initial load
         if (!isInitializedRef.current) {
           setStagePosition({
@@ -65,7 +65,7 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
           // Calculate the delta in viewport size and adjust position proportionally
           const deltaX = (rect.width - oldViewportWidth) / 2;
           const deltaY = (rect.height - oldViewportHeight) / 2;
-          
+
           setStagePosition((pos) => ({
             x: pos.x + deltaX,
             y: pos.y + deltaY,
@@ -132,7 +132,7 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   useLayoutEffect(() => {
     // Call immediately to ensure dimensions are set BEFORE any layer loading occurs
     handleResize();
-    
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [handleResize]);

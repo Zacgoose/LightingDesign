@@ -76,7 +76,7 @@ export const CippOffCanvas = (props) => {
           sx: { width: drawerWidth },
         }}
         ModalProps={{
-          keepMounted: false,
+          keepMounted: true,
         }}
         anchor={"right"}
         open={visible}

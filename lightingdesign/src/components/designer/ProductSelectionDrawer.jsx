@@ -2,6 +2,7 @@ import { Add, Close, Language } from "@mui/icons-material";
 import { IconButton, Box } from "@mui/material";
 import { CippOffCanvas } from "../CippComponents/CippOffCanvas";
 import { CippTablePage } from "../CippComponents/CippTablePage";
+import { useMemo, useCallback } from "react";
 
 export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClose, onOpen }) => {
   const filterList = [
@@ -29,32 +30,36 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
 
   const simpleColumns = ["thumbnailImageUrl", "name"];
 
-  const actions = [
+  const handleAddToCanvas = useCallback((row) => {
+    if (onProductSelect) {
+      onProductSelect(row);
+    }
+    if (onClose) {
+      onClose();
+    }
+  }, [onProductSelect, onClose]);
+
+  const handleOpenWebsite = useCallback((row) => {
+    if (row.url) {
+      window.open(row.url, '_blank', 'noopener,noreferrer');
+    }
+  }, []);
+
+  const actions = useMemo(() => [
     {
       label: "Add to Canvas",
       icon: <Add />,
       color: "primary",
       noConfirm: true,
-      customFunction: (row) => {
-        if (onProductSelect) {
-          onProductSelect(row);
-        }
-        if (onClose) {
-          onClose();
-        }
-      },
+      customFunction: handleAddToCanvas,
     },
     {
       label: "Website",
       icon: <Language />,
       noConfirm: true,
-      customFunction: (row) => {
-        if (row.url) {
-          window.open(row.url, '_blank', 'noopener,noreferrer');
-        }
-      },
+      customFunction: handleOpenWebsite,
     },
-  ];
+  ], [handleAddToCanvas, handleOpenWebsite]);
 
   return (
     <>

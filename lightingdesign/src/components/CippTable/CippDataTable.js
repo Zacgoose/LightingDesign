@@ -79,6 +79,7 @@ export const CippDataTable = (props) => {
     enableRowSelection = true,
     imageColumn = null,
     positionActionsColumn = 'last',
+    disableAutoLink = false,
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
@@ -169,7 +170,7 @@ export const CippDataTable = (props) => {
     ) {
       return;
     }
-    const apiColumns = utilColumnsFromAPI(usedData, imageColumn);
+    const apiColumns = utilColumnsFromAPI(usedData, imageColumn, disableAutoLink);
     let finalColumns = [];
     let newVisibility = { ...columnVisibility };
 
@@ -220,7 +221,7 @@ export const CippDataTable = (props) => {
     }
     setUsedColumns(finalColumns);
     setColumnVisibility(newVisibility);
-  }, [columns.length, usedData, queryKey, settings?.currentTenant, imageColumn]);
+  }, [columns.length, usedData, queryKey, settings?.currentTenant, imageColumn, disableAutoLink]);
 
   const createDialog = useDialog();
 

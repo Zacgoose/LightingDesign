@@ -90,7 +90,7 @@ const ImageWithHoverPreview = ({ src, alt, style }) => {
   );
 };
 
-export const getCippFormatting = (data, cellName, type, canReceive, flatten = true, imageColumn = null) => {
+export const getCippFormatting = (data, cellName, type, canReceive, flatten = true, imageColumn = null, disableAutoLink = false) => {
   const isText = type === "text";
   const cellNameLower = cellName.toLowerCase();
   
@@ -858,7 +858,7 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
   }
 
   //if string starts with http, return a link
-  if (typeof data === "string" && data.toLowerCase().startsWith("http")) {
+  if (!disableAutoLink && typeof data === "string" && data.toLowerCase().startsWith("http")) {
     return isText ? (
       data
     ) : (

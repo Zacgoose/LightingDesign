@@ -41,7 +41,12 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
         }
         
         const hasWrapped = children.some(child => child.offsetTop !== firstChildTop);
-        setIsWrapped(hasWrapped);
+        
+        // Only show collapse button if items actually wrap when all are visible
+        // If we're collapsed and showing fewer items, we need to check against all items
+        const allItemsWouldWrap = children.length < allItems.length || hasWrapped;
+        
+        setIsWrapped(allItemsWouldWrap && hasWrapped);
         
         // Store how many items fit in the first row
         if (hasWrapped) {
@@ -55,17 +60,24 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
     // Initial check
     checkWrapping();
     
-    // Add resize listener
-    window.addEventListener('resize', checkWrapping);
+    // Add resize listener with debounce
+    let resizeTimeout;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(checkWrapping, 100);
+    };
+    
+    window.addEventListener('resize', debouncedResize);
     
     // Delayed check to ensure layout is complete
-    const timeoutId = setTimeout(checkWrapping, 100);
+    const timeoutId = setTimeout(checkWrapping, 150);
 
     return () => {
-      window.removeEventListener('resize', checkWrapping);
+      window.removeEventListener('resize', debouncedResize);
       clearTimeout(timeoutId);
+      clearTimeout(resizeTimeout);
     };
-  }, [allItems.length]);
+  }, [allItems.length, isExpanded]);
 
   // Determine which items to render based on collapsed state
   const itemsToRender = !isExpanded && isWrapped && visibleCount !== null

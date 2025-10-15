@@ -63,7 +63,43 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
       window.removeEventListener('resize', checkWrapping);
       clearTimeout(timeoutId);
     };
-  }, [mainProps, toolsProps, viewProps]);
+  });
+
+  // Trigger wrapping check when items change
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (contentRef.current) {
+        const children = Array.from(contentRef.current.children);
+        if (children.length < 2) {
+          setIsWrapped(false);
+          setVisibleCount(null);
+          return;
+        }
+        
+        const firstChildTop = children[0].offsetTop;
+        let lastVisibleIndex = 0;
+        
+        for (let i = 0; i < children.length; i++) {
+          if (children[i].offsetTop === firstChildTop) {
+            lastVisibleIndex = i;
+          } else {
+            break;
+          }
+        }
+        
+        const hasWrapped = children.some(child => child.offsetTop !== firstChildTop);
+        setIsWrapped(hasWrapped);
+        
+        if (hasWrapped) {
+          setVisibleCount(lastVisibleIndex + 1);
+        } else {
+          setVisibleCount(null);
+        }
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [allItems.length]);
 
   // Determine which items to render based on collapsed state
   const itemsToRender = !isExpanded && isWrapped && visibleCount !== null

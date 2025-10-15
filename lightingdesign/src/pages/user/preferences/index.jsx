@@ -91,6 +91,13 @@ const Page = () => {
     { value: "high", label: "High (Slow)" },
   ];
 
+  const pageSizes = [
+    { value: "25", label: "25" },
+    { value: "50", label: "50" },
+    { value: "100", label: "100" },
+    { value: "250", label: "250" },
+  ];
+
   return (
     <>
       <Head>
@@ -114,6 +121,20 @@ const Page = () => {
                             type="switch"
                             name="persistFilters"
                             formControl={formcontrol}
+                          />
+                        ),
+                      },
+                      {
+                        label: "Default Table Page Size",
+                        value: (
+                          <CippFormComponent
+                            type="autoComplete"
+                            creatable={false}
+                            disableClearable={true}
+                            name="tablePageSize"
+                            formControl={formcontrol}
+                            multiple={false}
+                            options={pageSizes}
                           />
                         ),
                       },

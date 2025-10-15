@@ -15,8 +15,6 @@ import {
   ListItemIcon,
   ListItemText,
   Radio,
-  Tabs,
-  Tab,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -54,15 +52,10 @@ export const SubLayerControls = React.forwardRef(
     const [addDialogOpen, setAddDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [sublayerToDelete, setSublayerToDelete] = useState(null);
-    const [activeTab, setActiveTab] = useState(0);
 
     if (!sublayers || sublayers.length === 0) {
       return null;
     }
-
-    const handleTabChange = (event, newValue) => {
-      setActiveTab(newValue);
-    };
 
     const handleContextMenu = (e, sublayer) => {
       e.preventDefault();
@@ -163,11 +156,6 @@ export const SubLayerControls = React.forwardRef(
             </Tooltip>
           </Box>
           <Divider />
-          <Tabs value={activeTab} onChange={handleTabChange} sx={{ px: 2, minHeight: 40 }}>
-            <Tab label="Objects" sx={{ minHeight: 40, py: 1 }} />
-            <Tab label="Connections" sx={{ minHeight: 40, py: 1 }} />
-          </Tabs>
-          <Divider />
           <Box sx={{ p: 2, pt: 1 }}>
             <FormGroup>
               {sublayers.map((sublayer) => (
@@ -209,12 +197,12 @@ export const SubLayerControls = React.forwardRef(
                         label={
                           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                             <Typography variant="body2">{sublayer.name}</Typography>
-                            {activeTab === 0 && defaultSublayerId === sublayer.id && (
+                            {defaultSublayerId === sublayer.id && (
                               <Tooltip title="Default sublayer for new objects">
                                 <StarIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />
                               </Tooltip>
                             )}
-                            {activeTab === 1 && defaultCablingSublayerId === sublayer.id && (
+                            {defaultCablingSublayerId === sublayer.id && (
                               <Tooltip title="Default sublayer for cable connections">
                                 <CableIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />
                               </Tooltip>
@@ -242,25 +230,22 @@ export const SubLayerControls = React.forwardRef(
             contextMenu !== null ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined
           }
         >
-          {activeTab === 0 ? (
-            <MenuItem onClick={() => handleSetDefault(contextMenu?.sublayer.id)}>
-              <ListItemIcon>
-                {defaultSublayerId === contextMenu?.sublayer.id ? (
-                  <StarIcon fontSize="small" />
-                ) : (
-                  <StarBorderIcon fontSize="small" />
-                )}
-              </ListItemIcon>
-              <ListItemText>Set as Default for Objects</ListItemText>
-            </MenuItem>
-          ) : (
-            <MenuItem onClick={() => handleSetDefaultCabling(contextMenu?.sublayer.id)}>
-              <ListItemIcon>
-                <CableIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Set as Default for Connections</ListItemText>
-            </MenuItem>
-          )}
+          <MenuItem onClick={() => handleSetDefault(contextMenu?.sublayer.id)}>
+            <ListItemIcon>
+              {defaultSublayerId === contextMenu?.sublayer.id ? (
+                <StarIcon fontSize="small" />
+              ) : (
+                <StarBorderIcon fontSize="small" />
+              )}
+            </ListItemIcon>
+            <ListItemText>Set as Default for Objects</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleSetDefaultCabling(contextMenu?.sublayer.id)}>
+            <ListItemIcon>
+              <CableIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Set as Default for Connections</ListItemText>
+          </MenuItem>
           <MenuItem onClick={() => handleStartRename(contextMenu?.sublayer)}>
             <ListItemIcon>
               <EditIcon fontSize="small" />

@@ -245,17 +245,13 @@ export const CippApiDialog = (props) => {
       .split(".")
       .reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
 
-  const [linkClicked, setLinkClicked] = useState(false);
-  useEffect(() => setLinkClicked(false), [api.link]);
-
   useEffect(() => {
-    if (api.link && !linkClicked && row && Object.keys(row).length > 0) {
+    if (api.link && row && Object.keys(row).length > 0) {
       const timeoutId = setTimeout(() => {
         const linkWithData = api.link.replace(
           /\[([^\]]+)\]/g,
           (_, key) => getNestedValue(row, key) || `[${key}]`,
         );
-        setLinkClicked(true);
         if (linkWithData.startsWith("/") && !api?.external)
           router.push(linkWithData, undefined, { shallow: true });
         else window.open(linkWithData, api.target || "_blank");
@@ -263,7 +259,7 @@ export const CippApiDialog = (props) => {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [api.link, linkClicked, row, router]);
+  }, [api.link, row, router]);
 
   useEffect(() => {
     if (api.noConfirm && !api.link) {

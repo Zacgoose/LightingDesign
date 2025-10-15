@@ -48,11 +48,8 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
       label: "Website",
       icon: <Language />,
       noConfirm: true,
-      customFunction: (row) => {
-        if (row.url) {
-          window.open(row.url);
-        }
-      },
+      link: "[url]",
+      external: true
     },
   ];
 

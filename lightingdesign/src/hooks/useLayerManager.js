@@ -274,6 +274,21 @@ export const useLayerManager = (initialLayers = null) => {
     );
   }, []);
 
+  // Set default sublayer for new cable connections
+  const setDefaultCablingSublayer = useCallback((layerId, sublayerId) => {
+    setLayers((prev) =>
+      prev.map((layer) => {
+        if (layer.id === layerId) {
+          return {
+            ...layer,
+            defaultCablingSublayerId: sublayerId,
+          };
+        }
+        return layer;
+      }),
+    );
+  }, []);
+
   // Assign products to a sublayer
   const assignProductsToSublayer = useCallback((layerId, productIds, sublayerId) => {
     setLayers((prev) =>
@@ -355,6 +370,7 @@ export const useLayerManager = (initialLayers = null) => {
     removeSublayer,
     renameSublayer,
     setDefaultSublayer,
+    setDefaultCablingSublayer,
     assignProductsToSublayer,
     assignConnectorsToSublayer,
   };

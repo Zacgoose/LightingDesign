@@ -110,6 +110,7 @@ const Page = () => {
     removeSublayer,
     renameSublayer,
     setDefaultSublayer,
+    setDefaultCablingSublayer,
   } = layerManager;
 
   // Placement mode
@@ -1237,11 +1238,13 @@ const Page = () => {
                         sublayers={activeLayer?.sublayers || []}
                         layerId={activeLayerId}
                         defaultSublayerId={activeLayer?.defaultSublayerId}
+                        defaultCablingSublayerId={activeLayer?.defaultCablingSublayerId}
                         onSublayerToggle={toggleSublayerVisibility}
                         onSublayerAdd={addSublayer}
                         onSublayerRemove={removeSublayer}
                         onSublayerRename={renameSublayer}
                         onSetDefaultSublayer={setDefaultSublayer}
+                        onSetDefaultCablingSublayer={setDefaultCablingSublayer}
                         onClose={() => setShowLayers(false)}
                       />
                     </>

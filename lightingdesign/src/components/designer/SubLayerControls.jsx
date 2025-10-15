@@ -22,6 +22,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
+import CableIcon from "@mui/icons-material/Cable";
 import { TextInputDialog } from "/src/components/designer/TextInputDialog";
 import { ConfirmDialog } from "/src/components/designer/ConfirmDialog";
 
@@ -34,11 +35,13 @@ export const SubLayerControls = React.forwardRef(
       sublayers = [],
       layerId,
       defaultSublayerId,
+      defaultCablingSublayerId,
       onSublayerToggle,
       onSublayerAdd,
       onSublayerRemove,
       onSublayerRename,
       onSetDefaultSublayer,
+      onSetDefaultCablingSublayer,
       onClose,
     },
     ref,
@@ -105,6 +108,11 @@ export const SubLayerControls = React.forwardRef(
       handleCloseContextMenu();
     };
 
+    const handleSetDefaultCabling = (sublayerId) => {
+      onSetDefaultCablingSublayer(layerId, sublayerId);
+      handleCloseContextMenu();
+    };
+
     const handleAddSublayer = () => {
       setAddDialogOpen(true);
     };
@@ -139,7 +147,7 @@ export const SubLayerControls = React.forwardRef(
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
-              Object Layers
+              Sublayers
             </Typography>
             <Tooltip title="Add Sublayer">
               <IconButton size="small" onClick={handleAddSublayer} color="primary">
@@ -194,6 +202,11 @@ export const SubLayerControls = React.forwardRef(
                                 <StarIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />
                               </Tooltip>
                             )}
+                            {defaultCablingSublayerId === sublayer.id && (
+                              <Tooltip title="Default sublayer for cable connections">
+                                <CableIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />
+                              </Tooltip>
+                            )}
                           </Box>
                         }
                         sx={{ flex: 1 }}
@@ -225,7 +238,13 @@ export const SubLayerControls = React.forwardRef(
                 <StarBorderIcon fontSize="small" />
               )}
             </ListItemIcon>
-            <ListItemText>Set as Default</ListItemText>
+            <ListItemText>Set as Default for Objects</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleSetDefaultCabling(contextMenu?.sublayer.id)}>
+            <ListItemIcon>
+              <CableIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Set as Default for Connections</ListItemText>
           </MenuItem>
           <MenuItem onClick={() => handleStartRename(contextMenu?.sublayer)}>
             <ListItemIcon>

@@ -8,6 +8,8 @@ import {
   SwapHoriz,
   Layers,
   ChevronRight,
+  Info,
+  AddCircleOutline,
 } from "@mui/icons-material";
 
 export const ContextMenus = ({
@@ -22,10 +24,15 @@ export const ContextMenus = ({
   onSwapProduct,
   onScale,
   onAssignToSublayer,
+  onShowProperties,
+  onInsertCustomObject,
   sublayers = [],
+  selectedProductsCount = 0,
 }) => {
   const [sublayerMenuAnchor, setSublayerMenuAnchor] = useState(null);
+  const [customObjectMenuAnchor, setCustomObjectMenuAnchor] = useState(null);
   const sublayerMenuItemRef = useRef(null);
+  const customObjectMenuItemRef = useRef(null);
 
   // Prevent right-click on the menu itself - just close it
   const handleContextMenu = (e) => {
@@ -47,8 +54,24 @@ export const ContextMenus = ({
     handleSublayerMenuClose();
   };
 
+  const handleCustomObjectMenuOpen = (event) => {
+    setCustomObjectMenuAnchor(event.currentTarget);
+  };
+
+  const handleCustomObjectMenuClose = () => {
+    setCustomObjectMenuAnchor(null);
+  };
+
+  const handleCustomObjectSelect = (shapeName) => {
+    if (onInsertCustomObject) {
+      onInsertCustomObject(shapeName);
+    }
+    handleCustomObjectMenuClose();
+  };
+
   const handleMainMenuClose = () => {
     handleSublayerMenuClose();
+    handleCustomObjectMenuClose();
     onClose();
   };
 
@@ -75,6 +98,14 @@ export const ContextMenus = ({
       >
         {contextMenu?.type === "product" && (
           <>
+            {selectedProductsCount === 1 && onShowProperties && (
+              <MenuItem onClick={onShowProperties}>
+                <ListItemIcon>
+                  <Info fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Properties</ListItemText>
+              </MenuItem>
+            )}
             <MenuItem onClick={onDuplicate}>
               <ListItemIcon>
                 <ContentCopy fontSize="small" />
@@ -174,12 +205,26 @@ export const ContextMenus = ({
         )}
 
         {contextMenu?.type === "canvas" && (
-          <MenuItem onClick={onInsertProduct}>
-            <ListItemIcon>
-              <Add fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Add Product...</ListItemText>
-          </MenuItem>
+          <>
+            <MenuItem onClick={onInsertProduct}>
+              <ListItemIcon>
+                <Add fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Add Product...</ListItemText>
+            </MenuItem>
+            {onInsertCustomObject && (
+              <MenuItem
+                ref={customObjectMenuItemRef}
+                onMouseEnter={handleCustomObjectMenuOpen}
+              >
+                <ListItemIcon>
+                  <AddCircleOutline fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Insert Custom Object</ListItemText>
+                <ChevronRight fontSize="small" sx={{ ml: "auto" }} />
+              </MenuItem>
+            )}
+          </>
         )}
 
         {contextMenu?.type === "placement" && (
@@ -232,6 +277,71 @@ export const ContextMenus = ({
               <ListItemText>{sublayer.name}</ListItemText>
             </MenuItem>
           ))}
+        </Box>
+      </Popover>
+
+      {/* Custom Object submenu */}
+      <Popover
+        open={Boolean(customObjectMenuAnchor)}
+        anchorEl={customObjectMenuAnchor}
+        onClose={handleCustomObjectMenuClose}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        disableRestoreFocus
+        sx={{
+          pointerEvents: "none",
+        }}
+        PaperProps={{
+          onMouseEnter: () => {},
+          onMouseLeave: handleCustomObjectMenuClose,
+          sx: {
+            pointerEvents: "auto",
+            maxHeight: "400px",
+            overflow: "auto",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            minWidth: 200,
+          }}
+        >
+          <MenuItem onClick={() => handleCustomObjectSelect("circle")}>
+            <ListItemText>Circle</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("rect")}>
+            <ListItemText>Rectangle</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("pendant")}>
+            <ListItemText>Pendant</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("downlight")}>
+            <ListItemText>Downlight</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("spotlight")}>
+            <ListItemText>Spotlight</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("wall")}>
+            <ListItemText>Wall Light</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("fan")}>
+            <ListItemText>Fan</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("lamp")}>
+            <ListItemText>Lamp</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("strip")}>
+            <ListItemText>Strip Light</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("ceiling")}>
+            <ListItemText>Ceiling Light</ListItemText>
+          </MenuItem>
         </Box>
       </Popover>
     </Box>

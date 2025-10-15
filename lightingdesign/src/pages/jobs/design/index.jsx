@@ -16,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { DesignerToolbarRow } from "/src/components/designer/DesignerToolbarRow";
 import { DesignerCanvas } from "/src/components/designer/DesignerCanvas";
 import { ProductSelectionDrawer } from "/src/components/designer/ProductSelectionDrawer";
+import { ProductDetailsDrawer } from "/src/components/designer/ProductDetailsDrawer";
 import { ContextMenus } from "/src/components/designer/ContextMenus";
 import { ColorPickerPopover } from "/src/components/designer/ColorPickerPopover";
 import { ProductsLayer, COLOR_PALETTE } from "/src/components/designer/ProductsLayer";
@@ -183,6 +184,8 @@ const Page = () => {
 
   // UI state
   const [productDrawerVisible, setProductDrawerVisible] = useState(false);
+  const [productDetailsDrawerVisible, setProductDetailsDrawerVisible] = useState(false);
+  const [selectedProductForDetails, setSelectedProductForDetails] = useState(null);
   const [swapMode, setSwapMode] = useState(false);
 
   // Refs
@@ -991,6 +994,63 @@ const Page = () => {
 
   const handleDisconnectCable = useCallback(() => setConnectSequence([]), []);
 
+  const handleShowProperties = useCallback(() => {
+    if (selectedIds.length === 1) {
+      const product = products.find((p) => p.id === selectedIds[0]);
+      if (product) {
+        setSelectedProductForDetails(product);
+        setProductDetailsDrawerVisible(true);
+      }
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedIds, products, contextMenus]);
+
+  const handleInsertCustomObject = useCallback(
+    (shapeName) => {
+      if (contextMenus.contextMenu?.canvasX !== undefined) {
+        const x = contextMenus.contextMenu.canvasX;
+        const y = contextMenus.contextMenu.canvasY;
+
+        // Get default sizes for different shapes
+        const defaultSizes = {
+          circle: { realWorldSize: 1 },
+          rect: { realWorldWidth: 0.3, realWorldHeight: 0.3 },
+          pendant: { realWorldSize: 1 },
+          downlight: { realWorldSize: 0.8 },
+          spotlight: { realWorldSize: 0.8 },
+          wall: { realWorldWidth: 0.3, realWorldHeight: 0.4 },
+          fan: { realWorldSize: 1.4 },
+          lamp: { realWorldWidth: 0.25, realWorldHeight: 0.5 },
+          strip: { realWorldWidth: 0.6, realWorldHeight: 0.1 },
+          ceiling: { realWorldSize: 1.2 },
+        };
+
+        const sizeAttrs = defaultSizes[shapeName] || { realWorldSize: 1 };
+
+        const newProduct = {
+          id: `custom-${Date.now()}`,
+          x,
+          y,
+          rotation: 0,
+          color: "#666666",
+          shape: shapeName,
+          name: `Custom ${shapeName.charAt(0).toUpperCase() + shapeName.slice(1)}`,
+          product_type_unigram: shapeName,
+          isCustomObject: true,
+          ...sizeAttrs,
+        };
+
+        const transformed = applyGroupTransform();
+        const baseProducts = transformed || products;
+        updateHistory([...baseProducts, newProduct]);
+        setSelectedIds([newProduct.id]);
+        setGroupKey((k) => k + 1);
+      }
+      contextMenus.handleCloseContextMenu();
+    },
+    [contextMenus, products, applyGroupTransform, updateHistory, setSelectedIds, setGroupKey],
+  );
+
   const handleExport = useCallback(() => {
     const transformed = applyGroupTransform();
     if (transformed) updateHistory(transformed);
@@ -1094,6 +1154,15 @@ const Page = () => {
                   setProductDrawerVisible(false);
                   setSwapMode(false);
                   pendingInsertPosition.current = null;
+                }}
+              />
+
+              <ProductDetailsDrawer
+                product={selectedProductForDetails}
+                visible={productDetailsDrawerVisible}
+                onClose={() => {
+                  setProductDetailsDrawerVisible(false);
+                  setSelectedProductForDetails(null);
                 }}
               />
             </Box>
@@ -1284,7 +1353,10 @@ const Page = () => {
         onSwapProduct={handleSwapSelectedProducts}
         onScale={handleOpenScaleDialog}
         onAssignToSublayer={handleAssignToSublayer}
+        onShowProperties={handleShowProperties}
+        onInsertCustomObject={handleInsertCustomObject}
         sublayers={activeLayer?.sublayers || []}
+        selectedProductsCount={selectedIds.length}
       />
 
       <CippComponentDialog

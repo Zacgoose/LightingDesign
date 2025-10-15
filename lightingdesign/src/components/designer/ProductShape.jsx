@@ -39,7 +39,7 @@ export const ProductShape = memo(
     const realWorldWidth = product.realWorldWidth || config.realWorldWidth;
     const realWorldHeight = product.realWorldHeight || config.realWorldHeight;
     
-    // Calculate rendered width and height
+    // Calculate rendered width and height (actual size in virtual canvas units)
     let renderedWidth, renderedHeight;
     if (realWorldSize) {
       // For circular/square shapes
@@ -57,13 +57,15 @@ export const ProductShape = memo(
     const maxDimension = Math.max(renderedWidth, renderedHeight);
     
     // Scale text size based on rendered dimensions
-    // Base font sizes: 11 for SKU, 10 for name (designed for ~50px objects)
+    // Base font sizes: 11 for SKU, 10 for name (designed for ~50px baseline)
     // Scale proportionally with object size
-    const textScale = maxDimension / 50; // 50 is the baseline dimension from config
+    const baselineDimension = 50; // Original config baseline size
+    const textScale = maxDimension / baselineDimension;
     const skuFontSize = Math.max(11 * textScale, 8); // Min 8px
     const nameFontSize = Math.max(10 * textScale, 7); // Min 7px
     const textWidth = 120 * textScale;
     
+    // Position text relative to rendered dimensions
     const textYOffset = maxDimension / 2 + 10 * textScale;
     const skuYOffset = -(maxDimension / 2 + 20 * textScale);
 
@@ -90,8 +92,6 @@ export const ProductShape = memo(
           strokeWidth={config.strokeWidth + 1}
           width={renderedWidth}
           height={renderedHeight}
-          offsetX={renderedWidth / 2}
-          offsetY={renderedHeight / 2}
           listening={listening}
           realWorldWidth={product.realWorldWidth}
           realWorldHeight={product.realWorldHeight}

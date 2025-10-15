@@ -39,6 +39,12 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
     }
   }, [onProductSelect, onClose]);
 
+  const handleOpenWebsite = useCallback((row) => {
+    if (row.url) {
+      window.open(row.url, '_blank', 'noopener,noreferrer');
+    }
+  }, []);
+
   const actions = useMemo(() => [
     {
       label: "Add to Canvas",
@@ -50,11 +56,10 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
     {
       label: "Website",
       icon: <Language />,
-      link: "[url]",
-      external: true,
       noConfirm: true,
+      customFunction: handleOpenWebsite,
     },
-  ], [handleAddToCanvas]);
+  ], [handleAddToCanvas, handleOpenWebsite]);
 
   return (
     <>

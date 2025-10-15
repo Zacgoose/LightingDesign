@@ -37,16 +37,12 @@ const Page = () => {
 
   // Default values for all settings
   const defaultSettings = {
-    measurementUnits: { value: "metric", label: "Metric (Meters/Centimeters/Millimeters)" },
     tablePageSize: { value: "25", label: "25" },
-    persistFilters: false,
-    gridSize: { value: "20", label: "20 units" },
+    persistFilters: true,
     showGrid: true,
-    snapToGrid: true,
     exportFormat: { value: "pdf", label: "PDF" },
     exportQuality: { value: "medium", label: "Medium" },
     exportIncludeGrid: false,
-    exportIncludeScale: true,
   };
 
   // Merge user settings with defaults
@@ -66,16 +62,12 @@ const Page = () => {
     const formValues = formcontrol.getValues();
 
     const currentSettings = {
-      measurementUnits: formValues.measurementUnits,
       tablePageSize: formValues.tablePageSize,
       persistFilters: formValues.persistFilters,
-      gridSize: formValues.gridSize,
       showGrid: formValues.showGrid,
-      snapToGrid: formValues.snapToGrid,
       exportFormat: formValues.exportFormat,
       exportQuality: formValues.exportQuality,
       exportIncludeGrid: formValues.exportIncludeGrid,
-      exportIncludeScale: formValues.exportIncludeScale,
     };
 
     const shippedValues = {
@@ -87,18 +79,6 @@ const Page = () => {
   };
 
   // Options
-  const unitOptions = [
-    { value: "metric", label: "Metric (Meters/Centimeters/Millimeters)" },
-    { value: "imperial", label: "Imperial (Feet/Inches)" },
-  ];
-
-  const gridSizeOptions = [
-    { value: "10", label: "10 units" },
-    { value: "20", label: "20 units" },
-    { value: "50", label: "50 units" },
-    { value: "100", label: "100 units" },
-  ];
-
   const exportFormatOptions = [
     { value: "pdf", label: "PDF" },
     { value: "png", label: "PNG" },
@@ -109,13 +89,6 @@ const Page = () => {
     { value: "low", label: "Low (Fast)" },
     { value: "medium", label: "Medium" },
     { value: "high", label: "High (Slow)" },
-  ];
-
-  const pageSizes = [
-    { value: "25", label: "25" },
-    { value: "50", label: "50" },
-    { value: "100", label: "100" },
-    { value: "250", label: "250" },
   ];
 
   return (
@@ -135,34 +108,6 @@ const Page = () => {
                     title="General Settings"
                     propertyItems={[
                       {
-                        label: "Default Measurement Units",
-                        value: (
-                          <CippFormComponent
-                            type="autoComplete"
-                            creatable={false}
-                            disableClearable={true}
-                            name="measurementUnits"
-                            formControl={formcontrol}
-                            multiple={false}
-                            options={unitOptions}
-                          />
-                        ),
-                      },
-                      {
-                        label: "Default Table Page Size",
-                        value: (
-                          <CippFormComponent
-                            type="autoComplete"
-                            creatable={false}
-                            disableClearable={true}
-                            name="tablePageSize"
-                            formControl={formcontrol}
-                            multiple={false}
-                            options={pageSizes}
-                          />
-                        ),
-                      },
-                      {
                         label: "Save last used table filter",
                         value: (
                           <CippFormComponent
@@ -181,35 +126,11 @@ const Page = () => {
                     title="Canvas Settings"
                     propertyItems={[
                       {
-                        label: "Grid Size",
-                        value: (
-                          <CippFormComponent
-                            type="autoComplete"
-                            creatable={false}
-                            disableClearable={true}
-                            name="gridSize"
-                            formControl={formcontrol}
-                            multiple={false}
-                            options={gridSizeOptions}
-                          />
-                        ),
-                      },
-                      {
                         label: "Show Grid by Default",
                         value: (
                           <CippFormComponent
                             type="switch"
                             name="showGrid"
-                            formControl={formcontrol}
-                          />
-                        ),
-                      },
-                      {
-                        label: "Snap to Grid",
-                        value: (
-                          <CippFormComponent
-                            type="switch"
-                            name="snapToGrid"
                             formControl={formcontrol}
                           />
                         ),
@@ -256,16 +177,6 @@ const Page = () => {
                           <CippFormComponent
                             type="switch"
                             name="exportIncludeGrid"
-                            formControl={formcontrol}
-                          />
-                        ),
-                      },
-                      {
-                        label: "Include Scale Bar in Exports",
-                        value: (
-                          <CippFormComponent
-                            type="switch"
-                            name="exportIncludeScale"
                             formControl={formcontrol}
                           />
                         ),

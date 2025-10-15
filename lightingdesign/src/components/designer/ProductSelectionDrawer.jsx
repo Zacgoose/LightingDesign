@@ -1,10 +1,9 @@
-import { Add, Close } from "@mui/icons-material";
+import { Add, Close, Language } from "@mui/icons-material";
 import { IconButton, Box } from "@mui/material";
 import { CippOffCanvas } from "../CippComponents/CippOffCanvas";
 import { CippTablePage } from "../CippComponents/CippTablePage";
 
 export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClose, onOpen }) => {
-  // Filter options
   const filterList = [
     {
       filterName: "Pendants",
@@ -28,10 +27,8 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
     },
   ];
 
-  // Columns to display
   const simpleColumns = ["name", "thumbnailImageUrl", "sku"];
 
-  // Actions - use customFunction with noConfirm for immediate execution
   const actions = [
     {
       label: "Add to Canvas",
@@ -44,6 +41,16 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
         }
         if (onClose) {
           onClose();
+        }
+      },
+    },
+    {
+      label: "Website",
+      icon: <Language />,
+      noConfirm: true,
+      customFunction: (row) => {
+        if (row.url) {
+          window.open(row.url);
         }
       },
     },
@@ -77,6 +84,7 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
           exportEnabled={false}
           sx={{ flexGrow: 1, py: 0 }}
           containerSx={{ px: 1, py: 1 }}
+          positionActionsColumn= 'start'
         />
       </CippOffCanvas>
     </>

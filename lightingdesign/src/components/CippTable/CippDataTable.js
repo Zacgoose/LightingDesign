@@ -77,7 +77,8 @@ export const CippDataTable = (props) => {
     maxHeightOffset = "330px",
     defaultSorting = [],
     enableRowSelection = true,
-    imageColumn = null
+    imageColumn = null,
+    positionActionsColumn = 'last',
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
@@ -373,6 +374,7 @@ export const CippDataTable = (props) => {
         </Box>
       ) : undefined,
     onColumnVisibilityChange: setColumnVisibility,
+    positionActionsColumn: positionActionsColumn,
     renderRowActionMenuItems: actions
       ? ({ closeMenu, row }) => [
           actions.map((action, index) => (

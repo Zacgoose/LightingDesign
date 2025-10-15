@@ -1,4 +1,4 @@
-import { Button, Typography } from "@mui/material";
+import { Button, Typography, Box } from "@mui/material";
 import { useState } from "react";
 import {
   enablePerformanceLogging,
@@ -35,15 +35,18 @@ const DesignerViewToolbarControls = ({
     <Button key="layers" variant={showLayers ? "contained" : "outlined"} size="small" onClick={onToggleLayers}>
       Layers
     </Button>,
-    <Button key="zoom-out" variant="outlined" size="small" onClick={onZoomOut}>
-      -
-    </Button>,
-    <Typography key="zoom-level" variant="body2" sx={{ maxWidth: 35, minWidth: 35, textAlign: "center" }}>
-      {Math.round(zoomLevel * 100)}%
-    </Typography>,
-    <Button key="zoom-in" variant="outlined" size="small" onClick={onZoomIn}>
-      +
-    </Button>,
+    // Group zoom controls together
+    <Box key="zoom-controls" sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+      <Button variant="outlined" size="small" onClick={onZoomOut}>
+        -
+      </Button>
+      <Typography variant="body2" sx={{ maxWidth: 35, minWidth: 35, textAlign: "center" }}>
+        {Math.round(zoomLevel * 100)}%
+      </Typography>
+      <Button variant="outlined" size="small" onClick={onZoomIn}>
+        +
+      </Button>
+    </Box>,
     <Button key="reset" variant="outlined" size="small" onClick={onResetView}>
       Reset
     </Button>,

@@ -94,6 +94,6 @@ export const Table1 = () => (
       </Table>
     </Scrollbar>
     <Divider />
-    <Pagination rowsCount={1} page={0} rowsPerPage={10} />
+    <Pagination rowsCount={1} page={0} rowsPerPage={25} />
   </>
 );

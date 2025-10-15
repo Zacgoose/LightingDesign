@@ -27,7 +27,7 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
     },
   ];
 
-  const simpleColumns = ["name", "thumbnailImageUrl", "sku"];
+  const simpleColumns = ["thumbnailImageUrl", "name"];
 
   const actions = [
     {

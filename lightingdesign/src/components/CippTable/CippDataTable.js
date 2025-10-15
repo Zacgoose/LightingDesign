@@ -346,8 +346,10 @@ export const CippDataTable = (props) => {
     },
     // Initialize the filter chips with data attributes for tooltips
     initialState: {
+      ...modeInfo.initialState,
       columnFilters: columnFilters,
       columnVisibility: columnVisibility,
+      positionActionsColumn: positionActionsColumn,
     },
     columns: memoizedColumns,
     data: memoizedData ?? [],
@@ -374,7 +376,6 @@ export const CippDataTable = (props) => {
         </Box>
       ) : undefined,
     onColumnVisibilityChange: setColumnVisibility,
-    positionActionsColumn: positionActionsColumn,
     renderRowActionMenuItems: actions
       ? ({ closeMenu, row }) => [
           actions.map((action, index) => (

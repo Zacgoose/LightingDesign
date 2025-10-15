@@ -377,8 +377,8 @@ export const CippDataTable = (props) => {
       ) : undefined,
     onColumnVisibilityChange: setColumnVisibility,
     renderRowActionMenuItems: actions
-      ? ({ closeMenu, row }) => {
-          const menuItems = actions.map((action, index) => (
+      ? ({ closeMenu, row }) => [
+          actions.map((action, index) => (
             <MenuItem
               sx={{ color: action.color }}
               key={`actions-list-row-${index}`}
@@ -409,45 +409,37 @@ export const CippDataTable = (props) => {
               </SvgIcon>
               <ListItemText>{action.label}</ListItemText>
             </MenuItem>
-          ));
-          
-          if (offCanvas) {
-            menuItems.push(
-              <MenuItem
-                key={`actions-list-row-more`}
-                onClick={() => {
-                  closeMenu();
-                  setOffCanvasData(row.original);
-                  setOffcanvasVisible(true);
-                }}
-              >
-                <SvgIcon fontSize="small" sx={{ minWidth: "30px" }}>
-                  <MoreHoriz />
-                </SvgIcon>
-                More Info
-              </MenuItem>
-            );
-          }
-          
-          return menuItems;
-        }
-      : offCanvas
-        ? ({ closeMenu, row }) => [
+          )),
+          offCanvas && (
             <MenuItem
-              key="more-info"
+              key={`actions-list-row-more`}
               onClick={() => {
                 closeMenu();
                 setOffCanvasData(row.original);
                 setOffcanvasVisible(true);
               }}
             >
-              <ListItemIcon>
-                <More fontSize="small" />
-              </ListItemIcon>
+              <SvgIcon fontSize="small" sx={{ minWidth: "30px" }}>
+                <MoreHoriz />
+              </SvgIcon>
               More Info
             </MenuItem>
-          ]
-        : undefined,
+          ),
+        ]
+      : offCanvas && (
+          <MenuItem
+            onClick={() => {
+              closeMenu();
+              setOffCanvasData(row.original);
+              setOffcanvasVisible(true);
+            }}
+          >
+            <ListItemIcon>
+              <More fontSize="small" />
+            </ListItemIcon>
+            More Info
+          </MenuItem>
+        ),
     renderTopToolbar: ({ table }) => {
       return (
         <>

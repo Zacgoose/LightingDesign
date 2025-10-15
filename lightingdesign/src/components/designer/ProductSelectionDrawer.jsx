@@ -50,7 +50,7 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
       noConfirm: true,
       customFunction: (row) => {
         if (row.url) {
-          window.open(row.url);
+          window.open(row.url, '_blank', 'noopener,noreferrer');
         }
       },
     },

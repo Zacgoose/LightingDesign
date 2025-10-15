@@ -31,7 +31,30 @@ export const ProductShape = memo(
     });
 
     const shapeFunction = getShapeFunction(config.shapeType);
-    const maxDimension = Math.max(config.width || 30, config.height || 30);
+    
+    // Calculate actual rendered dimensions based on scaleFactor and real-world size
+    // This ensures text and bounding boxes align with the actual rendered shape
+    const scaleFactor = product.scaleFactor || 100; // fallback to default
+    const realWorldSize = product.realWorldSize || config.realWorldSize;
+    const realWorldWidth = product.realWorldWidth || config.realWorldWidth;
+    const realWorldHeight = product.realWorldHeight || config.realWorldHeight;
+    
+    // Calculate rendered width and height
+    let renderedWidth, renderedHeight;
+    if (realWorldSize) {
+      // For circular/square shapes
+      renderedWidth = renderedHeight = realWorldSize * scaleFactor;
+    } else if (realWorldWidth && realWorldHeight) {
+      // For rectangular shapes
+      renderedWidth = realWorldWidth * scaleFactor;
+      renderedHeight = realWorldHeight * scaleFactor;
+    } else {
+      // Fallback to config dimensions
+      renderedWidth = config.width || 30;
+      renderedHeight = config.height || 30;
+    }
+    
+    const maxDimension = Math.max(renderedWidth, renderedHeight);
     const textYOffset = maxDimension / 2 + 10;
     const skuYOffset = -(maxDimension / 2 + 20);
 
@@ -56,8 +79,8 @@ export const ProductShape = memo(
           fill={product.color || config.fill}
           stroke={customStroke}
           strokeWidth={config.strokeWidth + 1}
-          width={config.width}
-          height={config.height}
+          width={renderedWidth}
+          height={renderedHeight}
           listening={listening}
           realWorldWidth={product.realWorldWidth}
           realWorldHeight={product.realWorldHeight}

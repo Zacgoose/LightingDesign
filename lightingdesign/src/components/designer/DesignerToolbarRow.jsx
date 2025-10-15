@@ -8,7 +8,15 @@ import DesignerViewToolbarControls from "./DesignerViewToolbarControls";
 export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isWrapped, setIsWrapped] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(null);
   const contentRef = useRef(null);
+
+  // Get all toolbar items as a flat array
+  const allItems = [
+    ...DesignerMainToolbarControls(mainProps),
+    ...DesignerToolsToolbarControls(toolsProps),
+    ...DesignerViewToolbarControls(viewProps),
+  ];
 
   useEffect(() => {
     const checkWrapping = () => {
@@ -16,13 +24,31 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
         const children = Array.from(contentRef.current.children);
         if (children.length < 2) {
           setIsWrapped(false);
+          setVisibleCount(null);
           return;
         }
         
         // Check if any child is on a different line than the first child
         const firstChildTop = children[0].offsetTop;
+        let lastVisibleIndex = 0;
+        
+        for (let i = 0; i < children.length; i++) {
+          if (children[i].offsetTop === firstChildTop) {
+            lastVisibleIndex = i;
+          } else {
+            break;
+          }
+        }
+        
         const hasWrapped = children.some(child => child.offsetTop !== firstChildTop);
         setIsWrapped(hasWrapped);
+        
+        // Store how many items fit in the first row
+        if (hasWrapped) {
+          setVisibleCount(lastVisibleIndex + 1);
+        } else {
+          setVisibleCount(null);
+        }
       }
     };
 
@@ -37,6 +63,11 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
     };
   }, [mainProps, toolsProps, viewProps]);
 
+  // Determine which items to render based on collapsed state
+  const itemsToRender = !isExpanded && isWrapped && visibleCount !== null
+    ? allItems.slice(0, visibleCount)
+    : allItems;
+
   return (
     <Card sx={{ px: 1, py: 0, mb: 0 }}>
       <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
@@ -44,17 +75,14 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
           ref={contentRef}
           sx={{
             display: 'flex',
-            flexWrap: isExpanded ? 'wrap' : 'nowrap',
+            flexWrap: 'wrap',
             gap: 1,
             alignItems: 'center',
             py: 0.5,
             flex: 1,
-            overflow: isExpanded ? 'visible' : 'hidden',
           }}
         >
-          <DesignerMainToolbarControls {...mainProps} />
-          <DesignerToolsToolbarControls {...toolsProps} />
-          <DesignerViewToolbarControls {...viewProps} />
+          {itemsToRender}
         </Box>
         {isWrapped && (
           <IconButton

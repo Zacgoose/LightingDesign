@@ -344,8 +344,9 @@ export const CippDataTable = (props) => {
         },
       },
     },
-    // Initialize the filter chips with data attributes for tooltips
+    // Merge initialState from modeInfo with component-level overrides
     initialState: {
+      ...modeInfo.initialState,
       columnFilters: columnFilters,
       columnVisibility: columnVisibility,
     },

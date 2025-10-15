@@ -45,6 +45,11 @@ export const useDesignLoader = ({
       notes: product.notes,
       customLabel: product.customLabel,
       sublayerId: product.sublayerId,
+      // Include scaling and dimension properties
+      scaleFactor: product.scaleFactor,
+      realWorldSize: product.realWorldSize,
+      realWorldWidth: product.realWorldWidth,
+      realWorldHeight: product.realWorldHeight,
     };
   }, []);
 

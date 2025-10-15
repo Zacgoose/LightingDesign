@@ -72,6 +72,8 @@ const Page = () => {
     stageScale,
     canvasWidth,
     canvasHeight,
+    viewportWidth,
+    viewportHeight,
     stagePosition,
     showGrid,
     showLayers,
@@ -820,6 +822,10 @@ const Page = () => {
       const transformed = applyGroupTransform();
       const baseProducts = transformed || products;
       
+      // Get product type configuration for real-world dimensions
+      const productType = product.product_type_unigram?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      
       // Replace each selected product with the new product template
       const newProducts = baseProducts.map((p) => {
         if (selectedIds.includes(p.id)) {
@@ -843,6 +849,12 @@ const Page = () => {
             stockQty: parseInt(product.stock_qty) || 0,
             metadata: product,
             strokeColor: strokeColor,
+            // Update real-world dimensions for the new product type
+            realWorldSize: config.realWorldSize,
+            realWorldWidth: config.realWorldWidth,
+            realWorldHeight: config.realWorldHeight,
+            // Preserve the scaleFactor from the original product (or use current layer scale)
+            scaleFactor: p.scaleFactor || scaleFactor,
           };
         }
         return p;
@@ -863,11 +875,15 @@ const Page = () => {
     setProductDrawerVisible(false);
     pendingInsertPosition.current = null;
     setSwapMode(false);
-  }, [swapMode, selectedIds, products, applyGroupTransform, updateHistory, determineStrokeColorForSku, setGroupKey]);
+  }, [swapMode, selectedIds, products, applyGroupTransform, updateHistory, determineStrokeColorForSku, setGroupKey, scaleFactor]);
 
   const createProductFromTemplate = useCallback(
     (template, x, y) => {
       const strokeColor = determineStrokeColorForSku(template.sku);
+      
+      // Get product type configuration for real-world dimensions
+      const productType = template.product_type_unigram?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
 
       return {
         id: `product-${Date.now()}-${Math.random()}`,
@@ -899,9 +915,15 @@ const Page = () => {
         notes: "",
         customLabel: "",
         sublayerId: activeLayer?.defaultSublayerId || null,
+        // Store scaleFactor and real-world dimensions at creation time
+        // This ensures products maintain their size even if layer scale changes
+        scaleFactor: scaleFactor,
+        realWorldSize: config.realWorldSize,
+        realWorldWidth: config.realWorldWidth,
+        realWorldHeight: config.realWorldHeight,
       };
     },
-    [determineStrokeColorForSku, activeLayer],
+    [determineStrokeColorForSku, activeLayer, scaleFactor],
   );
 
   const handleCanvasClick = useCallback(
@@ -1109,6 +1131,8 @@ const Page = () => {
                   <DesignerCanvas
                     width={canvasWidth}
                     height={canvasHeight}
+                    viewportWidth={viewportWidth}
+                    viewportHeight={viewportHeight}
                     stageScale={stageScale}
                     stagePosition={stagePosition}
                     showGrid={showGrid}

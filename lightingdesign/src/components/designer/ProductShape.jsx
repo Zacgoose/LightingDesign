@@ -31,9 +31,43 @@ export const ProductShape = memo(
     });
 
     const shapeFunction = getShapeFunction(config.shapeType);
-    const maxDimension = Math.max(config.width || 30, config.height || 30);
-    const textYOffset = maxDimension / 2 + 10;
-    const skuYOffset = -(maxDimension / 2 + 20);
+    
+    // Calculate actual rendered dimensions based on scaleFactor and real-world size
+    // This ensures text and bounding boxes align with the actual rendered shape
+    const scaleFactor = product.scaleFactor || 100; // fallback to default
+    const realWorldSize = product.realWorldSize || config.realWorldSize;
+    const realWorldWidth = product.realWorldWidth || config.realWorldWidth;
+    const realWorldHeight = product.realWorldHeight || config.realWorldHeight;
+    
+    // Calculate rendered width and height (actual size in virtual canvas units)
+    let renderedWidth, renderedHeight;
+    if (realWorldSize) {
+      // For circular/square shapes
+      renderedWidth = renderedHeight = realWorldSize * scaleFactor;
+    } else if (realWorldWidth && realWorldHeight) {
+      // For rectangular shapes
+      renderedWidth = realWorldWidth * scaleFactor;
+      renderedHeight = realWorldHeight * scaleFactor;
+    } else {
+      // Fallback to config dimensions
+      renderedWidth = config.width || 30;
+      renderedHeight = config.height || 30;
+    }
+    
+    const maxDimension = Math.max(renderedWidth, renderedHeight);
+    
+    // Scale text size based on rendered dimensions
+    // Base font sizes: 11 for SKU, 10 for name (designed for ~50px baseline)
+    // Scale proportionally with object size
+    const baselineDimension = 50; // Original config baseline size
+    const textScale = maxDimension / baselineDimension;
+    const skuFontSize = Math.max(11 * textScale, 8); // Min 8px
+    const nameFontSize = Math.max(10 * textScale, 7); // Min 7px
+    const textWidth = 120 * textScale;
+    
+    // Position text relative to rendered dimensions
+    const textYOffset = maxDimension / 2 + 10 * textScale;
+    const skuYOffset = -(maxDimension / 2 + 20 * textScale);
 
     return (
       <Group
@@ -56,8 +90,8 @@ export const ProductShape = memo(
           fill={product.color || config.fill}
           stroke={customStroke}
           strokeWidth={config.strokeWidth + 1}
-          width={config.width}
-          height={config.height}
+          width={renderedWidth}
+          height={renderedHeight}
           listening={listening}
           realWorldWidth={product.realWorldWidth}
           realWorldHeight={product.realWorldHeight}
@@ -68,25 +102,25 @@ export const ProductShape = memo(
         {product.sku && (
           <Text
             text={product.sku}
-            fontSize={11}
+            fontSize={skuFontSize}
             fill={theme.palette.text.primary}
             fontStyle="bold"
             align="center"
             y={skuYOffset}
-            x={-60}
-            width={120}
+            x={-textWidth / 2}
+            width={textWidth}
             listening={listening}
           />
         )}
 
         <Text
           text={product.customLabel || product.name}
-          fontSize={10}
+          fontSize={nameFontSize}
           fill={theme.palette.text.secondary}
           align="center"
           y={textYOffset}
-          x={-60}
-          width={120}
+          x={-textWidth / 2}
+          width={textWidth}
           listening={listening}
         />
 
@@ -94,8 +128,9 @@ export const ProductShape = memo(
           <>
             <Shape
               sceneFunc={(context, shape) => {
+                const badgeRadius = 12 * textScale;
                 context.beginPath();
-                context.arc(maxDimension * 0.6, -maxDimension * 0.4, 12, 0, Math.PI * 2);
+                context.arc(maxDimension * 0.6, -maxDimension * 0.4, badgeRadius, 0, Math.PI * 2);
                 context.fillStrokeShape(shape);
               }}
               fill={theme.palette.error.main}
@@ -105,13 +140,13 @@ export const ProductShape = memo(
             />
             <Text
               text={`${product.quantity}`}
-              fontSize={10}
+              fontSize={Math.max(10 * textScale, 8)}
               fill={theme.palette.error.contrastText}
               fontStyle="bold"
               align="center"
-              x={maxDimension * 0.6 - 6}
-              y={-maxDimension * 0.4 - 5}
-              width={12}
+              x={maxDimension * 0.6 - 6 * textScale}
+              y={-maxDimension * 0.4 - 5 * textScale}
+              width={12 * textScale}
               listening={listening}
             />
           </>

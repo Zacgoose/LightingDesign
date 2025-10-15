@@ -8,6 +8,7 @@ export const utilTableMode = (
   offCanvas,
   onChange,
   maxHeightOffset = "380px",
+  disableMaxHeight = false,
 ) => {
   const settings = useSettings();
   if (mode === true) {
@@ -20,9 +21,11 @@ export const utilTableMode = (
       muiPaginationProps: {
         rowsPerPageOptions: [25, 50, 100, 250, 500],
       },
-      muiTableContainerProps: {
-        sx: { maxHeight: `calc(100vh - ${maxHeightOffset})` },
-      },
+      muiTableContainerProps: disableMaxHeight
+        ? { sx: {} }
+        : {
+            sx: { maxHeight: `calc(100vh - ${maxHeightOffset})` },
+          },
       initialState: {
         columnOrder: [...simpleColumns],
         columnVisibility: { ...columnVisibility },
@@ -56,9 +59,11 @@ export const utilTableMode = (
       muiPaginationProps: {
         rowsPerPageOptions: [25, 50, 100, 250, 500],
       },
-      muiTableContainerProps: {
-        sx: { maxHeight: `calc(100vh - ${maxHeightOffset})` },
-      },
+      muiTableContainerProps: disableMaxHeight
+        ? { sx: {} }
+        : {
+            sx: { maxHeight: `calc(100vh - ${maxHeightOffset})` },
+          },
       displayColumnDefOptions: {
         "mrt-row-actions": {
           visibleInShowHideMenu: false,

@@ -75,6 +75,7 @@ export const CippDataTable = (props) => {
     onChange,
     filters,
     maxHeightOffset = "330px",
+    disableMaxHeight = false,
     defaultSorting = [],
     enableRowSelection = true,
     imageColumn = null,
@@ -234,6 +235,7 @@ export const CippDataTable = (props) => {
       offCanvas,
       onChange,
       maxHeightOffset,
+      disableMaxHeight,
     ),
   );
   //create memoized version of usedColumns, and usedData
@@ -647,7 +649,14 @@ export const CippDataTable = (props) => {
   return (
     <>
       {noCard ? (
-        <Scrollbar>
+        <Scrollbar
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+          }}
+        >
           {!Array.isArray(usedData) && usedData ? (
             <ResourceUnavailable message={incorrectDataMessage} />
           ) : (

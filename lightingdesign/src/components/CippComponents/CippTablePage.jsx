@@ -26,6 +26,7 @@ export const CippTablePage = (props) => {
     sx = { flexGrow: 1, py: 4 },
     containerSx,
     enableRowSelection,
+    disableMaxHeight = false,
     ...other
   } = props;
   const tenant = useSettings().currentTenant;
@@ -40,6 +41,9 @@ export const CippTablePage = (props) => {
             <Card
               sx={{
                 display: "flex",
+                flexDirection: "column",
+                flexGrow: 1,
+                minHeight: 0,
               }}
             >
               <Divider />
@@ -51,6 +55,8 @@ export const CippTablePage = (props) => {
                 noDataButton={noDataButton}
                 actions={actions}
                 simple={false}
+                noCard={true}
+                disableMaxHeight={disableMaxHeight}
                 api={{
                   url: apiUrl,
                   data: { tenantFilter: tenant, ...apiData },

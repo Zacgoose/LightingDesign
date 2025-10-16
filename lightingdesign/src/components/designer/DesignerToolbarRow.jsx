@@ -22,7 +22,8 @@ import {
   Close, 
   Cable,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
+  TextFields
 } from "@mui/icons-material";
 import {
   enablePerformanceLogging,
@@ -196,6 +197,9 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
                 </ToggleButton>
                 <ToggleButton value="connect">
                   <Cable fontSize="small" />
+                </ToggleButton>
+                <ToggleButton value="text">
+                  <TextFields fontSize="small" />
                 </ToggleButton>
               </ToggleButtonGroup>
               {selectedTool === "connect" && (

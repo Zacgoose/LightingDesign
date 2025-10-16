@@ -18,6 +18,7 @@ export const DesignerCanvas = memo(
     onWheel,
     onDragEnd,
     onMouseDown,
+    onMouseUp,
     onTouchStart,
     onContextMenu,
     draggable = true,
@@ -117,6 +118,7 @@ export const DesignerCanvas = memo(
         setLastPanPos(null);
         e.evt.preventDefault();
       }
+      if (onMouseUp) onMouseUp(e);
     };
 
     // Middle mouse move handler
@@ -215,6 +217,7 @@ export const DesignerCanvas = memo(
       prevProps.onWheel === nextProps.onWheel &&
       prevProps.onDragEnd === nextProps.onDragEnd &&
       prevProps.onMouseDown === nextProps.onMouseDown &&
+      prevProps.onMouseUp === nextProps.onMouseUp &&
       prevProps.onTouchStart === nextProps.onTouchStart &&
       prevProps.onContextMenu === nextProps.onContextMenu &&
       prevProps.onMouseMove === nextProps.onMouseMove &&

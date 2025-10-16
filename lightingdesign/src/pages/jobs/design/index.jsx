@@ -26,6 +26,8 @@ import { MeasurementConfirmation } from "/src/components/designer/MeasurementCon
 import { LayerSwitcher } from "/src/components/designer/LayerSwitcher";
 import { SubLayerControls } from "/src/components/designer/SubLayerControls";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
+import { TextLayer } from "/src/components/designer/TextLayer";
+import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
 import { useHistory } from "/src/hooks/useHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
 import { useLayerManager } from "/src/hooks/useLayerManager";
@@ -180,6 +182,16 @@ const Page = () => {
 
   // Connection sequence for connect tool
   const [connectSequence, setConnectSequence] = useState([]);
+
+  // Text boxes state
+  const [textBoxes, setTextBoxes] = useState([]);
+  const [selectedTextId, setSelectedTextId] = useState(null);
+  const [editingTextId, setEditingTextId] = useState(null);
+
+  // Drag-to-select state
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionRect, setSelectionRect] = useState(null);
+  const selectionStartRef = useRef(null);
 
   // UI state
   const [productDrawerVisible, setProductDrawerVisible] = useState(false);
@@ -630,7 +642,15 @@ const Page = () => {
       setSelectedIds(newProducts.map((p) => p.id));
       forceGroupUpdate();
     },
-    onDelete: () => contextMenus.handleDeleteSelected(),
+    onDelete: () => {
+      // Delete selected text box if any
+      if (selectedTextId) {
+        setTextBoxes(textBoxes.filter((t) => t.id !== selectedTextId));
+        setSelectedTextId(null);
+      } else {
+        contextMenus.handleDeleteSelected();
+      }
+    },
     onSelectAll: () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
@@ -646,6 +666,7 @@ const Page = () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
       clearSelection();
+      setSelectedTextId(null);
     },
     onUndo: () => {
       const transformed = applyGroupTransform();
@@ -941,6 +962,11 @@ const Page = () => {
 
   const handleCanvasMouseMove = useCallback(
     (e) => {
+      if (isSelecting) {
+        handleSelectionMove(e);
+        return;
+      }
+
       if (!placementMode && !measureMode) return;
 
       const stage = e.target.getStage();
@@ -953,7 +979,7 @@ const Page = () => {
         setCursorPosition(canvasPos);
       }
     },
-    [placementMode, measureMode, stagePosition, stageScale],
+    [placementMode, measureMode, isSelecting, handleSelectionMove, stagePosition, stageScale],
   );
 
   const handleStopPlacement = useCallback(() => {
@@ -961,11 +987,229 @@ const Page = () => {
     setSelectedTool("select");
   }, []);
 
+  // Text box handlers
+  const handleTextClick = useCallback(
+    (e) => {
+      if (selectedTool === "text" && e.target === e.target.getStage()) {
+        const stage = e.target.getStage();
+        const pointerPosition = stage.getPointerPosition();
+        const canvasPos = {
+          x: (pointerPosition.x - stagePosition.x) / stageScale,
+          y: (pointerPosition.y - stagePosition.y) / stageScale,
+        };
+
+        const newTextBox = {
+          id: `text-${Date.now()}`,
+          x: canvasPos.x,
+          y: canvasPos.y,
+          text: "Double-click to edit",
+          fontSize: 24,
+          fontFamily: "Arial",
+          color: theme.palette.mode === "dark" ? "#ffffff" : "#000000",
+          width: 200,
+        };
+        setTextBoxes([...textBoxes, newTextBox]);
+        setSelectedTextId(newTextBox.id);
+        setSelectedIds([]);
+        setSelectedConnectorId(null);
+      }
+    },
+    [selectedTool, textBoxes, stagePosition, stageScale, theme, setSelectedIds, setSelectedConnectorId]
+  );
+
+  const handleTextDoubleClick = useCallback((e, textId) => {
+    const textBox = textBoxes.find((t) => t.id === textId);
+    if (!textBox) return;
+
+    // Create a temporary textarea for editing
+    const textNode = e.target;
+    const stage = textNode.getStage();
+    const stageBox = stage.container().getBoundingClientRect();
+
+    // Get text position in screen coordinates
+    const areaPosition = {
+      x: stageBox.left + textNode.x() * stageScale + stagePosition.x,
+      y: stageBox.top + textNode.y() * stageScale + stagePosition.y,
+    };
+
+    // Create textarea
+    const textarea = document.createElement("textarea");
+    document.body.appendChild(textarea);
+
+    textarea.value = textBox.text;
+    textarea.style.position = "absolute";
+    textarea.style.top = areaPosition.y + "px";
+    textarea.style.left = areaPosition.x + "px";
+    textarea.style.width = textBox.width * stageScale + "px";
+    textarea.style.fontSize = (textBox.fontSize || 24) * stageScale + "px";
+    textarea.style.fontFamily = textBox.fontFamily || "Arial";
+    textarea.style.border = "2px solid #2196f3";
+    textarea.style.padding = "4px";
+    textarea.style.margin = "0px";
+    textarea.style.overflow = "hidden";
+    textarea.style.background = "white";
+    textarea.style.outline = "none";
+    textarea.style.resize = "none";
+    textarea.style.lineHeight = "1.2";
+    textarea.style.transformOrigin = "left top";
+    textarea.style.color = textBox.color || "#000000";
+    textarea.style.zIndex = "9999";
+
+    textarea.focus();
+    textarea.select();
+
+    const removeTextarea = () => {
+      textarea.parentNode?.removeChild(textarea);
+      window.removeEventListener("click", handleOutsideClick);
+    };
+
+    const handleOutsideClick = (e) => {
+      if (e.target !== textarea) {
+        setTextBoxes((boxes) =>
+          boxes.map((box) =>
+            box.id === textId ? { ...box, text: textarea.value } : box
+          )
+        );
+        removeTextarea();
+      }
+    };
+
+    textarea.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        setTextBoxes((boxes) =>
+          boxes.map((box) =>
+            box.id === textId ? { ...box, text: textarea.value } : box
+          )
+        );
+        removeTextarea();
+      } else if (e.key === "Escape") {
+        removeTextarea();
+      }
+    });
+
+    setTimeout(() => {
+      window.addEventListener("click", handleOutsideClick);
+    }, 0);
+  }, [textBoxes, stageScale, stagePosition]);
+
+  const handleTextChange = useCallback((updatedTextBox) => {
+    setTextBoxes((boxes) =>
+      boxes.map((box) => (box.id === updatedTextBox.id ? updatedTextBox : box))
+    );
+  }, []);
+
+  const handleTextSelect = useCallback((textId) => {
+    setSelectedTextId(textId);
+    setSelectedIds([]);
+    setSelectedConnectorId(null);
+  }, [setSelectedIds, setSelectedConnectorId]);
+
+  // Drag-to-select handlers
+  const handleSelectionStart = useCallback(
+    (e) => {
+      if (selectedTool !== "select" || e.evt.button !== 0) return;
+      
+      const clickedOnEmpty = e.target === e.target.getStage();
+      if (!clickedOnEmpty) return;
+
+      const stage = e.target.getStage();
+      const pointerPosition = stage.getPointerPosition();
+      const canvasPos = {
+        x: (pointerPosition.x - stagePosition.x) / stageScale,
+        y: (pointerPosition.y - stagePosition.y) / stageScale,
+      };
+
+      setIsSelecting(true);
+      selectionStartRef.current = canvasPos;
+      setSelectionRect({
+        x1: canvasPos.x,
+        y1: canvasPos.y,
+        x2: canvasPos.x,
+        y2: canvasPos.y,
+      });
+    },
+    [selectedTool, stagePosition, stageScale]
+  );
+
+  const handleSelectionMove = useCallback(
+    (e) => {
+      if (!isSelecting) return;
+
+      const stage = e.target.getStage();
+      const pointerPosition = stage.getPointerPosition();
+      const canvasPos = {
+        x: (pointerPosition.x - stagePosition.x) / stageScale,
+        y: (pointerPosition.y - stagePosition.y) / stageScale,
+      };
+
+      setSelectionRect({
+        x1: selectionStartRef.current.x,
+        y1: selectionStartRef.current.y,
+        x2: canvasPos.x,
+        y2: canvasPos.y,
+      });
+    },
+    [isSelecting, stagePosition, stageScale]
+  );
+
+  const handleSelectionEnd = useCallback(() => {
+    if (!isSelecting) return;
+
+    if (selectionRect) {
+      // Calculate selection bounds
+      const x1 = Math.min(selectionRect.x1, selectionRect.x2);
+      const y1 = Math.min(selectionRect.y1, selectionRect.y2);
+      const x2 = Math.max(selectionRect.x1, selectionRect.x2);
+      const y2 = Math.max(selectionRect.y1, selectionRect.y2);
+
+      // Find products within or partially overlapping the selection rectangle
+      const selectedProducts = products.filter((product) => {
+        const productType = product.product_type?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
+        
+        // Calculate product bounds using its real-world size
+        const productScaleFactor = product.scaleFactor || scaleFactor;
+        const pixelWidth = ((config.realWorldWidth || config.realWorldSize) / productScaleFactor) * (product.scaleX || 1);
+        const pixelHeight = ((config.realWorldHeight || config.realWorldSize) / productScaleFactor) * (product.scaleY || 1);
+        
+        // Calculate product bounding box (considering it's centered)
+        const productX1 = product.x - pixelWidth / 2;
+        const productY1 = product.y - pixelHeight / 2;
+        const productX2 = product.x + pixelWidth / 2;
+        const productY2 = product.y + pixelHeight / 2;
+
+        // Check if rectangles overlap (partial or full)
+        return !(productX2 < x1 || productX1 > x2 || productY2 < y1 || productY1 > y2);
+      });
+
+      if (selectedProducts.length > 0) {
+        setSelectedIds(selectedProducts.map((p) => p.id));
+        setGroupKey((k) => k + 1);
+      }
+    }
+
+    setIsSelecting(false);
+    setSelectionRect(null);
+    selectionStartRef.current = null;
+  }, [isSelecting, selectionRect, products, scaleFactor, setSelectedIds, setGroupKey]);
+
   const checkDeselect = useCallback(
     (e) => {
       if (e.evt.button !== 0) return;
 
       if (selectedTool === "pan") return;
+
+      // Handle text tool
+      if (selectedTool === "text") {
+        handleTextClick(e);
+        return;
+      }
+
+      // Handle drag-to-select
+      if (selectedTool === "select") {
+        handleSelectionStart(e);
+        return;
+      }
 
       if (placementMode) {
         handleCanvasClick(e);
@@ -977,6 +1221,7 @@ const Page = () => {
         const transformed = applyGroupTransform();
         if (transformed) updateHistory(transformed);
         clearSelection();
+        setSelectedTextId(null);
       }
     },
     [
@@ -986,6 +1231,8 @@ const Page = () => {
       updateHistory,
       clearSelection,
       handleCanvasClick,
+      handleTextClick,
+      handleSelectionStart,
     ],
   );
 
@@ -1068,6 +1315,7 @@ const Page = () => {
                   applyGroupTransform();
                   setSelectedIds([]);
                   setSelectedConnectorId(null);
+                  setSelectedTextId(null);
                   setGroupKey((k) => k + 1);
                   setSelectedTool(tool);
                 },
@@ -1132,6 +1380,7 @@ const Page = () => {
                     onDragEnd={handleStageDragEnd}
                     draggable={selectedTool === "pan" && !placementMode}
                     onMouseDown={measureMode ? handleCanvasMeasureClick : checkDeselect}
+                    onMouseUp={handleSelectionEnd}
                     onTouchStart={checkDeselect}
                     onMouseMove={handleCanvasMouseMove}
                     onContextMenu={contextMenus.handleStageContextMenu}
@@ -1223,6 +1472,19 @@ const Page = () => {
                         });
                       }}
                     />
+
+                    {/* Text boxes layer */}
+                    <TextLayer
+                      textBoxes={textBoxes}
+                      selectedTextId={selectedTextId}
+                      onTextSelect={handleTextSelect}
+                      onTextChange={handleTextChange}
+                      onTextDoubleClick={handleTextDoubleClick}
+                      draggable={selectedTool === "select" || selectedTool === "text"}
+                    />
+
+                    {/* Selection rectangle for drag-to-select */}
+                    <SelectionRectangle selectionRect={selectionRect} />
                   </DesignerCanvas>
 
                   {/* Inline measurement confirmation */}

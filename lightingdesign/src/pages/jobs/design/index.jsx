@@ -1364,9 +1364,8 @@ const Page = () => {
           // Measure the text
           const metrics = ctx.measureText(newText);
           // Add padding to prevent text cutoff (similar to the previous padding: 5)
-          const padding = 10;
-          const width = metrics.width + padding;
-          const height = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + padding;
+          const width = metrics.width;
+          const height = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
           
           // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
           setTextBoxes((boxes) =>

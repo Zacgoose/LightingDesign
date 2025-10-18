@@ -74,11 +74,17 @@ export const ProductsLayer = memo(
     const isPanMode = selectedTool === "pan";
     const isConnectMode = selectedTool === "connect";
     const canInteract = !isPlacementMode && !isPanMode && !isConnectMode;
+    
+    // Check if selection includes text boxes (they have 'text-' prefix)
+    const hasTextBoxesInSelection = selectedIds.some(id => id.startsWith('text-'));
+    // Extract only product IDs from selectedIds
+    const productOnlyIds = selectedIds.filter(id => !id.startsWith('text-'));
+    
     return (
       <>
         {/* Unselected products - individually draggable */}
         {products
-          .filter((p) => !selectedIds.includes(p.id))
+          .filter((p) => !productOnlyIds.includes(p.id))
           .map((product) => {
             const productType = product.product_type?.toLowerCase() || "default";
             const config = productTypesConfig[productType] || productTypesConfig.default;
@@ -112,8 +118,8 @@ export const ProductsLayer = memo(
             );
           })}
 
-        {/* Selected products in a draggable group */}
-        {selectedIds.length > 0 && (
+        {/* Selected products in a draggable group - only if no text boxes in selection */}
+        {productOnlyIds.length > 0 && !hasTextBoxesInSelection && (
           <Group
             key={groupKey}
             ref={selectionGroupRef}
@@ -129,16 +135,16 @@ export const ProductsLayer = memo(
             {(selectionSnapshot.products?.length > 0
               ? selectionSnapshot.products
               : products
-                  .filter((p) => selectedIds.includes(p.id))
+                  .filter((p) => productOnlyIds.includes(p.id))
                   .map((p) => {
                     const centerX =
                       products
-                        .filter((prod) => selectedIds.includes(prod.id))
-                        .reduce((sum, prod) => sum + prod.x, 0) / selectedIds.length;
+                        .filter((prod) => productOnlyIds.includes(prod.id))
+                        .reduce((sum, prod) => sum + prod.x, 0) / productOnlyIds.length;
                     const centerY =
                       products
-                        .filter((prod) => selectedIds.includes(prod.id))
-                        .reduce((sum, prod) => sum + prod.y, 0) / selectedIds.length;
+                        .filter((prod) => productOnlyIds.includes(prod.id))
+                        .reduce((sum, prod) => sum + prod.y, 0) / productOnlyIds.length;
                     return {
                       ...p,
                       relativeX: p.x - centerX,
@@ -176,8 +182,8 @@ export const ProductsLayer = memo(
           </Group>
         )}
 
-        {/* Transformer for selected group */}
-        {selectedTool === "select" && !isPlacementMode && (
+        {/* Transformer for selected group - only if no text boxes in selection */}
+        {selectedTool === "select" && !isPlacementMode && !hasTextBoxesInSelection && (
           <Transformer
             ref={transformerRef}
             rotationSnaps={

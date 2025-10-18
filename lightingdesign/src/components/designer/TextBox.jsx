@@ -5,6 +5,7 @@ export const TextBox = memo(
   ({
     textBox,
     isSelected,
+    isInGroup = false,
     onSelect,
     onChange,
     onDragStart,
@@ -17,12 +18,13 @@ export const TextBox = memo(
     const trRef = useRef();
 
     useEffect(() => {
-      if (isSelected && trRef.current && textRef.current) {
+      // Only attach transformer if selected and NOT in a group selection
+      if (isSelected && !isInGroup && trRef.current && textRef.current) {
         // Attach transformer to text node
         trRef.current.nodes([textRef.current]);
         trRef.current.getLayer()?.batchDraw();
       }
-    }, [isSelected]);
+    }, [isSelected, isInGroup]);
 
     // Parse font style
     const isBold = textBox.fontStyle?.includes("bold") || false;
@@ -89,7 +91,7 @@ export const TextBox = memo(
           }}
           onContextMenu={onContextMenu}
         />
-        {isSelected && (
+        {isSelected && !isInGroup && (
           <Transformer
             ref={trRef}
             boundBoxFunc={(oldBox, newBox) => {

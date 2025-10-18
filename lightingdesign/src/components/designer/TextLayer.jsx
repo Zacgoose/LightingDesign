@@ -5,6 +5,7 @@ export const TextLayer = memo(
   ({
     textBoxes,
     selectedTextId,
+    selectedIds = [],
     onTextSelect,
     onTextChange,
     onTextDragStart,
@@ -13,6 +14,9 @@ export const TextLayer = memo(
     onTextContextMenu,
     draggable = true,
   }) => {
+    // Check if text is in a multi-selection (mixed with products or multiple texts)
+    const isInGroup = selectedIds.length > 1;
+    
     return (
       <>
         {textBoxes.map((textBox) => (
@@ -20,6 +24,7 @@ export const TextLayer = memo(
             key={textBox.id}
             textBox={textBox}
             isSelected={textBox.id === selectedTextId}
+            isInGroup={isInGroup}
             onSelect={(e) => {
               e.cancelBubble = true;
               onTextSelect(textBox.id);

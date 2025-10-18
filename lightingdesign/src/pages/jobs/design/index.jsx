@@ -28,6 +28,7 @@ import { LayerSwitcher } from "/src/components/designer/LayerSwitcher";
 import { SubLayerControls } from "/src/components/designer/SubLayerControls";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
 import { TextLayer } from "/src/components/designer/TextLayer";
+import { UnifiedSelectionGroup } from "/src/components/designer/UnifiedSelectionGroup";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
 import { TextEntryDialog } from "/src/components/designer/TextEntryDialog";
 import { useHistory } from "/src/hooks/useHistory";
@@ -671,6 +672,7 @@ const Page = () => {
         id: crypto.randomUUID(),
         x: t.x + 20,
         y: t.y + 20,
+        sublayerId: activeLayer?.defaultSublayerId || null,
       }));
 
       updateHistory([...products, ...newProducts]);
@@ -1110,6 +1112,7 @@ const Page = () => {
           textDecoration: "", // Can be "", "underline", "line-through", or "underline line-through"
           color: theme.palette.mode === "dark" ? "#ffffff" : "#000000",
           width: 200,
+          sublayerId: activeLayer?.defaultSublayerId || null,
         };
         
         // Add the text box and open the dialog immediately
@@ -1201,10 +1204,12 @@ const Page = () => {
   }, []);
 
   const handleTextSelect = useCallback((textId) => {
+    // Clear product selections and set only this text
     setSelectedTextId(textId);
-    setSelectedIds([]);
+    setSelectedIds([`text-${textId}`]);
     setSelectedConnectorId(null);
-  }, [setSelectedIds, setSelectedConnectorId]);
+    forceGroupUpdate();
+  }, [setSelectedIds, setSelectedConnectorId, forceGroupUpdate]);
 
   const handleTextContextMenu = useCallback((e, textId) => {
     e.evt.preventDefault();
@@ -1757,6 +1762,27 @@ const Page = () => {
                       onGroupTransformEnd={handleGroupTransformEnd}
                     />
 
+                    {/* Unified selection group for mixed product/text selections */}
+                    {selectedIds.some(id => id.startsWith('text-')) && (
+                      <UnifiedSelectionGroup
+                        selectedIds={selectedIds}
+                        products={filterProductsBySublayers(products, activeLayerId)}
+                        textBoxes={textBoxes}
+                        selectionSnapshot={selectionSnapshot}
+                        selectionGroupRef={selectionGroupRef}
+                        transformerRef={transformerRef}
+                        rotationSnaps={rotationSnaps}
+                        theme={theme}
+                        groupKey={groupKey}
+                        selectedTool={selectedTool}
+                        canInteract={selectedTool === "select"}
+                        isConnectMode={selectedTool === "connect"}
+                        onProductClick={handleProductClick}
+                        onContextMenu={contextMenus.handleContextMenu}
+                        onGroupTransformEnd={handleGroupTransformEnd}
+                      />
+                    )}
+
                     {/* Ghost product preview in placement mode */}
                     {placementMode && (
                       <ProductShape
@@ -1808,6 +1834,7 @@ const Page = () => {
                     <TextLayer
                       textBoxes={textBoxes}
                       selectedTextId={selectedTextId}
+                      selectedIds={selectedIds}
                       onTextSelect={handleTextSelect}
                       onTextChange={handleTextChange}
                       onTextDoubleClick={handleTextDoubleClick}

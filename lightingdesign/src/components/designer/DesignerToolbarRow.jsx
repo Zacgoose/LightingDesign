@@ -29,12 +29,17 @@ import {
   disablePerformanceLogging,
   isPerformanceLoggingEnabled,
 } from "/src/utils/performanceLogger";
+import { usePermissions } from "/src/hooks/use-permissions";
 
 export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showCollapseButton, setShowCollapseButton] = useState(false);
   const [perfLogging, setPerfLogging] = useState(isPerformanceLoggingEnabled());
   const containerRef = useRef(null);
+  
+  // Check if user has admin permissions
+  const { checkPermissions } = usePermissions();
+  const hasAdminPermission = checkPermissions(["LightingDesigner.Admin.*"]);
 
   useEffect(() => {
     const checkIfWrapped = () => {
@@ -234,15 +239,17 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
           <Button variant="outlined" size="small" onClick={onResetView}>
             Reset
           </Button>
-          <Button
-            variant={perfLogging ? "contained" : "outlined"}
-            size="small"
-            onClick={handleTogglePerfLogging}
-            color={perfLogging ? "warning" : "inherit"}
-            title="Toggle Performance Logging (check console)"
-          >
-            Perf Log
-          </Button>
+          {hasAdminPermission && (
+            <Button
+              variant={perfLogging ? "contained" : "outlined"}
+              size="small"
+              onClick={handleTogglePerfLogging}
+              color={perfLogging ? "warning" : "inherit"}
+              title="Toggle Performance Logging (check console)"
+            >
+              Perf Log
+            </Button>
+          )}
         </Box>
         {showCollapseButton && (
           <IconButton

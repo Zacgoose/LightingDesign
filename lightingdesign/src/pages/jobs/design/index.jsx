@@ -657,16 +657,35 @@ const Page = () => {
       .filter(id => id.startsWith('text-'))
       .map(id => id.substring(5)); // Remove 'text-' prefix
 
+    // Helper function for floating-point comparison with tolerance
+    const isClose = (a, b, tolerance = 0.0001) => Math.abs(a - b) < tolerance;
+
     // Check if group has been transformed
+    // Use tolerance for floating-point comparisons to avoid precision issues
     const hasTransform = !(
-      groupX === selectionSnapshot.centerX &&
-      groupY === selectionSnapshot.centerY &&
-      groupScaleX === 1 &&
-      groupScaleY === 1 &&
-      groupRotation === (selectionSnapshot.rotation || 0)
+      isClose(groupX, selectionSnapshot.centerX) &&
+      isClose(groupY, selectionSnapshot.centerY) &&
+      isClose(groupScaleX, 1) &&
+      isClose(groupScaleY, 1) &&
+      isClose(groupRotation, selectionSnapshot.rotation || 0)
     );
 
+    console.log('[handleUnifiedGroupTransformEnd]', {
+      hasTransform,
+      groupX,
+      groupY,
+      centerX: selectionSnapshot.centerX,
+      centerY: selectionSnapshot.centerY,
+      groupScaleX,
+      groupScaleY,
+      groupRotation,
+      snapshotRotation: selectionSnapshot.rotation || 0,
+      productCount: productIds.length,
+      textCount: textIds.length,
+    });
+
     if (!hasTransform) {
+      console.log('[handleUnifiedGroupTransformEnd] No transform, skipping update');
       setGroupKey((k) => k + 1);
       return;
     }
@@ -701,6 +720,14 @@ const Page = () => {
 
         const newX = groupX + relX;
         const newY = groupY + relY;
+
+        console.log(`[handleUnifiedGroupTransformEnd] Transforming product ${product.id}`, {
+          originalPos: { x: product.x, y: product.y },
+          newPos: { x: newX, y: newY },
+          delta: { x: newX - product.x, y: newY - product.y },
+          relativePos: { x: relX, y: relY },
+          snapshotRelative: { x: original.relativeX, y: original.relativeY },
+        });
 
         return {
           ...product,
@@ -745,6 +772,14 @@ const Page = () => {
 
         const newX = groupX + relX;
         const newY = groupY + relY;
+
+        console.log(`[handleUnifiedGroupTransformEnd] Transforming text box ${textBox.id}`, {
+          originalPos: { x: textBox.x, y: textBox.y },
+          newPos: { x: newX, y: newY },
+          delta: { x: newX - textBox.x, y: newY - textBox.y },
+          relativePos: { x: relX, y: relY },
+          snapshotRelative: { x: original.relativeX, y: original.relativeY },
+        });
 
         // Detect if this is a corner resize (proportional) or side/top resize
         const scaleDiff = Math.abs(groupScaleX - groupScaleY);

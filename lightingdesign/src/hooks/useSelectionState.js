@@ -73,6 +73,15 @@ export const useSelectionState = (products, textBoxes = []) => {
     const centerX = totalCount > 0 ? sumX / totalCount : 0;
     const centerY = totalCount > 0 ? sumY / totalCount : 0;
 
+    console.log('[selectionSnapshot] Creating new snapshot', {
+      selectedIds,
+      productCount: productSnapshot.length,
+      textCount: textSnapshot.length,
+      centerX,
+      centerY,
+      avgRotation,
+    });
+
     return {
       centerX,
       centerY,
@@ -113,6 +122,15 @@ export const useSelectionState = (products, textBoxes = []) => {
     if (selectedIds.length && selectionGroupRef.current && transformerRef.current) {
       // Get current or initial rotation
       const currentRotation = selectionSnapshot.rotation || 0;
+
+      console.log('[useEffect transformer] Attaching transformer', {
+        selectedCount: selectedIds.length,
+        currentRotation,
+        groupX: selectionGroupRef.current.x(),
+        groupY: selectionGroupRef.current.y(),
+        centerX: selectionSnapshot.centerX,
+        centerY: selectionSnapshot.centerY,
+      });
 
       // Set the group's rotation first
       selectionGroupRef.current.rotation(currentRotation);
@@ -155,17 +173,41 @@ export const useSelectionState = (products, textBoxes = []) => {
     const groupScaleY = group.scaleY();
     const groupRotation = group.rotation();
 
+    // Helper function for floating-point comparison with tolerance
+    const isClose = (a, b, tolerance = 0.0001) => Math.abs(a - b) < tolerance;
+
     // Check if the group has actually been transformed
     // If all values are at their defaults, skip the update
+    // Use tolerance for floating-point comparisons to avoid precision issues
     if (
-      groupX === selectionSnapshot.centerX &&
-      groupY === selectionSnapshot.centerY &&
-      groupScaleX === 1 &&
-      groupScaleY === 1 &&
-      groupRotation === (selectionSnapshot.rotation || 0)
+      isClose(groupX, selectionSnapshot.centerX) &&
+      isClose(groupY, selectionSnapshot.centerY) &&
+      isClose(groupScaleX, 1) &&
+      isClose(groupScaleY, 1) &&
+      isClose(groupRotation, selectionSnapshot.rotation || 0)
     ) {
+      console.log('[applyGroupTransform] No transform detected, skipping update', {
+        groupX,
+        groupY,
+        centerX: selectionSnapshot.centerX,
+        centerY: selectionSnapshot.centerY,
+        groupRotation,
+        snapshotRotation: selectionSnapshot.rotation || 0,
+      });
       return null;
     }
+
+    console.log('[applyGroupTransform] Transform detected, applying changes', {
+      groupX,
+      groupY,
+      centerX: selectionSnapshot.centerX,
+      centerY: selectionSnapshot.centerY,
+      groupScaleX,
+      groupScaleY,
+      groupRotation,
+      snapshotRotation: selectionSnapshot.rotation || 0,
+      selectedCount: selectedIds.length,
+    });
 
     const { products: snapshotProducts } = selectionSnapshot;
 

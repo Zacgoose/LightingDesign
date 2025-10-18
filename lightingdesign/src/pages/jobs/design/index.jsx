@@ -1108,29 +1108,6 @@ const Page = () => {
     [selectedTool, stagePosition, stageScale]
   );
 
-  const handleStageMouseUp = useCallback(
-    (e) => {
-      // First handle selection end
-      handleSelectionEnd();
-
-      // If we're in select mode and didn't drag, clear selection
-      if (selectedTool === "select" && !hasDraggedRef.current && selectionStartRef.current) {
-        const clickedOnEmpty = e.target === e.target.getStage();
-        if (clickedOnEmpty) {
-          const transformed = applyGroupTransform();
-          if (transformed) updateHistory(transformed);
-          clearSelection();
-          setSelectedTextId(null);
-        }
-      }
-
-      // Clean up refs
-      selectionStartRef.current = null;
-      hasDraggedRef.current = false;
-    },
-    [selectedTool, handleSelectionEnd, applyGroupTransform, updateHistory, clearSelection]
-  );
-
   const handleSelectionEnd = useCallback(() => {
     // If we didn't actually drag (just clicked), clear selection
     if (!hasDraggedRef.current) {
@@ -1202,6 +1179,29 @@ const Page = () => {
     selectionStartRef.current = null;
     hasDraggedRef.current = false;
   }, [isSelecting, selectionRect, products, textBoxes, scaleFactor, setSelectedIds, setGroupKey]);
+
+  const handleStageMouseUp = useCallback(
+    (e) => {
+      // First handle selection end
+      handleSelectionEnd();
+
+      // If we're in select mode and didn't drag, clear selection
+      if (selectedTool === "select" && !hasDraggedRef.current && selectionStartRef.current) {
+        const clickedOnEmpty = e.target === e.target.getStage();
+        if (clickedOnEmpty) {
+          const transformed = applyGroupTransform();
+          if (transformed) updateHistory(transformed);
+          clearSelection();
+          setSelectedTextId(null);
+        }
+      }
+
+      // Clean up refs
+      selectionStartRef.current = null;
+      hasDraggedRef.current = false;
+    },
+    [selectedTool, handleSelectionEnd, applyGroupTransform, updateHistory, clearSelection]
+  );
 
   const checkDeselect = useCallback(
     (e) => {

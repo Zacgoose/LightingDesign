@@ -605,6 +605,7 @@ const Page = () => {
     setIsDragging,
     setSelectedIds,
     setSelectedConnectorId,
+    setSelectedTextId,
     setGroupKey,
     setConnectors,
     setConnectSequence,

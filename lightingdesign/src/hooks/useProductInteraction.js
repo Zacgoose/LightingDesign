@@ -14,6 +14,7 @@ export const useProductInteraction = ({
   setIsDragging,
   setSelectedIds,
   setSelectedConnectorId,
+  setSelectedTextId,
   setGroupKey,
   setConnectors,
   setConnectSequence,
@@ -25,6 +26,7 @@ export const useProductInteraction = ({
     (e, productId) => {
       if (isDragging) return;
       setSelectedConnectorId(null);
+      setSelectedTextId(null); // Clear text selection when clicking on a product
 
       // Connect mode logic
       if (selectedTool === "connect") {
@@ -93,9 +95,11 @@ export const useProductInteraction = ({
       updateHistory,
       setSelectedIds,
       setSelectedConnectorId,
+      setSelectedTextId,
       setGroupKey,
       setConnectors,
       setConnectSequence,
+      activeLayer,
     ],
   );
 

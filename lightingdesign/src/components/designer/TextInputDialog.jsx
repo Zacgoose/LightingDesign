@@ -32,6 +32,10 @@ export const TextInputDialog = ({ open, onClose, onConfirm, title, label, defaul
       onConfirm(data.value.trim());
       onClose();
       form.reset({ value: "" });
+    } else {
+      // If empty, just close without confirming
+      onClose();
+      form.reset({ value: "" });
     }
   };
 
@@ -46,7 +50,7 @@ export const TextInputDialog = ({ open, onClose, onConfirm, title, label, defaul
         <DialogTitle>{title}</DialogTitle>
         <DialogContent>
           <TextField
-            {...form.register("value", { required: true })}
+            {...form.register("value")}
             fullWidth
             label={label}
             margin="normal"

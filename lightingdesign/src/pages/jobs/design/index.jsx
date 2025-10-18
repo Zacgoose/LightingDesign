@@ -190,6 +190,7 @@ const Page = () => {
   const [selectedTextId, setSelectedTextId] = useState(null);
   const [textDialogOpen, setTextDialogOpen] = useState(false);
   const [textDialogValue, setTextDialogValue] = useState("");
+  const [textDialogFormatting, setTextDialogFormatting] = useState({});
   const [pendingTextBoxId, setPendingTextBoxId] = useState(null);
 
   // Drag-to-select state
@@ -245,6 +246,14 @@ const Page = () => {
     if (isLoadingLayerData.current) return;
     updateLayer(activeLayerIdRef.current, { connectors });
   }, [connectors, updateLayer]);
+
+  // Keep text boxes in sync with active layer
+  // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
+  useEffect(() => {
+    if (isLoadingLayerData.current) return;
+    updateLayer(activeLayerIdRef.current, { textBoxes });
+  }, [textBoxes, updateLayer]);
 
   // Keep background image in sync with active layer
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
@@ -525,6 +534,7 @@ const Page = () => {
       // Load the new layer's data
       updateHistory(activeLayer.products || []);
       setConnectors(activeLayer.connectors || []);
+      setTextBoxes(activeLayer.textBoxes || []);
       setBackgroundImage(activeLayer.backgroundImage || null);
       setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
       setScaleFactor(activeLayer.scaleFactor || 100);
@@ -621,9 +631,15 @@ const Page = () => {
       const selectedConnectors = connectors.filter(
         (c) => selectedIds.includes(c.from) && selectedIds.includes(c.to),
       );
+      // Include selected text boxes in copy (extract text IDs from text- prefixed IDs)
+      const textIds = selectedIds
+        .filter(id => id.startsWith('text-'))
+        .map(id => id.substring(5)); // Remove 'text-' prefix
+      const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
       clipboard.current = {
         products: selectedProducts.map((p) => ({ ...p })),
         connectors: selectedConnectors.map((c) => ({ ...c })),
+        textBoxes: selectedTextBoxes.map((t) => ({ ...t })),
       };
     },
     onPaste: () => {
@@ -649,15 +665,40 @@ const Page = () => {
         to: idMap[c.to],
       }));
 
+      // Paste text boxes with offset
+      const newTextBoxes = (clipboard.current.textBoxes || []).map((t, index) => ({
+        ...t,
+        id: crypto.randomUUID(),
+        x: t.x + 20,
+        y: t.y + 20,
+      }));
+
       updateHistory([...products, ...newProducts]);
       setConnectors([...connectors, ...newConnectors]);
-      setSelectedIds(newProducts.map((p) => p.id));
+      setTextBoxes([...textBoxes, ...newTextBoxes]);
+      
+      // Select pasted products and text boxes
+      const allNewIds = [
+        ...newProducts.map((p) => p.id),
+        ...newTextBoxes.map((t) => `text-${t.id}`)
+      ];
+      setSelectedIds(allNewIds);
+      
+      // Set selectedTextId for single text box operations
+      if (newTextBoxes.length === 1 && newProducts.length === 0) {
+        setSelectedTextId(newTextBoxes[0].id);
+      } else if (newTextBoxes.length === 0) {
+        setSelectedTextId(null);
+      }
       forceGroupUpdate();
     },
     onDelete: () => {
-      // Delete selected text box if any
-      if (selectedTextId) {
-        setTextBoxes(textBoxes.filter((t) => t.id !== selectedTextId));
+      // Delete selected text boxes (from text- prefixed IDs in selectedIds)
+      const textIds = selectedIds
+        .filter(id => id.startsWith('text-'))
+        .map(id => id.substring(5));
+      if (textIds.length > 0) {
+        setTextBoxes(textBoxes.filter((t) => !textIds.includes(t.id)));
         setSelectedTextId(null);
       }
       // Also delete selected products/connectors
@@ -668,7 +709,12 @@ const Page = () => {
     onSelectAll: () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
-      setSelectedIds(products.map((p) => p.id));
+      // Select all products and text boxes
+      const allIds = [
+        ...products.map((p) => p.id),
+        ...textBoxes.map((t) => `text-${t.id}`)
+      ];
+      setSelectedIds(allIds);
       forceGroupUpdate();
     },
     onEscape: () => {
@@ -1058,7 +1104,7 @@ const Page = () => {
           x: canvasPos.x,
           y: canvasPos.y,
           text: "",
-          fontSize: 24,
+          fontSize: 32,
           fontFamily: "Arial",
           fontStyle: "normal", // Can be "normal", "bold", "italic", "bold italic"
           textDecoration: "", // Can be "", "underline", "line-through", or "underline line-through"
@@ -1071,6 +1117,13 @@ const Page = () => {
         setPendingTextBoxId(newTextBox.id);
         setSelectedTextId(newTextBox.id);
         setTextDialogValue("");
+        setTextDialogFormatting({
+          fontSize: newTextBox.fontSize,
+          fontFamily: newTextBox.fontFamily,
+          fontStyle: newTextBox.fontStyle,
+          textDecoration: newTextBox.textDecoration,
+          color: newTextBox.color,
+        });
         setTextDialogOpen(true);
         setSelectedIds([]);
         setSelectedConnectorId(null);
@@ -1084,16 +1137,43 @@ const Page = () => {
     if (textBox) {
       setPendingTextBoxId(textId);
       setTextDialogValue(textBox.text);
+      setTextDialogFormatting({
+        fontSize: textBox.fontSize || 24,
+        fontFamily: textBox.fontFamily || "Arial",
+        fontStyle: textBox.fontStyle || "normal",
+        textDecoration: textBox.textDecoration || "",
+        color: textBox.color || "#000000",
+      });
       setTextDialogOpen(true);
     }
   }, [textBoxes]);
 
   const handleTextDialogConfirm = useCallback(
-    (newText) => {
+    (formattingData) => {
       if (pendingTextBoxId) {
-        setTextBoxes((boxes) =>
-          boxes.map((box) => (box.id === pendingTextBoxId ? { ...box, text: newText } : box))
-        );
+        const newText = formattingData.text || "";
+        if (newText.trim()) {
+          // User confirmed with text - update the text box with text and formatting
+          setTextBoxes((boxes) =>
+            boxes.map((box) => 
+              box.id === pendingTextBoxId 
+                ? { 
+                    ...box, 
+                    text: newText,
+                    fontSize: formattingData.fontSize,
+                    fontFamily: formattingData.fontFamily,
+                    fontStyle: formattingData.fontStyle,
+                    textDecoration: formattingData.textDecoration,
+                    color: formattingData.color,
+                  } 
+                : box
+            )
+          );
+        } else {
+          // User confirmed with empty text - remove the text box
+          setTextBoxes((boxes) => boxes.filter((box) => box.id !== pendingTextBoxId));
+          setSelectedTextId(null);
+        }
         setPendingTextBoxId(null);
       }
       setTextDialogOpen(false);
@@ -1103,7 +1183,7 @@ const Page = () => {
 
   const handleTextDialogClose = useCallback(() => {
     setTextDialogOpen(false);
-    // If we were creating a new text box and it's still empty, remove it
+    // If we were creating a new text box and dialog was cancelled, remove it
     if (pendingTextBoxId) {
       const textBox = textBoxes.find((t) => t.id === pendingTextBoxId);
       if (textBox && !textBox.text) {
@@ -1134,13 +1214,11 @@ const Page = () => {
     setSelectedIds([]);
     setSelectedConnectorId(null);
     
-    const stage = e.target.getStage();
-    const pointerPosition = stage.getPointerPosition();
-    
+    // Use screen coordinates (clientX/Y) like product context menu
     contextMenus.setContextMenu({
       type: "text",
-      x: pointerPosition.x,
-      y: pointerPosition.y,
+      x: e.evt.clientX,
+      y: e.evt.clientY,
       textId: textId,
     });
   }, [setSelectedIds, setSelectedConnectorId, contextMenus]);
@@ -1325,11 +1403,16 @@ const Page = () => {
 
     // Select both products and text boxes (support mixed selection)
     if (selectedProducts.length > 0 || selectedTexts.length > 0) {
-      setSelectedIds(selectedProducts.map((p) => p.id));
-      // For now, select first text if any (single text selection)
-      if (selectedTexts.length > 0) {
+      // Combine product IDs and text box IDs (with text- prefix)
+      const allSelectedIds = [
+        ...selectedProducts.map((p) => p.id),
+        ...selectedTexts.map((t) => `text-${t.id}`)
+      ];
+      setSelectedIds(allSelectedIds);
+      // Also set selectedTextId for single text box operations
+      if (selectedTexts.length === 1) {
         setSelectedTextId(selectedTexts[0].id);
-      } else {
+      } else if (selectedTexts.length === 0) {
         setSelectedTextId(null);
       }
       setGroupKey((k) => k + 1);
@@ -1451,6 +1534,8 @@ const Page = () => {
           x,
           y,
           rotation: 0,
+          scaleX: 1,
+          scaleY: 1,
           color: shapeConfig.fill || "#666666",
           stroke: shapeConfig.stroke || "#424242",
           strokeWidth: shapeConfig.strokeWidth || 2,
@@ -1458,6 +1543,8 @@ const Page = () => {
           name: `Custom ${shapeName.charAt(0).toUpperCase() + shapeName.slice(1)}`,
           product_type_unigram: shapeName,
           isCustomObject: true,
+          // Add scaleFactor to ensure proper rendering and resizing
+          scaleFactor: scaleFactor || 100,
           ...sizeAttrs,
         };
 
@@ -1469,7 +1556,7 @@ const Page = () => {
       }
       contextMenus.handleCloseContextMenu();
     },
-    [contextMenus, products, applyGroupTransform, updateHistory, setSelectedIds, setGroupKey],
+    [contextMenus, products, applyGroupTransform, updateHistory, setSelectedIds, setGroupKey, scaleFactor],
   );
 
   const handleExport = useCallback(() => {
@@ -1739,6 +1826,7 @@ const Page = () => {
                     onConfirm={handleTextDialogConfirm}
                     title="Enter Text"
                     defaultValue={textDialogValue}
+                    defaultFormatting={textDialogFormatting}
                   />
 
                   {/* Inline measurement confirmation */}

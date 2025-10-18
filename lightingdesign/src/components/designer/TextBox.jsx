@@ -66,7 +66,13 @@ export const TextBox = memo(
             const scaleX = node.scaleX();
             const scaleY = node.scaleY();
 
-            // Reset scale and adjust width instead
+            // Calculate new font size based on vertical scale
+            // Use the average of scaleX and scaleY for uniform scaling
+            const averageScale = (scaleX + scaleY) / 2;
+            const currentFontSize = textBox.fontSize || 24;
+            const newFontSize = Math.max(8, Math.round(currentFontSize * averageScale));
+
+            // Reset scale and adjust width and font size
             node.scaleX(1);
             node.scaleY(1);
 
@@ -75,6 +81,7 @@ export const TextBox = memo(
               x: node.x(),
               y: node.y(),
               width: Math.max(5, node.width() * scaleX),
+              fontSize: newFontSize,
               rotation: node.rotation(),
               scaleX: 1,
               scaleY: 1,

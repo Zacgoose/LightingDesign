@@ -81,6 +81,8 @@ export const useDesignLoader = ({
         products: layer.products.map(stripProductMetadata),
         // Connectors are already in the correct format, just ensure they're included
         connectors: layer.connectors || [],
+        // Include text boxes
+        textBoxes: layer.textBoxes || [],
       }));
     },
     [stripProductMetadata],
@@ -168,6 +170,7 @@ export const useDesignLoader = ({
               enrichProduct(savedProduct, productsData.data),
             ),
             connectors: layer.connectors || [],
+            textBoxes: layer.textBoxes || [],
           }));
 
           console.log('=== LOAD: Enriched layers ===');

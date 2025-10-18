@@ -75,13 +75,16 @@ export const useKeyboardShortcuts = ({
       }
 
       // Undo
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
         onUndoRef.current();
       }
 
-      // Redo
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "z") {
+      // Redo (Ctrl+Shift+Z or Ctrl+Y)
+      if (
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z") ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y" && !e.shiftKey)
+      ) {
         e.preventDefault();
         onRedoRef.current();
       }

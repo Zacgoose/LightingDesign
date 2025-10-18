@@ -271,10 +271,7 @@ export const ProductsLayer = memo(
                   onTap={(e) => {
                     e.cancelBubble = true;
                   }}
-                  onMouseDown={(e) => {
-                    e.cancelBubble = true;
-                    // Prevent drag-to-select from starting when clicking on text
-                  }}
+                  // Don't cancel mouseDown - let it propagate to Group for dragging
                   onContextMenu={(e) => {
                     e.evt.preventDefault();
                     e.cancelBubble = true;
@@ -300,7 +297,11 @@ export const ProductsLayer = memo(
                 : undefined
             }
             boundBoxFunc={(oldBox, newBox) => {
-              if (newBox.width < 5 || newBox.height < 5) {
+              // Prevent box from getting too small
+              const minWidth = 20;
+              const minHeight = 15;
+              
+              if (newBox.width < minWidth || newBox.height < minHeight) {
                 return oldBox;
               }
               return newBox;

@@ -740,9 +740,23 @@ const Page = () => {
         const newX = groupX + relX;
         const newY = groupY + relY;
 
-        // For text, we update width and fontSize based on scale
-        const newFontSize = Math.max(8, Math.round((textBox.fontSize || 24) * ((groupScaleX + groupScaleY) / 2)));
-        const newWidth = Math.max(5, (textBox.width || 200) * groupScaleX);
+        // Detect if this is a corner resize (proportional) or side/top resize
+        const scaleDiff = Math.abs(groupScaleX - groupScaleY);
+        const isCornerResize = scaleDiff < 0.1; // Small difference means corner anchor (proportional)
+        
+        let newFontSize = textBox.fontSize || 24;
+        let newWidth = textBox.width || 200;
+
+        if (isCornerResize) {
+          // Corner resize: scale font size proportionally (keep ratio)
+          const averageScale = (groupScaleX + groupScaleY) / 2;
+          newFontSize = Math.max(8, Math.round(newFontSize * averageScale));
+          newWidth = Math.max(20, newWidth * averageScale);
+        } else {
+          // Side/top resize: adjust width only, keep font size constant for text wrapping
+          newWidth = Math.max(20, newWidth * groupScaleX);
+          // Font size stays the same, text will wrap
+        }
 
         return {
           ...textBox,

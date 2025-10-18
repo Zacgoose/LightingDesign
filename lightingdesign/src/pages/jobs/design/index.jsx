@@ -476,6 +476,15 @@ const Page = () => {
     [products, selectedIds, updateHistory, forceGroupUpdate, transformerRef, selectionGroupRef],
   );
 
+  // Force transformer update when text boxes change dimensions
+  useEffect(() => {
+    if (transformerRef.current && selectionGroupRef.current) {
+      // Force transformer to recalculate its bounding box
+      transformerRef.current.forceUpdate();
+      transformerRef.current.getLayer()?.batchDraw();
+    }
+  }, [textBoxes, transformerRef, selectionGroupRef]);
+
   // Update local state when switching layers OR when layers are loaded
   useEffect(() => {
     // Skip if router query is not ready yet - this prevents loading empty layer data

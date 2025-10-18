@@ -657,7 +657,7 @@ const Page = () => {
       groupY === selectionSnapshot.centerY &&
       groupScaleX === 1 &&
       groupScaleY === 1 &&
-      groupRotation === 0
+      groupRotation === (selectionSnapshot.rotation || 0)
     );
 
     if (!hasTransform) {
@@ -722,7 +722,7 @@ const Page = () => {
           ...product,
           x: newX,
           y: newY,
-          rotation: original.rotation + groupRotation + selectionSnapshot.rotation,
+          rotation: original.rotation + groupRotation,
           scaleX: (original.scaleX || 1) * groupScaleX,
           scaleY: (original.scaleY || 1) * groupScaleY,
         };
@@ -795,12 +795,18 @@ const Page = () => {
       setTextBoxes(transformedTextBoxes);
     }
 
+    // Force update transformer
+    if (transformerRef.current) {
+      transformerRef.current.forceUpdate();
+    }
+    
     // Force update
     setGroupKey((k) => k + 1);
   }, [
     selectedIds,
     selectionSnapshot,
     selectionGroupRef,
+    transformerRef,
     products,
     textBoxes,
     updateHistory,
@@ -1361,11 +1367,21 @@ const Page = () => {
           // Match the Konva.Text style exactly
           ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
           
-          // Measure the text
+          // Split into lines and measure each to get the widest line
+          const lines = newText.split('\n');
+          const maxWidth = lines.reduce((max, line) => {
+            const w = ctx.measureText(line).width;
+            return w > max ? w : max;
+          }, 0);
+          
+          // Measure height using the full text metrics
           const metrics = ctx.measureText(newText);
-          // Add padding to prevent text cutoff (similar to the previous padding: 5)
-          const width = metrics.width;
-          const height = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+          const lineHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+          
+          // Add padding to prevent text cutoff
+          const padding = 10;
+          const width = maxWidth + padding;
+          const height = (lineHeight * lines.length) + padding;
           
           // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
           setTextBoxes((boxes) =>

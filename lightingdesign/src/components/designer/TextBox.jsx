@@ -50,6 +50,7 @@ export const TextBox = memo(
           scaleX={textBox.scaleX || 1}
           scaleY={textBox.scaleY || 1}
           width={textBox.width}
+          wrap="none"
           draggable={draggable}
           onClick={onSelect}
           onTap={onSelect}

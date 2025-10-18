@@ -657,7 +657,7 @@ const Page = () => {
       groupY === selectionSnapshot.centerY &&
       groupScaleX === 1 &&
       groupScaleY === 1 &&
-      groupRotation === 0
+      groupRotation === (selectionSnapshot.rotation || 0)
     );
 
     if (!hasTransform) {
@@ -692,9 +692,13 @@ const Page = () => {
       const transformedProducts = products.map((product) => {
         if (!productIds.includes(product.id)) return product;
 
-        // Calculate relative position
-        let relX = product.x - centerX;
-        let relY = product.y - centerY;
+        // Get the original product from the snapshot
+        const original = selectionSnapshot.products?.find((p) => p.id === product.id);
+        if (!original) return product;
+
+        // Use relative positions from snapshot
+        let relX = original.relativeX || 0;
+        let relY = original.relativeY || 0;
 
         // Apply rotation
         if (groupRotation !== 0) {
@@ -718,9 +722,9 @@ const Page = () => {
           ...product,
           x: newX,
           y: newY,
-          rotation: (product.rotation || 0) + groupRotation,
-          scaleX: (product.scaleX || 1) * groupScaleX,
-          scaleY: (product.scaleY || 1) * groupScaleY,
+          rotation: original.rotation + groupRotation,
+          scaleX: (original.scaleX || 1) * groupScaleX,
+          scaleY: (original.scaleY || 1) * groupScaleY,
         };
       });
 
@@ -732,9 +736,13 @@ const Page = () => {
       const transformedTextBoxes = textBoxes.map((textBox) => {
         if (!textIds.includes(textBox.id)) return textBox;
 
-        // Calculate relative position
-        let relX = textBox.x - centerX;
-        let relY = textBox.y - centerY;
+        // Get the original text box from the snapshot
+        const original = selectionSnapshot.textBoxes?.find((t) => t.id === textBox.id);
+        if (!original) return textBox;
+
+        // Use relative positions from snapshot
+        let relX = original.relativeX || 0;
+        let relY = original.relativeY || 0;
 
         // Apply rotation
         if (groupRotation !== 0) {
@@ -758,8 +766,8 @@ const Page = () => {
         const scaleDiff = Math.abs(groupScaleX - groupScaleY);
         const isCornerResize = scaleDiff < 0.1; // Small difference means corner anchor (proportional)
         
-        let newFontSize = textBox.fontSize || 24;
-        let newWidth = textBox.width || 200;
+        let newFontSize = original.fontSize || 24;
+        let newWidth = original.width || 200;
 
         if (isCornerResize) {
           // Corner resize: scale font size proportionally (keep ratio)
@@ -776,7 +784,7 @@ const Page = () => {
           ...textBox,
           x: newX,
           y: newY,
-          rotation: (textBox.rotation || 0) + groupRotation,
+          rotation: (original.rotation || 0) + groupRotation,
           fontSize: newFontSize,
           width: newWidth,
           scaleX: 1, // Reset scale after applying to fontSize and width
@@ -787,12 +795,18 @@ const Page = () => {
       setTextBoxes(transformedTextBoxes);
     }
 
+    // Force update transformer
+    if (transformerRef.current) {
+      transformerRef.current.forceUpdate();
+    }
+    
     // Force update
     setGroupKey((k) => k + 1);
   }, [
     selectedIds,
     selectionSnapshot,
     selectionGroupRef,
+    transformerRef,
     products,
     textBoxes,
     updateHistory,
@@ -1337,10 +1351,8 @@ const Page = () => {
       if (pendingTextBoxId) {
         const newText = formattingData.text || "";
         if (newText.trim()) {
-          // Use Konva's Text node to calculate dimensions accurately
-          // This ensures the text box is sized exactly as Konva will render it
-          const Konva = require('konva');
-          
+          // Use canvas measureText API to calculate exact text dimensions
+          // as recommended by Konva documentation for accurate sizing
           const fontSize = formattingData.fontSize;
           const fontFamily = formattingData.fontFamily;
           const isBold = formattingData.fontStyle?.includes("bold");
@@ -1348,24 +1360,28 @@ const Page = () => {
           const fontStyle = isItalic ? "italic" : "normal";
           const fontWeight = isBold ? "bold" : "normal";
           
-          // Create a temporary Konva Text node to measure the text
-          // This gives us the exact dimensions Konva will use when rendering
-          const tempText = new Konva.Text({
-            text: newText,
-            fontSize: fontSize,
-            fontFamily: fontFamily,
-            fontStyle: fontStyle,
-            fontVariant: fontWeight,
-            padding: 5, // Small padding for visual spacing
-          });
+          // Create an offscreen canvas for measuring
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
           
-          // Get the width and height from the Konva Text node
-          // This accounts for line breaks, word wrapping, and font metrics
-          const textWidth = tempText.width();
-          const textHeight = tempText.height();
+          // Match the Konva.Text style exactly
+          ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
           
-          // Clean up the temporary node
-          tempText.destroy();
+          // Split into lines and measure each to get the widest line
+          const lines = newText.split('\n');
+          const maxWidth = lines.reduce((max, line) => {
+            const w = ctx.measureText(line).width;
+            return w > max ? w : max;
+          }, 0);
+          
+          // Measure height using the full text metrics
+          const metrics = ctx.measureText(newText);
+          const lineHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+          
+          // Add padding to prevent text cutoff
+          const padding = 10;
+          const width = maxWidth + padding;
+          const height = (lineHeight * lines.length) + padding;
           
           // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
           setTextBoxes((boxes) =>
@@ -1379,8 +1395,8 @@ const Page = () => {
                     fontStyle: formattingData.fontStyle,
                     textDecoration: formattingData.textDecoration,
                     color: formattingData.color,
-                    width: textWidth, // Use Konva's calculated width
-                    height: textHeight, // Use Konva's calculated height
+                    width: width, // Use canvas measureText width
+                    height: height, // Use canvas measureText height
                   } 
                 : box
             )

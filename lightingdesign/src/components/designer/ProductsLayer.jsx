@@ -278,6 +278,8 @@ export const ProductsLayer = memo(
                   scaleX={textBox.scaleX || 1}
                   scaleY={textBox.scaleY || 1}
                   width={textBox.width}
+                  offsetX={(textBox.width || 0) / 2}
+                  offsetY={(textBox.height || renderedFontSize * 1.2) / 2}
                   draggable={false}
                   listening={true}
                   onClick={(e) => {

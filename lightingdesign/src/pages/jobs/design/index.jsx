@@ -1353,9 +1353,9 @@ const Page = () => {
             const lines = newText.split('\n');
             const lineWidths = lines.map(line => {
               const metrics = tempContext.measureText(line);
-              // Use actualBoundingBoxRight for more accurate width calculation
+              // Use increased multiplier for generous sizing
               // Add extra margin for safety
-              return Math.ceil(metrics.width * 1.1);
+              return Math.ceil(metrics.width * 1.3);
             });
             const maxWidth = Math.max(...lineWidths, 50); // Minimum width of 50
             
@@ -1375,7 +1375,7 @@ const Page = () => {
                       fontStyle: formattingData.fontStyle,
                       textDecoration: formattingData.textDecoration,
                       color: formattingData.color,
-                      width: maxWidth + 40, // Increased padding to prevent premature wrapping
+                      width: maxWidth + 60, // Increased padding to prevent premature wrapping
                       height: textHeight + 10, // Add vertical padding
                     } 
                   : box

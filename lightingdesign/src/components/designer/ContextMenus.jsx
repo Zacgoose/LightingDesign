@@ -80,6 +80,12 @@ export const ContextMenus = ({
     };
   };
 
+  // Close submenus when hovering over other menu items
+  const handleMenuItemHover = () => {
+    handleSublayerMenuClose();
+    handleCustomObjectMenuClose();
+  };
+
   const handleMainMenuClose = () => {
     handleSublayerMenuClose();
     handleCustomObjectMenuClose();
@@ -110,20 +116,29 @@ export const ContextMenus = ({
         {contextMenu?.type === "product" && (
           <>
             {selectedProductsCount === 1 && onShowProperties && (
-              <MenuItem onClick={handleMenuItemClick(onShowProperties)}>
+              <MenuItem 
+                onClick={handleMenuItemClick(onShowProperties)}
+                onMouseEnter={handleMenuItemHover}
+              >
                 <ListItemIcon>
                   <Info fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Properties</ListItemText>
               </MenuItem>
             )}
-            <MenuItem onClick={handleMenuItemClick(onDuplicate)}>
+            <MenuItem 
+              onClick={handleMenuItemClick(onDuplicate)}
+              onMouseEnter={handleMenuItemHover}
+            >
               <ListItemIcon>
                 <ContentCopy fontSize="small" />
               </ListItemIcon>
               <ListItemText>Duplicate</ListItemText>
             </MenuItem>
-            <MenuItem onClick={handleMenuItemClick(onOpenColorPicker)}>
+            <MenuItem 
+              onClick={handleMenuItemClick(onOpenColorPicker)}
+              onMouseEnter={handleMenuItemHover}
+            >
               <ListItemIcon>
                 <Box
                   sx={{
@@ -138,19 +153,28 @@ export const ContextMenus = ({
               </ListItemIcon>
               <ListItemText>Change Color...</ListItemText>
             </MenuItem>
-            <MenuItem onClick={handleMenuItemClick(onSwapProduct)}>
+            <MenuItem 
+              onClick={handleMenuItemClick(onSwapProduct)}
+              onMouseEnter={handleMenuItemHover}
+            >
               <ListItemIcon>
                 <SwapHoriz fontSize="small" />
               </ListItemIcon>
               <ListItemText>Swap Product...</ListItemText>
             </MenuItem>
-            <MenuItem onClick={handleMenuItemClick(onScale)}>
+            <MenuItem 
+              onClick={handleMenuItemClick(onScale)}
+              onMouseEnter={handleMenuItemHover}
+            >
               <ListItemIcon>
                 <SettingsBackupRestore fontSize="small" />
               </ListItemIcon>
               <ListItemText>Scale...</ListItemText>
             </MenuItem>
-            <MenuItem onClick={handleMenuItemClick(onResetScale)}>
+            <MenuItem 
+              onClick={handleMenuItemClick(onResetScale)}
+              onMouseEnter={handleMenuItemHover}
+            >
               <ListItemIcon>
                 <SettingsBackupRestore fontSize="small" />
               </ListItemIcon>
@@ -168,7 +192,10 @@ export const ContextMenus = ({
                 <ChevronRight fontSize="small" sx={{ ml: "auto" }} />
               </MenuItem>
             )}
-            <MenuItem onClick={handleMenuItemClick(onDelete)}>
+            <MenuItem 
+              onClick={handleMenuItemClick(onDelete)}
+              onMouseEnter={handleMenuItemHover}
+            >
               <ListItemIcon>
                 <Delete fontSize="small" />
               </ListItemIcon>
@@ -179,7 +206,10 @@ export const ContextMenus = ({
 
         {contextMenu?.type === "connector" && (
           <>
-            <MenuItem onClick={handleMenuItemClick(onOpenColorPicker)}>
+            <MenuItem 
+              onClick={handleMenuItemClick(onOpenColorPicker)}
+              onMouseEnter={handleMenuItemHover}
+            >
               <ListItemIcon>
                 <Box
                   sx={{
@@ -206,7 +236,10 @@ export const ContextMenus = ({
                 <ChevronRight fontSize="small" sx={{ ml: "auto" }} />
               </MenuItem>
             )}
-            <MenuItem onClick={handleMenuItemClick(onDelete)}>
+            <MenuItem 
+              onClick={handleMenuItemClick(onDelete)}
+              onMouseEnter={handleMenuItemHover}
+            >
               <ListItemIcon>
                 <Delete fontSize="small" />
               </ListItemIcon>
@@ -217,7 +250,10 @@ export const ContextMenus = ({
 
         {contextMenu?.type === "canvas" && (
           <>
-            <MenuItem onClick={handleMenuItemClick(onInsertProduct)}>
+            <MenuItem 
+              onClick={handleMenuItemClick(onInsertProduct)}
+              onMouseEnter={handleMenuItemHover}
+            >
               <ListItemIcon>
                 <Add fontSize="small" />
               </ListItemIcon>
@@ -239,7 +275,10 @@ export const ContextMenus = ({
         )}
 
         {contextMenu?.type === "placement" && (
-          <MenuItem onClick={handleMenuItemClick(onSwapPlacementProduct)}>
+          <MenuItem 
+            onClick={handleMenuItemClick(onSwapPlacementProduct)}
+            onMouseEnter={handleMenuItemHover}
+          >
             <ListItemIcon>
               <SwapHoriz fontSize="small" />
             </ListItemIcon>

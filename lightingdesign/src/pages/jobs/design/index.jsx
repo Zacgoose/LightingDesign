@@ -1913,6 +1913,7 @@ const Page = () => {
                       onProductDragStart={handleProductDragStart}
                       onProductDragEnd={handleProductDragEnd}
                       onContextMenu={contextMenus.handleContextMenu}
+                      onTextContextMenu={handleTextContextMenu}
                       onGroupTransformEnd={handleUnifiedGroupTransformEnd}
                     />
 

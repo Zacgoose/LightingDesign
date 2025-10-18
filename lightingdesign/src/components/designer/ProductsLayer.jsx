@@ -57,6 +57,7 @@ export const ProductsLayer = memo(
     onContextMenu,
     onGroupTransformEnd,
     textBoxes = [], // Add textBoxes support
+    onTextContextMenu, // Add text context menu handler
   }) => {
     // Performance monitoring
     const renderCount = useRef(0);
@@ -262,7 +263,24 @@ export const ProductsLayer = memo(
                   scaleY={textBox.scaleY || 1}
                   width={textBox.width}
                   draggable={false}
-                  listening={false}
+                  listening={true}
+                  onClick={(e) => {
+                    e.cancelBubble = true;
+                    // Text is already selected, clicking does nothing (prevents new text creation in text mode)
+                  }}
+                  onMouseDown={(e) => {
+                    e.cancelBubble = true;
+                    // Allow clicking on text to select the group
+                  }}
+                  onContextMenu={(e) => {
+                    e.evt.preventDefault();
+                    e.cancelBubble = true;
+                    if (onTextContextMenu) {
+                      // Find the original text ID and call context menu
+                      const originalTextId = textBox.id;
+                      onTextContextMenu(e, originalTextId);
+                    }
+                  }}
                 />
               );
             })}
@@ -313,6 +331,7 @@ export const ProductsLayer = memo(
       prevProps.onProductDragStart === nextProps.onProductDragStart &&
       prevProps.onProductDragEnd === nextProps.onProductDragEnd &&
       prevProps.onContextMenu === nextProps.onContextMenu &&
+      prevProps.onTextContextMenu === nextProps.onTextContextMenu &&
       prevProps.onGroupTransformEnd === nextProps.onGroupTransformEnd
     );
   },

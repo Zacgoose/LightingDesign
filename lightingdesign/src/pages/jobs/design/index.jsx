@@ -1336,52 +1336,54 @@ const Page = () => {
       if (pendingTextBoxId) {
         const newText = formattingData.text || "";
         if (newText.trim()) {
-          // Calculate text dimensions using a temporary canvas context
-          // This ensures the text box is sized to fit its content
-          const tempCanvas = document.createElement('canvas');
-          const tempContext = tempCanvas.getContext('2d');
-          if (tempContext) {
-            const fontSize = formattingData.fontSize;
-            const fontFamily = formattingData.fontFamily;
-            const isBold = formattingData.fontStyle?.includes("bold");
-            const isItalic = formattingData.fontStyle?.includes("italic");
-            const fontStyle = isItalic ? "italic " : "";
-            const fontWeight = isBold ? "bold " : "";
-            tempContext.font = `${fontStyle}${fontWeight}${fontSize}px ${fontFamily}`;
-            
-            // Split text by newlines to handle multi-line text
-            const lines = newText.split('\n');
-            const lineWidths = lines.map(line => {
-              const metrics = tempContext.measureText(line);
-              // Use increased multiplier for generous sizing
-              // Add extra margin for safety
-              return Math.ceil(metrics.width * 1.3);
-            });
-            const maxWidth = Math.max(...lineWidths, 50); // Minimum width of 50
-            
-            // Height is fontSize * number of lines with line height multiplier
-            const lineHeight = fontSize * 1.2; // Standard line height multiplier
-            const textHeight = lineHeight * lines.length;
-            
-            // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
-            setTextBoxes((boxes) =>
-              boxes.map((box) => 
-                box.id === pendingTextBoxId 
-                  ? { 
-                      ...box, 
-                      text: newText,
-                      fontSize: formattingData.fontSize,
-                      fontFamily: formattingData.fontFamily,
-                      fontStyle: formattingData.fontStyle,
-                      textDecoration: formattingData.textDecoration,
-                      color: formattingData.color,
-                      width: maxWidth + 60, // Increased padding to prevent premature wrapping
-                      height: textHeight + 10, // Add vertical padding
-                    } 
-                  : box
-              )
-            );
-          }
+          // Use Konva's Text node to calculate dimensions accurately
+          // This ensures the text box is sized exactly as Konva will render it
+          const Konva = require('konva');
+          
+          const fontSize = formattingData.fontSize;
+          const fontFamily = formattingData.fontFamily;
+          const isBold = formattingData.fontStyle?.includes("bold");
+          const isItalic = formattingData.fontStyle?.includes("italic");
+          const fontStyle = isItalic ? "italic" : "normal";
+          const fontWeight = isBold ? "bold" : "normal";
+          
+          // Create a temporary Konva Text node to measure the text
+          // This gives us the exact dimensions Konva will use when rendering
+          const tempText = new Konva.Text({
+            text: newText,
+            fontSize: fontSize,
+            fontFamily: fontFamily,
+            fontStyle: fontStyle,
+            fontVariant: fontWeight,
+            padding: 5, // Small padding for visual spacing
+          });
+          
+          // Get the width and height from the Konva Text node
+          // This accounts for line breaks, word wrapping, and font metrics
+          const textWidth = tempText.width();
+          const textHeight = tempText.height();
+          
+          // Clean up the temporary node
+          tempText.destroy();
+          
+          // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
+          setTextBoxes((boxes) =>
+            boxes.map((box) => 
+              box.id === pendingTextBoxId 
+                ? { 
+                    ...box, 
+                    text: newText,
+                    fontSize: formattingData.fontSize,
+                    fontFamily: formattingData.fontFamily,
+                    fontStyle: formattingData.fontStyle,
+                    textDecoration: formattingData.textDecoration,
+                    color: formattingData.color,
+                    width: textWidth, // Use Konva's calculated width
+                    height: textHeight, // Use Konva's calculated height
+                  } 
+                : box
+            )
+          );
         } else {
           // User confirmed with empty text - remove the text box
           setTextBoxes((boxes) => boxes.filter((box) => box.id !== pendingTextBoxId));

@@ -1277,7 +1277,7 @@ const Page = () => {
           fontStyle: "normal", // Can be "normal", "bold", "italic", "bold italic"
           textDecoration: "", // Can be "", "underline", "line-through", or "underline line-through"
           color: theme.palette.mode === "dark" ? "#ffffff" : "#000000",
-          width: 200,
+          width: 100, // Initial placeholder width, will be auto-sized when text is entered
           sublayerId: activeLayer?.defaultSublayerId || null,
           scaleFactor: scaleFactor, // Store scaleFactor at creation time, similar to products
         };
@@ -1323,22 +1323,47 @@ const Page = () => {
       if (pendingTextBoxId) {
         const newText = formattingData.text || "";
         if (newText.trim()) {
-          // User confirmed with text - update the text box with text and formatting
-          setTextBoxes((boxes) =>
-            boxes.map((box) => 
-              box.id === pendingTextBoxId 
-                ? { 
-                    ...box, 
-                    text: newText,
-                    fontSize: formattingData.fontSize,
-                    fontFamily: formattingData.fontFamily,
-                    fontStyle: formattingData.fontStyle,
-                    textDecoration: formattingData.textDecoration,
-                    color: formattingData.color,
-                  } 
-                : box
-            )
-          );
+          // Calculate text dimensions using a temporary canvas context
+          // This ensures the text box is sized to fit its content
+          const tempCanvas = document.createElement('canvas');
+          const tempContext = tempCanvas.getContext('2d');
+          if (tempContext) {
+            const fontSize = formattingData.fontSize;
+            const fontFamily = formattingData.fontFamily;
+            const isBold = formattingData.fontStyle?.includes("bold");
+            const isItalic = formattingData.fontStyle?.includes("italic");
+            const fontStyle = isItalic ? "italic " : "";
+            const fontWeight = isBold ? "bold " : "";
+            tempContext.font = `${fontStyle}${fontWeight}${fontSize}px ${fontFamily}`;
+            
+            // Split text by newlines to handle multi-line text
+            const lines = newText.split('\n');
+            const lineWidths = lines.map(line => tempContext.measureText(line).width);
+            const maxWidth = Math.max(...lineWidths, 50); // Minimum width of 50
+            
+            // Height is fontSize * number of lines with line height multiplier
+            const lineHeight = fontSize * 1.2; // Standard line height multiplier
+            const textHeight = lineHeight * lines.length;
+            
+            // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
+            setTextBoxes((boxes) =>
+              boxes.map((box) => 
+                box.id === pendingTextBoxId 
+                  ? { 
+                      ...box, 
+                      text: newText,
+                      fontSize: formattingData.fontSize,
+                      fontFamily: formattingData.fontFamily,
+                      fontStyle: formattingData.fontStyle,
+                      textDecoration: formattingData.textDecoration,
+                      color: formattingData.color,
+                      width: maxWidth + 10, // Add small padding
+                      height: textHeight,
+                    } 
+                  : box
+              )
+            );
+          }
         } else {
           // User confirmed with empty text - remove the text box
           setTextBoxes((boxes) => boxes.filter((box) => box.id !== pendingTextBoxId));

@@ -960,6 +960,27 @@ const Page = () => {
     [placementMode, stagePosition, stageScale, createProductFromTemplate, products, updateHistory],
   );
 
+  const handleSelectionMove = useCallback(
+    (e) => {
+      if (!isSelecting) return;
+
+      const stage = e.target.getStage();
+      const pointerPosition = stage.getPointerPosition();
+      const canvasPos = {
+        x: (pointerPosition.x - stagePosition.x) / stageScale,
+        y: (pointerPosition.y - stagePosition.y) / stageScale,
+      };
+
+      setSelectionRect({
+        x1: selectionStartRef.current.x,
+        y1: selectionStartRef.current.y,
+        x2: canvasPos.x,
+        y2: canvasPos.y,
+      });
+    },
+    [isSelecting, stagePosition, stageScale]
+  );
+
   const handleCanvasMouseMove = useCallback(
     (e) => {
       if (isSelecting) {
@@ -1129,27 +1150,6 @@ const Page = () => {
       });
     },
     [selectedTool, stagePosition, stageScale]
-  );
-
-  const handleSelectionMove = useCallback(
-    (e) => {
-      if (!isSelecting) return;
-
-      const stage = e.target.getStage();
-      const pointerPosition = stage.getPointerPosition();
-      const canvasPos = {
-        x: (pointerPosition.x - stagePosition.x) / stageScale,
-        y: (pointerPosition.y - stagePosition.y) / stageScale,
-      };
-
-      setSelectionRect({
-        x1: selectionStartRef.current.x,
-        y1: selectionStartRef.current.y,
-        x2: canvasPos.x,
-        y2: canvasPos.y,
-      });
-    },
-    [isSelecting, stagePosition, stageScale]
   );
 
   const handleSelectionEnd = useCallback(() => {

@@ -1,539 +1,216 @@
-[handleUnifiedGroupTransformEnd] Calling updateHistory with transformed products 
-Object { productCount: 2, firstProductRotation: 89.99999999999997 }
-​
-firstProductRotation: 89.99999999999997
-​
-productCount: 2
-​
-<prototype>: Object { … }
-index.jsx:764:15
-[handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey index.jsx:845:13
-[handleUnifiedGroupTransformEnd] Called 
-Object { hasSelectedIds: true, hasGroupRef: true, hasSnapshot: true }
-​
-hasGroupRef: true
-​
-hasSelectedIds: true
-​
-hasSnapshot: true
-​
-<prototype>: Object { … }
-index.jsx:645:13
-[handleUnifiedGroupTransformEnd] 
-Object { hasTransform: true, groupX: -3624.096951949437, groupY: -1557.5021488065177, centerX: -3648.305214910405, centerY: -1581.7104117674621, groupScaleX: 0.9999999999999943, groupScaleY: 0.9999999999999988, groupRotation: 89.99999999999997, snapshotRotation: 0, productCount: 2, … }
-​
-centerX: -3648.305214910405
-​
-centerY: -1581.7104117674621
-​
-groupRotation: 89.99999999999997
-​
-groupScaleX: 0.9999999999999943
-​
-groupScaleY: 0.9999999999999988
-​
-groupX: -3624.096951949437
-​
-groupY: -1557.5021488065177
-​
-hasTransform: true
-​
-productCount: 2
-​
-snapshotRotation: 0
-​
-textCount: 0
-​
-<prototype>: Object { … }
-index.jsx:679:13
-[handleUnifiedGroupTransformEnd] Applying transform to products and text boxes index.jsx:699:13
-[handleUnifiedGroupTransformEnd] Transforming product product-1760781997506-0 
-Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…}, currentRotation: 0, originalRelativeRotation: 0, rotationDelta: 89.99999999999997, groupRotation: 89.99999999999997, snapshotRotation: 0, … }
-​
-currentRotation: 0
-​
-delta: Object { x: -131.10190879009178, y: 168.05606669284066 }
-​
-groupRotation: 89.99999999999997
-​
-newPos: Object { x: -3629.8281359590187, y: -1407.9231610650397 }
-​
-newRotation: 89.99999999999997
-​
-originalPos: Object { x: -3498.726227168927, y: -1575.9792277578804 }
-​
-originalRelativeRotation: 0
-​
-relativePos: Object { x: -5.731184009581598, y: 149.578987741478 }
-​
-rotationDelta: 89.99999999999997
-​
-snapshotRelative: Object { x: 149.57898774147816, y: 5.731184009581739 }
-​
-snapshotRotation: 0
-​
-<prototype>: Object { … }
-index.jsx:740:17
-[handleUnifiedGroupTransformEnd] Transforming product product-1760784738986-0 
-Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…}, currentRotation: 0, originalRelativeRotation: 0, rotationDelta: 89.99999999999997, groupRotation: 89.99999999999997, snapshotRotation: 0, … }
-​
-currentRotation: 0
-​
-delta: Object { x: 179.518434712028, y: -119.63954077095173 }
-​
-groupRotation: 89.99999999999997
-​
-newPos: Object { x: -3618.3657679398552, y: -1707.0811365479956 }
-​
-newRotation: 89.99999999999997
-​
-originalPos: Object { x: -3797.8842026518832, y: -1587.4415957770439 }
-​
-originalRelativeRotation: 0
-​
-relativePos: Object { x: 5.731184009581598, y: -149.578987741478 }
-​
-rotationDelta: 89.99999999999997
-​
-snapshotRelative: Object { x: -149.57898774147816, y: -5.731184009581739 }
-​
-snapshotRotation: 0
-​
-<prototype>: Object { … }
-index.jsx:740:17
-[handleUnifiedGroupTransformEnd] Calling updateHistory with transformed products 
-Object { productCount: 2, firstProductRotation: 89.99999999999997 }
-​
-firstProductRotation: 89.99999999999997
-​
-productCount: 2
-​
-<prototype>: Object { … }
-index.jsx:764:15
-[handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey index.jsx:845:13
-[selectionSnapshot] Product product-1760781997506-0 rotation: 89.99999999999997 useSelectionState.js:45:15
-[selectionSnapshot] Product product-1760784738986-0 rotation: 89.99999999999997 useSelectionState.js:45:15
+[selectionSnapshot] Product product-1760787238093-0 rotation: 0 useSelectionState.js:45:15
+[selectionSnapshot] Text 7ab8e2a0-6237-40c0-aa94-b7f7708dcc41 rotation: 0 useSelectionState.js:51:15
 [selectionSnapshot] Rotation calculation: 
-Object { totalRotation: 179.99999999999994, rotationCount: 2, avgRotation: 89.99999999999997 }
-​
-avgRotation: 89.99999999999997
-​
-rotationCount: 2
-​
-totalRotation: 179.99999999999994
-​
-<prototype>: Object { … }
+Object { totalRotation: 0, rotationCount: 2, avgRotation: 0 }
 useSelectionState.js:58:13
 [selectionSnapshot] Creating new snapshot 
-Object { selectedIds: (2) […], productCount: 2, textCount: 0, centerX: -3624.096951949437, centerY: -1557.5021488065177, avgRotation: 89.99999999999997 }
+Object { selectedIds: (2) […], productCount: 1, textCount: 1, centerX: -1493.3834903951447, centerY: -511.6318890473019, avgRotation: 0 }
 ​
-avgRotation: 89.99999999999997
+avgRotation: 0
 ​
-centerX: -3624.096951949437
+centerX: -1493.3834903951447
 ​
-centerY: -1557.5021488065177
+centerY: -511.6318890473019
 ​
-productCount: 2
+productCount: 1
 ​
-selectedIds: Array [ "product-1760781997506-0", "product-1760784738986-0" ]
+selectedIds: Array [ "product-1760787238093-0", "text-7ab8e2a0-6237-40c0-aa94-b7f7708dcc41" ]
 ​
-textCount: 0
-​
-<prototype>: Object { … }
-useSelectionState.js:84:13
-[ProductsLayer] Removing transformend listener from Transformer ProductsLayer.jsx:94:17
-[ProductsLayer] Attaching transformend listener to Transformer ProductsLayer.jsx:82:15
-[useEffect transformer] Attaching transformer 
-Object { selectedCount: 2, currentRotation: 89.99999999999997, groupX: -3624.096951949437, groupY: -1557.5021488065177, centerX: -3624.096951949437, centerY: -1557.5021488065177 }
-​
-centerX: -3624.096951949437
-​
-centerY: -1557.5021488065177
-​
-currentRotation: 89.99999999999997
-​
-groupX: -3624.096951949437
-​
-groupY: -1557.5021488065177
-​
-selectedCount: 2
-​
-<prototype>: Object { … }
-useSelectionState.js:134:15
-[useEffect transformer] Transformer and Group event handlers: 
-Object { hasGroupOnTransformEnd: "undefined", hasGroupOnDragEnd: "undefined" }
-​
-hasGroupOnDragEnd: "undefined"
-​
-hasGroupOnTransformEnd: "undefined"
-​
-<prototype>: Object { … }
-useSelectionState.js:164:15
-updateLayer called: 
-Object { layerId: "layer-1760547775415", updates: (1) […] }
-​
-layerId: "layer-1760547775415"
-​
-updates: Array [ "products" ]
-​
-<prototype>: Object { … }
-useLayerManager.js:97:13
-[ProductsLayer] Removing transformend listener from Transformer ProductsLayer.jsx:94:17
-[ProductsLayer] Attaching transformend listener to Transformer ProductsLayer.jsx:82:15
-Layer switch effect triggered 
-Object { activeLayerId: "layer-1760547775415", lastLoadedLayerId: "layer-1760547775415", hasActiveLayer: true, layersVersion: 1, condition: false }
-​
-activeLayerId: "layer-1760547775415"
-​
-condition: false
-​
-hasActiveLayer: true
-​
-lastLoadedLayerId: "layer-1760547775415"
-​
-layersVersion: 1
-​
-<prototype>: Object { … }
-index.jsx:529:13
-[applyGroupTransform] No transform detected, skipping update 
-Object { groupX: -3624.096951949437, groupY: -1557.5021488065177, centerX: -3624.096951949437, centerY: -1557.5021488065177, groupRotation: 89.99999999999997, snapshotRotation: 89.99999999999997 }
-​
-centerX: -3624.096951949437
-​
-centerY: -1557.5021488065177
-​
-groupRotation: 89.99999999999997
-​
-groupX: -3624.096951949437
-​
-groupY: -1557.5021488065177
-​
-snapshotRotation: 89.99999999999997
-​
-<prototype>: Object { … }
-useSelectionState.js:202:15
-[ProductsLayer] Removing transformend listener from Transformer ProductsLayer.jsx:94:17
-[selectionSnapshot] Product product-1760781997506-0 rotation: 89.99999999999997 useSelectionState.js:45:15
-[selectionSnapshot] Product product-1760784738986-0 rotation: 89.99999999999997 useSelectionState.js:45:15
-[selectionSnapshot] Rotation calculation: 
-Object { totalRotation: 179.99999999999994, rotationCount: 2, avgRotation: 89.99999999999997 }
-​
-avgRotation: 89.99999999999997
-​
-rotationCount: 2
-​
-totalRotation: 179.99999999999994
-​
-<prototype>: Object { … }
-useSelectionState.js:58:13
-[selectionSnapshot] Creating new snapshot 
-Object { selectedIds: (2) […], productCount: 2, textCount: 0, centerX: -3624.096951949437, centerY: -1557.5021488065177, avgRotation: 89.99999999999997 }
-​
-avgRotation: 89.99999999999997
-​
-centerX: -3624.096951949437
-​
-centerY: -1557.5021488065177
-​
-productCount: 2
-​
-selectedIds: Array [ "product-1760781997506-0", "product-1760784738986-0" ]
-​
-textCount: 0
+textCount: 1
 ​
 <prototype>: Object { … }
 useSelectionState.js:84:13
 [ProductsLayer] Attaching transformend listener to Transformer ProductsLayer.jsx:82:15
 [useEffect transformer] Attaching transformer 
-Object { selectedCount: 2, currentRotation: 89.99999999999997, groupX: -3624.096951949437, groupY: -1557.5021488065177, centerX: -3624.096951949437, centerY: -1557.5021488065177 }
-​
-centerX: -3624.096951949437
-​
-centerY: -1557.5021488065177
-​
-currentRotation: 89.99999999999997
-​
-groupX: -3624.096951949437
-​
-groupY: -1557.5021488065177
-​
-selectedCount: 2
-​
-<prototype>: Object { … }
+Object { selectedCount: 2, currentRotation: 0, groupX: -1493.3834903951447, groupY: -511.6318890473019, centerX: -1493.3834903951447, centerY: -511.6318890473019 }
 useSelectionState.js:134:15
 [useEffect transformer] Transformer and Group event handlers: 
 Object { hasGroupOnTransformEnd: "undefined", hasGroupOnDragEnd: "undefined" }
-​
-hasGroupOnDragEnd: "undefined"
-​
-hasGroupOnTransformEnd: "undefined"
-​
-<prototype>: Object { … }
 useSelectionState.js:164:15
 [ProductsLayer] Transformer transformend event fired ProductsLayer.jsx:85:17
 [handleUnifiedGroupTransformEnd] Called 
 Object { hasSelectedIds: true, hasGroupRef: true, hasSnapshot: true }
-​
-hasGroupRef: true
-​
-hasSelectedIds: true
-​
-hasSnapshot: true
-​
-<prototype>: Object { … }
 index.jsx:645:13
 [handleUnifiedGroupTransformEnd] 
-Object { hasTransform: true, groupX: -3648.305214910319, groupY: -1581.7104117674396, centerX: -3624.096951949437, centerY: -1557.5021488065177, groupScaleX: 0.9999999999999897, groupScaleY: 0.9999999999999946, groupRotation: -0, snapshotRotation: 89.99999999999997, productCount: 2, … }
+Object { hasTransform: true, groupX: -258.5842539551821, groupY: -1589.0774162413318, centerX: -1493.3834903951447, centerY: -511.6318890473019, groupScaleX: 0.9999999999999982, groupScaleY: 1.0000000000000056, groupRotation: 89.99999999999987, snapshotRotation: 0, productCount: 1, … }
 ​
-centerX: -3624.096951949437
+centerX: -1493.3834903951447
 ​
-centerY: -1557.5021488065177
+centerY: -511.6318890473019
 ​
-groupRotation: -0
+groupRotation: 89.99999999999987
 ​
-groupScaleX: 0.9999999999999897
+groupScaleX: 0.9999999999999982
 ​
-groupScaleY: 0.9999999999999946
+groupScaleY: 1.0000000000000056
 ​
-groupX: -3648.305214910319
+groupX: -258.5842539551821
 ​
-groupY: -1581.7104117674396
+groupY: -1589.0774162413318
 ​
 hasTransform: true
 ​
-productCount: 2
+productCount: 1
 ​
-snapshotRotation: 89.99999999999997
+snapshotRotation: 0
 ​
-textCount: 0
+textCount: 1
 ​
 <prototype>: Object { … }
 index.jsx:679:13
 [handleUnifiedGroupTransformEnd] Applying transform to products and text boxes index.jsx:699:13
-[handleUnifiedGroupTransformEnd] Transforming product product-1760781997506-0 
-Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…}, currentRotation: 89.99999999999997, originalRelativeRotation: 0, rotationDelta: -89.99999999999997, groupRotation: -0, snapshotRotation: 89.99999999999997, … }
+[handleUnifiedGroupTransformEnd] Transforming product product-1760787238093-0 
+Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…}, currentRotation: 0, originalRelativeRotation: 0, rotationDelta: 89.99999999999987, groupRotation: 89.99999999999987, snapshotRotation: 0, … }
 ​
-currentRotation: 89.99999999999997
+currentRotation: 0
 ​
-delta: Object { x: 131.1019087901759, y: -168.05606669281815 }
+delta: Object { x: -113.80672466794022, y: -440.4890334532528 }
 ​
-groupRotation: -0
+groupRotation: 89.99999999999987
 ​
-newPos: Object { x: -3498.726227168843, y: -1575.9792277578579 }
+newPos: Object { x: -614.4089876387466, y: -596.2961888169872 }
 ​
-newRotation: 0
+newRotation: 89.99999999999987
 ​
-originalPos: Object { x: -3629.8281359590187, y: -1407.9231610650397 }
-​
-originalRelativeRotation: 0
-​
-relativePos: Object { x: 149.5789877414764, y: 5.731184009581816 }
-​
-rotationDelta: -89.99999999999997
-​
-snapshotRelative: Object { x: -5.731184009581739, y: 149.57898774147793 }
-​
-snapshotRotation: 89.99999999999997
-​
-<prototype>: Object { … }
-index.jsx:740:17
-[handleUnifiedGroupTransformEnd] Transforming product product-1760784738986-0 
-Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…}, currentRotation: 89.99999999999997, originalRelativeRotation: 0, rotationDelta: -89.99999999999997, groupRotation: -0, snapshotRotation: 89.99999999999997, … }
-​
-currentRotation: 89.99999999999997
-​
-delta: Object { x: -179.51843471194024, y: 119.63954077097424 }
-​
-groupRotation: -0
-​
-newPos: Object { x: -3797.8842026517955, y: -1587.4415957770213 }
-​
-newRotation: 0
-​
-originalPos: Object { x: -3618.3657679398552, y: -1707.0811365479956 }
+originalPos: Object { x: -500.60226297080635, y: -155.8071553637344 }
 ​
 originalRelativeRotation: 0
 ​
-relativePos: Object { x: -149.5789877414764, y: -5.731184009581816 }
+relativePos: Object { x: -355.8247336835646, y: 992.7812274243446 }
 ​
-rotationDelta: -89.99999999999997
+rotationDelta: 89.99999999999987
 ​
-snapshotRelative: Object { x: 5.731184009581739, y: -149.57898774147793 }
+snapshotRelative: Object { x: 992.7812274243383, y: 355.8247336835675 }
 ​
-snapshotRotation: 89.99999999999997
+snapshotRotation: 0
 ​
 <prototype>: Object { … }
 index.jsx:740:17
 [handleUnifiedGroupTransformEnd] Calling updateHistory with transformed products 
-Object { productCount: 2, firstProductRotation: 0 }
+Object { productCount: 1, firstProductRotation: 89.99999999999987 }
+index.jsx:764:15
+[handleUnifiedGroupTransformEnd] Transforming text box 7ab8e2a0-6237-40c0-aa94-b7f7708dcc41 
+Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…} }
 ​
-firstProductRotation: 0
+delta: Object { x: 2583.4051975478656, y: -1714.4020209348066 }
 ​
-productCount: 2
+newPos: Object { x: 97.24047972838252, y: -2581.858643665676 }
+​
+originalPos: Object { x: -2486.164717819483, y: -867.4566227308694 }
+​
+relativePos: Object { x: 355.8247336835646, y: -992.7812274243446 }
+​
+snapshotRelative: Object { x: -992.7812274243383, y: -355.8247336835675 }
 ​
 <prototype>: Object { … }
-index.jsx:764:15
+index.jsx:804:17
 [handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey index.jsx:845:13
 [handleUnifiedGroupTransformEnd] Called 
 Object { hasSelectedIds: true, hasGroupRef: true, hasSnapshot: true }
-​
-hasGroupRef: true
-​
-hasSelectedIds: true
-​
-hasSnapshot: true
-​
-<prototype>: Object { … }
 index.jsx:645:13
 [handleUnifiedGroupTransformEnd] 
-Object { hasTransform: true, groupX: -3648.305214910319, groupY: -1581.7104117674396, centerX: -3624.096951949437, centerY: -1557.5021488065177, groupScaleX: 0.9999999999999897, groupScaleY: 0.9999999999999946, groupRotation: -0, snapshotRotation: 89.99999999999997, productCount: 2, … }
+Object { hasTransform: true, groupX: -258.5842539551821, groupY: -1589.0774162413318, centerX: -1493.3834903951447, centerY: -511.6318890473019, groupScaleX: 0.9999999999999982, groupScaleY: 1.0000000000000056, groupRotation: 89.99999999999987, snapshotRotation: 0, productCount: 1, … }
 ​
-centerX: -3624.096951949437
+centerX: -1493.3834903951447
 ​
-centerY: -1557.5021488065177
+centerY: -511.6318890473019
 ​
-groupRotation: -0
+groupRotation: 89.99999999999987
 ​
-groupScaleX: 0.9999999999999897
+groupScaleX: 0.9999999999999982
 ​
-groupScaleY: 0.9999999999999946
+groupScaleY: 1.0000000000000056
 ​
-groupX: -3648.305214910319
+groupX: -258.5842539551821
 ​
-groupY: -1581.7104117674396
+groupY: -1589.0774162413318
 ​
 hasTransform: true
 ​
-productCount: 2
+productCount: 1
 ​
-snapshotRotation: 89.99999999999997
+snapshotRotation: 0
 ​
-textCount: 0
+textCount: 1
 ​
 <prototype>: Object { … }
 index.jsx:679:13
 [handleUnifiedGroupTransformEnd] Applying transform to products and text boxes index.jsx:699:13
-[handleUnifiedGroupTransformEnd] Transforming product product-1760781997506-0 
-Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…}, currentRotation: 89.99999999999997, originalRelativeRotation: 0, rotationDelta: -89.99999999999997, groupRotation: -0, snapshotRotation: 89.99999999999997, … }
+[handleUnifiedGroupTransformEnd] Transforming product product-1760787238093-0 
+Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…}, currentRotation: 0, originalRelativeRotation: 0, rotationDelta: 89.99999999999987, groupRotation: 89.99999999999987, snapshotRotation: 0, … }
 ​
-currentRotation: 89.99999999999997
+currentRotation: 0
 ​
-delta: Object { x: 131.1019087901759, y: -168.05606669281815 }
+delta: Object { x: -113.80672466794022, y: -440.4890334532528 }
 ​
-groupRotation: -0
+groupRotation: 89.99999999999987
 ​
-newPos: Object { x: -3498.726227168843, y: -1575.9792277578579 }
+newPos: Object { x: -614.4089876387466, y: -596.2961888169872 }
 ​
-newRotation: 0
+newRotation: 89.99999999999987
 ​
-originalPos: Object { x: -3629.8281359590187, y: -1407.9231610650397 }
-​
-originalRelativeRotation: 0
-​
-relativePos: Object { x: 149.5789877414764, y: 5.731184009581816 }
-​
-rotationDelta: -89.99999999999997
-​
-snapshotRelative: Object { x: -5.731184009581739, y: 149.57898774147793 }
-​
-snapshotRotation: 89.99999999999997
-​
-<prototype>: Object { … }
-index.jsx:740:17
-[handleUnifiedGroupTransformEnd] Transforming product product-1760784738986-0 
-Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…}, currentRotation: 89.99999999999997, originalRelativeRotation: 0, rotationDelta: -89.99999999999997, groupRotation: -0, snapshotRotation: 89.99999999999997, … }
-​
-currentRotation: 89.99999999999997
-​
-delta: Object { x: -179.51843471194024, y: 119.63954077097424 }
-​
-groupRotation: -0
-​
-newPos: Object { x: -3797.8842026517955, y: -1587.4415957770213 }
-​
-newRotation: 0
-​
-originalPos: Object { x: -3618.3657679398552, y: -1707.0811365479956 }
+originalPos: Object { x: -500.60226297080635, y: -155.8071553637344 }
 ​
 originalRelativeRotation: 0
 ​
-relativePos: Object { x: -149.5789877414764, y: -5.731184009581816 }
+relativePos: Object { x: -355.8247336835646, y: 992.7812274243446 }
 ​
-rotationDelta: -89.99999999999997
+rotationDelta: 89.99999999999987
 ​
-snapshotRelative: Object { x: 5.731184009581739, y: -149.57898774147793 }
+snapshotRelative: Object { x: 992.7812274243383, y: 355.8247336835675 }
 ​
-snapshotRotation: 89.99999999999997
+snapshotRotation: 0
 ​
 <prototype>: Object { … }
 index.jsx:740:17
 [handleUnifiedGroupTransformEnd] Calling updateHistory with transformed products 
-Object { productCount: 2, firstProductRotation: 0 }
-​
-firstProductRotation: 0
-​
-productCount: 2
-​
-<prototype>: Object { … }
+Object { productCount: 1, firstProductRotation: 89.99999999999987 }
 index.jsx:764:15
-[handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey index.jsx:845:13
-[selectionSnapshot] Product product-1760781997506-0 rotation: 0 useSelectionState.js:45:15
-[selectionSnapshot] Product product-1760784738986-0 rotation: 0 useSelectionState.js:45:15
-[selectionSnapshot] Rotation calculation: 
-Object { totalRotation: 0, rotationCount: 2, avgRotation: 0 }
+[handleUnifiedGroupTransformEnd] Transforming text box 7ab8e2a0-6237-40c0-aa94-b7f7708dcc41 
+Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…} }
 ​
-avgRotation: 0
+delta: Object { x: 2583.4051975478656, y: -1714.4020209348066 }
 ​
-rotationCount: 2
+newPos: Object { x: 97.24047972838252, y: -2581.858643665676 }
 ​
-totalRotation: 0
+originalPos: Object { x: -2486.164717819483, y: -867.4566227308694 }
+​
+relativePos: Object { x: 355.8247336835646, y: -992.7812274243446 }
+​
+snapshotRelative: Object { x: -992.7812274243383, y: -355.8247336835675 }
 ​
 <prototype>: Object { … }
+index.jsx:804:17
+[handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey index.jsx:845:13
+[selectionSnapshot] Product product-1760787238093-0 rotation: 89.99999999999987 useSelectionState.js:45:15
+[selectionSnapshot] Text 7ab8e2a0-6237-40c0-aa94-b7f7708dcc41 rotation: 89.99999999999987 useSelectionState.js:51:15
+[selectionSnapshot] Rotation calculation: 
+Object { totalRotation: 179.99999999999974, rotationCount: 2, avgRotation: 89.99999999999987 }
 useSelectionState.js:58:13
 [selectionSnapshot] Creating new snapshot 
-Object { selectedIds: (2) […], productCount: 2, textCount: 0, centerX: -3648.305214910319, centerY: -1581.7104117674396, avgRotation: 0 }
+Object { selectedIds: (2) […], productCount: 1, textCount: 1, centerX: -258.584253955182, centerY: -1589.0774162413315, avgRotation: 89.99999999999987 }
 ​
-avgRotation: 0
+avgRotation: 89.99999999999987
 ​
-centerX: -3648.305214910319
+centerX: -258.584253955182
 ​
-centerY: -1581.7104117674396
+centerY: -1589.0774162413315
 ​
-productCount: 2
+productCount: 1
 ​
-selectedIds: Array [ "product-1760781997506-0", "product-1760784738986-0" ]
+selectedIds: Array [ "product-1760787238093-0", "text-7ab8e2a0-6237-40c0-aa94-b7f7708dcc41" ]
 ​
-textCount: 0
+textCount: 1
 ​
 <prototype>: Object { … }
 useSelectionState.js:84:13
 [ProductsLayer] Removing transformend listener from Transformer ProductsLayer.jsx:94:17
 [ProductsLayer] Attaching transformend listener to Transformer ProductsLayer.jsx:82:15
 [useEffect transformer] Attaching transformer 
-Object { selectedCount: 2, currentRotation: 0, groupX: -3648.305214910319, groupY: -1581.7104117674396, centerX: -3648.305214910319, centerY: -1581.7104117674396 }
-​
-centerX: -3648.305214910319
-​
-centerY: -1581.7104117674396
-​
-currentRotation: 0
-​
-groupX: -3648.305214910319
-​
-groupY: -1581.7104117674396
-​
-selectedCount: 2
-​
-<prototype>: Object { … }
+Object { selectedCount: 2, currentRotation: 89.99999999999987, groupX: -258.584253955182, groupY: -1589.0774162413315, centerX: -258.584253955182, centerY: -1589.0774162413315 }
 useSelectionState.js:134:15
 [useEffect transformer] Transformer and Group event handlers: 
 Object { hasGroupOnTransformEnd: "undefined", hasGroupOnDragEnd: "undefined" }
-​
-hasGroupOnDragEnd: "undefined"
-​
-hasGroupOnTransformEnd: "undefined"
-​
-<prototype>: Object { … }
 useSelectionState.js:164:15
 updateLayer called: 
 Object { layerId: "layer-1760547775415", updates: (1) […] }
@@ -544,39 +221,275 @@ updates: Array [ "products" ]
 ​
 <prototype>: Object { … }
 useLayerManager.js:97:13
+updateLayer called: 
+Object { layerId: "layer-1760547775415", updates: (1) […] }
+​
+layerId: "layer-1760547775415"
+​
+updates: Array [ "textBoxes" ]
+​
+<prototype>: Object { … }
+useLayerManager.js:97:13
 [ProductsLayer] Removing transformend listener from Transformer ProductsLayer.jsx:94:17
 [ProductsLayer] Attaching transformend listener to Transformer ProductsLayer.jsx:82:15
 Layer switch effect triggered 
 Object { activeLayerId: "layer-1760547775415", lastLoadedLayerId: "layer-1760547775415", hasActiveLayer: true, layersVersion: 1, condition: false }
-​
-activeLayerId: "layer-1760547775415"
-​
-condition: false
-​
-hasActiveLayer: true
-​
-lastLoadedLayerId: "layer-1760547775415"
-​
-layersVersion: 1
-​
-<prototype>: Object { … }
 index.jsx:529:13
 [applyGroupTransform] No transform detected, skipping update 
-Object { groupX: -3648.305214910319, groupY: -1581.7104117674396, centerX: -3648.305214910319, centerY: -1581.7104117674396, groupRotation: 0, snapshotRotation: 0 }
+Object { groupX: -258.584253955182, groupY: -1589.0774162413315, centerX: -258.584253955182, centerY: -1589.0774162413315, groupRotation: 89.99999999999987, snapshotRotation: 89.99999999999987 }
+useSelectionState.js:202:15
+[ProductsLayer] Removing transformend listener from Transformer ProductsLayer.jsx:94:17
+[selectionSnapshot] Product product-1760787238093-0 rotation: 89.99999999999987 useSelectionState.js:45:15
+[selectionSnapshot] Text 7ab8e2a0-6237-40c0-aa94-b7f7708dcc41 rotation: 89.99999999999987 useSelectionState.js:51:15
+[selectionSnapshot] Rotation calculation: 
+Object { totalRotation: 179.99999999999974, rotationCount: 2, avgRotation: 89.99999999999987 }
+useSelectionState.js:58:13
+[selectionSnapshot] Creating new snapshot 
+Object { selectedIds: (2) […], productCount: 1, textCount: 1, centerX: -258.584253955182, centerY: -1589.0774162413315, avgRotation: 89.99999999999987 }
 ​
-centerX: -3648.305214910319
+avgRotation: 89.99999999999987
 ​
-centerY: -1581.7104117674396
+centerX: -258.584253955182
 ​
-groupRotation: 0
+centerY: -1589.0774162413315
 ​
-groupX: -3648.305214910319
+productCount: 1
 ​
-groupY: -1581.7104117674396
+selectedIds: Array [ "product-1760787238093-0", "text-7ab8e2a0-6237-40c0-aa94-b7f7708dcc41" ]
 ​
-snapshotRotation: 0
+textCount: 1
 ​
 <prototype>: Object { … }
+useSelectionState.js:84:13
+[ProductsLayer] Attaching transformend listener to Transformer ProductsLayer.jsx:82:15
+[useEffect transformer] Attaching transformer 
+Object { selectedCount: 2, currentRotation: 89.99999999999987, groupX: -258.584253955182, groupY: -1589.0774162413315, centerX: -258.584253955182, centerY: -1589.0774162413315 }
+useSelectionState.js:134:15
+[useEffect transformer] Transformer and Group event handlers: 
+Object { hasGroupOnTransformEnd: "undefined", hasGroupOnDragEnd: "undefined" }
+useSelectionState.js:164:15
+[ProductsLayer] Transformer transformend event fired ProductsLayer.jsx:85:17
+[handleUnifiedGroupTransformEnd] Called 
+Object { hasSelectedIds: true, hasGroupRef: true, hasSnapshot: true }
+index.jsx:645:13
+[handleUnifiedGroupTransformEnd] 
+Object { hasTransform: true, groupX: -2413.539928937016, groupY: 408.52454949424316, centerX: -258.584253955182, centerY: -1589.0774162413315, groupScaleX: 0.9999999999999953, groupScaleY: 1.0000000000000049, groupRotation: -0, snapshotRotation: 89.99999999999987, productCount: 1, … }
+​
+centerX: -258.584253955182
+​
+centerY: -1589.0774162413315
+​
+groupRotation: -0
+​
+groupScaleX: 0.9999999999999953
+​
+groupScaleY: 1.0000000000000049
+​
+groupX: -2413.539928937016
+​
+groupY: 408.52454949424316
+​
+hasTransform: true
+​
+productCount: 1
+​
+snapshotRotation: 89.99999999999987
+​
+textCount: 1
+​
+<prototype>: Object { … }
+index.jsx:679:13
+[handleUnifiedGroupTransformEnd] Applying transform to products and text boxes index.jsx:699:13
+[handleUnifiedGroupTransformEnd] Transforming product product-1760787238093-0 
+Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…}, currentRotation: 89.99999999999987, originalRelativeRotation: 0, rotationDelta: -89.99999999999987, groupRotation: -0, snapshotRotation: 89.99999999999987, … }
+​
+currentRotation: 89.99999999999987
+​
+delta: Object { x: -806.3497138739303, y: 1360.6454719947988 }
+​
+groupRotation: -0
+​
+newPos: Object { x: -1420.758701512677, y: 764.3492831778117 }
+​
+newRotation: 0
+​
+originalPos: Object { x: -614.4089876387466, y: -596.2961888169872 }
+​
+originalRelativeRotation: 0
+​
+relativePos: Object { x: 992.7812274243389, y: 355.8247336835686 }
+​
+rotationDelta: -89.99999999999987
+​
+snapshotRelative: Object { x: -355.82473368356455, y: 992.7812274243444 }
+​
+snapshotRotation: 89.99999999999987
+​
+<prototype>: Object { … }
+index.jsx:740:17
+[handleUnifiedGroupTransformEnd] Calling updateHistory with transformed products 
+Object { productCount: 1, firstProductRotation: 0 }
+​
+firstProductRotation: 0
+​
+productCount: 1
+​
+<prototype>: Object { … }
+index.jsx:764:15
+[handleUnifiedGroupTransformEnd] Transforming text box 7ab8e2a0-6237-40c0-aa94-b7f7708dcc41 
+Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…} }
+​
+delta: Object { x: -3503.5616360897375, y: 2634.5584594763504 }
+​
+newPos: Object { x: -3406.321156361355, y: 52.69981581067441 }
+​
+originalPos: Object { x: 97.24047972838252, y: -2581.858643665676 }
+​
+relativePos: Object { x: -992.781227424339, y: -355.8247336835686 }
+​
+snapshotRelative: Object { x: 355.82473368356455, y: -992.7812274243445 }
+​
+<prototype>: Object { … }
+index.jsx:804:17
+[handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey index.jsx:845:13
+[handleUnifiedGroupTransformEnd] Called 
+Object { hasSelectedIds: true, hasGroupRef: true, hasSnapshot: true }
+index.jsx:645:13
+[handleUnifiedGroupTransformEnd] 
+Object { hasTransform: true, groupX: -2413.539928937016, groupY: 408.52454949424316, centerX: -258.584253955182, centerY: -1589.0774162413315, groupScaleX: 0.9999999999999953, groupScaleY: 1.0000000000000049, groupRotation: -0, snapshotRotation: 89.99999999999987, productCount: 1, … }
+​
+centerX: -258.584253955182
+​
+centerY: -1589.0774162413315
+​
+groupRotation: -0
+​
+groupScaleX: 0.9999999999999953
+​
+groupScaleY: 1.0000000000000049
+​
+groupX: -2413.539928937016
+​
+groupY: 408.52454949424316
+​
+hasTransform: true
+​
+productCount: 1
+​
+snapshotRotation: 89.99999999999987
+​
+textCount: 1
+​
+<prototype>: Object { … }
+index.jsx:679:13
+[handleUnifiedGroupTransformEnd] Applying transform to products and text boxes index.jsx:699:13
+[handleUnifiedGroupTransformEnd] Transforming product product-1760787238093-0 
+Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…}, currentRotation: 89.99999999999987, originalRelativeRotation: 0, rotationDelta: -89.99999999999987, groupRotation: -0, snapshotRotation: 89.99999999999987, … }
+​
+currentRotation: 89.99999999999987
+​
+delta: Object { x: -806.3497138739303, y: 1360.6454719947988 }
+​
+groupRotation: -0
+​
+newPos: Object { x: -1420.758701512677, y: 764.3492831778117 }
+​
+newRotation: 0
+​
+originalPos: Object { x: -614.4089876387466, y: -596.2961888169872 }
+​
+originalRelativeRotation: 0
+​
+relativePos: Object { x: 992.7812274243389, y: 355.8247336835686 }
+​
+rotationDelta: -89.99999999999987
+​
+snapshotRelative: Object { x: -355.82473368356455, y: 992.7812274243444 }
+​
+snapshotRotation: 89.99999999999987
+​
+<prototype>: Object { … }
+index.jsx:740:17
+[handleUnifiedGroupTransformEnd] Calling updateHistory with transformed products 
+Object { productCount: 1, firstProductRotation: 0 }
+​
+firstProductRotation: 0
+​
+productCount: 1
+​
+<prototype>: Object { … }
+index.jsx:764:15
+[handleUnifiedGroupTransformEnd] Transforming text box 7ab8e2a0-6237-40c0-aa94-b7f7708dcc41 
+Object { originalPos: {…}, newPos: {…}, delta: {…}, relativePos: {…}, snapshotRelative: {…} }
+​
+delta: Object { x: -3503.5616360897375, y: 2634.5584594763504 }
+​
+newPos: Object { x: -3406.321156361355, y: 52.69981581067441 }
+​
+originalPos: Object { x: 97.24047972838252, y: -2581.858643665676 }
+​
+relativePos: Object { x: -992.781227424339, y: -355.8247336835686 }
+​
+snapshotRelative: Object { x: 355.82473368356455, y: -992.7812274243445 }
+​
+<prototype>: Object { … }
+index.jsx:804:17
+[handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey index.jsx:845:13
+[selectionSnapshot] Product product-1760787238093-0 rotation: 0 useSelectionState.js:45:15
+[selectionSnapshot] Text 7ab8e2a0-6237-40c0-aa94-b7f7708dcc41 rotation: 0 useSelectionState.js:51:15
+[selectionSnapshot] Rotation calculation: 
+Object { totalRotation: 0, rotationCount: 2, avgRotation: 0 }
+useSelectionState.js:58:13
+[selectionSnapshot] Creating new snapshot 
+Object { selectedIds: (2) […], productCount: 1, textCount: 1, centerX: -2413.539928937016, centerY: 408.52454949424305, avgRotation: 0 }
+​
+avgRotation: 0
+​
+centerX: -2413.539928937016
+​
+centerY: 408.52454949424305
+​
+productCount: 1
+​
+selectedIds: Array [ "product-1760787238093-0", "text-7ab8e2a0-6237-40c0-aa94-b7f7708dcc41" ]
+​
+textCount: 1
+​
+<prototype>: Object { … }
+useSelectionState.js:84:13
+[ProductsLayer] Removing transformend listener from Transformer ProductsLayer.jsx:94:17
+[ProductsLayer] Attaching transformend listener to Transformer ProductsLayer.jsx:82:15
+[useEffect transformer] Attaching transformer 
+Object { selectedCount: 2, currentRotation: 0, groupX: -2413.539928937016, groupY: 408.52454949424305, centerX: -2413.539928937016, centerY: 408.52454949424305 }
+useSelectionState.js:134:15
+[useEffect transformer] Transformer and Group event handlers: 
+Object { hasGroupOnTransformEnd: "undefined", hasGroupOnDragEnd: "undefined" }
+useSelectionState.js:164:15
+updateLayer called: 
+Object { layerId: "layer-1760547775415", updates: (1) […] }
+​
+layerId: "layer-1760547775415"
+​
+updates: Array [ "products" ]
+​
+<prototype>: Object { … }
+useLayerManager.js:97:13
+updateLayer called: 
+Object { layerId: "layer-1760547775415", updates: (1) […] }
+​
+layerId: "layer-1760547775415"
+​
+updates: Array [ "textBoxes" ]
+​
+<prototype>: Object { … }
+useLayerManager.js:97:13
+[ProductsLayer] Removing transformend listener from Transformer ProductsLayer.jsx:94:17
+[ProductsLayer] Attaching transformend listener to Transformer ProductsLayer.jsx:82:15
+Layer switch effect triggered 
+Object { activeLayerId: "layer-1760547775415", lastLoadedLayerId: "layer-1760547775415", hasActiveLayer: true, layersVersion: 1, condition: false }
+index.jsx:529:13
+[applyGroupTransform] No transform detected, skipping update 
+Object { groupX: -2413.539928937016, groupY: 408.52454949424305, centerX: -2413.539928937016, centerY: 408.52454949424305, groupRotation: 0, snapshotRotation: 0 }
 useSelectionState.js:202:15
 [ProductsLayer] Removing transformend listener from Transformer ProductsLayer.jsx:94:17
 

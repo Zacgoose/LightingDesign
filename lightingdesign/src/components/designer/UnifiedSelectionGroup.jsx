@@ -176,13 +176,18 @@ export const UnifiedSelectionGroup = memo(
             const fontStyle = isItalic ? "italic" : "normal";
             const fontWeight = isBold ? "bold" : "normal";
 
+            // Calculate rendered font size based on scaleFactor
+            const baseFontSize = textBox.fontSize || 24;
+            const scaleFactor = textBox.scaleFactor || 100;
+            const renderedFontSize = baseFontSize * (scaleFactor / 100);
+
             return (
               <Text
                 key={textBox.id}
                 x={textBox.relativeX || 0}
                 y={textBox.relativeY || 0}
                 text={textBox.text}
-                fontSize={textBox.fontSize || 24}
+                fontSize={renderedFontSize}
                 fontFamily={textBox.fontFamily || "Arial"}
                 fontStyle={fontStyle}
                 fontVariant={fontWeight}

@@ -1265,6 +1265,7 @@ const Page = () => {
           color: theme.palette.mode === "dark" ? "#ffffff" : "#000000",
           width: 200,
           sublayerId: activeLayer?.defaultSublayerId || null,
+          scaleFactor: scaleFactor, // Store scaleFactor at creation time, similar to products
         };
         
         // Add the text box and open the dialog immediately

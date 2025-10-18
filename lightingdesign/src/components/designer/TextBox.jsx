@@ -32,6 +32,16 @@ export const TextBox = memo(
     const fontStyle = isItalic ? "italic" : "normal";
     const fontWeight = isBold ? "bold" : "normal";
 
+    // Calculate rendered font size based on scaleFactor
+    // The fontSize stored is the "base" size at scaleFactor=100
+    // For a larger floorplan (smaller scaleFactor), we want text to scale proportionally
+    const baseFontSize = textBox.fontSize || 24;
+    const scaleFactor = textBox.scaleFactor || 100;
+    // Render font size as: baseFontSize * (scaleFactor / 100)
+    // This way, if scaleFactor is 50 (large floorplan), a baseFontSize of 120 renders as 60 pixels
+    // And if scaleFactor is 200 (small floorplan), a baseFontSize of 24 renders as 48 pixels
+    const renderedFontSize = baseFontSize * (scaleFactor / 100);
+
     return (
       <>
         <Text
@@ -39,7 +49,7 @@ export const TextBox = memo(
           x={textBox.x}
           y={textBox.y}
           text={textBox.text}
-          fontSize={textBox.fontSize || 24}
+          fontSize={renderedFontSize}
           fontFamily={textBox.fontFamily || "Arial"}
           fontStyle={fontStyle}
           fontVariant={fontWeight}
@@ -68,13 +78,13 @@ export const TextBox = memo(
             const scaleX = node.scaleX();
             const scaleY = node.scaleY();
 
-            // Calculate new font size based on vertical scale
-            // Use the average of scaleX and scaleY for uniform scaling
+            // Calculate new base font size based on scale
+            // We're scaling the rendered size, so we need to adjust the base size
             const averageScale = (scaleX + scaleY) / 2;
-            const currentFontSize = textBox.fontSize || 24;
-            const newFontSize = Math.max(8, Math.round(currentFontSize * averageScale));
+            const currentBaseFontSize = textBox.fontSize || 24;
+            const newBaseFontSize = Math.max(8, Math.round(currentBaseFontSize * averageScale));
 
-            // Reset scale and adjust width and font size
+            // Reset scale and adjust width and base font size
             node.scaleX(1);
             node.scaleY(1);
 
@@ -83,7 +93,7 @@ export const TextBox = memo(
               x: node.x(),
               y: node.y(),
               width: Math.max(5, node.width() * scaleX),
-              fontSize: newFontSize,
+              fontSize: newBaseFontSize, // Update base fontSize
               rotation: node.rotation(),
               scaleX: 1,
               scaleY: 1,

@@ -651,7 +651,9 @@ const Page = () => {
       if (selectedTextId) {
         setTextBoxes(textBoxes.filter((t) => t.id !== selectedTextId));
         setSelectedTextId(null);
-      } else {
+      }
+      // Also delete selected products/connectors
+      if (selectedIds.length > 0 || selectedConnectorId) {
         contextMenus.handleDeleteSelected();
       }
     },
@@ -1040,7 +1042,7 @@ const Page = () => {
           id: crypto.randomUUID(),
           x: canvasPos.x,
           y: canvasPos.y,
-          text: "Double-click to edit",
+          text: "",  // Start with empty text so user can type immediately
           fontSize: 24,
           fontFamily: "Arial",
           color: theme.palette.mode === "dark" ? "#ffffff" : "#000000",
@@ -1048,6 +1050,7 @@ const Page = () => {
         };
         setTextBoxes([...textBoxes, newTextBox]);
         setSelectedTextId(newTextBox.id);
+        // Immediately enter edit mode so user can start typing
         setEditingTextId(newTextBox.id);
         setSelectedIds([]);
         setSelectedConnectorId(null);
@@ -1109,13 +1112,10 @@ const Page = () => {
   );
 
   const handleSelectionEnd = useCallback(() => {
-    // If we didn't actually drag (just clicked), clear selection
-    if (!hasDraggedRef.current) {
-      selectionStartRef.current = null;
-      return;
-    }
-
-    if (!isSelecting || !selectionRect) {
+    // If we didn't actually drag (just clicked), don't do selection
+    if (!hasDraggedRef.current || !selectionRect) {
+      setIsSelecting(false);
+      setSelectionRect(null);
       selectionStartRef.current = null;
       hasDraggedRef.current = false;
       return;
@@ -1160,25 +1160,23 @@ const Page = () => {
       return !(textX2 < x1 || textX1 > x2 || textY2 < y1 || textY1 > y2);
     });
 
-    if (selectedProducts.length > 0) {
+    // Select both products and text boxes (support mixed selection)
+    if (selectedProducts.length > 0 || selectedTexts.length > 0) {
       setSelectedIds(selectedProducts.map((p) => p.id));
-      setGroupKey((k) => k + 1);
-    }
-
-    // If text boxes are selected, select the first one (single text selection for now)
-    if (selectedTexts.length > 0) {
-      setSelectedTextId(selectedTexts[0].id);
-      // Clear product selection if text is selected
-      if (selectedProducts.length === 0) {
-        setSelectedIds([]);
+      // For now, select first text if any (single text selection)
+      if (selectedTexts.length > 0) {
+        setSelectedTextId(selectedTexts[0].id);
+      } else {
+        setSelectedTextId(null);
       }
+      setGroupKey((k) => k + 1);
     }
 
     setIsSelecting(false);
     setSelectionRect(null);
     selectionStartRef.current = null;
     hasDraggedRef.current = false;
-  }, [isSelecting, selectionRect, products, textBoxes, scaleFactor, setSelectedIds, setGroupKey]);
+  }, [selectionRect, products, textBoxes, scaleFactor, setSelectedIds, setGroupKey]);
 
   const handleStageMouseUp = useCallback(
     (e) => {

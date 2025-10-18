@@ -198,6 +198,13 @@ export const ProductsLayer = memo(
               const scaleFactor = textBox.scaleFactor || 100;
               const renderedFontSize = baseFontSize * (scaleFactor / 100);
 
+              // Calculate center offset for rotation
+              // Text width is known, height is approximately fontSize * 1.2 for single line
+              const textWidth = textBox.width || 100;
+              const textHeight = renderedFontSize * 1.2;
+              const offsetX = textWidth / 2;
+              const offsetY = textHeight / 2;
+
               return (
                 <Group
                   key={textBox.id}
@@ -206,8 +213,8 @@ export const ProductsLayer = memo(
                   rotation={textBox.rotation || 0}
                   scaleX={textBox.scaleX || 1}
                   scaleY={textBox.scaleY || 1}
-                  offsetX={0}
-                  offsetY={0}
+                  offsetX={offsetX}
+                  offsetY={offsetY}
                   draggable={false}
                   listening={true}
                   onClick={(e) => {
@@ -305,7 +312,6 @@ export const ProductsLayer = memo(
             anchorSize={8}
             borderDash={[4, 4]}
             rotationSnapTolerance={5}
-            rotationDeltaOffset={-(selectionSnapshot.rotation || 0)}
             enabledAnchors={
               textIds.length > 0 && productOnlyIds.length === 0
                 ? [

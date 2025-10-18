@@ -14,8 +14,8 @@ export const GridLayer = React.memo(
     scaleFactor = 100,
     backgroundImageNaturalSize = null,
     imageScale = 1,
-    gridColor = "rgba(0, 0, 0, 0.5)",
-    strokeWidth = 0.5,
+    gridColor = "rgba(0, 0, 0, 1)",
+    strokeWidth = 0.8,
   }) => {
     // Generate grid lines with memoization for performance
     const gridLines = useMemo(() => {

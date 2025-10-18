@@ -38,6 +38,7 @@ import { useSelectionState } from "/src/hooks/useSelectionState";
 import { useDesignLoader } from "/src/hooks/useDesignLoader";
 import { useProductInteraction } from "/src/hooks/useProductInteraction";
 import { useContextMenus } from "/src/hooks/useContextMenus";
+import { useSettings } from "/src/hooks/use-settings";
 import productTypesConfig from "/src/data/productTypes.json";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
 import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
@@ -47,6 +48,7 @@ const Page = () => {
   const { id } = router.query;
   const theme = useTheme();
   const queryClient = useQueryClient();
+  const settings = useSettings();
 
   // State for tracking save status
   const [isSaving, setIsSaving] = useState(false);
@@ -423,15 +425,19 @@ const Page = () => {
   useEffect(() => {
     if (!id || !hasUnsavedChanges || isSaving) return;
 
+    // Get auto-save interval from user settings (in minutes), default to 2 minutes
+    const autoSaveMinutes = parseInt(settings.autoSaveInterval?.value || "2", 10);
+    const autoSaveMs = autoSaveMinutes * 60 * 1000;
+
     const autoSaveInterval = setInterval(() => {
       if (hasUnsavedChanges && !isSaving) {
         console.log("Auto-saving design...");
         handleSave();
       }
-    }, 120000);
+    }, autoSaveMs);
 
     return () => clearInterval(autoSaveInterval);
-  }, [id, hasUnsavedChanges, isSaving, handleSave]);
+  }, [id, hasUnsavedChanges, isSaving, handleSave, settings.autoSaveInterval]);
 
   // Handler for context menu 'Scale...'
   const handleOpenScaleDialog = useCallback(() => {
@@ -1961,6 +1967,8 @@ const Page = () => {
                     backgroundImageNaturalSize={backgroundImageNaturalSize}
                     scaleFactor={scaleFactor}
                     onPan={handleCanvasPan}
+                    gridOpacity={settings.gridOpacity}
+                    backgroundOpacity={settings.backgroundOpacity}
                   >
                     <ConnectorsLayer
                       connectors={filterConnectorsBySublayers(connectors, activeLayerId)}

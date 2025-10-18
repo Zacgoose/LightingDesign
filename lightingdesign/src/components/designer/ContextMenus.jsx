@@ -106,13 +106,6 @@ export const ContextMenus = ({
         anchorPosition={
           contextMenu !== null ? { top: contextMenu.y, left: contextMenu.x } : undefined
         }
-        MenuListProps={{
-          onMouseLeave: () => {
-            // Close submenus when mouse leaves the main menu
-            handleSublayerMenuClose();
-            handleCustomObjectMenuClose();
-          },
-        }}
       >
         {contextMenu?.type === "product" && (
           <>

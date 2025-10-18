@@ -133,7 +133,7 @@ export const ProductsLayer = memo(
             rotation={selectionSnapshot.rotation || 0}
             offsetX={0}
             offsetY={0}
-            draggable={selectedTool === "select" && canInteract}
+            draggable={(selectedTool === "select" || selectedTool === "text") && canInteract}
             onDragEnd={onGroupTransformEnd}
             onTransformEnd={onGroupTransformEnd}
           >

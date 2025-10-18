@@ -73,31 +73,88 @@ export const TextBox = memo(
             });
             if (onDragEnd) onDragEnd(e);
           }}
-          onTransformEnd={(e) => {
+          onTransform={(e) => {
+            // Real-time updates during transformation
             const node = textRef.current;
+            const transformer = trRef.current;
+            
+            if (!node || !transformer) return;
+            
             const scaleX = node.scaleX();
             const scaleY = node.scaleY();
+            
+            // Determine which anchor is being used
+            const activeAnchor = transformer.getActiveAnchor();
+            const isCornerAnchor = activeAnchor && (
+              activeAnchor === 'top-left' || 
+              activeAnchor === 'top-right' || 
+              activeAnchor === 'bottom-left' || 
+              activeAnchor === 'bottom-right'
+            );
+            
+            if (isCornerAnchor) {
+              // Corner resize: scale font size (current behavior)
+              // Let the natural scaling happen, will adjust font on transformEnd
+            } else {
+              // Side/top resize: adjust width, keep font size
+              // Reset vertical scale, only use horizontal scale for width
+              const newWidth = Math.max(5, node.width() * scaleX);
+              node.width(newWidth);
+              node.scaleX(1);
+              node.scaleY(1);
+            }
+          }}
+          onTransformEnd={(e) => {
+            const node = textRef.current;
+            const transformer = trRef.current;
+            
+            if (!node || !transformer) return;
+            
+            const scaleX = node.scaleX();
+            const scaleY = node.scaleY();
+            
+            // Determine which anchor was used
+            const activeAnchor = transformer.getActiveAnchor();
+            const isCornerAnchor = activeAnchor && (
+              activeAnchor === 'top-left' || 
+              activeAnchor === 'top-right' || 
+              activeAnchor === 'bottom-left' || 
+              activeAnchor === 'bottom-right'
+            );
 
-            // Calculate new base font size based on scale
-            // We're scaling the rendered size, so we need to adjust the base size
-            const averageScale = (scaleX + scaleY) / 2;
-            const currentBaseFontSize = textBox.fontSize || 24;
-            const newBaseFontSize = Math.max(8, Math.round(currentBaseFontSize * averageScale));
+            if (isCornerAnchor) {
+              // Corner resize: adjust font size
+              const averageScale = (scaleX + scaleY) / 2;
+              const currentBaseFontSize = textBox.fontSize || 24;
+              const newBaseFontSize = Math.max(8, Math.round(currentBaseFontSize * averageScale));
 
-            // Reset scale and adjust width and base font size
-            node.scaleX(1);
-            node.scaleY(1);
+              // Reset scale and adjust width and base font size
+              node.scaleX(1);
+              node.scaleY(1);
 
-            onChange({
-              ...textBox,
-              x: node.x(),
-              y: node.y(),
-              width: Math.max(5, node.width() * scaleX),
-              fontSize: newBaseFontSize, // Update base fontSize
-              rotation: node.rotation(),
-              scaleX: 1,
-              scaleY: 1,
-            });
+              onChange({
+                ...textBox,
+                x: node.x(),
+                y: node.y(),
+                width: Math.max(5, node.width() * scaleX),
+                fontSize: newBaseFontSize,
+                rotation: node.rotation(),
+                scaleX: 1,
+                scaleY: 1,
+              });
+            } else {
+              // Side/top resize: keep font size, adjust width
+              // Width was already adjusted in onTransform, just finalize
+              onChange({
+                ...textBox,
+                x: node.x(),
+                y: node.y(),
+                width: node.width(),
+                rotation: node.rotation(),
+                scaleX: 1,
+                scaleY: 1,
+              });
+            }
           }}
           onContextMenu={onContextMenu}
         />

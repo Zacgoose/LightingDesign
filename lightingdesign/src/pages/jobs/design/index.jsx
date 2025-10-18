@@ -1383,7 +1383,7 @@ const Page = () => {
     e.cancelBubble = true;
     
     setSelectedTextId(textId);
-    setSelectedIds([]);
+    setSelectedIds([`text-${textId}`]); // Keep text in selection for visual feedback
     setSelectedConnectorId(null);
     
     // Use screen coordinates (clientX/Y) like product context menu

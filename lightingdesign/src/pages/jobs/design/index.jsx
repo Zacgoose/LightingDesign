@@ -28,6 +28,7 @@ import { SubLayerControls } from "/src/components/designer/SubLayerControls";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
 import { TextLayer } from "/src/components/designer/TextLayer";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
+import { TextEditor } from "/src/components/designer/TextEditor";
 import { useHistory } from "/src/hooks/useHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
 import { useLayerManager } from "/src/hooks/useLayerManager";
@@ -192,6 +193,8 @@ const Page = () => {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionRect, setSelectionRect] = useState(null);
   const selectionStartRef = useRef(null);
+  const hasDraggedRef = useRef(false);
+  const DRAG_THRESHOLD = 5; // pixels - minimum movement to consider it a drag
 
   // UI state
   const [productDrawerVisible, setProductDrawerVisible] = useState(false);
@@ -201,6 +204,7 @@ const Page = () => {
   const clipboard = useRef({ products: [], connectors: [] });
   const pendingInsertPosition = useRef(null);
   const subLayerControlsRef = useRef();
+  const stageRef = useRef();
 
   // Measurement state
   const [measureMode, setMeasureMode] = useState(false);
@@ -962,7 +966,7 @@ const Page = () => {
 
   const handleSelectionMove = useCallback(
     (e) => {
-      if (!isSelecting) return;
+      if (!selectionStartRef.current) return;
 
       const stage = e.target.getStage();
       const pointerPosition = stage.getPointerPosition();
@@ -971,14 +975,27 @@ const Page = () => {
         y: (pointerPosition.y - stagePosition.y) / stageScale,
       };
 
-      setSelectionRect({
-        x1: selectionStartRef.current.x,
-        y1: selectionStartRef.current.y,
-        x2: canvasPos.x,
-        y2: canvasPos.y,
-      });
+      // Check if we've moved beyond the threshold
+      const dx = Math.abs(canvasPos.x - selectionStartRef.current.x);
+      const dy = Math.abs(canvasPos.y - selectionStartRef.current.y);
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (!hasDraggedRef.current && distance > DRAG_THRESHOLD / stageScale) {
+        // Start selection - we've moved beyond threshold
+        hasDraggedRef.current = true;
+        setIsSelecting(true);
+      }
+
+      if (hasDraggedRef.current) {
+        setSelectionRect({
+          x1: selectionStartRef.current.x,
+          y1: selectionStartRef.current.y,
+          x2: canvasPos.x,
+          y2: canvasPos.y,
+        });
+      }
     },
-    [isSelecting, stagePosition, stageScale]
+    [stagePosition, stageScale, DRAG_THRESHOLD]
   );
 
   const handleCanvasMouseMove = useCallback(
@@ -1020,7 +1037,7 @@ const Page = () => {
         };
 
         const newTextBox = {
-          id: `text-${Date.now()}`,
+          id: crypto.randomUUID(),
           x: canvasPos.x,
           y: canvasPos.y,
           text: "Double-click to edit",
@@ -1031,6 +1048,7 @@ const Page = () => {
         };
         setTextBoxes([...textBoxes, newTextBox]);
         setSelectedTextId(newTextBox.id);
+        setEditingTextId(newTextBox.id);
         setSelectedIds([]);
         setSelectedConnectorId(null);
       }
@@ -1039,79 +1057,22 @@ const Page = () => {
   );
 
   const handleTextDoubleClick = useCallback((e, textId) => {
-    const textBox = textBoxes.find((t) => t.id === textId);
-    if (!textBox) return;
+    setEditingTextId(textId);
+  }, []);
 
-    // Create a temporary textarea for editing
-    const textNode = e.target;
-    const stage = textNode.getStage();
-    const stageBox = stage.container().getBoundingClientRect();
+  const handleTextEditSave = useCallback(
+    (textId, newText) => {
+      setTextBoxes((boxes) =>
+        boxes.map((box) => (box.id === textId ? { ...box, text: newText } : box))
+      );
+      setEditingTextId(null);
+    },
+    []
+  );
 
-    // Get text position in screen coordinates
-    const areaPosition = {
-      x: stageBox.left + textNode.x() * stageScale + stagePosition.x,
-      y: stageBox.top + textNode.y() * stageScale + stagePosition.y,
-    };
-
-    // Create textarea
-    const textarea = document.createElement("textarea");
-    document.body.appendChild(textarea);
-
-    textarea.value = textBox.text;
-    textarea.style.position = "absolute";
-    textarea.style.top = areaPosition.y + "px";
-    textarea.style.left = areaPosition.x + "px";
-    textarea.style.width = textBox.width * stageScale + "px";
-    textarea.style.fontSize = (textBox.fontSize || 24) * stageScale + "px";
-    textarea.style.fontFamily = textBox.fontFamily || "Arial";
-    textarea.style.border = "2px solid #2196f3";
-    textarea.style.padding = "4px";
-    textarea.style.margin = "0px";
-    textarea.style.overflow = "hidden";
-    textarea.style.background = "white";
-    textarea.style.outline = "none";
-    textarea.style.resize = "none";
-    textarea.style.lineHeight = "1.2";
-    textarea.style.transformOrigin = "left top";
-    textarea.style.color = textBox.color || "#000000";
-    textarea.style.zIndex = "9999";
-
-    textarea.focus();
-    textarea.select();
-
-    const removeTextarea = () => {
-      textarea.parentNode?.removeChild(textarea);
-      window.removeEventListener("click", handleOutsideClick);
-    };
-
-    const handleOutsideClick = (e) => {
-      if (e.target !== textarea) {
-        setTextBoxes((boxes) =>
-          boxes.map((box) =>
-            box.id === textId ? { ...box, text: textarea.value } : box
-          )
-        );
-        removeTextarea();
-      }
-    };
-
-    textarea.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        setTextBoxes((boxes) =>
-          boxes.map((box) =>
-            box.id === textId ? { ...box, text: textarea.value } : box
-          )
-        );
-        removeTextarea();
-      } else if (e.key === "Escape") {
-        removeTextarea();
-      }
-    });
-
-    setTimeout(() => {
-      window.addEventListener("click", handleOutsideClick);
-    }, 0);
-  }, [textBoxes, stageScale, stagePosition]);
+  const handleTextEditCancel = useCallback(() => {
+    setEditingTextId(null);
+  }, []);
 
   const handleTextChange = useCallback((updatedTextBox) => {
     setTextBoxes((boxes) =>
@@ -1140,58 +1101,107 @@ const Page = () => {
         y: (pointerPosition.y - stagePosition.y) / stageScale,
       };
 
-      setIsSelecting(true);
       selectionStartRef.current = canvasPos;
-      setSelectionRect({
-        x1: canvasPos.x,
-        y1: canvasPos.y,
-        x2: canvasPos.x,
-        y2: canvasPos.y,
-      });
+      hasDraggedRef.current = false;
+      // Don't set isSelecting yet - wait for actual movement
     },
     [selectedTool, stagePosition, stageScale]
   );
 
+  const handleStageMouseUp = useCallback(
+    (e) => {
+      // First handle selection end
+      handleSelectionEnd();
+
+      // If we're in select mode and didn't drag, clear selection
+      if (selectedTool === "select" && !hasDraggedRef.current && selectionStartRef.current) {
+        const clickedOnEmpty = e.target === e.target.getStage();
+        if (clickedOnEmpty) {
+          const transformed = applyGroupTransform();
+          if (transformed) updateHistory(transformed);
+          clearSelection();
+          setSelectedTextId(null);
+        }
+      }
+
+      // Clean up refs
+      selectionStartRef.current = null;
+      hasDraggedRef.current = false;
+    },
+    [selectedTool, handleSelectionEnd, applyGroupTransform, updateHistory, clearSelection]
+  );
+
   const handleSelectionEnd = useCallback(() => {
-    if (!isSelecting) return;
+    // If we didn't actually drag (just clicked), clear selection
+    if (!hasDraggedRef.current) {
+      selectionStartRef.current = null;
+      return;
+    }
 
-    if (selectionRect) {
-      // Calculate selection bounds
-      const x1 = Math.min(selectionRect.x1, selectionRect.x2);
-      const y1 = Math.min(selectionRect.y1, selectionRect.y2);
-      const x2 = Math.max(selectionRect.x1, selectionRect.x2);
-      const y2 = Math.max(selectionRect.y1, selectionRect.y2);
+    if (!isSelecting || !selectionRect) {
+      selectionStartRef.current = null;
+      hasDraggedRef.current = false;
+      return;
+    }
 
-      // Find products within or partially overlapping the selection rectangle
-      const selectedProducts = products.filter((product) => {
-        const productType = product.product_type?.toLowerCase() || "default";
-        const config = productTypesConfig[productType] || productTypesConfig.default;
-        
-        // Calculate product bounds using its real-world size
-        const productScaleFactor = product.scaleFactor || scaleFactor;
-        const pixelWidth = ((config.realWorldWidth || config.realWorldSize) / productScaleFactor) * (product.scaleX || 1);
-        const pixelHeight = ((config.realWorldHeight || config.realWorldSize) / productScaleFactor) * (product.scaleY || 1);
-        
-        // Calculate product bounding box (considering it's centered)
-        const productX1 = product.x - pixelWidth / 2;
-        const productY1 = product.y - pixelHeight / 2;
-        const productX2 = product.x + pixelWidth / 2;
-        const productY2 = product.y + pixelHeight / 2;
+    // Calculate selection bounds
+    const x1 = Math.min(selectionRect.x1, selectionRect.x2);
+    const y1 = Math.min(selectionRect.y1, selectionRect.y2);
+    const x2 = Math.max(selectionRect.x1, selectionRect.x2);
+    const y2 = Math.max(selectionRect.y1, selectionRect.y2);
 
-        // Check if rectangles overlap (partial or full)
-        return !(productX2 < x1 || productX1 > x2 || productY2 < y1 || productY1 > y2);
-      });
+    // Find products within or partially overlapping the selection rectangle
+    const selectedProducts = products.filter((product) => {
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      
+      // Calculate product bounds using its real-world size
+      const productScaleFactor = product.scaleFactor || scaleFactor;
+      const pixelWidth = ((config.realWorldWidth || config.realWorldSize) / productScaleFactor) * (product.scaleX || 1);
+      const pixelHeight = ((config.realWorldHeight || config.realWorldSize) / productScaleFactor) * (product.scaleY || 1);
+      
+      // Calculate product bounding box (considering it's centered)
+      const productX1 = product.x - pixelWidth / 2;
+      const productY1 = product.y - pixelHeight / 2;
+      const productX2 = product.x + pixelWidth / 2;
+      const productY2 = product.y + pixelHeight / 2;
 
-      if (selectedProducts.length > 0) {
-        setSelectedIds(selectedProducts.map((p) => p.id));
-        setGroupKey((k) => k + 1);
+      // Check if rectangles overlap (partial or full)
+      return !(productX2 < x1 || productX1 > x2 || productY2 < y1 || productY1 > y2);
+    });
+
+    // Find text boxes within or partially overlapping the selection rectangle
+    const selectedTexts = textBoxes.filter((textBox) => {
+      const textWidth = textBox.width || 200;
+      const textHeight = (textBox.fontSize || 24) * 1.2; // Approximate height
+      
+      const textX1 = textBox.x;
+      const textY1 = textBox.y;
+      const textX2 = textBox.x + textWidth;
+      const textY2 = textBox.y + textHeight;
+
+      return !(textX2 < x1 || textX1 > x2 || textY2 < y1 || textY1 > y2);
+    });
+
+    if (selectedProducts.length > 0) {
+      setSelectedIds(selectedProducts.map((p) => p.id));
+      setGroupKey((k) => k + 1);
+    }
+
+    // If text boxes are selected, select the first one (single text selection for now)
+    if (selectedTexts.length > 0) {
+      setSelectedTextId(selectedTexts[0].id);
+      // Clear product selection if text is selected
+      if (selectedProducts.length === 0) {
+        setSelectedIds([]);
       }
     }
 
     setIsSelecting(false);
     setSelectionRect(null);
     selectionStartRef.current = null;
-  }, [isSelecting, selectionRect, products, scaleFactor, setSelectedIds, setGroupKey]);
+    hasDraggedRef.current = false;
+  }, [isSelecting, selectionRect, products, textBoxes, scaleFactor, setSelectedIds, setGroupKey]);
 
   const checkDeselect = useCallback(
     (e) => {
@@ -1205,9 +1215,10 @@ const Page = () => {
         return;
       }
 
-      // Handle drag-to-select
+      // Handle drag-to-select (just record start position)
       if (selectedTool === "select") {
         handleSelectionStart(e);
+        // Don't clear selection yet - wait to see if it's a drag or click
         return;
       }
 
@@ -1369,6 +1380,7 @@ const Page = () => {
                   }}
                 >
                   <DesignerCanvas
+                    ref={stageRef}
                     width={canvasWidth}
                     height={canvasHeight}
                     viewportWidth={viewportWidth}
@@ -1380,7 +1392,7 @@ const Page = () => {
                     onDragEnd={handleStageDragEnd}
                     draggable={selectedTool === "pan" && !placementMode}
                     onMouseDown={measureMode ? handleCanvasMeasureClick : checkDeselect}
-                    onMouseUp={handleSelectionEnd}
+                    onMouseUp={handleStageMouseUp}
                     onTouchStart={checkDeselect}
                     onMouseMove={handleCanvasMouseMove}
                     onContextMenu={contextMenus.handleStageContextMenu}
@@ -1486,6 +1498,24 @@ const Page = () => {
                     {/* Selection rectangle for drag-to-select */}
                     <SelectionRectangle selectionRect={selectionRect} />
                   </DesignerCanvas>
+
+                  {/* Text editor portal */}
+                  {editingTextId && stageRef.current && (() => {
+                    const textBox = textBoxes.find((t) => t.id === editingTextId);
+                    if (!textBox) return null;
+                    const stage = stageRef.current;
+                    const stageBox = stage.container().getBoundingClientRect();
+                    return (
+                      <TextEditor
+                        textBox={textBox}
+                        stageScale={stageScale}
+                        stagePosition={stagePosition}
+                        stageBox={stageBox}
+                        onSave={(newText) => handleTextEditSave(editingTextId, newText)}
+                        onCancel={handleTextEditCancel}
+                      />
+                    );
+                  })()}
 
                   {/* Inline measurement confirmation */}
                   <MeasurementConfirmation

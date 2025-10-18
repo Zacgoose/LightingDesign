@@ -622,9 +622,15 @@ const Page = () => {
       const selectedConnectors = connectors.filter(
         (c) => selectedIds.includes(c.from) && selectedIds.includes(c.to),
       );
+      // Include selected text boxes in copy (extract text IDs from text- prefixed IDs)
+      const textIds = selectedIds
+        .filter(id => id.startsWith('text-'))
+        .map(id => id.substring(5)); // Remove 'text-' prefix
+      const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
       clipboard.current = {
         products: selectedProducts.map((p) => ({ ...p })),
         connectors: selectedConnectors.map((c) => ({ ...c })),
+        textBoxes: selectedTextBoxes.map((t) => ({ ...t })),
       };
     },
     onPaste: () => {
@@ -650,15 +656,40 @@ const Page = () => {
         to: idMap[c.to],
       }));
 
+      // Paste text boxes with offset
+      const newTextBoxes = (clipboard.current.textBoxes || []).map((t, index) => ({
+        ...t,
+        id: crypto.randomUUID(),
+        x: t.x + 20,
+        y: t.y + 20,
+      }));
+
       updateHistory([...products, ...newProducts]);
       setConnectors([...connectors, ...newConnectors]);
-      setSelectedIds(newProducts.map((p) => p.id));
+      setTextBoxes([...textBoxes, ...newTextBoxes]);
+      
+      // Select pasted products and text boxes
+      const allNewIds = [
+        ...newProducts.map((p) => p.id),
+        ...newTextBoxes.map((t) => `text-${t.id}`)
+      ];
+      setSelectedIds(allNewIds);
+      
+      // Set selectedTextId for single text box operations
+      if (newTextBoxes.length === 1 && newProducts.length === 0) {
+        setSelectedTextId(newTextBoxes[0].id);
+      } else if (newTextBoxes.length === 0) {
+        setSelectedTextId(null);
+      }
       forceGroupUpdate();
     },
     onDelete: () => {
-      // Delete selected text box if any
-      if (selectedTextId) {
-        setTextBoxes(textBoxes.filter((t) => t.id !== selectedTextId));
+      // Delete selected text boxes (from text- prefixed IDs in selectedIds)
+      const textIds = selectedIds
+        .filter(id => id.startsWith('text-'))
+        .map(id => id.substring(5));
+      if (textIds.length > 0) {
+        setTextBoxes(textBoxes.filter((t) => !textIds.includes(t.id)));
         setSelectedTextId(null);
       }
       // Also delete selected products/connectors
@@ -669,7 +700,12 @@ const Page = () => {
     onSelectAll: () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
-      setSelectedIds(products.map((p) => p.id));
+      // Select all products and text boxes
+      const allIds = [
+        ...products.map((p) => p.id),
+        ...textBoxes.map((t) => `text-${t.id}`)
+      ];
+      setSelectedIds(allIds);
       forceGroupUpdate();
     },
     onEscape: () => {
@@ -1360,11 +1396,16 @@ const Page = () => {
 
     // Select both products and text boxes (support mixed selection)
     if (selectedProducts.length > 0 || selectedTexts.length > 0) {
-      setSelectedIds(selectedProducts.map((p) => p.id));
-      // For now, select first text if any (single text selection)
-      if (selectedTexts.length > 0) {
+      // Combine product IDs and text box IDs (with text- prefix)
+      const allSelectedIds = [
+        ...selectedProducts.map((p) => p.id),
+        ...selectedTexts.map((t) => `text-${t.id}`)
+      ];
+      setSelectedIds(allSelectedIds);
+      // Also set selectedTextId for single text box operations
+      if (selectedTexts.length === 1) {
         setSelectedTextId(selectedTexts[0].id);
-      } else {
+      } else if (selectedTexts.length === 0) {
         setSelectedTextId(null);
       }
       setGroupKey((k) => k + 1);

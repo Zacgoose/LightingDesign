@@ -37,9 +37,21 @@ export const useSelectionState = (products, textBoxes = []) => {
       return { centerX: 0, centerY: 0, products: [], textBoxes: [], rotation: 0 };
     }
 
-    // Calculate average rotation (only from products for now)
-    const totalRotation = productSnapshot.reduce((sum, p) => sum + (p.rotation || 0), 0);
-    const avgRotation = productSnapshot.length > 0 ? totalRotation / productSnapshot.length : 0;
+    // Calculate average rotation including both products and text boxes
+    let totalRotation = 0;
+    let rotationCount = 0;
+    
+    productSnapshot.forEach((p) => {
+      totalRotation += (p.rotation || 0);
+      rotationCount++;
+    });
+    
+    textSnapshot.forEach((t) => {
+      totalRotation += (t.rotation || 0);
+      rotationCount++;
+    });
+    
+    const avgRotation = rotationCount > 0 ? totalRotation / rotationCount : 0;
 
     // Calculate center including both products and text boxes
     let sumX = 0;
@@ -86,6 +98,8 @@ export const useSelectionState = (products, textBoxes = []) => {
           ...t,
           relativeX: relX,
           relativeY: relY,
+          // Subtract average rotation to match product behavior
+          rotation: (t.rotation || 0) - avgRotation,
         };
       }),
     };

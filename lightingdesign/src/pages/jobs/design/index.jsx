@@ -671,28 +671,6 @@ const Page = () => {
       return;
     }
 
-    // Calculate center for both products and text boxes
-    let centerX = 0;
-    let centerY = 0;
-    let totalCount = 0;
-
-    if (productIds.length > 0) {
-      const selectedProducts = products.filter(p => productIds.includes(p.id));
-      centerX += selectedProducts.reduce((sum, p) => sum + p.x, 0);
-      centerY += selectedProducts.reduce((sum, p) => sum + p.y, 0);
-      totalCount += selectedProducts.length;
-    }
-
-    if (textIds.length > 0) {
-      const selectedTexts = textBoxes.filter(t => textIds.includes(t.id));
-      centerX += selectedTexts.reduce((sum, t) => sum + t.x, 0);
-      centerY += selectedTexts.reduce((sum, t) => sum + t.y, 0);
-      totalCount += selectedTexts.length;
-    }
-
-    centerX /= totalCount;
-    centerY /= totalCount;
-
     // Transform products
     if (productIds.length > 0) {
       const transformedProducts = products.map((product) => {
@@ -706,7 +684,7 @@ const Page = () => {
         let relX = original.relativeX || 0;
         let relY = original.relativeY || 0;
 
-        // Apply rotation
+        // Apply group rotation to relative positions (Konva coordinate system)
         if (groupRotation !== 0) {
           const angle = (groupRotation * Math.PI) / 180;
           const cos = Math.cos(angle);
@@ -750,7 +728,7 @@ const Page = () => {
         let relX = original.relativeX || 0;
         let relY = original.relativeY || 0;
 
-        // Apply rotation
+        // Apply group rotation to relative positions (Konva coordinate system)
         if (groupRotation !== 0) {
           const angle = (groupRotation * Math.PI) / 180;
           const cos = Math.cos(angle);

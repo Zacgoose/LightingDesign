@@ -1,4 +1,4 @@
-import { Text, Transformer } from "react-konva";
+import { Text, Transformer, Group } from "react-konva";
 import { useEffect, useRef, memo } from "react";
 
 export const TextBox = memo(
@@ -14,7 +14,7 @@ export const TextBox = memo(
     onDoubleClick,
     onContextMenu,
   }) => {
-    const textRef = useRef();
+    const groupRef = useRef();
     // Removed separate transformer - using unified transformer from ProductsLayer
 
     // Parse font style
@@ -35,22 +35,15 @@ export const TextBox = memo(
 
     return (
       <>
-        <Text
-          ref={textRef}
+        <Group
+          ref={groupRef}
           x={textBox.x}
           y={textBox.y}
-          text={textBox.text}
-          fontSize={renderedFontSize}
-          fontFamily={textBox.fontFamily || "Arial"}
-          fontStyle={fontStyle}
-          fontVariant={fontWeight}
-          textDecoration={textBox.textDecoration || ""}
-          fill={textBox.color || "#000000"}
           rotation={textBox.rotation || 0}
           scaleX={textBox.scaleX || 1}
           scaleY={textBox.scaleY || 1}
-          width={textBox.width}
-          wrap="none"
+          offsetX={0}
+          offsetY={0}
           draggable={draggable}
           onClick={onSelect}
           onTap={onSelect}
@@ -67,7 +60,7 @@ export const TextBox = memo(
           }}
           onTransform={(e) => {
             // Real-time updates during transformation
-            const node = textRef.current;
+            const node = groupRef.current;
             if (!node) return;
             
             // Note: This won't work without transformer ref, but we keep it for when text is in group
@@ -75,7 +68,7 @@ export const TextBox = memo(
           }}
           onTransformEnd={(e) => {
             // This only applies to unselected text boxes (selected ones use ProductsLayer transformer)
-            const node = textRef.current;
+            const node = groupRef.current;
             if (!node) return;
             
             const scaleX = node.scaleX();
@@ -93,7 +86,7 @@ export const TextBox = memo(
               ...textBox,
               x: node.x(),
               y: node.y(),
-              width: Math.max(5, node.width() * scaleX),
+              width: Math.max(5, textBox.width * scaleX),
               fontSize: newBaseFontSize,
               rotation: node.rotation(),
               scaleX: 1,
@@ -101,7 +94,23 @@ export const TextBox = memo(
             });
           }}
           onContextMenu={onContextMenu}
-        />
+        >
+          <Text
+            x={0}
+            y={0}
+            text={textBox.text}
+            fontSize={renderedFontSize}
+            fontFamily={textBox.fontFamily || "Arial"}
+            fontStyle={fontStyle}
+            fontVariant={fontWeight}
+            textDecoration={textBox.textDecoration || ""}
+            fill={textBox.color || "#000000"}
+            width={textBox.width}
+            wrap="none"
+            draggable={false}
+            listening={true}
+          />
+        </Group>
         {/* No separate transformer - using unified transformer from ProductsLayer for selected text */}
       </>
     );

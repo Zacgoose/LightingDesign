@@ -28,6 +28,8 @@ export const DesignerCanvas = memo(
       children,
       onMouseMove,
       onPan,
+      gridOpacity,
+      backgroundOpacity,
     },
     ref
   ) => {
@@ -174,6 +176,7 @@ export const DesignerCanvas = memo(
             backgroundImageNaturalSize={backgroundImageNaturalSize}
             imageScale={imageScale}
             gridColor={gridColor}
+            opacity={gridOpacity !== undefined ? gridOpacity / 100 : 0.5}
           />
 
           {/* Background Image Layer */}
@@ -185,7 +188,7 @@ export const DesignerCanvas = memo(
                 y={(-backgroundImageNaturalSize.height * imageScale) / 2}
                 width={backgroundImageNaturalSize.width * imageScale}
                 height={backgroundImageNaturalSize.height * imageScale}
-                opacity={0.7}
+                opacity={backgroundOpacity !== undefined ? backgroundOpacity / 100 : 0.7}
                 listening={false}
               />
             </Layer>
@@ -223,7 +226,9 @@ export const DesignerCanvas = memo(
       prevProps.onTouchStart === nextProps.onTouchStart &&
       prevProps.onContextMenu === nextProps.onContextMenu &&
       prevProps.onMouseMove === nextProps.onMouseMove &&
-      prevProps.onPan === nextProps.onPan
+      prevProps.onPan === nextProps.onPan &&
+      prevProps.gridOpacity === nextProps.gridOpacity &&
+      prevProps.backgroundOpacity === nextProps.backgroundOpacity
     );
   },
 );

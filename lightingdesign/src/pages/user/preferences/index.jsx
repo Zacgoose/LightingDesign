@@ -43,6 +43,9 @@ const Page = () => {
     exportFormat: { value: "pdf", label: "PDF" },
     exportQuality: { value: "medium", label: "Medium" },
     exportIncludeGrid: false,
+    autoSaveInterval: { value: "2", label: "2 minutes" },
+    gridOpacity: 50,
+    backgroundOpacity: 70,
   };
 
   // Merge user settings with defaults
@@ -68,6 +71,9 @@ const Page = () => {
       exportFormat: formValues.exportFormat,
       exportQuality: formValues.exportQuality,
       exportIncludeGrid: formValues.exportIncludeGrid,
+      autoSaveInterval: formValues.autoSaveInterval,
+      gridOpacity: formValues.gridOpacity,
+      backgroundOpacity: formValues.backgroundOpacity,
     };
 
     const shippedValues = {
@@ -97,6 +103,16 @@ const Page = () => {
     { value: "100", label: "100" },
     { value: "250", label: "250" },
     { value: "500", label: "500" },
+  ];
+
+  const autoSaveIntervalOptions = [
+    { value: "2", label: "2 minutes" },
+    { value: "3", label: "3 minutes" },
+    { value: "4", label: "4 minutes" },
+    { value: "5", label: "5 minutes" },
+    { value: "6", label: "6 minutes" },
+    { value: "7", label: "7 minutes" },
+    { value: "8", label: "8 minutes" },
   ];
 
   return (
@@ -154,6 +170,58 @@ const Page = () => {
                             type="switch"
                             name="showGrid"
                             formControl={formcontrol}
+                          />
+                        ),
+                      },
+                    ]}
+                  />
+
+                  {/* Designer Settings */}
+                  <CippPropertyListCard
+                    showDivider={false}
+                    title="Designer Settings"
+                    propertyItems={[
+                      {
+                        label: "Auto-Save Interval",
+                        value: (
+                          <CippFormComponent
+                            type="autoComplete"
+                            creatable={false}
+                            disableClearable={true}
+                            name="autoSaveInterval"
+                            formControl={formcontrol}
+                            multiple={false}
+                            options={autoSaveIntervalOptions}
+                          />
+                        ),
+                      },
+                      {
+                        label: "Grid Opacity (%)",
+                        value: (
+                          <CippFormComponent
+                            type="number"
+                            name="gridOpacity"
+                            formControl={formcontrol}
+                            validators={{
+                              min: { value: 0, message: "Minimum is 0%" },
+                              max: { value: 100, message: "Maximum is 100%" },
+                            }}
+                            helperText="0-100%"
+                          />
+                        ),
+                      },
+                      {
+                        label: "Background Opacity (%)",
+                        value: (
+                          <CippFormComponent
+                            type="number"
+                            name="backgroundOpacity"
+                            formControl={formcontrol}
+                            validators={{
+                              min: { value: 0, message: "Minimum is 0%" },
+                              max: { value: 100, message: "Maximum is 100%" },
+                            }}
+                            helperText="0-100%"
                           />
                         ),
                       },

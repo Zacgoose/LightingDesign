@@ -16,6 +16,7 @@ export const GridLayer = React.memo(
     imageScale = 1,
     gridColor = "rgba(0, 0, 0, 0.5)",
     strokeWidth = 0.5,
+    opacity = 0.5,
   }) => {
     // Generate grid lines with memoization for performance
     const gridLines = useMemo(() => {
@@ -78,6 +79,7 @@ export const GridLayer = React.memo(
             points={line.points}
             stroke={gridColor}
             strokeWidth={strokeWidth}
+            opacity={opacity}
             listening={false}
             perfectDrawEnabled={false}
           />

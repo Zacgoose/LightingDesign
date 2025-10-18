@@ -76,6 +76,10 @@ const initialSettings = {
   persistFilters: false,
   lastUsedFilters: {},
   tablePageSize: { value: "25", label: "25" },
+  // Designer settings
+  autoSaveInterval: { value: "2", label: "2 minutes" },
+  gridOpacity: 50,
+  backgroundOpacity: 70,
 };
 
 const initialState = {

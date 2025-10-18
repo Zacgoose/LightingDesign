@@ -154,40 +154,8 @@ export const ProductsLayer = memo(
             }}
           >
             {/* Render selected products */}
-            {(selectionSnapshot.products?.length > 0
-              ? selectionSnapshot.products
-              : products
-                  .filter((p) => productOnlyIds.includes(p.id))
-                  .map((p) => {
-                    // Calculate center including both products and text boxes
-                    let centerX = 0;
-                    let centerY = 0;
-                    let totalCount = 0;
-                    
-                    if (productOnlyIds.length > 0) {
-                      const selectedProducts = products.filter((prod) => productOnlyIds.includes(prod.id));
-                      centerX += selectedProducts.reduce((sum, prod) => sum + prod.x, 0);
-                      centerY += selectedProducts.reduce((sum, prod) => sum + prod.y, 0);
-                      totalCount += selectedProducts.length;
-                    }
-                    
-                    if (textIds.length > 0) {
-                      const selectedTexts = textBoxes.filter((t) => textIds.includes(t.id));
-                      centerX += selectedTexts.reduce((sum, t) => sum + t.x, 0);
-                      centerY += selectedTexts.reduce((sum, t) => sum + t.y, 0);
-                      totalCount += selectedTexts.length;
-                    }
-                    
-                    centerX /= totalCount;
-                    centerY /= totalCount;
-                    
-                    return {
-                      ...p,
-                      relativeX: p.x - centerX,
-                      relativeY: p.y - centerY,
-                    };
-                  })
-            ).map((product) => {
+            {/* Always use snapshot to avoid inconsistencies */}
+            {selectionSnapshot.products?.map((product) => {
               const productType = product.product_type?.toLowerCase() || "default";
               const config = productTypesConfig[productType] || productTypesConfig.default;
               const customStroke = getProductStrokeColor(product, products, config.stroke);
@@ -217,40 +185,8 @@ export const ProductsLayer = memo(
             })}
             
             {/* Render selected text boxes */}
-            {(selectionSnapshot.textBoxes?.length > 0
-              ? selectionSnapshot.textBoxes
-              : textBoxes
-                  .filter((t) => textIds.includes(t.id))
-                  .map((t) => {
-                    // Calculate center including both products and text boxes
-                    let centerX = 0;
-                    let centerY = 0;
-                    let totalCount = 0;
-                    
-                    if (productOnlyIds.length > 0) {
-                      const selectedProducts = products.filter((p) => productOnlyIds.includes(p.id));
-                      centerX += selectedProducts.reduce((sum, p) => sum + p.x, 0);
-                      centerY += selectedProducts.reduce((sum, p) => sum + p.y, 0);
-                      totalCount += selectedProducts.length;
-                    }
-                    
-                    if (textIds.length > 0) {
-                      const selectedTexts = textBoxes.filter((tb) => textIds.includes(tb.id));
-                      centerX += selectedTexts.reduce((sum, tb) => sum + tb.x, 0);
-                      centerY += selectedTexts.reduce((sum, tb) => sum + tb.y, 0);
-                      totalCount += selectedTexts.length;
-                    }
-                    
-                    centerX /= totalCount;
-                    centerY /= totalCount;
-                    
-                    return {
-                      ...t,
-                      relativeX: t.x - centerX,
-                      relativeY: t.y - centerY,
-                    };
-                  })
-            ).map((textBox) => {
+            {/* Always use snapshot to avoid inconsistencies */}
+            {selectionSnapshot.textBoxes?.map((textBox) => {
               // Parse font style
               const isBold = textBox.fontStyle?.includes("bold") || false;
               const isItalic = textBox.fontStyle?.includes("italic") || false;

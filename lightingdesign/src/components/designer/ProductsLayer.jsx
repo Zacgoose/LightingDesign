@@ -334,13 +334,20 @@ export const ProductsLayer = memo(
                   );
                   
                   if (isCornerAnchor) {
-                    // Maintain aspect ratio for corner resize
+                    // Strictly maintain aspect ratio for corner resize
                     const ratio = oldBox.width / oldBox.height;
-                    const newRatio = newBox.width / newBox.height;
                     
-                    // If ratio changed, adjust to maintain it
-                    if (Math.abs(ratio - newRatio) > 0.01) {
+                    // Calculate which dimension changed more
+                    const widthChange = Math.abs(newBox.width - oldBox.width);
+                    const heightChange = Math.abs(newBox.height - oldBox.height);
+                    
+                    // Maintain ratio by adjusting the dimension that changed less
+                    if (widthChange > heightChange) {
+                      // Width changed more, adjust height to maintain ratio
                       newBox.height = newBox.width / ratio;
+                    } else {
+                      // Height changed more, adjust width to maintain ratio
+                      newBox.width = newBox.height * ratio;
                     }
                   }
                 }

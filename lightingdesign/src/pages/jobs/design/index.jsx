@@ -540,6 +540,10 @@ const Page = () => {
       // Update activeLayerIdRef immediately to ensure sync effects use correct layer
       activeLayerIdRef.current = activeLayerId;
 
+      // Clear selections when switching floors to prevent ghost transformer
+      setSelectedIds([]);
+      setSelectedTextId(null);
+
       // Load the new layer's data
       updateHistory(activeLayer.products || []);
       setConnectors(activeLayer.connectors || []);
@@ -1366,7 +1370,7 @@ const Page = () => {
                       fontStyle: formattingData.fontStyle,
                       textDecoration: formattingData.textDecoration,
                       color: formattingData.color,
-                      width: maxWidth + 10, // Add small padding
+                      width: maxWidth + 20, // Add padding for better sizing
                       height: textHeight,
                     } 
                   : box

@@ -164,8 +164,16 @@ const Page = () => {
   );
   const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100);
 
+  // Text boxes state
+  const [textBoxes, setTextBoxes] = useState([]);
+  const [selectedTextId, setSelectedTextId] = useState(null);
+  const [textDialogOpen, setTextDialogOpen] = useState(false);
+  const [textDialogValue, setTextDialogValue] = useState("");
+  const [textDialogFormatting, setTextDialogFormatting] = useState({});
+  const [pendingTextBoxId, setPendingTextBoxId] = useState(null);
+
   // Selection state management using custom hook
-  const selectionState = useSelectionState(products);
+  const selectionState = useSelectionState(products, textBoxes);
   const {
     selectedIds,
     selectedConnectorId,
@@ -185,14 +193,6 @@ const Page = () => {
 
   // Connection sequence for connect tool
   const [connectSequence, setConnectSequence] = useState([]);
-
-  // Text boxes state
-  const [textBoxes, setTextBoxes] = useState([]);
-  const [selectedTextId, setSelectedTextId] = useState(null);
-  const [textDialogOpen, setTextDialogOpen] = useState(false);
-  const [textDialogValue, setTextDialogValue] = useState("");
-  const [textDialogFormatting, setTextDialogFormatting] = useState({});
-  const [pendingTextBoxId, setPendingTextBoxId] = useState(null);
 
   // Drag-to-select state
   const [isSelecting, setIsSelecting] = useState(false);
@@ -477,6 +477,15 @@ const Page = () => {
     [products, selectedIds, updateHistory, forceGroupUpdate, transformerRef, selectionGroupRef],
   );
 
+  // Force transformer update when text boxes change dimensions
+  useEffect(() => {
+    if (transformerRef.current && selectionGroupRef.current) {
+      // Force transformer to recalculate its bounding box
+      transformerRef.current.forceUpdate();
+      transformerRef.current.getLayer()?.batchDraw();
+    }
+  }, [textBoxes, transformerRef, selectionGroupRef]);
+
   // Update local state when switching layers OR when layers are loaded
   useEffect(() => {
     // Skip if router query is not ready yet - this prevents loading empty layer data
@@ -531,6 +540,10 @@ const Page = () => {
       
       // Update activeLayerIdRef immediately to ensure sync effects use correct layer
       activeLayerIdRef.current = activeLayerId;
+
+      // Clear selections when switching floors to prevent ghost transformer
+      setSelectedIds([]);
+      setSelectedTextId(null);
 
       // Load the new layer's data - use resetHistoryBaseline to prevent undo past loaded state
       resetHistoryBaseline(activeLayer.products || []);
@@ -605,6 +618,7 @@ const Page = () => {
     setIsDragging,
     setSelectedIds,
     setSelectedConnectorId,
+    setSelectedTextId,
     setGroupKey,
     setConnectors,
     setConnectSequence,
@@ -619,6 +633,172 @@ const Page = () => {
     handleProductDragEnd,
     handleGroupTransformEnd,
   } = productInteraction;
+
+  // Unified group transform handler that handles both products and text boxes
+  const handleUnifiedGroupTransformEnd = useCallback(() => {
+    if (!selectedIds.length || !selectionGroupRef.current || !selectionSnapshot) return;
+
+    const group = selectionGroupRef.current;
+    const groupX = group.x();
+    const groupY = group.y();
+    const groupScaleX = group.scaleX();
+    const groupScaleY = group.scaleY();
+    const groupRotation = group.rotation();
+
+    // Extract product IDs and text IDs
+    const productIds = selectedIds.filter(id => !id.startsWith('text-'));
+    const textIds = selectedIds
+      .filter(id => id.startsWith('text-'))
+      .map(id => id.substring(5)); // Remove 'text-' prefix
+
+    // Check if group has been transformed
+    const hasTransform = !(
+      groupX === selectionSnapshot.centerX &&
+      groupY === selectionSnapshot.centerY &&
+      groupScaleX === 1 &&
+      groupScaleY === 1 &&
+      groupRotation === 0
+    );
+
+    if (!hasTransform) {
+      setGroupKey((k) => k + 1);
+      return;
+    }
+
+    // Calculate center for both products and text boxes
+    let centerX = 0;
+    let centerY = 0;
+    let totalCount = 0;
+
+    if (productIds.length > 0) {
+      const selectedProducts = products.filter(p => productIds.includes(p.id));
+      centerX += selectedProducts.reduce((sum, p) => sum + p.x, 0);
+      centerY += selectedProducts.reduce((sum, p) => sum + p.y, 0);
+      totalCount += selectedProducts.length;
+    }
+
+    if (textIds.length > 0) {
+      const selectedTexts = textBoxes.filter(t => textIds.includes(t.id));
+      centerX += selectedTexts.reduce((sum, t) => sum + t.x, 0);
+      centerY += selectedTexts.reduce((sum, t) => sum + t.y, 0);
+      totalCount += selectedTexts.length;
+    }
+
+    centerX /= totalCount;
+    centerY /= totalCount;
+
+    // Transform products
+    if (productIds.length > 0) {
+      const transformedProducts = products.map((product) => {
+        if (!productIds.includes(product.id)) return product;
+
+        // Calculate relative position
+        let relX = product.x - centerX;
+        let relY = product.y - centerY;
+
+        // Apply rotation
+        if (groupRotation !== 0) {
+          const angle = (groupRotation * Math.PI) / 180;
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+          const rotatedX = relX * cos - relY * sin;
+          const rotatedY = relX * sin + relY * cos;
+          relX = rotatedX;
+          relY = rotatedY;
+        }
+
+        // Apply scale
+        relX *= groupScaleX;
+        relY *= groupScaleY;
+
+        const newX = groupX + relX;
+        const newY = groupY + relY;
+
+        return {
+          ...product,
+          x: newX,
+          y: newY,
+          rotation: (product.rotation || 0) + groupRotation,
+          scaleX: (product.scaleX || 1) * groupScaleX,
+          scaleY: (product.scaleY || 1) * groupScaleY,
+        };
+      });
+
+      updateHistory(transformedProducts);
+    }
+
+    // Transform text boxes
+    if (textIds.length > 0) {
+      const transformedTextBoxes = textBoxes.map((textBox) => {
+        if (!textIds.includes(textBox.id)) return textBox;
+
+        // Calculate relative position
+        let relX = textBox.x - centerX;
+        let relY = textBox.y - centerY;
+
+        // Apply rotation
+        if (groupRotation !== 0) {
+          const angle = (groupRotation * Math.PI) / 180;
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+          const rotatedX = relX * cos - relY * sin;
+          const rotatedY = relX * sin + relY * cos;
+          relX = rotatedX;
+          relY = rotatedY;
+        }
+
+        // Apply scale
+        relX *= groupScaleX;
+        relY *= groupScaleY;
+
+        const newX = groupX + relX;
+        const newY = groupY + relY;
+
+        // Detect if this is a corner resize (proportional) or side/top resize
+        const scaleDiff = Math.abs(groupScaleX - groupScaleY);
+        const isCornerResize = scaleDiff < 0.1; // Small difference means corner anchor (proportional)
+        
+        let newFontSize = textBox.fontSize || 24;
+        let newWidth = textBox.width || 200;
+
+        if (isCornerResize) {
+          // Corner resize: scale font size proportionally (keep ratio)
+          const averageScale = (groupScaleX + groupScaleY) / 2;
+          newFontSize = Math.max(8, Math.round(newFontSize * averageScale));
+          newWidth = Math.max(20, newWidth * averageScale);
+        } else {
+          // Side/top resize: adjust width only, keep font size constant for text wrapping
+          newWidth = Math.max(20, newWidth * groupScaleX);
+          // Font size stays the same, text will wrap
+        }
+
+        return {
+          ...textBox,
+          x: newX,
+          y: newY,
+          rotation: (textBox.rotation || 0) + groupRotation,
+          fontSize: newFontSize,
+          width: newWidth,
+          scaleX: 1, // Reset scale after applying to fontSize and width
+          scaleY: 1,
+        };
+      });
+
+      setTextBoxes(transformedTextBoxes);
+    }
+
+    // Force update
+    setGroupKey((k) => k + 1);
+  }, [
+    selectedIds,
+    selectionSnapshot,
+    selectionGroupRef,
+    products,
+    textBoxes,
+    updateHistory,
+    setTextBoxes,
+    setGroupKey,
+  ]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -672,6 +852,7 @@ const Page = () => {
         id: crypto.randomUUID(),
         x: t.x + 20,
         y: t.y + 20,
+        sublayerId: activeLayer?.defaultSublayerId || null,
       }));
 
       updateHistory([...products, ...newProducts]);
@@ -1110,7 +1291,9 @@ const Page = () => {
           fontStyle: "normal", // Can be "normal", "bold", "italic", "bold italic"
           textDecoration: "", // Can be "", "underline", "line-through", or "underline line-through"
           color: theme.palette.mode === "dark" ? "#ffffff" : "#000000",
-          width: 200,
+          width: 100, // Initial placeholder width, will be auto-sized when text is entered
+          sublayerId: activeLayer?.defaultSublayerId || null,
+          scaleFactor: scaleFactor, // Store scaleFactor at creation time, similar to products
         };
         
         // Add the text box and open the dialog immediately
@@ -1154,7 +1337,37 @@ const Page = () => {
       if (pendingTextBoxId) {
         const newText = formattingData.text || "";
         if (newText.trim()) {
-          // User confirmed with text - update the text box with text and formatting
+          // Use Konva's Text node to calculate dimensions accurately
+          // This ensures the text box is sized exactly as Konva will render it
+          const Konva = require('konva');
+          
+          const fontSize = formattingData.fontSize;
+          const fontFamily = formattingData.fontFamily;
+          const isBold = formattingData.fontStyle?.includes("bold");
+          const isItalic = formattingData.fontStyle?.includes("italic");
+          const fontStyle = isItalic ? "italic" : "normal";
+          const fontWeight = isBold ? "bold" : "normal";
+          
+          // Create a temporary Konva Text node to measure the text
+          // This gives us the exact dimensions Konva will use when rendering
+          const tempText = new Konva.Text({
+            text: newText,
+            fontSize: fontSize,
+            fontFamily: fontFamily,
+            fontStyle: fontStyle,
+            fontVariant: fontWeight,
+            padding: 5, // Small padding for visual spacing
+          });
+          
+          // Get the width and height from the Konva Text node
+          // This accounts for line breaks, word wrapping, and font metrics
+          const textWidth = tempText.width();
+          const textHeight = tempText.height();
+          
+          // Clean up the temporary node
+          tempText.destroy();
+          
+          // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
           setTextBoxes((boxes) =>
             boxes.map((box) => 
               box.id === pendingTextBoxId 
@@ -1166,6 +1379,8 @@ const Page = () => {
                     fontStyle: formattingData.fontStyle,
                     textDecoration: formattingData.textDecoration,
                     color: formattingData.color,
+                    width: textWidth, // Use Konva's calculated width
+                    height: textHeight, // Use Konva's calculated height
                   } 
                 : box
             )
@@ -1202,17 +1417,19 @@ const Page = () => {
   }, []);
 
   const handleTextSelect = useCallback((textId) => {
+    // Clear product selections and set only this text
     setSelectedTextId(textId);
-    setSelectedIds([]);
+    setSelectedIds([`text-${textId}`]);
     setSelectedConnectorId(null);
-  }, [setSelectedIds, setSelectedConnectorId]);
+    forceGroupUpdate();
+  }, [setSelectedIds, setSelectedConnectorId, forceGroupUpdate]);
 
   const handleTextContextMenu = useCallback((e, textId) => {
     e.evt.preventDefault();
     e.cancelBubble = true;
     
     setSelectedTextId(textId);
-    setSelectedIds([]);
+    setSelectedIds([`text-${textId}`]); // Keep text in selection for visual feedback
     setSelectedConnectorId(null);
     
     // Use screen coordinates (clientX/Y) like product context menu
@@ -1230,6 +1447,13 @@ const Page = () => {
       if (textBox) {
         setPendingTextBoxId(selectedTextId);
         setTextDialogValue(textBox.text);
+        setTextDialogFormatting({
+          fontSize: textBox.fontSize || 32,
+          fontFamily: textBox.fontFamily || "Arial",
+          fontStyle: textBox.fontStyle || "normal",
+          textDecoration: textBox.textDecoration || "",
+          color: textBox.color || "#000000",
+        });
         setTextDialogOpen(true);
       }
     }
@@ -1742,6 +1966,7 @@ const Page = () => {
 
                     <ProductsLayer
                       products={filterProductsBySublayers(products, activeLayerId)}
+                      textBoxes={textBoxes}
                       selectedIds={selectedIds}
                       selectedTool={selectedTool}
                       selectionSnapshot={selectionSnapshot}
@@ -1755,7 +1980,8 @@ const Page = () => {
                       onProductDragStart={handleProductDragStart}
                       onProductDragEnd={handleProductDragEnd}
                       onContextMenu={contextMenus.handleContextMenu}
-                      onGroupTransformEnd={handleGroupTransformEnd}
+                      onTextContextMenu={handleTextContextMenu}
+                      onGroupTransformEnd={handleUnifiedGroupTransformEnd}
                     />
 
                     {/* Ghost product preview in placement mode */}
@@ -1809,6 +2035,7 @@ const Page = () => {
                     <TextLayer
                       textBoxes={textBoxes}
                       selectedTextId={selectedTextId}
+                      selectedIds={selectedIds}
                       onTextSelect={handleTextSelect}
                       onTextChange={handleTextChange}
                       onTextDoubleClick={handleTextDoubleClick}

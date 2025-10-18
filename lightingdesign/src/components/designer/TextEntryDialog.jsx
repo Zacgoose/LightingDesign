@@ -42,6 +42,8 @@ export const TextEntryDialog = ({
 
   // Formatting state
   const [fontSize, setFontSize] = useState(defaultFormatting.fontSize || 32);
+  const [customFontSize, setCustomFontSize] = useState("");
+  const [showCustomSize, setShowCustomSize] = useState(false);
   const [fontFamily, setFontFamily] = useState(defaultFormatting.fontFamily || "Arial");
   const [formats, setFormats] = useState(() => {
     const initial = [];
@@ -56,7 +58,12 @@ export const TextEntryDialog = ({
   useEffect(() => {
     if (open) {
       form.reset({ value: defaultValue });
-      setFontSize(defaultFormatting.fontSize || 32);
+      const newFontSize = defaultFormatting.fontSize || 32;
+      setFontSize(newFontSize);
+      // Check if fontSize is in preset list
+      const presetSizes = [12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64, 96, 120];
+      setShowCustomSize(!presetSizes.includes(newFontSize));
+      setCustomFontSize(presetSizes.includes(newFontSize) ? "" : String(newFontSize));
       setFontFamily(defaultFormatting.fontFamily || "Arial");
       setTextColor(defaultFormatting.color || "#000000");
       const initial = [];
@@ -69,6 +76,9 @@ export const TextEntryDialog = ({
 
   const onSubmit = (data) => {
     const value = data.value || "";
+    
+    // Use custom font size if set, otherwise use selected fontSize
+    const finalFontSize = showCustomSize && customFontSize ? parseInt(customFontSize) : fontSize;
     
     // Build fontStyle string
     let fontStyle = "normal";
@@ -85,7 +95,7 @@ export const TextEntryDialog = ({
     
     const formatting = {
       text: value,
-      fontSize,
+      fontSize: finalFontSize,
       fontFamily,
       fontStyle,
       textDecoration,
@@ -130,44 +140,23 @@ export const TextEntryDialog = ({
             />
           </Box>
           
-          {/* Text Preview */}
-          <Box 
-            sx={{ 
-              mb: 2, 
-              p: 2, 
-              border: "1px solid rgba(0, 0, 0, 0.23)", 
-              borderRadius: 1,
-              minHeight: 60,
-              backgroundColor: "background.paper",
-            }}
-          >
-            <Box sx={{ mb: 1, fontSize: "0.75rem", color: "text.secondary" }}>
-              Preview:
-            </Box>
-            <Box
-              sx={{
-                fontSize: `${fontSize}px`,
-                fontFamily: fontFamily,
-                fontWeight: formats.includes("bold") ? "bold" : "normal",
-                fontStyle: formats.includes("italic") ? "italic" : "normal",
-                textDecoration: formats.includes("underline") ? "underline" : "none",
-                color: textColor,
-                wordWrap: "break-word",
-              }}
-            >
-              {form.watch("value") || "Type text above to see preview..."}
-            </Box>
-          </Box>
-          
           {/* Formatting Controls */}
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
             {/* Font Size */}
             <FormControl size="small" sx={{ minWidth: 100 }}>
               <InputLabel>Size</InputLabel>
               <Select
-                value={fontSize}
+                value={showCustomSize ? "custom" : fontSize}
                 label="Size"
-                onChange={(e) => setFontSize(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value === "custom") {
+                    setShowCustomSize(true);
+                    setCustomFontSize(String(fontSize));
+                  } else {
+                    setShowCustomSize(false);
+                    setFontSize(e.target.value);
+                  }
+                }}
               >
                 <MenuItem value={12}>12</MenuItem>
                 <MenuItem value={14}>14</MenuItem>
@@ -180,8 +169,24 @@ export const TextEntryDialog = ({
                 <MenuItem value={36}>36</MenuItem>
                 <MenuItem value={48}>48</MenuItem>
                 <MenuItem value={64}>64</MenuItem>
+                <MenuItem value={96}>96</MenuItem>
+                <MenuItem value={120}>120</MenuItem>
+                <MenuItem value="custom">Custom...</MenuItem>
               </Select>
             </FormControl>
+            
+            {/* Custom Font Size Input */}
+            {showCustomSize && (
+              <TextField
+                size="small"
+                type="number"
+                label="Custom Size"
+                value={customFontSize}
+                onChange={(e) => setCustomFontSize(e.target.value)}
+                sx={{ width: 100 }}
+                inputProps={{ min: 1, max: 500 }}
+              />
+            )}
             
             {/* Font Family */}
             <FormControl size="small" sx={{ minWidth: 120 }}>

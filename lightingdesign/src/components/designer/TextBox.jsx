@@ -5,6 +5,7 @@ export const TextBox = memo(
   ({
     textBox,
     isSelected,
+    isInGroup = false,
     onSelect,
     onChange,
     onDragStart,
@@ -14,21 +15,23 @@ export const TextBox = memo(
     onContextMenu,
   }) => {
     const textRef = useRef();
-    const trRef = useRef();
-
-    useEffect(() => {
-      if (isSelected && trRef.current && textRef.current) {
-        // Attach transformer to text node
-        trRef.current.nodes([textRef.current]);
-        trRef.current.getLayer()?.batchDraw();
-      }
-    }, [isSelected]);
+    // Removed separate transformer - using unified transformer from ProductsLayer
 
     // Parse font style
     const isBold = textBox.fontStyle?.includes("bold") || false;
     const isItalic = textBox.fontStyle?.includes("italic") || false;
     const fontStyle = isItalic ? "italic" : "normal";
     const fontWeight = isBold ? "bold" : "normal";
+
+    // Calculate rendered font size based on scaleFactor
+    // The fontSize stored is the "base" size at scaleFactor=100
+    // For a larger floorplan (smaller scaleFactor), we want text to scale proportionally
+    const baseFontSize = textBox.fontSize || 24;
+    const scaleFactor = textBox.scaleFactor || 100;
+    // Render font size as: baseFontSize * (scaleFactor / 100)
+    // This way, if scaleFactor is 50 (large floorplan), a baseFontSize of 120 renders as 60 pixels
+    // And if scaleFactor is 200 (small floorplan), a baseFontSize of 24 renders as 48 pixels
+    const renderedFontSize = baseFontSize * (scaleFactor / 100);
 
     return (
       <>
@@ -37,7 +40,7 @@ export const TextBox = memo(
           x={textBox.x}
           y={textBox.y}
           text={textBox.text}
-          fontSize={textBox.fontSize || 24}
+          fontSize={renderedFontSize}
           fontFamily={textBox.fontFamily || "Arial"}
           fontStyle={fontStyle}
           fontVariant={fontWeight}
@@ -61,18 +64,27 @@ export const TextBox = memo(
             });
             if (onDragEnd) onDragEnd(e);
           }}
-          onTransformEnd={(e) => {
+          onTransform={(e) => {
+            // Real-time updates during transformation
             const node = textRef.current;
+            if (!node) return;
+            
+            // Note: This won't work without transformer ref, but we keep it for when text is in group
+            // The ProductsLayer handles transformations for selected text
+          }}
+          onTransformEnd={(e) => {
+            // This only applies to unselected text boxes (selected ones use ProductsLayer transformer)
+            const node = textRef.current;
+            if (!node) return;
+            
             const scaleX = node.scaleX();
             const scaleY = node.scaleY();
 
-            // Calculate new font size based on vertical scale
-            // Use the average of scaleX and scaleY for uniform scaling
+            // Simple scaling behavior for unselected text
             const averageScale = (scaleX + scaleY) / 2;
-            const currentFontSize = textBox.fontSize || 24;
-            const newFontSize = Math.max(8, Math.round(currentFontSize * averageScale));
+            const currentBaseFontSize = textBox.fontSize || 24;
+            const newBaseFontSize = Math.max(8, Math.round(currentBaseFontSize * averageScale));
 
-            // Reset scale and adjust width and font size
             node.scaleX(1);
             node.scaleY(1);
 
@@ -81,7 +93,7 @@ export const TextBox = memo(
               x: node.x(),
               y: node.y(),
               width: Math.max(5, node.width() * scaleX),
-              fontSize: newFontSize,
+              fontSize: newBaseFontSize,
               rotation: node.rotation(),
               scaleX: 1,
               scaleY: 1,
@@ -89,26 +101,7 @@ export const TextBox = memo(
           }}
           onContextMenu={onContextMenu}
         />
-        {isSelected && (
-          <Transformer
-            ref={trRef}
-            boundBoxFunc={(oldBox, newBox) => {
-              // Limit resize
-              if (newBox.width < 5 || newBox.height < 5) {
-                return oldBox;
-              }
-              return newBox;
-            }}
-            enabledAnchors={[
-              "top-left",
-              "top-right",
-              "bottom-left",
-              "bottom-right",
-              "middle-left",
-              "middle-right",
-            ]}
-          />
-        )}
+        {/* No separate transformer - using unified transformer from ProductsLayer for selected text */}
       </>
     );
   }

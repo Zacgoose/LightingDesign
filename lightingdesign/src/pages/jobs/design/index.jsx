@@ -1451,6 +1451,8 @@ const Page = () => {
           x,
           y,
           rotation: 0,
+          scaleX: 1,
+          scaleY: 1,
           color: shapeConfig.fill || "#666666",
           stroke: shapeConfig.stroke || "#424242",
           strokeWidth: shapeConfig.strokeWidth || 2,
@@ -1458,6 +1460,8 @@ const Page = () => {
           name: `Custom ${shapeName.charAt(0).toUpperCase() + shapeName.slice(1)}`,
           product_type_unigram: shapeName,
           isCustomObject: true,
+          // Add scaleFactor to ensure proper rendering and resizing
+          scaleFactor: scaleFactor || 100,
           ...sizeAttrs,
         };
 
@@ -1469,7 +1473,7 @@ const Page = () => {
       }
       contextMenus.handleCloseContextMenu();
     },
-    [contextMenus, products, applyGroupTransform, updateHistory, setSelectedIds, setGroupKey],
+    [contextMenus, products, applyGroupTransform, updateHistory, setSelectedIds, setGroupKey, scaleFactor],
   );
 
   const handleExport = useCallback(() => {

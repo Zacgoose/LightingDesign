@@ -41,7 +41,7 @@ export const TextEntryDialog = ({
   });
 
   // Formatting state
-  const [fontSize, setFontSize] = useState(defaultFormatting.fontSize || 24);
+  const [fontSize, setFontSize] = useState(defaultFormatting.fontSize || 32);
   const [fontFamily, setFontFamily] = useState(defaultFormatting.fontFamily || "Arial");
   const [formats, setFormats] = useState(() => {
     const initial = [];
@@ -56,7 +56,7 @@ export const TextEntryDialog = ({
   useEffect(() => {
     if (open) {
       form.reset({ value: defaultValue });
-      setFontSize(defaultFormatting.fontSize || 24);
+      setFontSize(defaultFormatting.fontSize || 32);
       setFontFamily(defaultFormatting.fontFamily || "Arial");
       setTextColor(defaultFormatting.color || "#000000");
       const initial = [];

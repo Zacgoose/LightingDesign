@@ -247,6 +247,14 @@ const Page = () => {
     updateLayer(activeLayerIdRef.current, { connectors });
   }, [connectors, updateLayer]);
 
+  // Keep text boxes in sync with active layer
+  // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
+  useEffect(() => {
+    if (isLoadingLayerData.current) return;
+    updateLayer(activeLayerIdRef.current, { textBoxes });
+  }, [textBoxes, updateLayer]);
+
   // Keep background image in sync with active layer
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
   // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
@@ -526,6 +534,7 @@ const Page = () => {
       // Load the new layer's data
       updateHistory(activeLayer.products || []);
       setConnectors(activeLayer.connectors || []);
+      setTextBoxes(activeLayer.textBoxes || []);
       setBackgroundImage(activeLayer.backgroundImage || null);
       setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
       setScaleFactor(activeLayer.scaleFactor || 100);
@@ -1095,7 +1104,7 @@ const Page = () => {
           x: canvasPos.x,
           y: canvasPos.y,
           text: "",
-          fontSize: 24,
+          fontSize: 32,
           fontFamily: "Arial",
           fontStyle: "normal", // Can be "normal", "bold", "italic", "bold italic"
           textDecoration: "", // Can be "", "underline", "line-through", or "underline line-through"
@@ -1205,13 +1214,11 @@ const Page = () => {
     setSelectedIds([]);
     setSelectedConnectorId(null);
     
-    const stage = e.target.getStage();
-    const pointerPosition = stage.getPointerPosition();
-    
+    // Use screen coordinates (clientX/Y) like product context menu
     contextMenus.setContextMenu({
       type: "text",
-      x: pointerPosition.x,
-      y: pointerPosition.y,
+      x: e.evt.clientX,
+      y: e.evt.clientY,
       textId: textId,
     });
   }, [setSelectedIds, setSelectedConnectorId, contextMenus]);

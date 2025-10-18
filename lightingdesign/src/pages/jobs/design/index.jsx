@@ -16,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { DesignerToolbarRow } from "/src/components/designer/DesignerToolbarRow";
 import { DesignerCanvas } from "/src/components/designer/DesignerCanvas";
 import { ProductSelectionDrawer } from "/src/components/designer/ProductSelectionDrawer";
+import { ProductDetailsDrawer } from "/src/components/designer/ProductDetailsDrawer";
 import { ContextMenus } from "/src/components/designer/ContextMenus";
 import { ColorPickerPopover } from "/src/components/designer/ColorPickerPopover";
 import { ProductsLayer, COLOR_PALETTE } from "/src/components/designer/ProductsLayer";
@@ -183,6 +184,8 @@ const Page = () => {
 
   // UI state
   const [productDrawerVisible, setProductDrawerVisible] = useState(false);
+  const [productDetailsDrawerVisible, setProductDetailsDrawerVisible] = useState(false);
+  const [selectedProductForDetails, setSelectedProductForDetails] = useState(null);
   const [swapMode, setSwapMode] = useState(false);
 
   // Refs
@@ -829,10 +832,13 @@ const Page = () => {
             sku: product.sku,
             brand: product.brand,
             product_type: product.product_type_unigram,
+            product_type_unigram: product.product_type_unigram,
             price: parseFloat(product.price) || 0,
             msrp: parseFloat(product.msrp) || 0,
             imageUrl: product.imageUrl,
             thumbnailUrl: product.thumbnailImageUrl,
+            thumbnailImageUrl: product.thumbnailImageUrl,
+            url: product.url, // Website link
             category: product.top_web_category,
             categories: product.category_hierarchy || [],
             description: product.short_description,
@@ -892,10 +898,13 @@ const Page = () => {
         sku: template.sku,
         brand: template.brand,
         product_type: template.product_type_unigram,
+        product_type_unigram: template.product_type_unigram,
         price: parseFloat(template.price) || 0,
         msrp: parseFloat(template.msrp) || 0,
         imageUrl: template.imageUrl,
         thumbnailUrl: template.thumbnailImageUrl,
+        thumbnailImageUrl: template.thumbnailImageUrl,
+        url: template.url, // Website link
         category: template.top_web_category,
         categories: template.category_hierarchy || [],
         description: template.short_description,
@@ -990,6 +999,64 @@ const Page = () => {
   );
 
   const handleDisconnectCable = useCallback(() => setConnectSequence([]), []);
+
+  const handleShowProperties = useCallback(() => {
+    if (selectedIds.length === 1) {
+      const product = products.find((p) => p.id === selectedIds[0]);
+      if (product) {
+        setSelectedProductForDetails(product);
+        setProductDetailsDrawerVisible(true);
+      }
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedIds, products, contextMenus]);
+
+  const handleInsertCustomObject = useCallback(
+    (shapeName) => {
+      if (contextMenus.contextMenu?.canvasX !== undefined) {
+        const x = contextMenus.contextMenu.canvasX;
+        const y = contextMenus.contextMenu.canvasY;
+
+        // Get configuration from productTypes.json
+        const shapeConfig = productTypesConfig[shapeName] || productTypesConfig.default;
+        
+        // Extract size attributes from the config
+        const sizeAttrs = {};
+        if (shapeConfig.realWorldSize !== undefined) {
+          sizeAttrs.realWorldSize = shapeConfig.realWorldSize;
+        }
+        if (shapeConfig.realWorldWidth !== undefined) {
+          sizeAttrs.realWorldWidth = shapeConfig.realWorldWidth;
+        }
+        if (shapeConfig.realWorldHeight !== undefined) {
+          sizeAttrs.realWorldHeight = shapeConfig.realWorldHeight;
+        }
+
+        const newProduct = {
+          id: `custom-${crypto.randomUUID()}`,
+          x,
+          y,
+          rotation: 0,
+          color: shapeConfig.fill || "#666666",
+          stroke: shapeConfig.stroke || "#424242",
+          strokeWidth: shapeConfig.strokeWidth || 2,
+          shape: shapeConfig.shapeType || shapeName,
+          name: `Custom ${shapeName.charAt(0).toUpperCase() + shapeName.slice(1)}`,
+          product_type_unigram: shapeName,
+          isCustomObject: true,
+          ...sizeAttrs,
+        };
+
+        const transformed = applyGroupTransform();
+        const baseProducts = transformed || products;
+        updateHistory([...baseProducts, newProduct]);
+        setSelectedIds([newProduct.id]);
+        setGroupKey((k) => k + 1);
+      }
+      contextMenus.handleCloseContextMenu();
+    },
+    [contextMenus, products, applyGroupTransform, updateHistory, setSelectedIds, setGroupKey],
+  );
 
   const handleExport = useCallback(() => {
     const transformed = applyGroupTransform();
@@ -1094,6 +1161,15 @@ const Page = () => {
                   setProductDrawerVisible(false);
                   setSwapMode(false);
                   pendingInsertPosition.current = null;
+                }}
+              />
+
+              <ProductDetailsDrawer
+                product={selectedProductForDetails}
+                visible={productDetailsDrawerVisible}
+                onClose={() => {
+                  setProductDetailsDrawerVisible(false);
+                  setSelectedProductForDetails(null);
                 }}
               />
             </Box>
@@ -1284,7 +1360,10 @@ const Page = () => {
         onSwapProduct={handleSwapSelectedProducts}
         onScale={handleOpenScaleDialog}
         onAssignToSublayer={handleAssignToSublayer}
+        onShowProperties={handleShowProperties}
+        onInsertCustomObject={handleInsertCustomObject}
         sublayers={activeLayer?.sublayers || []}
+        selectedProductsCount={selectedIds.length}
       />
 
       <CippComponentDialog

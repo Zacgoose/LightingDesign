@@ -83,16 +83,14 @@ export const CippOffCanvas = (props) => {
         onClose={onClose}
       >
           {!hideTitle ? (
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1.5 }}
-            >
-            <>
-              <Typography variant="h5">{title}</Typography>
-              <IconButton onClick={onClose}>
-                <CloseIcon />
-              </IconButton>
-            </>
-            <Divider />
+            <Box sx={{ p: 1.5 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Typography variant="h5" sx={{ flexGrow: 1 }}>{title}</Typography>
+                <IconButton onClick={onClose} sx={{ ml: 2 }}>
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+              <Divider />
             </Box>
           ) : null}
         <Box

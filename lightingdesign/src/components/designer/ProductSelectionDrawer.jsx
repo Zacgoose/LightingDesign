@@ -56,17 +56,12 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
   return (
     <>
       <CippOffCanvas
-        hideTitle={true}
+        title="Add Product"
         visible={visible}
         onClose={onClose}
         size="xl"
         contentPadding={0}
       >
-        <Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}>
-          <IconButton onClick={onClose} size="small">
-            <Close />
-          </IconButton>
-        </Box>
         <CippTablePage
           title="Products List"
           hideTitle={true}

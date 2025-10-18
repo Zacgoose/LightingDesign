@@ -27,7 +27,7 @@ export const useDesignLoader = ({
 
   // Helper function to strip unnecessary metadata from products before saving
   const stripProductMetadata = useCallback((product) => {
-    // Only keep essential data for canvas operations and identification
+    // Keep essential data for canvas operations, identification, and properties display
     return {
       id: product.id,
       x: product.x,
@@ -50,6 +50,26 @@ export const useDesignLoader = ({
       realWorldSize: product.realWorldSize,
       realWorldWidth: product.realWorldWidth,
       realWorldHeight: product.realWorldHeight,
+      // Include product details for properties panel
+      brand: product.brand,
+      product_type: product.product_type,
+      msrp: product.msrp,
+      price: product.price,
+      thumbnailUrl: product.thumbnailUrl,
+      imageUrl: product.imageUrl,
+      url: product.url,
+      description: product.description,
+      category: product.category,
+      categories: product.categories,
+      colors: product.colors,
+      inStock: product.inStock,
+      stockQty: product.stockQty,
+      // For custom objects
+      shape: product.shape,
+      stroke: product.stroke,
+      strokeWidth: product.strokeWidth,
+      isCustomObject: product.isCustomObject,
+      product_type_unigram: product.product_type_unigram,
     };
   }, []);
 
@@ -75,10 +95,13 @@ export const useDesignLoader = ({
         ...savedProduct,
         brand: apiProduct.brand,
         product_type: apiProduct.product_type_unigram,
+        product_type_unigram: apiProduct.product_type_unigram,
         price: parseFloat(apiProduct.price) || 0,
         msrp: parseFloat(apiProduct.msrp) || 0,
         imageUrl: apiProduct.imageUrl,
         thumbnailUrl: apiProduct.thumbnailImageUrl,
+        thumbnailImageUrl: apiProduct.thumbnailImageUrl, // Also add this for consistency
+        url: apiProduct.url, // Website link
         category: apiProduct.top_web_category,
         categories: apiProduct.category_hierarchy || [],
         description: apiProduct.short_description,

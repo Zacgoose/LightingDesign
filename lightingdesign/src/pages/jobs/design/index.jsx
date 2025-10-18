@@ -701,9 +701,22 @@ const Page = () => {
     // Calculate the rotation delta (how much we've rotated from the snapshot)
     const rotationDelta = groupRotation - (selectionSnapshot.rotation || 0);
     
-    // Calculate position delta (how much the group center has moved)
-    const centerDeltaX = groupX - selectionSnapshot.centerX;
-    const centerDeltaY = groupY - selectionSnapshot.centerY;
+    // Check if this is a pure rotation/scale (not dragged)
+    // If only rotation/scale changed but not position, treat centerDelta as 0
+    const hasRotationChange = !isClose(groupRotation, selectionSnapshot.rotation || 0);
+    const hasScaleChange = !isClose(groupScaleX, 1) || !isClose(groupScaleY, 1);
+    const hasPositionChange = !isClose(groupX, selectionSnapshot.centerX) || !isClose(groupY, selectionSnapshot.centerY);
+    
+    // For pure rotation/scale transforms (no drag), ignore the position change
+    // Konva moves the group position during rotation, but we don't want to treat that as a drag
+    let centerDeltaX = 0;
+    let centerDeltaY = 0;
+    
+    if (hasPositionChange && !hasRotationChange && !hasScaleChange) {
+      // Only position changed - this is a real drag
+      centerDeltaX = groupX - selectionSnapshot.centerX;
+      centerDeltaY = groupY - selectionSnapshot.centerY;
+    }
 
     // Transform products
     if (productIds.length > 0) {

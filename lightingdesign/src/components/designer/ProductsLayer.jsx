@@ -262,6 +262,10 @@ export const ProductsLayer = memo(
               const scaleFactor = textBox.scaleFactor || 100;
               const renderedFontSize = baseFontSize * (scaleFactor / 100);
 
+              // Calculate text height for proper rotation anchor
+              // The rotation should pivot around the center of the text box
+              const textHeight = renderedFontSize * 1.2; // Approximate line height
+              
               return (
                 <Group
                   key={textBox.id}
@@ -270,6 +274,8 @@ export const ProductsLayer = memo(
                   rotation={textBox.rotation || 0}
                   scaleX={textBox.scaleX || 1}
                   scaleY={textBox.scaleY || 1}
+                  offsetX={0}
+                  offsetY={0}
                   draggable={false}
                   listening={true}
                   onClick={(e) => {

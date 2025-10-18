@@ -687,6 +687,9 @@ const Page = () => {
     centerX /= totalCount;
     centerY /= totalCount;
 
+    // Calculate rotation delta (how much the group was rotated from initial state)
+    const rotationDelta = groupRotation - (selectionSnapshot.rotation || 0);
+
     // Transform products
     if (productIds.length > 0) {
       const transformedProducts = products.map((product) => {
@@ -700,9 +703,9 @@ const Page = () => {
         let relX = original.relativeX || 0;
         let relY = original.relativeY || 0;
 
-        // Apply rotation
-        if (groupRotation !== 0) {
-          const angle = (groupRotation * Math.PI) / 180;
+        // Apply rotation delta (not absolute rotation)
+        if (rotationDelta !== 0) {
+          const angle = (rotationDelta * Math.PI) / 180;
           const cos = Math.cos(angle);
           const sin = Math.sin(angle);
           const rotatedX = relX * cos - relY * sin;
@@ -744,9 +747,9 @@ const Page = () => {
         let relX = original.relativeX || 0;
         let relY = original.relativeY || 0;
 
-        // Apply rotation
-        if (groupRotation !== 0) {
-          const angle = (groupRotation * Math.PI) / 180;
+        // Apply rotation delta (not absolute rotation)
+        if (rotationDelta !== 0) {
+          const angle = (rotationDelta * Math.PI) / 180;
           const cos = Math.cos(angle);
           const sin = Math.sin(angle);
           const rotatedX = relX * cos - relY * sin;

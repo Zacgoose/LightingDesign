@@ -98,7 +98,7 @@ export const useSelectionState = (products, textBoxes = []) => {
           ...t,
           relativeX: relX,
           relativeY: relY,
-          // Subtract average rotation to avoid double rotation when in selection group
+          // Subtract average rotation to match product behavior
           rotation: (t.rotation || 0) - avgRotation,
         };
       }),

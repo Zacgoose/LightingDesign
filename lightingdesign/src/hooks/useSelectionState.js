@@ -42,16 +42,24 @@ export const useSelectionState = (products, textBoxes = []) => {
     let rotationCount = 0;
     
     productSnapshot.forEach((p) => {
+      console.log(`[selectionSnapshot] Product ${p.id} rotation:`, p.rotation);
       totalRotation += (p.rotation || 0);
       rotationCount++;
     });
     
     textSnapshot.forEach((t) => {
+      console.log(`[selectionSnapshot] Text ${t.id} rotation:`, t.rotation);
       totalRotation += (t.rotation || 0);
       rotationCount++;
     });
     
     const avgRotation = rotationCount > 0 ? totalRotation / rotationCount : 0;
+
+    console.log('[selectionSnapshot] Rotation calculation:', {
+      totalRotation,
+      rotationCount,
+      avgRotation,
+    });
 
     // Calculate center including both products and text boxes
     let sumX = 0;

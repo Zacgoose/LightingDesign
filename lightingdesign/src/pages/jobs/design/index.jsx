@@ -690,6 +690,8 @@ const Page = () => {
       return;
     }
 
+    console.log('[handleUnifiedGroupTransformEnd] Applying transform to products and text boxes');
+
     // Transform products
     if (productIds.length > 0) {
       const transformedProducts = products.map((product) => {
@@ -727,6 +729,10 @@ const Page = () => {
           delta: { x: newX - product.x, y: newY - product.y },
           relativePos: { x: relX, y: relY },
           snapshotRelative: { x: original.relativeX, y: original.relativeY },
+          currentRotation: product.rotation,
+          originalRelativeRotation: original.rotation,
+          groupRotation: groupRotation,
+          newRotation: original.rotation + groupRotation,
         });
 
         return {
@@ -813,6 +819,8 @@ const Page = () => {
 
       setTextBoxes(transformedTextBoxes);
     }
+
+    console.log('[handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey');
 
     // Force update transformer
     if (transformerRef.current) {

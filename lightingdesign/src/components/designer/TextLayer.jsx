@@ -1,4 +1,3 @@
-import { Layer } from "react-konva";
 import { TextBox } from "./TextBox";
 import { memo } from "react";
 

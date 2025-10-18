@@ -1,34 +1,36 @@
 import { Box, useTheme } from "@mui/material";
 import { Stage, Layer, Image as KonvaImage } from "react-konva";
-import { useState, useEffect, useMemo, useRef, memo } from "react";
+import { useState, useEffect, useMemo, useRef, memo, forwardRef } from "react";
 import { GridLayer } from "./GridLayer";
 import { usePerformanceMonitor, logRender } from "/src/utils/performanceLogger";
 
 export const DesignerCanvas = memo(
-  ({
-    width = 4200,
-    height = 2970,
-    viewportWidth, // Optional: actual visible viewport width (overrides width for Stage)
-    viewportHeight, // Optional: actual visible viewport height (overrides height for Stage)
-    stageScale = 1,
-    stagePosition,
-    showGrid,
-    gridSize = 100,
-    scaleFactor = 100,
-    onWheel,
-    onDragEnd,
-    onMouseDown,
-    onMouseUp,
-    onTouchStart,
-    onContextMenu,
-    draggable = true,
-    stageRef,
-    backgroundImage = null,
-    backgroundImageNaturalSize = null,
-    children,
-    onMouseMove,
-    onPan,
-  }) => {
+  forwardRef((
+    {
+      width = 4200,
+      height = 2970,
+      viewportWidth, // Optional: actual visible viewport width (overrides width for Stage)
+      viewportHeight, // Optional: actual visible viewport height (overrides height for Stage)
+      stageScale = 1,
+      stagePosition,
+      showGrid,
+      gridSize = 100,
+      scaleFactor = 100,
+      onWheel,
+      onDragEnd,
+      onMouseDown,
+      onMouseUp,
+      onTouchStart,
+      onContextMenu,
+      draggable = true,
+      backgroundImage = null,
+      backgroundImageNaturalSize = null,
+      children,
+      onMouseMove,
+      onPan,
+    },
+    ref
+  ) => {
     const theme = useTheme();
     const [bgImage, setBgImage] = useState(null);
 
@@ -146,7 +148,7 @@ export const DesignerCanvas = memo(
         }}
       >
         <Stage
-          ref={stageRef}
+          ref={ref}
           width={stageWidth}
           height={stageHeight}
           scaleX={stageScale}
@@ -194,7 +196,7 @@ export const DesignerCanvas = memo(
         </Stage>
       </Box>
     );
-  },
+  }),
   (prevProps, nextProps) => {
     // Custom comparison - only re-render if these props actually change
     // Note: stagePosition and stageScale changes are handled by Konva internally

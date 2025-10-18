@@ -160,6 +160,11 @@ export const useSelectionState = (products, textBoxes = []) => {
 
       // Force update
       transformerRef.current.getLayer()?.batchDraw();
+      
+      console.log('[useEffect transformer] Transformer and Group event handlers:', {
+        hasGroupOnTransformEnd: typeof selectionGroupRef.current.attrs.onTransformEnd,
+        hasGroupOnDragEnd: typeof selectionGroupRef.current.attrs.onDragEnd,
+      });
     } else if (transformerRef.current) {
       transformerRef.current.nodes([]);
       if (selectionGroupRef.current) {

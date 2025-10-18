@@ -1615,8 +1615,14 @@ const Page = () => {
 
     // Find text boxes within or partially overlapping the selection rectangle
     const selectedTexts = textBoxes.filter((textBox) => {
-      const textWidth = textBox.width || 200;
-      const textHeight = (textBox.fontSize || 24) * 1.2; // Approximate height
+      // Calculate actual rendered dimensions
+      const textScaleFactor = textBox.scaleFactor || scaleFactor;
+      const baseFontSize = textBox.fontSize || 24;
+      const renderedFontSize = baseFontSize * (textScaleFactor / 100);
+      
+      // Account for text box scale transforms
+      const textWidth = (textBox.width || 200) * (textBox.scaleX || 1);
+      const textHeight = renderedFontSize * 1.2 * (textBox.scaleY || 1); // Approximate height with line height multiplier
       
       const textX1 = textBox.x;
       const textY1 = textBox.y;

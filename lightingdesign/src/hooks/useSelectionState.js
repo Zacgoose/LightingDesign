@@ -162,7 +162,7 @@ export const useSelectionState = (products, textBoxes = []) => {
       groupY === selectionSnapshot.centerY &&
       groupScaleX === 1 &&
       groupScaleY === 1 &&
-      groupRotation === 0
+      groupRotation === (selectionSnapshot.rotation || 0)
     ) {
       return null;
     }

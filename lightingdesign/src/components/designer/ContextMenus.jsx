@@ -32,7 +32,6 @@ export const ContextMenus = ({
   const [sublayerMenuAnchor, setSublayerMenuAnchor] = useState(null);
   const [customObjectMenuAnchor, setCustomObjectMenuAnchor] = useState(null);
   const sublayerMenuItemRef = useRef(null);
-  const customObjectMenuItemRef = useRef(null);
 
   // Prevent right-click on the menu itself - just close it
   const handleContextMenu = (e) => {

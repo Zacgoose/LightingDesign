@@ -1,4 +1,3 @@
-import { Layer } from "react-konva";
 import { TextBox } from "./TextBox";
 import { memo } from "react";
 
@@ -14,7 +13,7 @@ export const TextLayer = memo(
     draggable = true,
   }) => {
     return (
-      <Layer>
+      <>
         {textBoxes.map((textBox) => (
           <TextBox
             key={textBox.id}
@@ -31,7 +30,7 @@ export const TextLayer = memo(
             draggable={draggable}
           />
         ))}
-      </Layer>
+      </>
     );
   }
 );

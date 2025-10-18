@@ -358,13 +358,11 @@ export const ProductsLayer = memo(
             enabledAnchors={
               textIds.length > 0 && productOnlyIds.length === 0
                 ? [
-                    // For text-only selections
+                    // For text-only selections: only corners for proportional scaling
                     "top-left",
                     "top-right",
                     "bottom-left",
                     "bottom-right",
-                    "middle-left",
-                    "middle-right",
                   ]
                 : undefined // Default anchors for products or mixed selections
             }

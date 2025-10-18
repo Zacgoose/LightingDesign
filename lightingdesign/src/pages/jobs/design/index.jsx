@@ -1401,6 +1401,13 @@ const Page = () => {
       if (textBox) {
         setPendingTextBoxId(selectedTextId);
         setTextDialogValue(textBox.text);
+        setTextDialogFormatting({
+          fontSize: textBox.fontSize || 32,
+          fontFamily: textBox.fontFamily || "Arial",
+          fontStyle: textBox.fontStyle || "normal",
+          textDecoration: textBox.textDecoration || "",
+          color: textBox.color || "#000000",
+        });
         setTextDialogOpen(true);
       }
     }

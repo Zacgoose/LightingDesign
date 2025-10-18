@@ -268,9 +268,12 @@ export const ProductsLayer = memo(
                     e.cancelBubble = true;
                     // Text is already selected, clicking does nothing (prevents new text creation in text mode)
                   }}
+                  onTap={(e) => {
+                    e.cancelBubble = true;
+                  }}
                   onMouseDown={(e) => {
                     e.cancelBubble = true;
-                    // Allow clicking on text to select the group
+                    // Prevent drag-to-select from starting when clicking on text
                   }}
                   onContextMenu={(e) => {
                     e.evt.preventDefault();

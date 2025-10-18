@@ -1337,10 +1337,8 @@ const Page = () => {
       if (pendingTextBoxId) {
         const newText = formattingData.text || "";
         if (newText.trim()) {
-          // Use Konva's Text node to calculate dimensions accurately
-          // This ensures the text box is sized exactly as Konva will render it
-          const Konva = require('konva');
-          
+          // Use canvas measureText API to calculate exact text dimensions
+          // as recommended by Konva documentation for accurate sizing
           const fontSize = formattingData.fontSize;
           const fontFamily = formattingData.fontFamily;
           const isBold = formattingData.fontStyle?.includes("bold");
@@ -1348,24 +1346,17 @@ const Page = () => {
           const fontStyle = isItalic ? "italic" : "normal";
           const fontWeight = isBold ? "bold" : "normal";
           
-          // Create a temporary Konva Text node to measure the text
-          // This gives us the exact dimensions Konva will use when rendering
-          const tempText = new Konva.Text({
-            text: newText,
-            fontSize: fontSize,
-            fontFamily: fontFamily,
-            fontStyle: fontStyle,
-            fontVariant: fontWeight,
-            padding: 5, // Small padding for visual spacing
-          });
+          // Create an offscreen canvas for measuring
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
           
-          // Get the width and height from the Konva Text node
-          // This accounts for line breaks, word wrapping, and font metrics
-          const textWidth = tempText.width();
-          const textHeight = tempText.height();
+          // Match the Konva.Text style exactly
+          ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
           
-          // Clean up the temporary node
-          tempText.destroy();
+          // Measure the text
+          const metrics = ctx.measureText(newText);
+          const width = metrics.width;
+          const height = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
           
           // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
           setTextBoxes((boxes) =>
@@ -1379,8 +1370,8 @@ const Page = () => {
                     fontStyle: formattingData.fontStyle,
                     textDecoration: formattingData.textDecoration,
                     color: formattingData.color,
-                    width: textWidth, // Use Konva's calculated width
-                    height: textHeight, // Use Konva's calculated height
+                    width: width, // Use canvas measureText width
+                    height: height, // Use canvas measureText height
                   } 
                 : box
             )

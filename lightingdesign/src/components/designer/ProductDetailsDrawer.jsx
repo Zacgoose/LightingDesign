@@ -6,6 +6,10 @@ import CippPageCard from "../CippCards/CippPageCard";
 export const ProductDetailsDrawer = ({ product, visible = false, onClose }) => {
   if (!product) return null;
 
+  // Handle both field name variations for backward compatibility
+  const thumbnailUrl = product.thumbnailImageUrl || product.thumbnailUrl;
+  const websiteUrl = product.url;
+
   return (
     <CippOffCanvas
       title="Product Properties"
@@ -16,7 +20,7 @@ export const ProductDetailsDrawer = ({ product, visible = false, onClose }) => {
     >
       <Stack spacing={3}>
         {/* Product Image */}
-        {product.thumbnailImageUrl && (
+        {thumbnailUrl && (
           <Box
             sx={{
               display: "flex",
@@ -28,7 +32,7 @@ export const ProductDetailsDrawer = ({ product, visible = false, onClose }) => {
             }}
           >
             <img
-              src={product.thumbnailImageUrl}
+              src={thumbnailUrl}
               alt={product.name || "Product"}
               style={{
                 maxWidth: "100%",
@@ -66,25 +70,25 @@ export const ProductDetailsDrawer = ({ product, visible = false, onClose }) => {
               )}
 
               {/* Product Type */}
-              {product.product_type_unigram && (
+              {(product.product_type_unigram || product.product_type) && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">
                     Type
                   </Typography>
                   <Typography variant="body1" sx={{ textTransform: "capitalize" }}>
-                    {product.product_type_unigram}
+                    {product.product_type_unigram || product.product_type}
                   </Typography>
                 </Box>
               )}
 
               {/* Website Link */}
-              {product.url && (
+              {websiteUrl && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">
                     Website
                   </Typography>
                   <Link
-                    href={product.url}
+                    href={websiteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     variant="body1"
@@ -93,7 +97,7 @@ export const ProductDetailsDrawer = ({ product, visible = false, onClose }) => {
                       wordBreak: "break-all",
                     }}
                   >
-                    {product.url}
+                    {websiteUrl}
                   </Link>
                 </Box>
               )}

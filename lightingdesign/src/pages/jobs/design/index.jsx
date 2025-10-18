@@ -165,7 +165,7 @@ const Page = () => {
   const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100);
 
   // Selection state management using custom hook
-  const selectionState = useSelectionState(products);
+  const selectionState = useSelectionState(products, textBoxes);
   const {
     selectedIds,
     selectedConnectorId,
@@ -619,6 +619,158 @@ const Page = () => {
     handleProductDragEnd,
     handleGroupTransformEnd,
   } = productInteraction;
+
+  // Unified group transform handler that handles both products and text boxes
+  const handleUnifiedGroupTransformEnd = useCallback(() => {
+    if (!selectedIds.length || !selectionGroupRef.current || !selectionSnapshot) return;
+
+    const group = selectionGroupRef.current;
+    const groupX = group.x();
+    const groupY = group.y();
+    const groupScaleX = group.scaleX();
+    const groupScaleY = group.scaleY();
+    const groupRotation = group.rotation();
+
+    // Extract product IDs and text IDs
+    const productIds = selectedIds.filter(id => !id.startsWith('text-'));
+    const textIds = selectedIds
+      .filter(id => id.startsWith('text-'))
+      .map(id => id.substring(5)); // Remove 'text-' prefix
+
+    // Check if group has been transformed
+    const hasTransform = !(
+      groupX === selectionSnapshot.centerX &&
+      groupY === selectionSnapshot.centerY &&
+      groupScaleX === 1 &&
+      groupScaleY === 1 &&
+      groupRotation === 0
+    );
+
+    if (!hasTransform) {
+      setGroupKey((k) => k + 1);
+      return;
+    }
+
+    // Calculate center for both products and text boxes
+    let centerX = 0;
+    let centerY = 0;
+    let totalCount = 0;
+
+    if (productIds.length > 0) {
+      const selectedProducts = products.filter(p => productIds.includes(p.id));
+      centerX += selectedProducts.reduce((sum, p) => sum + p.x, 0);
+      centerY += selectedProducts.reduce((sum, p) => sum + p.y, 0);
+      totalCount += selectedProducts.length;
+    }
+
+    if (textIds.length > 0) {
+      const selectedTexts = textBoxes.filter(t => textIds.includes(t.id));
+      centerX += selectedTexts.reduce((sum, t) => sum + t.x, 0);
+      centerY += selectedTexts.reduce((sum, t) => sum + t.y, 0);
+      totalCount += selectedTexts.length;
+    }
+
+    centerX /= totalCount;
+    centerY /= totalCount;
+
+    // Transform products
+    if (productIds.length > 0) {
+      const transformedProducts = products.map((product) => {
+        if (!productIds.includes(product.id)) return product;
+
+        // Calculate relative position
+        let relX = product.x - centerX;
+        let relY = product.y - centerY;
+
+        // Apply rotation
+        if (groupRotation !== 0) {
+          const angle = (groupRotation * Math.PI) / 180;
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+          const rotatedX = relX * cos - relY * sin;
+          const rotatedY = relX * sin + relY * cos;
+          relX = rotatedX;
+          relY = rotatedY;
+        }
+
+        // Apply scale
+        relX *= groupScaleX;
+        relY *= groupScaleY;
+
+        const newX = groupX + relX;
+        const newY = groupY + relY;
+
+        return {
+          ...product,
+          x: newX,
+          y: newY,
+          rotation: (product.rotation || 0) + groupRotation,
+          scaleX: (product.scaleX || 1) * groupScaleX,
+          scaleY: (product.scaleY || 1) * groupScaleY,
+        };
+      });
+
+      updateHistory(transformedProducts);
+    }
+
+    // Transform text boxes
+    if (textIds.length > 0) {
+      const transformedTextBoxes = textBoxes.map((textBox) => {
+        if (!textIds.includes(textBox.id)) return textBox;
+
+        // Calculate relative position
+        let relX = textBox.x - centerX;
+        let relY = textBox.y - centerY;
+
+        // Apply rotation
+        if (groupRotation !== 0) {
+          const angle = (groupRotation * Math.PI) / 180;
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+          const rotatedX = relX * cos - relY * sin;
+          const rotatedY = relX * sin + relY * cos;
+          relX = rotatedX;
+          relY = rotatedY;
+        }
+
+        // Apply scale
+        relX *= groupScaleX;
+        relY *= groupScaleY;
+
+        const newX = groupX + relX;
+        const newY = groupY + relY;
+
+        // For text, we update width and fontSize based on scale
+        const newFontSize = Math.max(8, Math.round((textBox.fontSize || 24) * ((groupScaleX + groupScaleY) / 2)));
+        const newWidth = Math.max(5, (textBox.width || 200) * groupScaleX);
+
+        return {
+          ...textBox,
+          x: newX,
+          y: newY,
+          rotation: (textBox.rotation || 0) + groupRotation,
+          fontSize: newFontSize,
+          width: newWidth,
+          scaleX: 1, // Reset scale after applying to fontSize and width
+          scaleY: 1,
+        };
+      });
+
+      setTextBoxes(transformedTextBoxes);
+    }
+
+    // Force update
+    setGroupKey((k) => k + 1);
+  }, [
+    selectedIds,
+    selectionSnapshot,
+    selectionGroupRef,
+    products,
+    textBoxes,
+    updateHistory,
+    setTextBoxes,
+    setGroupKey,
+  ]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -1779,7 +1931,7 @@ const Page = () => {
                         isConnectMode={selectedTool === "connect"}
                         onProductClick={handleProductClick}
                         onContextMenu={contextMenus.handleContextMenu}
-                        onGroupTransformEnd={handleGroupTransformEnd}
+                        onGroupTransformEnd={handleUnifiedGroupTransformEnd}
                       />
                     )}
 

@@ -7,7 +7,7 @@
 
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 
-export const useSelectionState = (products) => {
+export const useSelectionState = (products, textBoxes = []) => {
   // Selection state
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedConnectorId, setSelectedConnectorId] = useState(null);
@@ -21,61 +21,75 @@ export const useSelectionState = (products) => {
   // Selection snapshot for group transformations
   const selectionSnapshot = useMemo(() => {
     if (selectedIds.length === 0) {
-      return { centerX: 0, centerY: 0, products: [], rotation: 0 };
+      return { centerX: 0, centerY: 0, products: [], textBoxes: [], rotation: 0 };
     }
 
-    const snapshot = products.filter((p) => selectedIds.includes(p.id)).map((p) => ({ ...p }));
+    // Split IDs into products and text boxes
+    const productIds = selectedIds.filter(id => !id.startsWith('text-'));
+    const textIds = selectedIds
+      .filter(id => id.startsWith('text-'))
+      .map(id => id.substring(5)); // Remove 'text-' prefix
 
-    if (snapshot.length === 0) {
-      return { centerX: 0, centerY: 0, products: [], rotation: 0 };
+    const productSnapshot = products.filter((p) => productIds.includes(p.id)).map((p) => ({ ...p }));
+    const textSnapshot = textBoxes.filter((t) => textIds.includes(t.id)).map((t) => ({ ...t }));
+
+    if (productSnapshot.length === 0 && textSnapshot.length === 0) {
+      return { centerX: 0, centerY: 0, products: [], textBoxes: [], rotation: 0 };
     }
 
-    // Calculate average rotation of selected products first
-    const totalRotation = snapshot.reduce((sum, p) => sum + (p.rotation || 0), 0);
-    const avgRotation = totalRotation / snapshot.length;
+    // Calculate average rotation (only from products for now)
+    const totalRotation = productSnapshot.reduce((sum, p) => sum + (p.rotation || 0), 0);
+    const avgRotation = productSnapshot.length > 0 ? totalRotation / productSnapshot.length : 0;
 
-    // Calculate center considering rotation
+    // Calculate center including both products and text boxes
     let sumX = 0;
     let sumY = 0;
+    let totalCount = 0;
 
-    snapshot.forEach((p) => {
-      // If the product is rotated, we need to adjust its position relative to the average rotation
-      if (p.rotation) {
-        const angle = ((p.rotation - avgRotation) * Math.PI) / 180;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        sumX += p.x * cos - p.y * sin;
-        sumY += p.x * sin + p.y * cos;
-      } else {
-        sumX += p.x;
-        sumY += p.y;
-      }
+    productSnapshot.forEach((p) => {
+      sumX += p.x;
+      sumY += p.y;
+      totalCount++;
     });
 
-    const centerX = sumX / snapshot.length;
-    const centerY = sumY / snapshot.length;
+    textSnapshot.forEach((t) => {
+      sumX += t.x;
+      sumY += t.y;
+      totalCount++;
+    });
+
+    const centerX = totalCount > 0 ? sumX / totalCount : 0;
+    const centerY = totalCount > 0 ? sumY / totalCount : 0;
 
     return {
       centerX,
       centerY,
       rotation: avgRotation,
-      products: snapshot.map((p) => {
-        // Calculate relative position accounting for rotation
-        const angle = (avgRotation * Math.PI) / 180;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        const relX = (p.x - centerX) * cos + (p.y - centerY) * sin;
-        const relY = -(p.x - centerX) * sin + (p.y - centerY) * cos;
+      products: productSnapshot.map((p) => {
+        // Calculate relative position
+        const relX = p.x - centerX;
+        const relY = p.y - centerY;
 
         return {
           ...p,
           relativeX: relX,
           relativeY: relY,
-          rotation: (p.rotation || 0) - avgRotation, // Store relative rotation
+          rotation: (p.rotation || 0) - avgRotation,
+        };
+      }),
+      textBoxes: textSnapshot.map((t) => {
+        // Calculate relative position
+        const relX = t.x - centerX;
+        const relY = t.y - centerY;
+
+        return {
+          ...t,
+          relativeX: relX,
+          relativeY: relY,
         };
       }),
     };
-  }, [products, selectedIds]);
+  }, [products, textBoxes, selectedIds]);
 
   // Store the initial rotation when selection changes
   const [initialRotation, setInitialRotation] = useState(0);

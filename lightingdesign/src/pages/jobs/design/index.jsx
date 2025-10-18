@@ -842,6 +842,7 @@ const Page = () => {
         id: `connector-${Date.now()}-${index}`,
         from: idMap[c.from],
         to: idMap[c.to],
+        sublayerId: activeLayer?.defaultCablingSublayerId || null,
       }));
 
       // Paste text boxes with offset
@@ -1766,6 +1767,7 @@ const Page = () => {
           strokeWidth: shapeConfig.strokeWidth || 2,
           shape: shapeConfig.shapeType || shapeName,
           name: `Custom ${shapeName.charAt(0).toUpperCase() + shapeName.slice(1)}`,
+          product_type: shapeName, // Fix: Add product_type for shape lookup
           product_type_unigram: shapeName,
           isCustomObject: true,
           // Add scaleFactor to ensure proper rendering and resizing

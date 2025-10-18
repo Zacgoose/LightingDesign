@@ -64,7 +64,7 @@ export const ConnectorLine = ({
           connector.color ||
           (isSelected ? theme.palette.secondary.main : theme.palette.primary.main)
         }
-        strokeWidth={isSelected ? 3 : 2}
+        strokeWidth={isSelected ? 6 : 4}
         lineCap="round"
         hitStrokeWidth={20} // Makes it easier to click
         onClick={handleLineClick}

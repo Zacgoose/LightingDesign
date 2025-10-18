@@ -235,6 +235,57 @@ export const ProductShapes = {
     context.rect(-width / 2, -height / 2, width, height);
     context.fillStrokeShape(shape);
   },
+
+  arrow: (context, shape) => {
+    const scaleFactor = shape.getAttr("scaleFactor") || 50;
+    const realWorldWidth =
+      shape.getAttr("realWorldWidth") || (shape.width() ? shape.width() / scaleFactor : 0.8);
+    const realWorldHeight =
+      shape.getAttr("realWorldHeight") || (shape.height() ? shape.height() / scaleFactor : 0.4);
+    const width = realWorldWidth * scaleFactor;
+    const height = realWorldHeight * scaleFactor;
+    
+    // Draw arrow pointing right
+    const headWidth = width * 0.3;
+    const shaftHeight = height * 0.4;
+    
+    context.beginPath();
+    // Start at left of shaft
+    context.moveTo(-width / 2, -shaftHeight / 2);
+    // Top of shaft
+    context.lineTo(width / 2 - headWidth, -shaftHeight / 2);
+    // Top of arrow head
+    context.lineTo(width / 2 - headWidth, -height / 2);
+    // Arrow point
+    context.lineTo(width / 2, 0);
+    // Bottom of arrow head
+    context.lineTo(width / 2 - headWidth, height / 2);
+    // Bottom of shaft
+    context.lineTo(width / 2 - headWidth, shaftHeight / 2);
+    // Complete shaft
+    context.lineTo(-width / 2, shaftHeight / 2);
+    context.closePath();
+    context.fillStrokeShape(shape);
+  },
+
+  boxoutline: (context, shape) => {
+    const scaleFactor = shape.getAttr("scaleFactor") || 50;
+    const realWorldWidth =
+      shape.getAttr("realWorldWidth") || (shape.width() ? shape.width() / scaleFactor : 0.5);
+    const realWorldHeight =
+      shape.getAttr("realWorldHeight") || (shape.height() ? shape.height() / scaleFactor : 0.5);
+    const width = realWorldWidth * scaleFactor;
+    const height = realWorldHeight * scaleFactor;
+    
+    // Draw box outline (no fill)
+    context.save();
+    context.strokeStyle = shape.getAttr("stroke");
+    context.lineWidth = shape.getAttr("strokeWidth") || 2;
+    context.beginPath();
+    context.rect(-width / 2, -height / 2, width, height);
+    context.stroke();
+    context.restore();
+  },
 };
 
 // Helper function to get shape function by name

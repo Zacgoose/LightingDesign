@@ -113,6 +113,26 @@
     "stroke": "#F9A825",
     "strokeWidth": 2
   },
+  "arrow": {
+    "shapeType": "arrow",
+    "width": 80,
+    "height": 40,
+    "realWorldWidth": 0.8,
+    "realWorldHeight": 0.4,
+    "fill": "#90CAF9",
+    "stroke": "#1976D2",
+    "strokeWidth": 2
+  },
+  "boxoutline": {
+    "shapeType": "boxoutline",
+    "width": 50,
+    "height": 50,
+    "realWorldWidth": 0.5,
+    "realWorldHeight": 0.5,
+    "fill": "transparent",
+    "stroke": "#424242",
+    "strokeWidth": 3
+  },
   "default": {
     "shapeType": "rect",
     "width": 30,

@@ -505,6 +505,12 @@ export const ContextMenus = ({
           <MenuItem onClick={() => handleCustomObjectSelect("chandelier")}>
             <ListItemText>Chandelier</ListItemText>
           </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("arrow")}>
+            <ListItemText>Arrow</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("boxoutline")}>
+            <ListItemText>Box Outline</ListItemText>
+          </MenuItem>
         </Box>
       </Popover>
 

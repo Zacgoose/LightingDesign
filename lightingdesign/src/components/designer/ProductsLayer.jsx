@@ -337,18 +337,16 @@ export const ProductsLayer = memo(
                     // Strictly maintain aspect ratio for corner resize
                     const ratio = oldBox.width / oldBox.height;
                     
-                    // Calculate which dimension changed more
-                    const widthChange = Math.abs(newBox.width - oldBox.width);
-                    const heightChange = Math.abs(newBox.height - oldBox.height);
+                    // Calculate scale change for both dimensions
+                    const scaleX = newBox.width / oldBox.width;
+                    const scaleY = newBox.height / oldBox.height;
                     
-                    // Maintain ratio by adjusting the dimension that changed less
-                    if (widthChange > heightChange) {
-                      // Width changed more, adjust height to maintain ratio
-                      newBox.height = newBox.width / ratio;
-                    } else {
-                      // Height changed more, adjust width to maintain ratio
-                      newBox.width = newBox.height * ratio;
-                    }
+                    // Use the average scale to maintain aspect ratio smoothly
+                    const avgScale = (scaleX + scaleY) / 2;
+                    
+                    // Apply uniform scaling
+                    newBox.width = oldBox.width * avgScale;
+                    newBox.height = oldBox.height * avgScale;
                   }
                 }
               }
@@ -356,7 +354,7 @@ export const ProductsLayer = memo(
               return newBox;
             }}
             rotateEnabled={true}
-            keepRatio={false}
+            keepRatio={textIds.length > 0 && productOnlyIds.length === 0}
             ignoreStroke={true}
             anchorSize={8}
             borderDash={[4, 4]}

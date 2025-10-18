@@ -1351,7 +1351,12 @@ const Page = () => {
             
             // Split text by newlines to handle multi-line text
             const lines = newText.split('\n');
-            const lineWidths = lines.map(line => tempContext.measureText(line).width);
+            const lineWidths = lines.map(line => {
+              const metrics = tempContext.measureText(line);
+              // Use actualBoundingBoxRight for more accurate width calculation
+              // Add extra margin for safety
+              return Math.ceil(metrics.width * 1.1);
+            });
             const maxWidth = Math.max(...lineWidths, 50); // Minimum width of 50
             
             // Height is fontSize * number of lines with line height multiplier
@@ -1370,8 +1375,8 @@ const Page = () => {
                       fontStyle: formattingData.fontStyle,
                       textDecoration: formattingData.textDecoration,
                       color: formattingData.color,
-                      width: maxWidth + 20, // Add padding for better sizing
-                      height: textHeight,
+                      width: maxWidth + 40, // Increased padding to prevent premature wrapping
+                      height: textHeight + 10, // Add vertical padding
                     } 
                   : box
               )

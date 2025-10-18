@@ -127,6 +127,7 @@ const Page = () => {
   const {
     state: products,
     updateHistory,
+    resetHistoryBaseline,
     undo: handleUndo,
     redo: handleRedo,
     canUndo,
@@ -531,8 +532,8 @@ const Page = () => {
       // Update activeLayerIdRef immediately to ensure sync effects use correct layer
       activeLayerIdRef.current = activeLayerId;
 
-      // Load the new layer's data
-      updateHistory(activeLayer.products || []);
+      // Load the new layer's data - use resetHistoryBaseline to prevent undo past loaded state
+      resetHistoryBaseline(activeLayer.products || []);
       setConnectors(activeLayer.connectors || []);
       setTextBoxes(activeLayer.textBoxes || []);
       setBackgroundImage(activeLayer.backgroundImage || null);

@@ -1028,7 +1028,7 @@ const Page = () => {
         const sizeAttrs = defaultSizes[shapeName] || { realWorldSize: 1 };
 
         const newProduct = {
-          id: `custom-${Date.now()}`,
+          id: `custom-${crypto.randomUUID()}`,
           x,
           y,
           rotation: 0,

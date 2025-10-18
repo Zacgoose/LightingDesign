@@ -190,6 +190,7 @@ const Page = () => {
   const [selectedTextId, setSelectedTextId] = useState(null);
   const [textDialogOpen, setTextDialogOpen] = useState(false);
   const [textDialogValue, setTextDialogValue] = useState("");
+  const [textDialogFormatting, setTextDialogFormatting] = useState({});
   const [pendingTextBoxId, setPendingTextBoxId] = useState(null);
 
   // Drag-to-select state
@@ -1071,6 +1072,13 @@ const Page = () => {
         setPendingTextBoxId(newTextBox.id);
         setSelectedTextId(newTextBox.id);
         setTextDialogValue("");
+        setTextDialogFormatting({
+          fontSize: newTextBox.fontSize,
+          fontFamily: newTextBox.fontFamily,
+          fontStyle: newTextBox.fontStyle,
+          textDecoration: newTextBox.textDecoration,
+          color: newTextBox.color,
+        });
         setTextDialogOpen(true);
         setSelectedIds([]);
         setSelectedConnectorId(null);
@@ -1084,16 +1092,43 @@ const Page = () => {
     if (textBox) {
       setPendingTextBoxId(textId);
       setTextDialogValue(textBox.text);
+      setTextDialogFormatting({
+        fontSize: textBox.fontSize || 24,
+        fontFamily: textBox.fontFamily || "Arial",
+        fontStyle: textBox.fontStyle || "normal",
+        textDecoration: textBox.textDecoration || "",
+        color: textBox.color || "#000000",
+      });
       setTextDialogOpen(true);
     }
   }, [textBoxes]);
 
   const handleTextDialogConfirm = useCallback(
-    (newText) => {
+    (formattingData) => {
       if (pendingTextBoxId) {
-        setTextBoxes((boxes) =>
-          boxes.map((box) => (box.id === pendingTextBoxId ? { ...box, text: newText } : box))
-        );
+        const newText = formattingData.text || "";
+        if (newText.trim()) {
+          // User confirmed with text - update the text box with text and formatting
+          setTextBoxes((boxes) =>
+            boxes.map((box) => 
+              box.id === pendingTextBoxId 
+                ? { 
+                    ...box, 
+                    text: newText,
+                    fontSize: formattingData.fontSize,
+                    fontFamily: formattingData.fontFamily,
+                    fontStyle: formattingData.fontStyle,
+                    textDecoration: formattingData.textDecoration,
+                    color: formattingData.color,
+                  } 
+                : box
+            )
+          );
+        } else {
+          // User confirmed with empty text - remove the text box
+          setTextBoxes((boxes) => boxes.filter((box) => box.id !== pendingTextBoxId));
+          setSelectedTextId(null);
+        }
         setPendingTextBoxId(null);
       }
       setTextDialogOpen(false);
@@ -1103,7 +1138,7 @@ const Page = () => {
 
   const handleTextDialogClose = useCallback(() => {
     setTextDialogOpen(false);
-    // If we were creating a new text box and it's still empty, remove it
+    // If we were creating a new text box and dialog was cancelled, remove it
     if (pendingTextBoxId) {
       const textBox = textBoxes.find((t) => t.id === pendingTextBoxId);
       if (textBox && !textBox.text) {
@@ -1743,6 +1778,7 @@ const Page = () => {
                     onConfirm={handleTextDialogConfirm}
                     title="Enter Text"
                     defaultValue={textDialogValue}
+                    defaultFormatting={textDialogFormatting}
                   />
 
                   {/* Inline measurement confirmation */}

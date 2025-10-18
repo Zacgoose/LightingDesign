@@ -15,16 +15,7 @@ export const TextBox = memo(
     onContextMenu,
   }) => {
     const textRef = useRef();
-    const trRef = useRef();
-
-    useEffect(() => {
-      // Only attach transformer if selected and NOT in a group selection
-      if (isSelected && !isInGroup && trRef.current && textRef.current) {
-        // Attach transformer to text node
-        trRef.current.nodes([textRef.current]);
-        trRef.current.getLayer()?.batchDraw();
-      }
-    }, [isSelected, isInGroup]);
+    // Removed separate transformer - using unified transformer from ProductsLayer
 
     // Parse font style
     const isBold = textBox.fontStyle?.includes("bold") || false;
@@ -76,108 +67,41 @@ export const TextBox = memo(
           onTransform={(e) => {
             // Real-time updates during transformation
             const node = textRef.current;
-            const transformer = trRef.current;
+            if (!node) return;
             
-            if (!node || !transformer) return;
-            
-            const scaleX = node.scaleX();
-            const scaleY = node.scaleY();
-            
-            // Determine which anchor is being used
-            const activeAnchor = transformer.getActiveAnchor();
-            const isCornerAnchor = activeAnchor && (
-              activeAnchor === 'top-left' || 
-              activeAnchor === 'top-right' || 
-              activeAnchor === 'bottom-left' || 
-              activeAnchor === 'bottom-right'
-            );
-            
-            if (isCornerAnchor) {
-              // Corner resize: scale font size (current behavior)
-              // Let the natural scaling happen, will adjust font on transformEnd
-            } else {
-              // Side/top resize: adjust width, keep font size
-              // Reset vertical scale, only use horizontal scale for width
-              const newWidth = Math.max(5, node.width() * scaleX);
-              node.width(newWidth);
-              node.scaleX(1);
-              node.scaleY(1);
-            }
+            // Note: This won't work without transformer ref, but we keep it for when text is in group
+            // The ProductsLayer handles transformations for selected text
           }}
           onTransformEnd={(e) => {
+            // This only applies to unselected text boxes (selected ones use ProductsLayer transformer)
             const node = textRef.current;
-            const transformer = trRef.current;
-            
-            if (!node || !transformer) return;
+            if (!node) return;
             
             const scaleX = node.scaleX();
             const scaleY = node.scaleY();
-            
-            // Determine which anchor was used
-            const activeAnchor = transformer.getActiveAnchor();
-            const isCornerAnchor = activeAnchor && (
-              activeAnchor === 'top-left' || 
-              activeAnchor === 'top-right' || 
-              activeAnchor === 'bottom-left' || 
-              activeAnchor === 'bottom-right'
-            );
 
-            if (isCornerAnchor) {
-              // Corner resize: adjust font size
-              const averageScale = (scaleX + scaleY) / 2;
-              const currentBaseFontSize = textBox.fontSize || 24;
-              const newBaseFontSize = Math.max(8, Math.round(currentBaseFontSize * averageScale));
+            // Simple scaling behavior for unselected text
+            const averageScale = (scaleX + scaleY) / 2;
+            const currentBaseFontSize = textBox.fontSize || 24;
+            const newBaseFontSize = Math.max(8, Math.round(currentBaseFontSize * averageScale));
 
-              // Reset scale and adjust width and base font size
-              node.scaleX(1);
-              node.scaleY(1);
+            node.scaleX(1);
+            node.scaleY(1);
 
-              onChange({
-                ...textBox,
-                x: node.x(),
-                y: node.y(),
-                width: Math.max(5, node.width() * scaleX),
-                fontSize: newBaseFontSize,
-                rotation: node.rotation(),
-                scaleX: 1,
-                scaleY: 1,
-              });
-            } else {
-              // Side/top resize: keep font size, adjust width
-              // Width was already adjusted in onTransform, just finalize
-              onChange({
-                ...textBox,
-                x: node.x(),
-                y: node.y(),
-                width: node.width(),
-                rotation: node.rotation(),
-                scaleX: 1,
-                scaleY: 1,
-              });
-            }
+            onChange({
+              ...textBox,
+              x: node.x(),
+              y: node.y(),
+              width: Math.max(5, node.width() * scaleX),
+              fontSize: newBaseFontSize,
+              rotation: node.rotation(),
+              scaleX: 1,
+              scaleY: 1,
+            });
           }}
           onContextMenu={onContextMenu}
         />
-        {isSelected && !isInGroup && (
-          <Transformer
-            ref={trRef}
-            boundBoxFunc={(oldBox, newBox) => {
-              // Limit resize
-              if (newBox.width < 5 || newBox.height < 5) {
-                return oldBox;
-              }
-              return newBox;
-            }}
-            enabledAnchors={[
-              "top-left",
-              "top-right",
-              "bottom-left",
-              "bottom-right",
-              "middle-left",
-              "middle-right",
-            ]}
-          />
-        )}
+        {/* No separate transformer - using unified transformer from ProductsLayer for selected text */}
       </>
     );
   }

@@ -50,6 +50,9 @@ export const useContextMenus = ({
       // Disable context menus in pan mode
       if (selectedTool === "pan") return;
 
+      // In text mode, disable object context menus on stage
+      if (selectedTool === "text") return;
+
       // Always move our context menu to the new location
       let menuType = null;
       let menuProps = {};

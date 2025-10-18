@@ -290,8 +290,8 @@ export const ProductsLayer = memo(
           </Group>
         )}
 
-        {/* Transformer for selected group */}
-        {selectedTool === "select" && !isPlacementMode && hasSelection && (
+        {/* Transformer for selected group - visible in both select and text modes */}
+        {(selectedTool === "select" || selectedTool === "text") && !isPlacementMode && hasSelection && (
           <Transformer
             ref={transformerRef}
             rotationSnaps={

@@ -44,8 +44,8 @@ const Page = () => {
     exportQuality: { value: "medium", label: "Medium" },
     exportIncludeGrid: false,
     autoSaveInterval: { value: "2", label: "2 minutes" },
-    gridOpacity: 50,
-    backgroundOpacity: 70,
+    gridOpacity: 80,
+    backgroundOpacity: 60,
   };
 
   // Merge user settings with defaults

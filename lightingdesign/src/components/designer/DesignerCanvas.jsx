@@ -88,7 +88,7 @@ export const DesignerCanvas = memo(
       theme.palette.mode === "dark" ? theme.palette.background.default : "#f5f5f5";
 
     const gridColor =
-      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)";
+      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 1)" : "rgba(0, 0, 0, 1)";
 
     // Calculate image scale to fit canvas
     const getImageScale = () => {

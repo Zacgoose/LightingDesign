@@ -698,6 +698,13 @@ const Page = () => {
 
     console.log('[handleUnifiedGroupTransformEnd] Applying transform to products and text boxes');
 
+    // Calculate the rotation delta (how much we've rotated from the snapshot)
+    const rotationDelta = groupRotation - (selectionSnapshot.rotation || 0);
+    
+    // Calculate position delta (how much the group center has moved)
+    const centerDeltaX = groupX - selectionSnapshot.centerX;
+    const centerDeltaY = groupY - selectionSnapshot.centerY;
+
     // Transform products
     if (productIds.length > 0) {
       const transformedProducts = products.map((product) => {
@@ -707,13 +714,13 @@ const Page = () => {
         const original = selectionSnapshot.products?.find((p) => p.id === product.id);
         if (!original) return product;
 
-        // Use relative positions from snapshot
+        // Start with relative position from snapshot (relative to original center)
         let relX = original.relativeX || 0;
         let relY = original.relativeY || 0;
 
-        // Apply group rotation to relative positions (Konva coordinate system)
-        if (groupRotation !== 0) {
-          const angle = (groupRotation * Math.PI) / 180;
+        // Apply rotation delta to relative positions
+        if (rotationDelta !== 0) {
+          const angle = (rotationDelta * Math.PI) / 180;
           const cos = Math.cos(angle);
           const sin = Math.sin(angle);
           const rotatedX = relX * cos - relY * sin;
@@ -726,8 +733,9 @@ const Page = () => {
         relX *= groupScaleX;
         relY *= groupScaleY;
 
-        const newX = groupX + relX;
-        const newY = groupY + relY;
+        // Add back to ORIGINAL center + any center movement (drag)
+        const newX = selectionSnapshot.centerX + relX + centerDeltaX;
+        const newY = selectionSnapshot.centerY + relY + centerDeltaY;
 
         console.log(`[handleUnifiedGroupTransformEnd] Transforming product ${product.id}`, {
           originalPos: { x: product.x, y: product.y },
@@ -737,15 +745,16 @@ const Page = () => {
           snapshotRelative: { x: original.relativeX, y: original.relativeY },
           currentRotation: product.rotation,
           originalRelativeRotation: original.rotation,
+          rotationDelta: rotationDelta,
           groupRotation: groupRotation,
-          newRotation: original.rotation + groupRotation,
+          newRotation: original.rotation + rotationDelta,
         });
 
         return {
           ...product,
           x: newX,
           y: newY,
-          rotation: original.rotation + groupRotation,
+          rotation: original.rotation + rotationDelta,
           scaleX: (original.scaleX || 1) * groupScaleX,
           scaleY: (original.scaleY || 1) * groupScaleY,
         };
@@ -768,13 +777,13 @@ const Page = () => {
         const original = selectionSnapshot.textBoxes?.find((t) => t.id === textBox.id);
         if (!original) return textBox;
 
-        // Use relative positions from snapshot
+        // Start with relative position from snapshot (relative to original center)
         let relX = original.relativeX || 0;
         let relY = original.relativeY || 0;
 
-        // Apply group rotation to relative positions (Konva coordinate system)
-        if (groupRotation !== 0) {
-          const angle = (groupRotation * Math.PI) / 180;
+        // Apply rotation delta to relative positions
+        if (rotationDelta !== 0) {
+          const angle = (rotationDelta * Math.PI) / 180;
           const cos = Math.cos(angle);
           const sin = Math.sin(angle);
           const rotatedX = relX * cos - relY * sin;
@@ -787,8 +796,9 @@ const Page = () => {
         relX *= groupScaleX;
         relY *= groupScaleY;
 
-        const newX = groupX + relX;
-        const newY = groupY + relY;
+        // Add back to ORIGINAL center + any center movement (drag)
+        const newX = selectionSnapshot.centerX + relX + centerDeltaX;
+        const newY = selectionSnapshot.centerY + relY + centerDeltaY;
 
         console.log(`[handleUnifiedGroupTransformEnd] Transforming text box ${textBox.id}`, {
           originalPos: { x: textBox.x, y: textBox.y },
@@ -820,7 +830,7 @@ const Page = () => {
           ...textBox,
           x: newX,
           y: newY,
-          rotation: (original.rotation || 0) + groupRotation,
+          rotation: (original.rotation || 0) + rotationDelta,
           fontSize: newFontSize,
           width: newWidth,
           scaleX: 1, // Reset scale after applying to fontSize and width

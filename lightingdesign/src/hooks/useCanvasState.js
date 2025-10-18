@@ -119,7 +119,6 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   }, []);
 
   const handleResetView = useCallback(() => {
-    setStageScale(1);
     setStagePosition({
       x: viewportWidth / 2,
       y: viewportHeight / 2,

@@ -10,6 +10,7 @@ export const TextLayer = memo(
     onTextDragStart,
     onTextDragEnd,
     onTextDoubleClick,
+    onTextContextMenu,
     draggable = true,
   }) => {
     return (
@@ -27,6 +28,7 @@ export const TextLayer = memo(
             onDragStart={(e) => onTextDragStart && onTextDragStart(e, textBox.id)}
             onDragEnd={(e) => onTextDragEnd && onTextDragEnd(e, textBox.id)}
             onDoubleClick={(e) => onTextDoubleClick && onTextDoubleClick(e, textBox.id)}
+            onContextMenu={(e) => onTextContextMenu && onTextContextMenu(e, textBox.id)}
             draggable={draggable}
           />
         ))}

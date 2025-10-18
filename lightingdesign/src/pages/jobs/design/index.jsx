@@ -29,7 +29,7 @@ import { SubLayerControls } from "/src/components/designer/SubLayerControls";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
 import { TextLayer } from "/src/components/designer/TextLayer";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
-import { TextEditor } from "/src/components/designer/TextEditor";
+import { TextEntryDialog } from "/src/components/designer/TextEntryDialog";
 import { useHistory } from "/src/hooks/useHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
 import { useLayerManager } from "/src/hooks/useLayerManager";
@@ -188,7 +188,9 @@ const Page = () => {
   // Text boxes state
   const [textBoxes, setTextBoxes] = useState([]);
   const [selectedTextId, setSelectedTextId] = useState(null);
-  const [editingTextId, setEditingTextId] = useState(null);
+  const [textDialogOpen, setTextDialogOpen] = useState(false);
+  const [textDialogValue, setTextDialogValue] = useState("");
+  const [pendingTextBoxId, setPendingTextBoxId] = useState(null);
 
   // Drag-to-select state
   const [isSelecting, setIsSelecting] = useState(false);
@@ -578,6 +580,9 @@ const Page = () => {
     setConnectSequence,
     applyGroupTransform,
     pendingInsertPosition,
+    selectedTextId,
+    textBoxes,
+    setTextBoxes,
   });
 
   // Product interaction hook
@@ -1051,16 +1056,21 @@ const Page = () => {
           id: crypto.randomUUID(),
           x: canvasPos.x,
           y: canvasPos.y,
-          text: "",  // Start with empty text so user can type immediately
+          text: "",
           fontSize: 24,
           fontFamily: "Arial",
+          fontStyle: "normal", // Can be "normal", "bold", "italic", "bold italic"
+          textDecoration: "", // Can be "", "underline", "line-through", or "underline line-through"
           color: theme.palette.mode === "dark" ? "#ffffff" : "#000000",
           width: 200,
         };
+        
+        // Add the text box and open the dialog immediately
         setTextBoxes([...textBoxes, newTextBox]);
+        setPendingTextBoxId(newTextBox.id);
         setSelectedTextId(newTextBox.id);
-        // Immediately enter edit mode so user can start typing
-        setEditingTextId(newTextBox.id);
+        setTextDialogValue("");
+        setTextDialogOpen(true);
         setSelectedIds([]);
         setSelectedConnectorId(null);
       }
@@ -1069,22 +1079,39 @@ const Page = () => {
   );
 
   const handleTextDoubleClick = useCallback((e, textId) => {
-    setEditingTextId(textId);
-  }, []);
+    const textBox = textBoxes.find((t) => t.id === textId);
+    if (textBox) {
+      setPendingTextBoxId(textId);
+      setTextDialogValue(textBox.text);
+      setTextDialogOpen(true);
+    }
+  }, [textBoxes]);
 
-  const handleTextEditSave = useCallback(
-    (textId, newText) => {
-      setTextBoxes((boxes) =>
-        boxes.map((box) => (box.id === textId ? { ...box, text: newText } : box))
-      );
-      setEditingTextId(null);
+  const handleTextDialogConfirm = useCallback(
+    (newText) => {
+      if (pendingTextBoxId) {
+        setTextBoxes((boxes) =>
+          boxes.map((box) => (box.id === pendingTextBoxId ? { ...box, text: newText } : box))
+        );
+        setPendingTextBoxId(null);
+      }
+      setTextDialogOpen(false);
     },
-    []
+    [pendingTextBoxId]
   );
 
-  const handleTextEditCancel = useCallback(() => {
-    setEditingTextId(null);
-  }, []);
+  const handleTextDialogClose = useCallback(() => {
+    setTextDialogOpen(false);
+    // If we were creating a new text box and it's still empty, remove it
+    if (pendingTextBoxId) {
+      const textBox = textBoxes.find((t) => t.id === pendingTextBoxId);
+      if (textBox && !textBox.text) {
+        setTextBoxes((boxes) => boxes.filter((box) => box.id !== pendingTextBoxId));
+        setSelectedTextId(null);
+      }
+    }
+    setPendingTextBoxId(null);
+  }, [pendingTextBoxId, textBoxes]);
 
   const handleTextChange = useCallback((updatedTextBox) => {
     setTextBoxes((boxes) =>
@@ -1097,6 +1124,132 @@ const Page = () => {
     setSelectedIds([]);
     setSelectedConnectorId(null);
   }, [setSelectedIds, setSelectedConnectorId]);
+
+  const handleTextContextMenu = useCallback((e, textId) => {
+    e.evt.preventDefault();
+    e.cancelBubble = true;
+    
+    setSelectedTextId(textId);
+    setSelectedIds([]);
+    setSelectedConnectorId(null);
+    
+    const stage = e.target.getStage();
+    const pointerPosition = stage.getPointerPosition();
+    
+    contextMenus.setContextMenu({
+      type: "text",
+      x: pointerPosition.x,
+      y: pointerPosition.y,
+      textId: textId,
+    });
+  }, [setSelectedIds, setSelectedConnectorId, contextMenus]);
+
+  const handleTextEdit = useCallback(() => {
+    if (selectedTextId) {
+      const textBox = textBoxes.find((t) => t.id === selectedTextId);
+      if (textBox) {
+        setPendingTextBoxId(selectedTextId);
+        setTextDialogValue(textBox.text);
+        setTextDialogOpen(true);
+      }
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedTextId, textBoxes, contextMenus]);
+
+  const handleTextFormatBold = useCallback(() => {
+    if (selectedTextId) {
+      setTextBoxes((boxes) =>
+        boxes.map((box) => {
+          if (box.id !== selectedTextId) return box;
+          const currentStyle = box.fontStyle || "normal";
+          const isBold = currentStyle.includes("bold");
+          const isItalic = currentStyle.includes("italic");
+          
+          let newStyle;
+          if (isBold && isItalic) {
+            newStyle = "italic";
+          } else if (isBold) {
+            newStyle = "normal";
+          } else if (isItalic) {
+            newStyle = "bold italic";
+          } else {
+            newStyle = "bold";
+          }
+          
+          return { ...box, fontStyle: newStyle };
+        })
+      );
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedTextId, contextMenus]);
+
+  const handleTextFormatItalic = useCallback(() => {
+    if (selectedTextId) {
+      setTextBoxes((boxes) =>
+        boxes.map((box) => {
+          if (box.id !== selectedTextId) return box;
+          const currentStyle = box.fontStyle || "normal";
+          const isBold = currentStyle.includes("bold");
+          const isItalic = currentStyle.includes("italic");
+          
+          let newStyle;
+          if (isBold && isItalic) {
+            newStyle = "bold";
+          } else if (isItalic) {
+            newStyle = "normal";
+          } else if (isBold) {
+            newStyle = "bold italic";
+          } else {
+            newStyle = "italic";
+          }
+          
+          return { ...box, fontStyle: newStyle };
+        })
+      );
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedTextId, contextMenus]);
+
+  const handleTextFormatUnderline = useCallback(() => {
+    if (selectedTextId) {
+      setTextBoxes((boxes) =>
+        boxes.map((box) => {
+          if (box.id !== selectedTextId) return box;
+          const currentDecoration = box.textDecoration || "";
+          const hasUnderline = currentDecoration.includes("underline");
+          
+          let newDecoration;
+          if (hasUnderline) {
+            // Remove underline
+            newDecoration = currentDecoration.replace("underline", "").trim();
+          } else {
+            // Add underline
+            newDecoration = currentDecoration ? `${currentDecoration} underline` : "underline";
+          }
+          
+          return { ...box, textDecoration: newDecoration };
+        })
+      );
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedTextId, contextMenus]);
+
+  const handleTextFontSize = useCallback((fontSize) => {
+    if (selectedTextId) {
+      setTextBoxes((boxes) =>
+        boxes.map((box) => (box.id === selectedTextId ? { ...box, fontSize } : box))
+      );
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedTextId, contextMenus]);
+
+  const handleTextColorChange = useCallback((color) => {
+    if (selectedTextId) {
+      setTextBoxes((boxes) =>
+        boxes.map((box) => (box.id === selectedTextId ? { ...box, color } : box))
+      );
+    }
+  }, [selectedTextId]);
 
   // Drag-to-select handlers
   const handleSelectionStart = useCallback(
@@ -1192,7 +1345,7 @@ const Page = () => {
       // First handle selection end
       handleSelectionEnd();
 
-      // If we're in select mode and didn't drag, clear selection
+      // If we're in select mode and clicked on empty canvas without dragging, clear selection
       if (selectedTool === "select" && !hasDraggedRef.current && selectionStartRef.current) {
         const clickedOnEmpty = e.target === e.target.getStage();
         if (clickedOnEmpty) {
@@ -1566,6 +1719,7 @@ const Page = () => {
                       onTextSelect={handleTextSelect}
                       onTextChange={handleTextChange}
                       onTextDoubleClick={handleTextDoubleClick}
+                      onTextContextMenu={handleTextContextMenu}
                       draggable={selectedTool === "select" || selectedTool === "text"}
                     />
 
@@ -1573,23 +1727,14 @@ const Page = () => {
                     <SelectionRectangle selectionRect={selectionRect} />
                   </DesignerCanvas>
 
-                  {/* Text editor portal */}
-                  {editingTextId && stageRef.current && (() => {
-                    const textBox = textBoxes.find((t) => t.id === editingTextId);
-                    if (!textBox) return null;
-                    const stage = stageRef.current;
-                    const stageBox = stage.container().getBoundingClientRect();
-                    return (
-                      <TextEditor
-                        textBox={textBox}
-                        stageScale={stageScale}
-                        stagePosition={stagePosition}
-                        stageBox={stageBox}
-                        onSave={(newText) => handleTextEditSave(editingTextId, newText)}
-                        onCancel={handleTextEditCancel}
-                      />
-                    );
-                  })()}
+                  {/* Text entry dialog */}
+                  <TextEntryDialog
+                    open={textDialogOpen}
+                    onClose={handleTextDialogClose}
+                    onConfirm={handleTextDialogConfirm}
+                    title="Enter Text"
+                    defaultValue={textDialogValue}
+                  />
 
                   {/* Inline measurement confirmation */}
                   <MeasurementConfirmation
@@ -1654,6 +1799,11 @@ const Page = () => {
         onInsertCustomObject={handleInsertCustomObject}
         sublayers={activeLayer?.sublayers || []}
         selectedProductsCount={selectedIds.length}
+        onTextEdit={handleTextEdit}
+        onTextFormatBold={handleTextFormatBold}
+        onTextFormatItalic={handleTextFormatItalic}
+        onTextFormatUnderline={handleTextFormatUnderline}
+        onTextFontSize={handleTextFontSize}
       />
 
       <CippComponentDialog

@@ -10,6 +10,10 @@ import {
   ChevronRight,
   Info,
   AddCircleOutline,
+  FormatBold,
+  FormatItalic,
+  FormatUnderlined,
+  TextFields,
 } from "@mui/icons-material";
 
 export const ContextMenus = ({
@@ -28,11 +32,18 @@ export const ContextMenus = ({
   onInsertCustomObject,
   sublayers = [],
   selectedProductsCount = 0,
+  onTextEdit,
+  onTextFormatBold,
+  onTextFormatItalic,
+  onTextFormatUnderline,
+  onTextFontSize,
 }) => {
   const [sublayerMenuAnchor, setSublayerMenuAnchor] = useState(null);
   const [customObjectMenuAnchor, setCustomObjectMenuAnchor] = useState(null);
+  const [fontSizeMenuAnchor, setFontSizeMenuAnchor] = useState(null);
   const sublayerMenuItemRef = useRef(null);
   const customObjectMenuItemRef = useRef(null);
+  const fontSizeMenuItemRef = useRef(null);
 
   // Prevent right-click on the menu itself - just close it
   const handleContextMenu = (e) => {
@@ -47,6 +58,21 @@ export const ContextMenus = ({
 
   const handleSublayerMenuClose = () => {
     setSublayerMenuAnchor(null);
+  };
+
+  const handleFontSizeMenuOpen = (event) => {
+    setFontSizeMenuAnchor(event.currentTarget);
+  };
+
+  const handleFontSizeMenuClose = () => {
+    setFontSizeMenuAnchor(null);
+  };
+
+  const handleFontSizeSelect = (fontSize) => {
+    if (onTextFontSize) {
+      onTextFontSize(fontSize);
+    }
+    handleFontSizeMenuClose();
   };
 
   const handleSublayerSelect = (sublayerId) => {
@@ -74,6 +100,7 @@ export const ContextMenus = ({
     return (e) => {
       handleSublayerMenuClose();
       handleCustomObjectMenuClose();
+      handleFontSizeMenuClose();
       if (handler) {
         handler(e);
       }
@@ -84,11 +111,13 @@ export const ContextMenus = ({
   const handleMenuItemHover = () => {
     handleSublayerMenuClose();
     handleCustomObjectMenuClose();
+    handleFontSizeMenuClose();
   };
 
   const handleMainMenuClose = () => {
     handleSublayerMenuClose();
     handleCustomObjectMenuClose();
+    handleFontSizeMenuClose();
     onClose();
   };
 
@@ -285,6 +314,84 @@ export const ContextMenus = ({
             <ListItemText>Swap Product...</ListItemText>
           </MenuItem>
         )}
+
+        {contextMenu?.type === "text" && (
+          <>
+            <MenuItem 
+              onClick={handleMenuItemClick(onTextEdit)}
+              onMouseEnter={handleMenuItemHover}
+            >
+              <ListItemIcon>
+                <TextFields fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Edit Text</ListItemText>
+            </MenuItem>
+            <MenuItem 
+              onClick={handleMenuItemClick(onTextFormatBold)}
+              onMouseEnter={handleMenuItemHover}
+            >
+              <ListItemIcon>
+                <FormatBold fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Bold</ListItemText>
+            </MenuItem>
+            <MenuItem 
+              onClick={handleMenuItemClick(onTextFormatItalic)}
+              onMouseEnter={handleMenuItemHover}
+            >
+              <ListItemIcon>
+                <FormatItalic fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Italic</ListItemText>
+            </MenuItem>
+            <MenuItem 
+              onClick={handleMenuItemClick(onTextFormatUnderline)}
+              onMouseEnter={handleMenuItemHover}
+            >
+              <ListItemIcon>
+                <FormatUnderlined fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Underline</ListItemText>
+            </MenuItem>
+            <MenuItem
+              ref={fontSizeMenuItemRef}
+              onMouseEnter={handleFontSizeMenuOpen}
+            >
+              <ListItemIcon>
+                <TextFields fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Font Size</ListItemText>
+              <ChevronRight fontSize="small" sx={{ ml: "auto" }} />
+            </MenuItem>
+            <MenuItem 
+              onClick={handleMenuItemClick(onOpenColorPicker)}
+              onMouseEnter={handleMenuItemHover}
+            >
+              <ListItemIcon>
+                <Box
+                  sx={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    bgcolor: "primary.main",
+                    border: "1px solid",
+                    borderColor: "divider",
+                  }}
+                />
+              </ListItemIcon>
+              <ListItemText>Change Color...</ListItemText>
+            </MenuItem>
+            <MenuItem 
+              onClick={handleMenuItemClick(onDelete)}
+              onMouseEnter={handleMenuItemHover}
+            >
+              <ListItemIcon>
+                <Delete fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Delete</ListItemText>
+            </MenuItem>
+          </>
+        )}
       </Menu>
 
       {/* Sublayer submenu */}
@@ -398,6 +505,46 @@ export const ContextMenus = ({
           <MenuItem onClick={() => handleCustomObjectSelect("chandelier")}>
             <ListItemText>Chandelier</ListItemText>
           </MenuItem>
+        </Box>
+      </Popover>
+
+      {/* Font Size submenu */}
+      <Popover
+        open={Boolean(fontSizeMenuAnchor)}
+        anchorEl={fontSizeMenuAnchor}
+        onClose={handleFontSizeMenuClose}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        disableRestoreFocus
+        sx={{
+          pointerEvents: "none",
+        }}
+        PaperProps={{
+          onMouseEnter: () => {},
+          onMouseLeave: handleFontSizeMenuClose,
+          sx: {
+            pointerEvents: "auto",
+            maxHeight: "300px",
+            overflow: "auto",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            minWidth: 120,
+          }}
+        >
+          {[12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72].map((size) => (
+            <MenuItem key={size} onClick={() => handleFontSizeSelect(size)}>
+              <ListItemText>{size}px</ListItemText>
+            </MenuItem>
+          ))}
         </Box>
       </Popover>
     </Box>

@@ -42,16 +42,24 @@ export const useSelectionState = (products, textBoxes = []) => {
     let rotationCount = 0;
     
     productSnapshot.forEach((p) => {
+      console.log(`[selectionSnapshot] Product ${p.id} rotation:`, p.rotation);
       totalRotation += (p.rotation || 0);
       rotationCount++;
     });
     
     textSnapshot.forEach((t) => {
+      console.log(`[selectionSnapshot] Text ${t.id} rotation:`, t.rotation);
       totalRotation += (t.rotation || 0);
       rotationCount++;
     });
     
     const avgRotation = rotationCount > 0 ? totalRotation / rotationCount : 0;
+
+    console.log('[selectionSnapshot] Rotation calculation:', {
+      totalRotation,
+      rotationCount,
+      avgRotation,
+    });
 
     // Calculate center including both products and text boxes
     let sumX = 0;
@@ -72,6 +80,15 @@ export const useSelectionState = (products, textBoxes = []) => {
 
     const centerX = totalCount > 0 ? sumX / totalCount : 0;
     const centerY = totalCount > 0 ? sumY / totalCount : 0;
+
+    console.log('[selectionSnapshot] Creating new snapshot', {
+      selectedIds,
+      productCount: productSnapshot.length,
+      textCount: textSnapshot.length,
+      centerX,
+      centerY,
+      avgRotation,
+    });
 
     return {
       centerX,
@@ -114,6 +131,15 @@ export const useSelectionState = (products, textBoxes = []) => {
       // Get current or initial rotation
       const currentRotation = selectionSnapshot.rotation || 0;
 
+      console.log('[useEffect transformer] Attaching transformer', {
+        selectedCount: selectedIds.length,
+        currentRotation,
+        groupX: selectionGroupRef.current.x(),
+        groupY: selectionGroupRef.current.y(),
+        centerX: selectionSnapshot.centerX,
+        centerY: selectionSnapshot.centerY,
+      });
+
       // Set the group's rotation first
       selectionGroupRef.current.rotation(currentRotation);
 
@@ -134,6 +160,11 @@ export const useSelectionState = (products, textBoxes = []) => {
 
       // Force update
       transformerRef.current.getLayer()?.batchDraw();
+      
+      console.log('[useEffect transformer] Transformer and Group event handlers:', {
+        hasGroupOnTransformEnd: typeof selectionGroupRef.current.attrs.onTransformEnd,
+        hasGroupOnDragEnd: typeof selectionGroupRef.current.attrs.onDragEnd,
+      });
     } else if (transformerRef.current) {
       transformerRef.current.nodes([]);
       if (selectionGroupRef.current) {
@@ -155,17 +186,41 @@ export const useSelectionState = (products, textBoxes = []) => {
     const groupScaleY = group.scaleY();
     const groupRotation = group.rotation();
 
+    // Helper function for floating-point comparison with tolerance
+    const isClose = (a, b, tolerance = 0.0001) => Math.abs(a - b) < tolerance;
+
     // Check if the group has actually been transformed
     // If all values are at their defaults, skip the update
+    // Use tolerance for floating-point comparisons to avoid precision issues
     if (
-      groupX === selectionSnapshot.centerX &&
-      groupY === selectionSnapshot.centerY &&
-      groupScaleX === 1 &&
-      groupScaleY === 1 &&
-      groupRotation === 0
+      isClose(groupX, selectionSnapshot.centerX) &&
+      isClose(groupY, selectionSnapshot.centerY) &&
+      isClose(groupScaleX, 1) &&
+      isClose(groupScaleY, 1) &&
+      isClose(groupRotation, selectionSnapshot.rotation || 0)
     ) {
+      console.log('[applyGroupTransform] No transform detected, skipping update', {
+        groupX,
+        groupY,
+        centerX: selectionSnapshot.centerX,
+        centerY: selectionSnapshot.centerY,
+        groupRotation,
+        snapshotRotation: selectionSnapshot.rotation || 0,
+      });
       return null;
     }
+
+    console.log('[applyGroupTransform] Transform detected, applying changes', {
+      groupX,
+      groupY,
+      centerX: selectionSnapshot.centerX,
+      centerY: selectionSnapshot.centerY,
+      groupScaleX,
+      groupScaleY,
+      groupRotation,
+      snapshotRotation: selectionSnapshot.rotation || 0,
+      selectedCount: selectedIds.length,
+    });
 
     const { products: snapshotProducts } = selectionSnapshot;
 

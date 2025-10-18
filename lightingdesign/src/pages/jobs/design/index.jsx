@@ -642,6 +642,12 @@ const Page = () => {
 
   // Unified group transform handler that handles both products and text boxes
   const handleUnifiedGroupTransformEnd = useCallback(() => {
+    console.log('[handleUnifiedGroupTransformEnd] Called', {
+      hasSelectedIds: !!selectedIds.length,
+      hasGroupRef: !!selectionGroupRef.current,
+      hasSnapshot: !!selectionSnapshot,
+    });
+
     if (!selectedIds.length || !selectionGroupRef.current || !selectionSnapshot) return;
 
     const group = selectionGroupRef.current;
@@ -657,19 +663,47 @@ const Page = () => {
       .filter(id => id.startsWith('text-'))
       .map(id => id.substring(5)); // Remove 'text-' prefix
 
+    // Helper function for floating-point comparison with tolerance
+    const isClose = (a, b, tolerance = 0.0001) => Math.abs(a - b) < tolerance;
+
     // Check if group has been transformed
+    // Use tolerance for floating-point comparisons to avoid precision issues
     const hasTransform = !(
-      groupX === selectionSnapshot.centerX &&
-      groupY === selectionSnapshot.centerY &&
-      groupScaleX === 1 &&
-      groupScaleY === 1 &&
-      groupRotation === (selectionSnapshot.rotation || 0)
+      isClose(groupX, selectionSnapshot.centerX) &&
+      isClose(groupY, selectionSnapshot.centerY) &&
+      isClose(groupScaleX, 1) &&
+      isClose(groupScaleY, 1) &&
+      isClose(groupRotation, selectionSnapshot.rotation || 0)
     );
 
+    console.log('[handleUnifiedGroupTransformEnd]', {
+      hasTransform,
+      groupX,
+      groupY,
+      centerX: selectionSnapshot.centerX,
+      centerY: selectionSnapshot.centerY,
+      groupScaleX,
+      groupScaleY,
+      groupRotation,
+      snapshotRotation: selectionSnapshot.rotation || 0,
+      productCount: productIds.length,
+      textCount: textIds.length,
+    });
+
     if (!hasTransform) {
+      console.log('[handleUnifiedGroupTransformEnd] No transform, skipping update');
       setGroupKey((k) => k + 1);
       return;
     }
+
+    console.log('[handleUnifiedGroupTransformEnd] Applying transform to products and text boxes');
+
+    // Calculate the rotation delta (how much we've rotated from the snapshot)
+    const rotationDelta = groupRotation - (selectionSnapshot.rotation || 0);
+    
+    // Calculate center movement delta
+    const centerDeltaX = groupX - selectionSnapshot.centerX;
+    const centerDeltaY = groupY - selectionSnapshot.centerY;
 
     // Transform products
     if (productIds.length > 0) {
@@ -680,13 +714,13 @@ const Page = () => {
         const original = selectionSnapshot.products?.find((p) => p.id === product.id);
         if (!original) return product;
 
-        // Use relative positions from snapshot
+        // Start with relative position from snapshot (relative to original center)
         let relX = original.relativeX || 0;
         let relY = original.relativeY || 0;
 
-        // Apply group rotation to relative positions (Konva coordinate system)
-        if (groupRotation !== 0) {
-          const angle = (groupRotation * Math.PI) / 180;
+        // Apply rotation delta to relative positions
+        if (rotationDelta !== 0) {
+          const angle = (rotationDelta * Math.PI) / 180;
           const cos = Math.cos(angle);
           const sin = Math.sin(angle);
           const rotatedX = relX * cos - relY * sin;
@@ -699,17 +733,37 @@ const Page = () => {
         relX *= groupScaleX;
         relY *= groupScaleY;
 
-        const newX = groupX + relX;
-        const newY = groupY + relY;
+        // Add back to ORIGINAL center + any center movement (drag)
+        const newX = selectionSnapshot.centerX + relX + centerDeltaX;
+        const newY = selectionSnapshot.centerY + relY + centerDeltaY;
+
+        console.log(`[handleUnifiedGroupTransformEnd] Transforming product ${product.id}`, {
+          originalPos: { x: product.x, y: product.y },
+          newPos: { x: newX, y: newY },
+          delta: { x: newX - product.x, y: newY - product.y },
+          relativePos: { x: relX, y: relY },
+          snapshotRelative: { x: original.relativeX, y: original.relativeY },
+          currentRotation: product.rotation,
+          originalRelativeRotation: original.rotation,
+          rotationDelta: rotationDelta,
+          groupRotation: groupRotation,
+          snapshotRotation: selectionSnapshot.rotation || 0,
+          newRotation: (original.rotation || 0) + (selectionSnapshot.rotation || 0) + rotationDelta,
+        });
 
         return {
           ...product,
           x: newX,
           y: newY,
-          rotation: original.rotation + groupRotation,
+          rotation: (original.rotation || 0) + (selectionSnapshot.rotation || 0) + rotationDelta,
           scaleX: (original.scaleX || 1) * groupScaleX,
           scaleY: (original.scaleY || 1) * groupScaleY,
         };
+      });
+
+      console.log('[handleUnifiedGroupTransformEnd] Calling updateHistory with transformed products', {
+        productCount: transformedProducts.filter(p => productIds.includes(p.id)).length,
+        firstProductRotation: transformedProducts.find(p => productIds.includes(p.id))?.rotation,
       });
 
       updateHistory(transformedProducts);
@@ -724,13 +778,13 @@ const Page = () => {
         const original = selectionSnapshot.textBoxes?.find((t) => t.id === textBox.id);
         if (!original) return textBox;
 
-        // Use relative positions from snapshot
+        // Start with relative position from snapshot (relative to original center)
         let relX = original.relativeX || 0;
         let relY = original.relativeY || 0;
 
-        // Apply group rotation to relative positions (Konva coordinate system)
-        if (groupRotation !== 0) {
-          const angle = (groupRotation * Math.PI) / 180;
+        // Apply rotation delta to relative positions
+        if (rotationDelta !== 0) {
+          const angle = (rotationDelta * Math.PI) / 180;
           const cos = Math.cos(angle);
           const sin = Math.sin(angle);
           const rotatedX = relX * cos - relY * sin;
@@ -743,8 +797,17 @@ const Page = () => {
         relX *= groupScaleX;
         relY *= groupScaleY;
 
-        const newX = groupX + relX;
-        const newY = groupY + relY;
+        // Add back to ORIGINAL center + any center movement (drag)
+        const newX = selectionSnapshot.centerX + relX + centerDeltaX;
+        const newY = selectionSnapshot.centerY + relY + centerDeltaY;
+
+        console.log(`[handleUnifiedGroupTransformEnd] Transforming text box ${textBox.id}`, {
+          originalPos: { x: textBox.x, y: textBox.y },
+          newPos: { x: newX, y: newY },
+          delta: { x: newX - textBox.x, y: newY - textBox.y },
+          relativePos: { x: relX, y: relY },
+          snapshotRelative: { x: original.relativeX, y: original.relativeY },
+        });
 
         // Detect if this is a corner resize (proportional) or side/top resize
         const scaleDiff = Math.abs(groupScaleX - groupScaleY);
@@ -768,7 +831,7 @@ const Page = () => {
           ...textBox,
           x: newX,
           y: newY,
-          rotation: (original.rotation || 0) + groupRotation,
+          rotation: (original.rotation || 0) + (selectionSnapshot.rotation || 0) + rotationDelta,
           fontSize: newFontSize,
           width: newWidth,
           scaleX: 1, // Reset scale after applying to fontSize and width
@@ -778,6 +841,8 @@ const Page = () => {
 
       setTextBoxes(transformedTextBoxes);
     }
+
+    console.log('[handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey');
 
     // Force update transformer
     if (transformerRef.current) {
@@ -1615,8 +1680,14 @@ const Page = () => {
 
     // Find text boxes within or partially overlapping the selection rectangle
     const selectedTexts = textBoxes.filter((textBox) => {
-      const textWidth = textBox.width || 200;
-      const textHeight = (textBox.fontSize || 24) * 1.2; // Approximate height
+      // Calculate actual rendered dimensions
+      const textScaleFactor = textBox.scaleFactor || scaleFactor;
+      const baseFontSize = textBox.fontSize || 24;
+      const renderedFontSize = baseFontSize * (textScaleFactor / 100);
+      
+      // Account for text box scale transforms
+      const textWidth = (textBox.width || 200) * (textBox.scaleX || 1);
+      const textHeight = renderedFontSize * 1.2 * (textBox.scaleY || 1); // Approximate height with line height multiplier
       
       const textX1 = textBox.x;
       const textY1 = textBox.y;

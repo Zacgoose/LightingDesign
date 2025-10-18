@@ -263,22 +263,13 @@ export const ProductsLayer = memo(
               const renderedFontSize = baseFontSize * (scaleFactor / 100);
 
               return (
-                <Text
+                <Group
                   key={textBox.id}
                   x={textBox.relativeX || 0}
                   y={textBox.relativeY || 0}
-                  text={textBox.text}
-                  fontSize={renderedFontSize}
-                  fontFamily={textBox.fontFamily || "Arial"}
-                  fontStyle={fontStyle}
-                  fontVariant={fontWeight}
-                  textDecoration={textBox.textDecoration || ""}
-                  fill={textBox.color || "#000000"}
                   rotation={textBox.rotation || 0}
                   scaleX={textBox.scaleX || 1}
                   scaleY={textBox.scaleY || 1}
-                  width={textBox.width}
-                  wrap="none"
                   draggable={false}
                   listening={true}
                   onClick={(e) => {
@@ -288,7 +279,7 @@ export const ProductsLayer = memo(
                   onTap={(e) => {
                     e.cancelBubble = true;
                   }}
-                  // Don't cancel mouseDown - let it propagate to Group for dragging
+                  // Don't cancel mouseDown - let it propagate to parent Group for dragging
                   onContextMenu={(e) => {
                     e.evt.preventDefault();
                     e.cancelBubble = true;
@@ -298,7 +289,23 @@ export const ProductsLayer = memo(
                       onTextContextMenu(e, originalTextId);
                     }
                   }}
-                />
+                >
+                  <Text
+                    x={0}
+                    y={0}
+                    text={textBox.text}
+                    fontSize={renderedFontSize}
+                    fontFamily={textBox.fontFamily || "Arial"}
+                    fontStyle={fontStyle}
+                    fontVariant={fontWeight}
+                    textDecoration={textBox.textDecoration || ""}
+                    fill={textBox.color || "#000000"}
+                    width={textBox.width}
+                    wrap="none"
+                    draggable={false}
+                    listening={true}
+                  />
+                </Group>
               );
             })}
           </Group>

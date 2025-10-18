@@ -747,14 +747,15 @@ const Page = () => {
           originalRelativeRotation: original.rotation,
           rotationDelta: rotationDelta,
           groupRotation: groupRotation,
-          newRotation: original.rotation + rotationDelta,
+          snapshotRotation: selectionSnapshot.rotation || 0,
+          newRotation: (original.rotation || 0) + (selectionSnapshot.rotation || 0) + rotationDelta,
         });
 
         return {
           ...product,
           x: newX,
           y: newY,
-          rotation: original.rotation + rotationDelta,
+          rotation: (original.rotation || 0) + (selectionSnapshot.rotation || 0) + rotationDelta,
           scaleX: (original.scaleX || 1) * groupScaleX,
           scaleY: (original.scaleY || 1) * groupScaleY,
         };
@@ -830,7 +831,7 @@ const Page = () => {
           ...textBox,
           x: newX,
           y: newY,
-          rotation: (original.rotation || 0) + rotationDelta,
+          rotation: (original.rotation || 0) + (selectionSnapshot.rotation || 0) + rotationDelta,
           fontSize: newFontSize,
           width: newWidth,
           scaleX: 1, // Reset scale after applying to fontSize and width

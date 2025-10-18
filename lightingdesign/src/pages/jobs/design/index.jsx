@@ -163,6 +163,14 @@ const Page = () => {
   );
   const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100);
 
+  // Text boxes state
+  const [textBoxes, setTextBoxes] = useState([]);
+  const [selectedTextId, setSelectedTextId] = useState(null);
+  const [textDialogOpen, setTextDialogOpen] = useState(false);
+  const [textDialogValue, setTextDialogValue] = useState("");
+  const [textDialogFormatting, setTextDialogFormatting] = useState({});
+  const [pendingTextBoxId, setPendingTextBoxId] = useState(null);
+
   // Selection state management using custom hook
   const selectionState = useSelectionState(products, textBoxes);
   const {
@@ -184,14 +192,6 @@ const Page = () => {
 
   // Connection sequence for connect tool
   const [connectSequence, setConnectSequence] = useState([]);
-
-  // Text boxes state
-  const [textBoxes, setTextBoxes] = useState([]);
-  const [selectedTextId, setSelectedTextId] = useState(null);
-  const [textDialogOpen, setTextDialogOpen] = useState(false);
-  const [textDialogValue, setTextDialogValue] = useState("");
-  const [textDialogFormatting, setTextDialogFormatting] = useState({});
-  const [pendingTextBoxId, setPendingTextBoxId] = useState(null);
 
   // Drag-to-select state
   const [isSelecting, setIsSelecting] = useState(false);

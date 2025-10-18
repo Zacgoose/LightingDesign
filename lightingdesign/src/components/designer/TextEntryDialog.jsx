@@ -130,35 +130,6 @@ export const TextEntryDialog = ({
             />
           </Box>
           
-          {/* Text Preview */}
-          <Box 
-            sx={{ 
-              mb: 2, 
-              p: 2, 
-              border: "1px solid rgba(0, 0, 0, 0.23)", 
-              borderRadius: 1,
-              minHeight: 60,
-              backgroundColor: "background.paper",
-            }}
-          >
-            <Box sx={{ mb: 1, fontSize: "0.75rem", color: "text.secondary" }}>
-              Preview:
-            </Box>
-            <Box
-              sx={{
-                fontSize: `${fontSize}px`,
-                fontFamily: fontFamily,
-                fontWeight: formats.includes("bold") ? "bold" : "normal",
-                fontStyle: formats.includes("italic") ? "italic" : "normal",
-                textDecoration: formats.includes("underline") ? "underline" : "none",
-                color: textColor,
-                wordWrap: "break-word",
-              }}
-            >
-              {form.watch("value") || "Type text above to see preview..."}
-            </Box>
-          </Box>
-          
           {/* Formatting Controls */}
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
             {/* Font Size */}

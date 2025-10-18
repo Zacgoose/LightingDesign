@@ -136,6 +136,22 @@ export const ProductsLayer = memo(
             draggable={(selectedTool === "select" || selectedTool === "text") && canInteract}
             onDragEnd={onGroupTransformEnd}
             onTransformEnd={onGroupTransformEnd}
+            onTransform={(e) => {
+              // Real-time updates during transformation for text boxes
+              const node = e.target;
+              const scaleX = node.scaleX();
+              const scaleY = node.scaleY();
+              
+              // Detect if this is a side/top resize (non-proportional)
+              const scaleDiff = Math.abs(scaleX - scaleY);
+              const isSideResize = scaleDiff > 0.1;
+              
+              if (isSideResize && textIds.length > 0) {
+                // For side resize, update width in real-time for text wrapping
+                // This provides live preview of text wrapping
+                node.getLayer()?.batchDraw();
+              }
+            }}
           >
             {/* Render selected products */}
             {(selectionSnapshot.products?.length > 0
@@ -304,6 +320,32 @@ export const ProductsLayer = memo(
               if (newBox.width < minWidth || newBox.height < minHeight) {
                 return oldBox;
               }
+              
+              // For text-only selections, enforce aspect ratio on corner resizes
+              if (textIds.length > 0 && productOnlyIds.length === 0) {
+                const transformer = transformerRef.current;
+                if (transformer) {
+                  const activeAnchor = transformer.getActiveAnchor();
+                  const isCornerAnchor = activeAnchor && (
+                    activeAnchor === 'top-left' ||
+                    activeAnchor === 'top-right' ||
+                    activeAnchor === 'bottom-left' ||
+                    activeAnchor === 'bottom-right'
+                  );
+                  
+                  if (isCornerAnchor) {
+                    // Maintain aspect ratio for corner resize
+                    const ratio = oldBox.width / oldBox.height;
+                    const newRatio = newBox.width / newBox.height;
+                    
+                    // If ratio changed, adjust to maintain it
+                    if (Math.abs(ratio - newRatio) > 0.01) {
+                      newBox.height = newBox.width / ratio;
+                    }
+                  }
+                }
+              }
+              
               return newBox;
             }}
             rotateEnabled={true}
@@ -313,6 +355,19 @@ export const ProductsLayer = memo(
             borderDash={[4, 4]}
             rotationSnapTolerance={5}
             rotationDeltaOffset={-(selectionSnapshot.rotation || 0)}
+            enabledAnchors={
+              textIds.length > 0 && productOnlyIds.length === 0
+                ? [
+                    // For text-only selections
+                    "top-left",
+                    "top-right",
+                    "bottom-left",
+                    "bottom-right",
+                    "middle-left",
+                    "middle-right",
+                  ]
+                : undefined // Default anchors for products or mixed selections
+            }
           />
         )}
       </>

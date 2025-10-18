@@ -1,4 +1,4 @@
-import { Group, Transformer } from "react-konva";
+import { Group, Transformer, Text } from "react-konva";
 import { ProductShape } from "./ProductShape";
 import productTypesConfig from "/src/data/productTypes.json";
 import { useEffect, useRef, memo } from "react";
@@ -56,6 +56,7 @@ export const ProductsLayer = memo(
     onProductDragEnd,
     onContextMenu,
     onGroupTransformEnd,
+    textBoxes = [], // Add textBoxes support
   }) => {
     // Performance monitoring
     const renderCount = useRef(0);
@@ -75,10 +76,13 @@ export const ProductsLayer = memo(
     const isConnectMode = selectedTool === "connect";
     const canInteract = !isPlacementMode && !isPanMode && !isConnectMode;
     
-    // Check if selection includes text boxes (they have 'text-' prefix)
-    const hasTextBoxesInSelection = selectedIds.some(id => id.startsWith('text-'));
-    // Extract only product IDs from selectedIds
+    // Extract product IDs and text IDs from selectedIds
     const productOnlyIds = selectedIds.filter(id => !id.startsWith('text-'));
+    const textIds = selectedIds
+      .filter(id => id.startsWith('text-'))
+      .map(id => id.substring(5)); // Remove 'text-' prefix
+    
+    const hasSelection = productOnlyIds.length > 0 || textIds.length > 0;
     
     return (
       <>
@@ -118,8 +122,8 @@ export const ProductsLayer = memo(
             );
           })}
 
-        {/* Selected products in a draggable group - only if no text boxes in selection */}
-        {productOnlyIds.length > 0 && !hasTextBoxesInSelection && (
+        {/* Selected products and text boxes in a draggable group */}
+        {hasSelection && (
           <Group
             key={groupKey}
             ref={selectionGroupRef}
@@ -132,19 +136,34 @@ export const ProductsLayer = memo(
             onDragEnd={onGroupTransformEnd}
             onTransformEnd={onGroupTransformEnd}
           >
+            {/* Render selected products */}
             {(selectionSnapshot.products?.length > 0
               ? selectionSnapshot.products
               : products
                   .filter((p) => productOnlyIds.includes(p.id))
                   .map((p) => {
-                    const centerX =
-                      products
-                        .filter((prod) => productOnlyIds.includes(prod.id))
-                        .reduce((sum, prod) => sum + prod.x, 0) / productOnlyIds.length;
-                    const centerY =
-                      products
-                        .filter((prod) => productOnlyIds.includes(prod.id))
-                        .reduce((sum, prod) => sum + prod.y, 0) / productOnlyIds.length;
+                    // Calculate center including both products and text boxes
+                    let centerX = 0;
+                    let centerY = 0;
+                    let totalCount = 0;
+                    
+                    if (productOnlyIds.length > 0) {
+                      const selectedProducts = products.filter((prod) => productOnlyIds.includes(prod.id));
+                      centerX += selectedProducts.reduce((sum, prod) => sum + prod.x, 0);
+                      centerY += selectedProducts.reduce((sum, prod) => sum + prod.y, 0);
+                      totalCount += selectedProducts.length;
+                    }
+                    
+                    if (textIds.length > 0) {
+                      const selectedTexts = textBoxes.filter((t) => textIds.includes(t.id));
+                      centerX += selectedTexts.reduce((sum, t) => sum + t.x, 0);
+                      centerY += selectedTexts.reduce((sum, t) => sum + t.y, 0);
+                      totalCount += selectedTexts.length;
+                    }
+                    
+                    centerX /= totalCount;
+                    centerY /= totalCount;
+                    
                     return {
                       ...p,
                       relativeX: p.x - centerX,
@@ -179,11 +198,79 @@ export const ProductsLayer = memo(
                 />
               );
             })}
+            
+            {/* Render selected text boxes */}
+            {(selectionSnapshot.textBoxes?.length > 0
+              ? selectionSnapshot.textBoxes
+              : textBoxes
+                  .filter((t) => textIds.includes(t.id))
+                  .map((t) => {
+                    // Calculate center including both products and text boxes
+                    let centerX = 0;
+                    let centerY = 0;
+                    let totalCount = 0;
+                    
+                    if (productOnlyIds.length > 0) {
+                      const selectedProducts = products.filter((p) => productOnlyIds.includes(p.id));
+                      centerX += selectedProducts.reduce((sum, p) => sum + p.x, 0);
+                      centerY += selectedProducts.reduce((sum, p) => sum + p.y, 0);
+                      totalCount += selectedProducts.length;
+                    }
+                    
+                    if (textIds.length > 0) {
+                      const selectedTexts = textBoxes.filter((tb) => textIds.includes(tb.id));
+                      centerX += selectedTexts.reduce((sum, tb) => sum + tb.x, 0);
+                      centerY += selectedTexts.reduce((sum, tb) => sum + tb.y, 0);
+                      totalCount += selectedTexts.length;
+                    }
+                    
+                    centerX /= totalCount;
+                    centerY /= totalCount;
+                    
+                    return {
+                      ...t,
+                      relativeX: t.x - centerX,
+                      relativeY: t.y - centerY,
+                    };
+                  })
+            ).map((textBox) => {
+              // Parse font style
+              const isBold = textBox.fontStyle?.includes("bold") || false;
+              const isItalic = textBox.fontStyle?.includes("italic") || false;
+              const fontStyle = isItalic ? "italic" : "normal";
+              const fontWeight = isBold ? "bold" : "normal";
+
+              // Calculate rendered font size based on scaleFactor
+              const baseFontSize = textBox.fontSize || 24;
+              const scaleFactor = textBox.scaleFactor || 100;
+              const renderedFontSize = baseFontSize * (scaleFactor / 100);
+
+              return (
+                <Text
+                  key={textBox.id}
+                  x={textBox.relativeX || 0}
+                  y={textBox.relativeY || 0}
+                  text={textBox.text}
+                  fontSize={renderedFontSize}
+                  fontFamily={textBox.fontFamily || "Arial"}
+                  fontStyle={fontStyle}
+                  fontVariant={fontWeight}
+                  textDecoration={textBox.textDecoration || ""}
+                  fill={textBox.color || "#000000"}
+                  rotation={textBox.rotation || 0}
+                  scaleX={textBox.scaleX || 1}
+                  scaleY={textBox.scaleY || 1}
+                  width={textBox.width}
+                  draggable={false}
+                  listening={false}
+                />
+              );
+            })}
           </Group>
         )}
 
-        {/* Transformer for selected group - only if no text boxes in selection */}
-        {selectedTool === "select" && !isPlacementMode && !hasTextBoxesInSelection && (
+        {/* Transformer for selected group */}
+        {selectedTool === "select" && !isPlacementMode && hasSelection && (
           <Transformer
             ref={transformerRef}
             rotationSnaps={
@@ -214,6 +301,7 @@ export const ProductsLayer = memo(
     // Only re-render if these specific props change
     return (
       prevProps.products === nextProps.products &&
+      prevProps.textBoxes === nextProps.textBoxes &&
       prevProps.selectedIds === nextProps.selectedIds &&
       prevProps.selectedTool === nextProps.selectedTool &&
       prevProps.selectionSnapshot === nextProps.selectionSnapshot &&

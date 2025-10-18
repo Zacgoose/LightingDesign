@@ -28,7 +28,6 @@ import { LayerSwitcher } from "/src/components/designer/LayerSwitcher";
 import { SubLayerControls } from "/src/components/designer/SubLayerControls";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
 import { TextLayer } from "/src/components/designer/TextLayer";
-import { UnifiedSelectionGroup } from "/src/components/designer/UnifiedSelectionGroup";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
 import { TextEntryDialog } from "/src/components/designer/TextEntryDialog";
 import { useHistory } from "/src/hooks/useHistory";
@@ -1900,6 +1899,7 @@ const Page = () => {
 
                     <ProductsLayer
                       products={filterProductsBySublayers(products, activeLayerId)}
+                      textBoxes={textBoxes}
                       selectedIds={selectedIds}
                       selectedTool={selectedTool}
                       selectionSnapshot={selectionSnapshot}
@@ -1913,29 +1913,8 @@ const Page = () => {
                       onProductDragStart={handleProductDragStart}
                       onProductDragEnd={handleProductDragEnd}
                       onContextMenu={contextMenus.handleContextMenu}
-                      onGroupTransformEnd={handleGroupTransformEnd}
+                      onGroupTransformEnd={handleUnifiedGroupTransformEnd}
                     />
-
-                    {/* Unified selection group for mixed product/text selections */}
-                    {selectedIds.some(id => id.startsWith('text-')) && (
-                      <UnifiedSelectionGroup
-                        selectedIds={selectedIds}
-                        products={filterProductsBySublayers(products, activeLayerId)}
-                        textBoxes={textBoxes}
-                        selectionSnapshot={selectionSnapshot}
-                        selectionGroupRef={selectionGroupRef}
-                        transformerRef={transformerRef}
-                        rotationSnaps={rotationSnaps}
-                        theme={theme}
-                        groupKey={groupKey}
-                        selectedTool={selectedTool}
-                        canInteract={selectedTool === "select"}
-                        isConnectMode={selectedTool === "connect"}
-                        onProductClick={handleProductClick}
-                        onContextMenu={contextMenus.handleContextMenu}
-                        onGroupTransformEnd={handleUnifiedGroupTransformEnd}
-                      />
-                    )}
 
                     {/* Ghost product preview in placement mode */}
                     {placementMode && (

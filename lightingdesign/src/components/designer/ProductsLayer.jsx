@@ -161,8 +161,14 @@ export const ProductsLayer = memo(
             onDragEnd={onGroupTransformEnd}
             onTransformEnd={onGroupTransformEnd}
             onTransform={(e) => {
-              // Real-time updates during transformation for text boxes
               const node = e.target;
+              
+              // Keep the group centered at its original position during rotation/scale
+              // This prevents visual jumping and coordinate drift
+              node.x(selectionSnapshot.centerX || 0);
+              node.y(selectionSnapshot.centerY || 0);
+              
+              // Real-time updates during transformation for text boxes
               const scaleX = node.scaleX();
               const scaleY = node.scaleY();
               

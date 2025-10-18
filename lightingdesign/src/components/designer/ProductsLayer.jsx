@@ -72,6 +72,30 @@ export const ProductsLayer = memo(
       });
     });
 
+    // Manually attach transformend event listener to Transformer
+    // This is necessary because the Group's onTransformEnd prop doesn't fire reliably
+    useEffect(() => {
+      if (!transformerRef.current || !onGroupTransformEnd) return;
+
+      const transformer = transformerRef.current;
+      
+      console.log('[ProductsLayer] Attaching transformend listener to Transformer');
+      
+      const handleTransformEnd = () => {
+        console.log('[ProductsLayer] Transformer transformend event fired');
+        onGroupTransformEnd();
+      };
+
+      // Attach the event listener
+      transformer.on('transformend', handleTransformEnd);
+
+      // Cleanup
+      return () => {
+        console.log('[ProductsLayer] Removing transformend listener from Transformer');
+        transformer.off('transformend', handleTransformEnd);
+      };
+    }, [transformerRef, onGroupTransformEnd]);
+
     const isPlacementMode = selectedTool === "placement" || placementMode;
     const isPanMode = selectedTool === "pan";
     const isConnectMode = selectedTool === "connect";

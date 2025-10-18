@@ -1016,7 +1016,8 @@ const Page = () => {
 
   const handleCanvasMouseMove = useCallback(
     (e) => {
-      if (isSelecting) {
+      // Handle drag-to-select - call handleSelectionMove if we have a selection start point
+      if (selectionStartRef.current) {
         handleSelectionMove(e);
         return;
       }
@@ -1033,7 +1034,7 @@ const Page = () => {
         setCursorPosition(canvasPos);
       }
     },
-    [placementMode, measureMode, isSelecting, handleSelectionMove, stagePosition, stageScale],
+    [placementMode, measureMode, handleSelectionMove, stagePosition, stageScale],
   );
 
   const handleStopPlacement = useCallback(() => {
@@ -1342,11 +1343,15 @@ const Page = () => {
 
   const handleStageMouseUp = useCallback(
     (e) => {
-      // First handle selection end
+      // Store drag state before handleSelectionEnd clears it
+      const wasDragging = hasDraggedRef.current;
+      const hadSelectionStart = selectionStartRef.current !== null;
+      
+      // Handle selection end (this will clear the refs)
       handleSelectionEnd();
 
       // If we're in select mode and clicked on empty canvas without dragging, clear selection
-      if (selectedTool === "select" && !hasDraggedRef.current && selectionStartRef.current) {
+      if (selectedTool === "select" && !wasDragging && hadSelectionStart) {
         const clickedOnEmpty = e.target === e.target.getStage();
         if (clickedOnEmpty) {
           const transformed = applyGroupTransform();
@@ -1356,7 +1361,7 @@ const Page = () => {
         }
       }
 
-      // Clean up refs
+      // Clean up refs (redundant but safe)
       selectionStartRef.current = null;
       hasDraggedRef.current = false;
     },

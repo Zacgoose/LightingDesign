@@ -24,6 +24,9 @@ export const useContextMenus = ({
   setConnectSequence,
   applyGroupTransform,
   pendingInsertPosition,
+  selectedTextId,
+  textBoxes,
+  setTextBoxes,
 }) => {
   const [contextMenu, setContextMenu] = useState(null);
   const [colorPickerAnchor, setColorPickerAnchor] = useState(null);
@@ -143,10 +146,12 @@ export const useContextMenus = ({
         setColorPickerTarget({ type: "products", ids: selectedIds });
       } else if (selectedConnectorId) {
         setColorPickerTarget({ type: "connector", id: selectedConnectorId });
+      } else if (selectedTextId) {
+        setColorPickerTarget({ type: "text", id: selectedTextId });
       }
       handleCloseContextMenu();
     },
-    [selectedIds, selectedConnectorId, handleCloseContextMenu],
+    [selectedIds, selectedConnectorId, selectedTextId, handleCloseContextMenu],
   );
 
   const handleColorChange = useCallback(
@@ -172,6 +177,12 @@ export const useContextMenus = ({
           return c;
         });
         setConnectors(newConnectors);
+      } else if (colorPickerTarget.type === "text") {
+        if (setTextBoxes) {
+          setTextBoxes((boxes) =>
+            boxes.map((box) => (box.id === colorPickerTarget.id ? { ...box, color } : box))
+          );
+        }
       }
 
       setColorPickerAnchor(null);
@@ -185,6 +196,7 @@ export const useContextMenus = ({
       updateHistory,
       setConnectors,
       setGroupKey,
+      setTextBoxes,
     ],
   );
 
@@ -193,6 +205,10 @@ export const useContextMenus = ({
       const newConnectors = connectors.filter((c) => c.id !== selectedConnectorId);
       setConnectors(newConnectors);
       setSelectedConnectorId(null);
+    }
+
+    if (selectedTextId && setTextBoxes) {
+      setTextBoxes((boxes) => boxes.filter((box) => box.id !== selectedTextId));
     }
 
     if (selectedIds.length > 0) {
@@ -212,6 +228,7 @@ export const useContextMenus = ({
   }, [
     selectedIds,
     selectedConnectorId,
+    selectedTextId,
     products,
     connectors,
     applyGroupTransform,
@@ -221,6 +238,7 @@ export const useContextMenus = ({
     setSelectedConnectorId,
     setGroupKey,
     handleCloseContextMenu,
+    setTextBoxes,
   ]);
 
   const handleDuplicateSelected = useCallback(() => {

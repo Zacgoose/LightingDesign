@@ -11,6 +11,7 @@ export const TextBox = memo(
     onDragEnd,
     draggable = true,
     onDoubleClick,
+    onContextMenu,
   }) => {
     const textRef = useRef();
     const trRef = useRef();
@@ -23,6 +24,12 @@ export const TextBox = memo(
       }
     }, [isSelected]);
 
+    // Parse font style
+    const isBold = textBox.fontStyle?.includes("bold") || false;
+    const isItalic = textBox.fontStyle?.includes("italic") || false;
+    const fontStyle = isItalic ? "italic" : "normal";
+    const fontWeight = isBold ? "bold" : "normal";
+
     return (
       <>
         <Text
@@ -32,6 +39,9 @@ export const TextBox = memo(
           text={textBox.text}
           fontSize={textBox.fontSize || 24}
           fontFamily={textBox.fontFamily || "Arial"}
+          fontStyle={fontStyle}
+          fontVariant={fontWeight}
+          textDecoration={textBox.textDecoration || ""}
           fill={textBox.color || "#000000"}
           rotation={textBox.rotation || 0}
           scaleX={textBox.scaleX || 1}
@@ -70,6 +80,7 @@ export const TextBox = memo(
               scaleY: 1,
             });
           }}
+          onContextMenu={onContextMenu}
         />
         {isSelected && (
           <Transformer

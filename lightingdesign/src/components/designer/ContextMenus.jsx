@@ -69,6 +69,17 @@ export const ContextMenus = ({
     handleCustomObjectMenuClose();
   };
 
+  // Wrapper to ensure submenus close when any menu item is clicked
+  const handleMenuItemClick = (handler) => {
+    return (e) => {
+      handleSublayerMenuClose();
+      handleCustomObjectMenuClose();
+      if (handler) {
+        handler(e);
+      }
+    };
+  };
+
   const handleMainMenuClose = () => {
     handleSublayerMenuClose();
     handleCustomObjectMenuClose();
@@ -95,24 +106,31 @@ export const ContextMenus = ({
         anchorPosition={
           contextMenu !== null ? { top: contextMenu.y, left: contextMenu.x } : undefined
         }
+        MenuListProps={{
+          onMouseLeave: () => {
+            // Close submenus when mouse leaves the main menu
+            handleSublayerMenuClose();
+            handleCustomObjectMenuClose();
+          },
+        }}
       >
         {contextMenu?.type === "product" && (
           <>
             {selectedProductsCount === 1 && onShowProperties && (
-              <MenuItem onClick={onShowProperties}>
+              <MenuItem onClick={handleMenuItemClick(onShowProperties)}>
                 <ListItemIcon>
                   <Info fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Properties</ListItemText>
               </MenuItem>
             )}
-            <MenuItem onClick={onDuplicate}>
+            <MenuItem onClick={handleMenuItemClick(onDuplicate)}>
               <ListItemIcon>
                 <ContentCopy fontSize="small" />
               </ListItemIcon>
               <ListItemText>Duplicate</ListItemText>
             </MenuItem>
-            <MenuItem onClick={onOpenColorPicker}>
+            <MenuItem onClick={handleMenuItemClick(onOpenColorPicker)}>
               <ListItemIcon>
                 <Box
                   sx={{
@@ -127,19 +145,19 @@ export const ContextMenus = ({
               </ListItemIcon>
               <ListItemText>Change Color...</ListItemText>
             </MenuItem>
-            <MenuItem onClick={onSwapProduct}>
+            <MenuItem onClick={handleMenuItemClick(onSwapProduct)}>
               <ListItemIcon>
                 <SwapHoriz fontSize="small" />
               </ListItemIcon>
               <ListItemText>Swap Product...</ListItemText>
             </MenuItem>
-            <MenuItem onClick={onScale}>
+            <MenuItem onClick={handleMenuItemClick(onScale)}>
               <ListItemIcon>
                 <SettingsBackupRestore fontSize="small" />
               </ListItemIcon>
               <ListItemText>Scale...</ListItemText>
             </MenuItem>
-            <MenuItem onClick={onResetScale}>
+            <MenuItem onClick={handleMenuItemClick(onResetScale)}>
               <ListItemIcon>
                 <SettingsBackupRestore fontSize="small" />
               </ListItemIcon>
@@ -157,7 +175,7 @@ export const ContextMenus = ({
                 <ChevronRight fontSize="small" sx={{ ml: "auto" }} />
               </MenuItem>
             )}
-            <MenuItem onClick={onDelete}>
+            <MenuItem onClick={handleMenuItemClick(onDelete)}>
               <ListItemIcon>
                 <Delete fontSize="small" />
               </ListItemIcon>
@@ -168,7 +186,7 @@ export const ContextMenus = ({
 
         {contextMenu?.type === "connector" && (
           <>
-            <MenuItem onClick={onOpenColorPicker}>
+            <MenuItem onClick={handleMenuItemClick(onOpenColorPicker)}>
               <ListItemIcon>
                 <Box
                   sx={{
@@ -195,7 +213,7 @@ export const ContextMenus = ({
                 <ChevronRight fontSize="small" sx={{ ml: "auto" }} />
               </MenuItem>
             )}
-            <MenuItem onClick={onDelete}>
+            <MenuItem onClick={handleMenuItemClick(onDelete)}>
               <ListItemIcon>
                 <Delete fontSize="small" />
               </ListItemIcon>
@@ -206,7 +224,7 @@ export const ContextMenus = ({
 
         {contextMenu?.type === "canvas" && (
           <>
-            <MenuItem onClick={onInsertProduct}>
+            <MenuItem onClick={handleMenuItemClick(onInsertProduct)}>
               <ListItemIcon>
                 <Add fontSize="small" />
               </ListItemIcon>
@@ -228,7 +246,7 @@ export const ContextMenus = ({
         )}
 
         {contextMenu?.type === "placement" && (
-          <MenuItem onClick={onSwapPlacementProduct}>
+          <MenuItem onClick={handleMenuItemClick(onSwapPlacementProduct)}>
             <ListItemIcon>
               <SwapHoriz fontSize="small" />
             </ListItemIcon>
@@ -312,12 +330,6 @@ export const ContextMenus = ({
             minWidth: 200,
           }}
         >
-          <MenuItem onClick={() => handleCustomObjectSelect("circle")}>
-            <ListItemText>Circle</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={() => handleCustomObjectSelect("rect")}>
-            <ListItemText>Rectangle</ListItemText>
-          </MenuItem>
           <MenuItem onClick={() => handleCustomObjectSelect("pendant")}>
             <ListItemText>Pendant</ListItemText>
           </MenuItem>
@@ -330,8 +342,14 @@ export const ContextMenus = ({
           <MenuItem onClick={() => handleCustomObjectSelect("wall")}>
             <ListItemText>Wall Light</ListItemText>
           </MenuItem>
-          <MenuItem onClick={() => handleCustomObjectSelect("fan")}>
-            <ListItemText>Fan</ListItemText>
+          <MenuItem onClick={() => handleCustomObjectSelect("ceiling")}>
+            <ListItemText>Ceiling Light</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("floor")}>
+            <ListItemText>Floor Lamp</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("table")}>
+            <ListItemText>Table Lamp</ListItemText>
           </MenuItem>
           <MenuItem onClick={() => handleCustomObjectSelect("lamp")}>
             <ListItemText>Lamp</ListItemText>
@@ -339,8 +357,14 @@ export const ContextMenus = ({
           <MenuItem onClick={() => handleCustomObjectSelect("strip")}>
             <ListItemText>Strip Light</ListItemText>
           </MenuItem>
-          <MenuItem onClick={() => handleCustomObjectSelect("ceiling")}>
-            <ListItemText>Ceiling Light</ListItemText>
+          <MenuItem onClick={() => handleCustomObjectSelect("fan")}>
+            <ListItemText>Fan</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("track")}>
+            <ListItemText>Track Light</ListItemText>
+          </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("chandelier")}>
+            <ListItemText>Chandelier</ListItemText>
           </MenuItem>
         </Box>
       </Popover>

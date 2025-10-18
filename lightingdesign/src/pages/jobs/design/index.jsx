@@ -1011,29 +1011,30 @@ const Page = () => {
         const x = contextMenus.contextMenu.canvasX;
         const y = contextMenus.contextMenu.canvasY;
 
-        // Get default sizes for different shapes
-        const defaultSizes = {
-          circle: { realWorldSize: 1 },
-          rect: { realWorldWidth: 0.3, realWorldHeight: 0.3 },
-          pendant: { realWorldSize: 1 },
-          downlight: { realWorldSize: 0.8 },
-          spotlight: { realWorldSize: 0.8 },
-          wall: { realWorldWidth: 0.3, realWorldHeight: 0.4 },
-          fan: { realWorldSize: 1.4 },
-          lamp: { realWorldWidth: 0.25, realWorldHeight: 0.5 },
-          strip: { realWorldWidth: 0.6, realWorldHeight: 0.1 },
-          ceiling: { realWorldSize: 1.2 },
-        };
-
-        const sizeAttrs = defaultSizes[shapeName] || { realWorldSize: 1 };
+        // Get configuration from productTypes.json
+        const shapeConfig = productTypesConfig[shapeName] || productTypesConfig.default;
+        
+        // Extract size attributes from the config
+        const sizeAttrs = {};
+        if (shapeConfig.realWorldSize !== undefined) {
+          sizeAttrs.realWorldSize = shapeConfig.realWorldSize;
+        }
+        if (shapeConfig.realWorldWidth !== undefined) {
+          sizeAttrs.realWorldWidth = shapeConfig.realWorldWidth;
+        }
+        if (shapeConfig.realWorldHeight !== undefined) {
+          sizeAttrs.realWorldHeight = shapeConfig.realWorldHeight;
+        }
 
         const newProduct = {
           id: `custom-${crypto.randomUUID()}`,
           x,
           y,
           rotation: 0,
-          color: "#666666",
-          shape: shapeName,
+          color: shapeConfig.fill || "#666666",
+          stroke: shapeConfig.stroke || "#424242",
+          strokeWidth: shapeConfig.strokeWidth || 2,
+          shape: shapeConfig.shapeType || shapeName,
           name: `Custom ${shapeName.charAt(0).toUpperCase() + shapeName.slice(1)}`,
           product_type_unigram: shapeName,
           isCustomObject: true,

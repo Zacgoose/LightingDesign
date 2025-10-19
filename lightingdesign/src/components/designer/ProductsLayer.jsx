@@ -306,7 +306,7 @@ export const ProductsLayer = memo(
               
               return newBox;
             }}
-            rotateEnabled={productOnlyIds.length + textIds.length === 1}
+            rotateEnabled={true}
             keepRatio={textIds.length > 0 && productOnlyIds.length === 0}
             ignoreStroke={true}
             anchorSize={8}

@@ -33,6 +33,13 @@ export const TextBox = memo(
     // And if scaleFactor is 200 (small floorplan), a baseFontSize of 24 renders as 48 pixels
     const renderedFontSize = baseFontSize * (scaleFactor / 100);
 
+    // Calculate center offset for rotation
+    // Text width is known, height is approximately fontSize * 1.2 for single line
+    const textWidth = textBox.width || 100;
+    const textHeight = renderedFontSize * 1.2;
+    const offsetX = textWidth / 2;
+    const offsetY = textHeight / 2;
+
     return (
       <>
         <Group
@@ -42,8 +49,8 @@ export const TextBox = memo(
           rotation={textBox.rotation || 0}
           scaleX={textBox.scaleX || 1}
           scaleY={textBox.scaleY || 1}
-          offsetX={0}
-          offsetY={0}
+          offsetX={offsetX}
+          offsetY={offsetY}
           draggable={draggable}
           onClick={onSelect}
           onTap={onSelect}

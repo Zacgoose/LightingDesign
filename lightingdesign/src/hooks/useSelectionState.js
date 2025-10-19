@@ -38,6 +38,8 @@ export const useSelectionState = (products, textBoxes = []) => {
     }
 
     // Calculate average rotation including both products and text boxes
+    // When multiple objects are selected, don't use average rotation (keep group at 0)
+    // This prevents objects from "shuffling" around the center when selected
     let totalRotation = 0;
     let rotationCount = 0;
     
@@ -51,7 +53,9 @@ export const useSelectionState = (products, textBoxes = []) => {
       rotationCount++;
     });
     
-    const avgRotation = rotationCount > 0 ? totalRotation / rotationCount : 0;
+    // Only use average rotation for single object selection
+    // For multiple objects, keep group rotation at 0 to avoid position shuffling
+    const avgRotation = rotationCount === 1 ? (totalRotation / rotationCount) : 0;
 
     // Calculate center including both products and text boxes
     let sumX = 0;

@@ -54,55 +54,6 @@ export const ProductShape = memo(
       renderedHeight = config.height || 30;
     }
     
-    // Custom client rect function for accurate transformer bounds
-    // Returns the bounding box of the shape in its local coordinate space
-    const getClientRect = () => {
-      // Shapes are drawn centered at (0, 0), so we need to account for how they extend
-      // For pendant: circle at (0,0) radius=width/2, wire extends to y=-(width/2)*1.5
-      // For spotlight: body centered, bracket extends above
-      
-      const halfWidth = renderedWidth / 2;
-      const halfHeight = renderedHeight / 2;
-      
-      // Most shapes are symmetric and centered, so bounds are ±half dimensions
-      // But shapes with vertical extensions (pendant, spotlight) extend more upward
-      
-      // For pendant/chandelier (shapeType='pendant'):
-      // - Circle: y from -radius to +radius (centered at 0)
-      // - Wire: y from -radius*1.5 to -radius
-      // - Total: y from -radius*1.5 to +radius = height of width*1.25
-      // - Since circle is centered, top = -1.5*halfWidth, bottom = +halfWidth
-      if (config.shapeType === 'pendant') {
-        return {
-          x: -halfWidth,
-          y: -halfWidth * 1.5,  // Wire extends 1.5x radius above center
-          width: renderedWidth,
-          height: renderedWidth * 1.25,  // Total height is 1.25x width
-        };
-      }
-      
-      // For spotlight:
-      // - Bracket: y from -radius*1.2 to -radius*0.8 (at x from -radius/2 to +radius/2)
-      // - Body: x from -radius*0.8 to +radius*0.8, y from -radius to +radius
-      // - Total bounds: x from -radius*0.8 to +radius*0.8, y from -radius*1.2 to +radius
-      if (config.shapeType === 'spotlight') {
-        return {
-          x: -halfWidth * 0.8,  // Body width is ±0.8*radius
-          y: -halfWidth * 1.2,  // Bracket extends 1.2*radius above center
-          width: halfWidth * 0.8 * 2,  // Total width: 1.6*radius
-          height: halfWidth * (1.2 + 1),  // Total height: from -1.2*radius to +radius = 2.2*radius
-        };
-      }
-      
-      // For all other shapes, use symmetric centered bounds
-      return {
-        x: -halfWidth,
-        y: -halfHeight,
-        width: renderedWidth,
-        height: renderedHeight,
-      };
-    };
-    
     const maxDimension = Math.max(renderedWidth, renderedHeight);
     
     // Scale text size based on rendered dimensions
@@ -146,7 +97,6 @@ export const ProductShape = memo(
           realWorldHeight={product.realWorldHeight}
           realWorldSize={product.realWorldSize}
           scaleFactor={product.scaleFactor}
-          getClientRect={getClientRect}
         />
 
         {product.sku && (

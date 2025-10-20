@@ -1024,6 +1024,9 @@ const Page = () => {
             // Constrain zoom to reasonable bounds (0.01 to 100)
             const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
             setStageScale(constrainedZoom);
+            
+            // Center the canvas to show the background image in the middle of viewport
+            handleResetView();
           };
           img.src = ev.target.result;
         };
@@ -1031,7 +1034,7 @@ const Page = () => {
       }
     };
     input.click();
-  }, [setBackgroundImage, setBackgroundImageNaturalSize, canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale]);
+  }, [setBackgroundImage, setBackgroundImageNaturalSize, canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale, handleResetView]);
 
   const handleMeasure = useCallback(() => {
     setMeasureMode(true);

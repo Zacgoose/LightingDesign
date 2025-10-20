@@ -1001,6 +1001,29 @@ const Page = () => {
           img.onload = () => {
             setBackgroundImage(ev.target.result);
             setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+            
+            // Auto-zoom to fit the background image in the viewport
+            // The background image is first scaled to fit within the canvas dimensions
+            const imageScaleX = canvasWidth / img.width;
+            const imageScaleY = canvasHeight / img.height;
+            const imageScale = Math.min(imageScaleX, imageScaleY);
+            
+            // The actual size of the image in canvas coordinates after scaling
+            const scaledImageWidth = img.width * imageScale;
+            const scaledImageHeight = img.height * imageScale;
+            
+            // Now calculate what zoom level we need so that the scaled image
+            // fills approximately 90% of the viewport (leaving 10% margin)
+            const padding = 0.9; // Fill 90% of viewport
+            const zoomX = (viewportWidth * padding) / scaledImageWidth;
+            const zoomY = (viewportHeight * padding) / scaledImageHeight;
+            
+            // Use the smaller zoom to ensure the entire image fits within viewport
+            const autoZoom = Math.min(zoomX, zoomY);
+            
+            // Constrain zoom to reasonable bounds (0.01 to 100)
+            const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
+            setStageScale(constrainedZoom);
           };
           img.src = ev.target.result;
         };
@@ -1008,7 +1031,7 @@ const Page = () => {
       }
     };
     input.click();
-  }, [setBackgroundImage, setBackgroundImageNaturalSize]);
+  }, [setBackgroundImage, setBackgroundImageNaturalSize, canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale]);
 
   const handleMeasure = useCallback(() => {
     setMeasureMode(true);

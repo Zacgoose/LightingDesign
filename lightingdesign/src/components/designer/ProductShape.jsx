@@ -31,14 +31,14 @@ export const ProductShape = memo(
     });
 
     const shapeFunction = getShapeFunction(config.shapeType);
-    
+
     // Calculate actual rendered dimensions based on scaleFactor and real-world size
     // This ensures text and bounding boxes align with the actual rendered shape
     const scaleFactor = product.scaleFactor || 100; // fallback to default
     const realWorldSize = product.realWorldSize || config.realWorldSize;
     const realWorldWidth = product.realWorldWidth || config.realWorldWidth;
     const realWorldHeight = product.realWorldHeight || config.realWorldHeight;
-    
+
     // Calculate rendered width and height (actual size in virtual canvas units)
     let renderedWidth, renderedHeight;
     if (realWorldSize) {
@@ -53,9 +53,9 @@ export const ProductShape = memo(
       renderedWidth = config.width || 30;
       renderedHeight = config.height || 30;
     }
-    
+
     const maxDimension = Math.max(renderedWidth, renderedHeight);
-    
+
     // Scale text size based on rendered dimensions
     // Base font sizes: 11 for SKU, 10 for name (designed for ~50px baseline)
     // Scale proportionally with object size
@@ -64,10 +64,13 @@ export const ProductShape = memo(
     const skuFontSize = Math.max(11 * textScale, 8); // Min 8px
     const nameFontSize = Math.max(10 * textScale, 7); // Min 7px
     const textWidth = 120 * textScale;
-    
+
     // Position text relative to rendered dimensions
     const textYOffset = maxDimension / 2 + 10 * textScale;
     const skuYOffset = -(maxDimension / 2 + 20 * textScale);
+
+    // Check if this is a design tool (arrow, boxoutline) - these shouldn't show labels
+    const isDesignTool = config.shapeType === "arrow" || config.shapeType === "boxoutline";
 
     return (
       <Group
@@ -99,7 +102,7 @@ export const ProductShape = memo(
           scaleFactor={product.scaleFactor}
         />
 
-        {product.sku && (
+        {!isDesignTool && product.sku && (
           <Text
             text={product.sku}
             fontSize={skuFontSize}
@@ -113,18 +116,20 @@ export const ProductShape = memo(
           />
         )}
 
-        <Text
-          text={product.customLabel || product.name}
-          fontSize={nameFontSize}
-          fill={theme.palette.text.secondary}
-          align="center"
-          y={textYOffset}
-          x={-textWidth / 2}
-          width={textWidth}
-          listening={listening}
-        />
+        {!isDesignTool && (
+          <Text
+            text={product.customLabel || product.name}
+            fontSize={nameFontSize}
+            fill={theme.palette.text.secondary}
+            align="center"
+            y={textYOffset}
+            x={-textWidth / 2}
+            width={textWidth}
+            listening={listening}
+          />
+        )}
 
-        {product.quantity > 1 && (
+        {!isDesignTool && product.quantity > 1 && (
           <>
             <Shape
               sceneFunc={(context, shape) => {

@@ -239,48 +239,57 @@ export const ProductShapes = {
   arrow: (context, shape) => {
     const scaleFactor = shape.getAttr("scaleFactor") || 50;
     const realWorldWidth =
-      shape.getAttr("realWorldWidth") || (shape.width() ? shape.width() / scaleFactor : 0.8);
+      shape.getAttr("realWorldWidth") || (shape.width() ? shape.width() / scaleFactor : 1.0);
     const realWorldHeight =
-      shape.getAttr("realWorldHeight") || (shape.height() ? shape.height() / scaleFactor : 0.4);
+      shape.getAttr("realWorldHeight") || (shape.height() ? shape.height() / scaleFactor : 0.3);
     const width = realWorldWidth * scaleFactor;
     const height = realWorldHeight * scaleFactor;
-    
-    // Draw arrow pointing right
-    const headWidth = width * 0.3;
-    const shaftHeight = height * 0.4;
-    
+
+    // Draw a simple arrow line with arrowhead - more like a design/annotation tool
+    const headLength = height * 1.5; // Arrow head length
+    const headWidth = height; // Arrow head width
+    const strokeWidth = shape.getAttr("strokeWidth") || 3;
+
+    context.save();
+    context.strokeStyle = shape.getAttr("stroke");
+    context.fillStyle = shape.getAttr("stroke");
+    context.lineWidth = strokeWidth;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+
+    // Draw the arrow shaft (line)
     context.beginPath();
-    // Start at left of shaft
-    context.moveTo(-width / 2, -shaftHeight / 2);
-    // Top of shaft
-    context.lineTo(width / 2 - headWidth, -shaftHeight / 2);
-    // Top of arrow head
-    context.lineTo(width / 2 - headWidth, -height / 2);
-    // Arrow point
-    context.lineTo(width / 2, 0);
-    // Bottom of arrow head
-    context.lineTo(width / 2 - headWidth, height / 2);
-    // Bottom of shaft
-    context.lineTo(width / 2 - headWidth, shaftHeight / 2);
-    // Complete shaft
-    context.lineTo(-width / 2, shaftHeight / 2);
+    context.moveTo(-width / 2, 0);
+    context.lineTo(width / 2 - headLength, 0);
+    context.stroke();
+
+    // Draw the arrow head (filled triangle)
+    context.beginPath();
+    context.moveTo(width / 2, 0);
+    context.lineTo(width / 2 - headLength, -headWidth / 2);
+    context.lineTo(width / 2 - headLength, headWidth / 2);
     context.closePath();
-    context.fillStrokeShape(shape);
+    context.fill();
+
+    context.restore();
   },
 
   boxoutline: (context, shape) => {
     const scaleFactor = shape.getAttr("scaleFactor") || 50;
     const realWorldWidth =
-      shape.getAttr("realWorldWidth") || (shape.width() ? shape.width() / scaleFactor : 0.5);
+      shape.getAttr("realWorldWidth") || (shape.width() ? shape.width() / scaleFactor : 1.0);
     const realWorldHeight =
-      shape.getAttr("realWorldHeight") || (shape.height() ? shape.height() / scaleFactor : 0.5);
+      shape.getAttr("realWorldHeight") || (shape.height() ? shape.height() / scaleFactor : 1.0);
     const width = realWorldWidth * scaleFactor;
     const height = realWorldHeight * scaleFactor;
-    
-    // Draw box outline (no fill)
+    const strokeWidth = shape.getAttr("strokeWidth") || 3;
+
+    // Draw a simple box outline for annotations/highlighting
     context.save();
     context.strokeStyle = shape.getAttr("stroke");
-    context.lineWidth = shape.getAttr("strokeWidth") || 2;
+    context.lineWidth = strokeWidth;
+    context.lineCap = "round";
+    context.lineJoin = "round";
     context.beginPath();
     context.rect(-width / 2, -height / 2, width, height);
     context.stroke();

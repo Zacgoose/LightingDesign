@@ -115,22 +115,22 @@
   },
   "arrow": {
     "shapeType": "arrow",
-    "width": 80,
-    "height": 40,
-    "realWorldWidth": 0.8,
-    "realWorldHeight": 0.4,
-    "fill": "#90CAF9",
-    "stroke": "#1976D2",
-    "strokeWidth": 2
+    "width": 100,
+    "height": 30,
+    "realWorldWidth": 1.0,
+    "realWorldHeight": 0.3,
+    "fill": "transparent",
+    "stroke": "#FF5722",
+    "strokeWidth": 3
   },
   "boxoutline": {
     "shapeType": "boxoutline",
-    "width": 50,
-    "height": 50,
-    "realWorldWidth": 0.5,
-    "realWorldHeight": 0.5,
+    "width": 100,
+    "height": 100,
+    "realWorldWidth": 1.0,
+    "realWorldHeight": 1.0,
     "fill": "transparent",
-    "stroke": "#424242",
+    "stroke": "#FF5722",
     "strokeWidth": 3
   },
   "default": {

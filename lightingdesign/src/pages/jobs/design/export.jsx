@@ -177,21 +177,26 @@ const Page = () => {
           layerName: layer.name
         })));
         
-        return {
-          layer,
-          products: filteredProducts,
-          connectors: (layer.connectors || []).filter((connector) => {
-            if (!connector.sublayerId) return true;
-            return selectedSublayerIds.includes(connector.sublayerId);
-          }),
-        };
+          const filteredTextBoxes = (layer.textBoxes || []).filter((tb) => {
+            if (!tb.sublayerId) return true;
+            return selectedSublayerIds.includes(tb.sublayerId);
+          });
+          return {
+            layer,
+            products: filteredProducts,
+            connectors: (layer.connectors || []).filter((connector) => {
+              if (!connector.sublayerId) return true;
+              return selectedSublayerIds.includes(connector.sublayerId);
+            }),
+            textBoxes: filteredTextBoxes,
+          };
       }).filter(Boolean);
       
       setExportProgress(20);
       
       // Process each layer (one per page for multi-page support)
       for (let i = 0; i < selectedLayerData.length; i++) {
-        const { layer, products, connectors } = selectedLayerData[i];
+        const { layer, products, connectors, textBoxes } = selectedLayerData[i];
         
         if (i > 0) {
           pdf.addPage();
@@ -229,6 +234,7 @@ const Page = () => {
         await renderCanvasToPDF(pdf, {
           products,
           connectors,
+          textBoxes,
           backgroundImage: layer.backgroundImage,
           backgroundImageNaturalSize: layer.backgroundImageNaturalSize,
           scaleFactor: layer.scaleFactor || 100,
@@ -319,7 +325,7 @@ const Page = () => {
   
   // Helper function to render canvas to PDF using SVG
   const renderCanvasToPDF = async (pdf, options) => {
-    const { products, connectors, backgroundImage, backgroundImageNaturalSize, scaleFactor, drawingArea, canvasSize } = options;
+    const { products, connectors, textBoxes = [], backgroundImage, backgroundImageNaturalSize, scaleFactor, drawingArea, canvasSize } = options;
     
     console.log('renderCanvasToPDF called (SVG mode):', {
       productsCount: products.length,
@@ -345,7 +351,7 @@ const Page = () => {
       maxX = Math.max(maxX, product.x + halfSize);
       maxY = Math.max(maxY, product.y + halfSize);
     });
-    // Connector bounds: use product endpoints (connectors may not have x/y themselves)
+  // Connector bounds: use product endpoints (connectors may not have x/y themselves)
     connectors.forEach((conn) => {
       const fromP = products.find((p) => p.id === conn.from);
       const toP = products.find((p) => p.id === conn.to);
@@ -361,6 +367,20 @@ const Page = () => {
         maxX = Math.max(maxX, toP.x);
         maxY = Math.max(maxY, toP.y);
       }
+    });
+    // Text box bounds: compute approximate bounding box using font metrics and width
+    textBoxes.forEach((tb) => {
+      const textScaleFactor = tb.scaleFactor || scaleFactor;
+      const baseFontSize = tb.fontSize || 24;
+      const renderedFontSize = baseFontSize * (textScaleFactor / 100);
+      const textHeight = renderedFontSize * 1.2 * (tb.scaleY || 1);
+      const textWidth = (tb.width || 200) * (tb.scaleX || 1);
+      const halfW = textWidth / 2;
+      const halfH = textHeight / 2;
+      minX = Math.min(minX, tb.x - halfW);
+      minY = Math.min(minY, tb.y - halfH);
+      maxX = Math.max(maxX, tb.x + halfW);
+      maxY = Math.max(maxY, tb.y + halfH);
     });
     // Background bounds
     let bgX = 0, bgY = 0, bgWidth = 0, bgHeight = 0;
@@ -466,6 +486,23 @@ const Page = () => {
       const exportConnectors = connectors.filter(
         (c) => exportProductIds.has(c.from) && exportProductIds.has(c.to),
       );
+      // Text boxes in the export region
+      const exportTextBoxes = textBoxes.filter((tb) => {
+        const textScaleFactor = tb.scaleFactor || scaleFactor;
+        const baseFontSize = tb.fontSize || 24;
+        const renderedFontSize = baseFontSize * (textScaleFactor / 100);
+        const textHeight = renderedFontSize * 1.2 * (tb.scaleY || 1);
+        const textWidth = (tb.width || 200) * (tb.scaleX || 1);
+        const left = tb.x - textWidth / 2;
+        const top = tb.y - textHeight / 2;
+        const right = tb.x + textWidth / 2;
+        const bottom = tb.y + textHeight / 2;
+        const relLeft = left - contentOffsetX;
+        const relTop = top - contentOffsetY;
+        const relRight = right - contentOffsetX;
+        const relBottom = bottom - contentOffsetY;
+        return !(relRight < 0 || relLeft > exportWidth || relBottom < 0 || relTop > exportHeight);
+      });
       console.log('Connectors in export region:', exportConnectors.length, 'of', connectors.length);
 
   // Add connectors (cables)
@@ -504,7 +541,7 @@ const Page = () => {
         svgElement.appendChild(imgEl);
       }
 
-      console.log('Manual builder: exportProducts=', exportProducts.length, 'exportConnectors=', exportConnectors.length);
+  console.log('Manual builder: exportProducts=', exportProducts.length, 'exportConnectors=', exportConnectors.length, 'exportTextBoxes=', exportTextBoxes.length);
       // Draw connectors as lines
       let connectorCount = 0;
       exportConnectors.forEach((connector) => {
@@ -791,6 +828,54 @@ const Page = () => {
         productCount++;
       });
       console.log('Manual builder appended products:', productCount);
+
+        // Draw text boxes
+        let textCount = 0;
+        exportTextBoxes.forEach((tb) => {
+          const tbScaleFactor = tb.scaleFactor || scaleFactor;
+          const baseFontSize = tb.fontSize || 24;
+          const renderedFontSize = baseFontSize * (tbScaleFactor / 100);
+          const lineHeight = renderedFontSize * 1.2;
+          const textWidth = tb.width || 100;
+          const sx = tb.scaleX || 1;
+          const sy = tb.scaleY || 1;
+          const cx = tb.x;
+          const cy = tb.y;
+          const rotation = tb.rotation || 0;
+
+          const groupEl = document.createElementNS(SVG_NS, 'g');
+          // Apply translate, rotate and scale (groups in Konva are positioned with offset on center)
+          groupEl.setAttribute('transform', `translate(${cx} ${cy}) rotate(${rotation}) scale(${sx} ${sy})`);
+          svgElement.appendChild(groupEl);
+
+          const offsetX = (textWidth) / 2;
+          const offsetY = (lineHeight) / 2;
+
+          const textEl = document.createElementNS(SVG_NS, 'text');
+          textEl.setAttribute('x', String(-offsetX));
+          textEl.setAttribute('y', String(-offsetY));
+          textEl.setAttribute('fill', tb.color || '#000000');
+          textEl.setAttribute('font-family', tb.fontFamily || 'Arial');
+          textEl.setAttribute('font-size', String(renderedFontSize));
+          if (tb.fontStyle?.includes('italic')) textEl.setAttribute('font-style', 'italic');
+          if (tb.fontStyle?.includes('bold')) textEl.setAttribute('font-weight', 'bold');
+          if (tb.textDecoration) textEl.setAttribute('text-decoration', tb.textDecoration);
+          textEl.setAttribute('dominant-baseline', 'hanging');
+          textEl.setAttribute('text-anchor', 'start');
+
+          const lines = (tb.text || '').split('\n');
+          lines.forEach((ln, idx) => {
+            const tspan = document.createElementNS(SVG_NS, 'tspan');
+            tspan.setAttribute('x', String(-offsetX));
+            if (idx === 0) tspan.setAttribute('dy', '0');
+            else tspan.setAttribute('dy', String(lineHeight));
+            tspan.textContent = ln;
+            textEl.appendChild(tspan);
+          });
+          groupEl.appendChild(textEl);
+          textCount++;
+        });
+        console.log('Manual builder appended text boxes:', textCount);
 
       // Diagnostics
       const primitives = svgElement.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');

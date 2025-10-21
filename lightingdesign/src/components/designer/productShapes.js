@@ -2,21 +2,46 @@ export const ProductShapes = {
   pendant: (context, shape) => {
     // Use pre-calculated dimensions from ProductShape component
     const width = shape.width() || 50;
+    const height = shape.height() || width * 1.25;
     const radius = width / 2;
+    
+    // Calculate vertical offset to center the shape within its height
+    // Wire extends 0.5*radius above the circle (0.25*width total)
+    // Total drawn height: 2*radius + 0.5*radius = 2.5*radius
+    // Center of drawn content: -0.25*radius (since wire is 0.5*radius and circle is 2*radius)
+    // We need to shift to center it at y=0 within the height bounds
+    const drawnHeight = radius * 2.5;
+    const yOffset = (height - drawnHeight) / 2 + radius * 0.25;
+    
+    // Debug logging (only log occasionally to avoid spam)
+    if (Math.random() < 0.01) {
+      console.log(`[pendant shape] Drawing with:`, {
+        width,
+        height,
+        radius,
+        drawnHeight,
+        yOffset,
+        wireTop: -radius * 1.5 + yOffset,
+        wireBottom: -radius + yOffset,
+        circleCenter: yOffset,
+        circleTop: -radius + yOffset,
+        circleBottom: radius + yOffset,
+      });
+    }
 
     // Hanging wire
     context.save();
     context.strokeStyle = shape.getAttr("stroke");
     context.lineWidth = 1;
     context.beginPath();
-    context.moveTo(0, -radius * 1.5);
-    context.lineTo(0, -radius);
+    context.moveTo(0, -radius * 1.5 + yOffset);
+    context.lineTo(0, -radius + yOffset);
     context.stroke();
     context.restore();
 
     // Pendant body (circle)
     context.beginPath();
-    context.arc(0, 0, radius, 0, Math.PI * 2);
+    context.arc(0, yOffset, radius, 0, Math.PI * 2);
     context.closePath();
     context.fillStrokeShape(shape);
   },
@@ -54,19 +79,28 @@ export const ProductShapes = {
   spotlight: (context, shape) => {
     // Use pre-calculated dimensions from ProductShape component
     const width = shape.width() || 40;
+    const height = shape.height() || width * 1.2;
     const radius = width / 2;
+
+    // Calculate vertical offset to center the shape within its height
+    // Mounting bracket extends 0.2*radius above the light body
+    // Light body extends from -radius to +radius (2*radius tall)
+    // Total drawn height: 2*radius + 0.2*radius = 2.2*radius
+    // Center of drawn content: -0.1*radius
+    const drawnHeight = radius * 2.2;
+    const yOffset = (height - drawnHeight) / 2 + radius * 0.1;
 
     // Mounting bracket
     context.beginPath();
-    context.rect(-radius / 2, -radius * 1.2, radius, radius * 0.4);
+    context.rect(-radius / 2, -radius * 1.2 + yOffset, radius, radius * 0.4);
     context.fillStrokeShape(shape);
 
     // Light body (cone-ish shape)
     context.beginPath();
-    context.moveTo(-radius * 0.6, -radius);
-    context.lineTo(radius * 0.6, -radius);
-    context.lineTo(radius * 0.8, radius);
-    context.lineTo(-radius * 0.8, radius);
+    context.moveTo(-radius * 0.6, -radius + yOffset);
+    context.lineTo(radius * 0.6, -radius + yOffset);
+    context.lineTo(radius * 0.8, radius + yOffset);
+    context.lineTo(-radius * 0.8, radius + yOffset);
     context.closePath();
     context.fillStrokeShape(shape);
   },

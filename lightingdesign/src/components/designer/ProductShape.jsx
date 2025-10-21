@@ -56,6 +56,24 @@ export const ProductShape = memo(
     
     const maxDimension = Math.max(renderedWidth, renderedHeight);
     
+    // Debug logging for custom objects to verify dimensions
+    if (product.isCustomObject && renderCount.current === 1) {
+      console.log(`[ProductShape] Custom object created:`, {
+        id: product.id,
+        name: product.name,
+        productType: product.product_type,
+        shapeType: config.shapeType,
+        scaleFactor,
+        realWorldSize,
+        realWorldWidth,
+        realWorldHeight,
+        renderedWidth,
+        renderedHeight,
+        configWidth: config.width,
+        configHeight: config.height,
+      });
+    }
+    
     // Scale text size based on rendered dimensions
     // Base font sizes: 11 for SKU, 10 for name (designed for ~50px baseline)
     // Scale proportionally with object size

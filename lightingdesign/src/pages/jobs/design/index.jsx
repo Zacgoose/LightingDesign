@@ -52,15 +52,15 @@ const Page = () => {
   const queryClient = useQueryClient();
   const settings = useSettings();
 
-  // Configure pdfjs worker once on component mount
+  // Configure pdfjs to work without a worker (synchronous rendering)
+  // This avoids all CORS and worker setup issues
   useEffect(() => {
-    // Set up the PDF.js worker using local path to avoid CORS issues
-    // The worker file should be copied to public folder during build
-    if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      // Use a relative path to serve from public folder
-      // This avoids CORS issues with external CDNs
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
-      console.log("PDF.js worker configured:", pdfjsLib.GlobalWorkerOptions.workerSrc);
+    if (typeof window !== "undefined") {
+      // Disable worker - PDF.js will use synchronous rendering on main thread
+      // This is simpler and avoids CORS issues, with minimal performance impact
+      // for typical floor plan PDFs (1-2 pages)
+      pdfjsLib.GlobalWorkerOptions.workerSrc = false;
+      console.log("PDF.js configured for synchronous rendering (no worker)");
     }
   }, []);
 

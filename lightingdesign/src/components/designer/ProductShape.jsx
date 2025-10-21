@@ -56,6 +56,22 @@ export const ProductShape = memo(
     
     const maxDimension = Math.max(renderedWidth, renderedHeight);
     
+    // Debug logging to understand transformer issues
+    if (product.isCustomObject && renderCount.current === 1) {
+      console.log(`[ProductShape] Custom object:`, {
+        id: product.id,
+        name: product.name,
+        productType: product.product_type,
+        shapeType: config.shapeType,
+        scaleFactor,
+        realWorldSize,
+        realWorldWidth,
+        realWorldHeight,
+        renderedWidth,
+        renderedHeight,
+      });
+    }
+    
     // Scale text size based on rendered dimensions
     // Base font sizes: 11 for SKU, 10 for name (designed for ~50px baseline)
     // Scale proportionally with object size
@@ -92,6 +108,8 @@ export const ProductShape = memo(
           strokeWidth={config.strokeWidth + 1}
           width={renderedWidth}
           height={renderedHeight}
+          offsetX={renderedWidth / 2}
+          offsetY={renderedHeight / 2}
           listening={listening}
           realWorldWidth={product.realWorldWidth}
           realWorldHeight={product.realWorldHeight}

@@ -215,6 +215,14 @@ const Page = () => {
         const drawingAreaWidth = pageWidth - 20;
         
         // Render canvas to PDF
+        console.log(`Exporting floor: ${layer.name}`, {
+          productsCount: products.length,
+          connectorsCount: connectors.length,
+          hasBackground: !!layer.backgroundImage,
+          backgroundSize: layer.backgroundImageNaturalSize,
+          scaleFactor: layer.scaleFactor || 100,
+        });
+        
         await renderCanvasToPDF(pdf, {
           products,
           connectors,
@@ -310,25 +318,59 @@ const Page = () => {
   const renderCanvasToPDF = async (pdf, options) => {
     const { products, connectors, backgroundImage, backgroundImageNaturalSize, scaleFactor, drawingArea, canvasSize } = options;
     
-    // Calculate scale to fit canvas in drawing area
+    console.log('renderCanvasToPDF called:', {
+      productsCount: products.length,
+      connectorsCount: connectors.length,
+      scaleFactor,
+      canvasSize,
+      drawingArea,
+    });
+    
+    // Calculate scale to fit canvas in drawing area while maintaining aspect ratio
     const scaleX = drawingArea.width / canvasSize.width;
     const scaleY = drawingArea.height / canvasSize.height;
     const scale = Math.min(scaleX, scaleY) * 0.9; // Use 90% to leave margin
     
-    const offsetX = drawingArea.x + (drawingArea.width - canvasSize.width * scale) / 2;
-    const offsetY = drawingArea.y + (drawingArea.height - canvasSize.height * scale) / 2;
+    console.log('PDF scale calculation:', { scaleX, scaleY, finalScale: scale });
     
-    // Draw background image if available
+    // Center the scaled canvas in the drawing area
+    const scaledCanvasWidth = canvasSize.width * scale;
+    const scaledCanvasHeight = canvasSize.height * scale;
+    const offsetX = drawingArea.x + (drawingArea.width - scaledCanvasWidth) / 2;
+    const offsetY = drawingArea.y + (drawingArea.height - scaledCanvasHeight) / 2;
+    
+    // Draw background image if available - maintain its original aspect ratio
     if (backgroundImage && backgroundImageNaturalSize) {
       try {
-        const imgScaleX = canvasSize.width / backgroundImageNaturalSize.width;
-        const imgScaleY = canvasSize.height / backgroundImageNaturalSize.height;
-        const imgScale = Math.min(imgScaleX, imgScaleY);
+        // The background image in the canvas is scaled to fit the canvas while maintaining aspect ratio
+        // Calculate how it's displayed in the canvas
+        const canvasImgScaleX = canvasSize.width / backgroundImageNaturalSize.width;
+        const canvasImgScaleY = canvasSize.height / backgroundImageNaturalSize.height;
+        const canvasImgScale = Math.min(canvasImgScaleX, canvasImgScaleY);
         
-        const imgWidth = backgroundImageNaturalSize.width * imgScale * scale;
-        const imgHeight = backgroundImageNaturalSize.height * imgScale * scale;
+        // The actual displayed size in canvas coordinates
+        const displayedWidth = backgroundImageNaturalSize.width * canvasImgScale;
+        const displayedHeight = backgroundImageNaturalSize.height * canvasImgScale;
         
-        pdf.addImage(backgroundImage, 'PNG', offsetX, offsetY, imgWidth, imgHeight);
+        // Center the image in canvas (same as in DesignerCanvas)
+        const imgOffsetX = (canvasSize.width - displayedWidth) / 2;
+        const imgOffsetY = (canvasSize.height - displayedHeight) / 2;
+        
+        // Now scale to PDF coordinates
+        const pdfImgX = offsetX + imgOffsetX * scale;
+        const pdfImgY = offsetY + imgOffsetY * scale;
+        const pdfImgWidth = displayedWidth * scale;
+        const pdfImgHeight = displayedHeight * scale;
+        
+        console.log('Background image rendering:', {
+          naturalSize: backgroundImageNaturalSize,
+          canvasImgScale,
+          displayedSize: { width: displayedWidth, height: displayedHeight },
+          pdfPosition: { x: pdfImgX, y: pdfImgY },
+          pdfSize: { width: pdfImgWidth, height: pdfImgHeight },
+        });
+        
+        pdf.addImage(backgroundImage, 'PNG', pdfImgX, pdfImgY, pdfImgWidth, pdfImgHeight);
       } catch (err) {
         console.warn("Failed to add background image to PDF:", err);
       }
@@ -337,7 +379,7 @@ const Page = () => {
     // Draw border around canvas area
     pdf.setDrawColor(200, 200, 200);
     pdf.setLineWidth(0.2);
-    pdf.rect(offsetX, offsetY, canvasSize.width * scale, canvasSize.height * scale);
+    pdf.rect(offsetX, offsetY, scaledCanvasWidth, scaledCanvasHeight);
     
     // Draw connectors (cables)
     pdf.setLineWidth(0.5);
@@ -357,17 +399,41 @@ const Page = () => {
     });
     
     // Draw products
-    products.forEach((product) => {
+    products.forEach((product, idx) => {
       const productType = product.product_type?.toLowerCase() || "default";
       const config = productTypesConfig[productType] || productTypesConfig.default;
       
-      const productScaleFactor = product.scaleFactor || scaleFactor;
-      const realSize = config.realWorldSize || 1.0;
-      const pixelSize = (realSize / productScaleFactor) * 100; // Convert to pixels
-      
+      // Calculate product position in PDF coordinates
       const x = offsetX + product.x * scale;
       const y = offsetY + product.y * scale;
-      const size = pixelSize * scale * (product.scaleX || 1);
+      
+      // Calculate product size
+      // The product's real-world size is in meters, scaleFactor converts meters to pixels
+      const productScaleFactor = product.scaleFactor || scaleFactor;
+      const realWorldSize = config.realWorldSize || config.realWorldWidth || 1.0;
+      
+      // Size in canvas pixels (scaleFactor is pixels per meter)
+      const canvasPixelSize = realWorldSize * productScaleFactor;
+      
+      // Apply product's scale and convert to PDF coordinates
+      const pdfSize = canvasPixelSize * (product.scaleX || 1) * scale;
+      
+      // Ensure minimum visible size in PDF (at least 2mm)
+      const minSize = 2;
+      const size = Math.max(pdfSize, minSize);
+      
+      if (idx < 3) {
+        console.log(`Product ${idx} (${product.name || 'unnamed'}):`, {
+          position: { x: product.x, y: product.y },
+          pdfPosition: { x, y },
+          realWorldSize,
+          productScaleFactor,
+          canvasPixelSize,
+          pdfSize,
+          finalSize: size,
+          type: productType,
+        });
+      }
       
       // Draw based on shape type
       const shapeType = config.shapeType || "circle";
@@ -420,6 +486,8 @@ const Page = () => {
         pdf.circle(x, y, size / 2, "FD");
       }
     });
+    
+    console.log(`Rendered ${products.length} products and ${connectors.length} connectors to PDF`);
   };
   
   // Helper function to add product legend

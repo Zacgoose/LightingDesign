@@ -24,7 +24,7 @@ import { Download, ArrowBack } from "@mui/icons-material";
 import { ApiGetCall } from "/src/api/ApiCall";
 import Link from "next/link";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { Stage, Layer, Rect, Circle, Line, Text as KonvaText, Group } from "react-konva";
 import productTypesConfig from "/src/data/productTypes.json";
 
@@ -456,7 +456,7 @@ const Page = () => {
     }));
     
     // Create table
-    pdf.autoTable({
+    autoTable(pdf, {
       startY: 25,
       head: [['SKU', 'Product Name', 'Brand', 'Type', 'Qty', 'Price', 'Floors']],
       body: legendData.map((item) => [
@@ -480,13 +480,13 @@ const Page = () => {
         5: { cellWidth: 20 },
         6: { cellWidth: 'auto' },
       },
-    });
+  });
     
     // Add summary
     const totalQuantity = legendData.reduce((sum, item) => sum + item.quantity, 0);
     const totalValue = legendData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
-    const finalY = pdf.lastAutoTable.finalY || 25;
+  const finalY = (pdf.lastAutoTable?.finalY) || 25;
     pdf.setFontSize(10);
     pdf.setFont("helvetica", "bold");
     pdf.text(`Total Products: ${totalQuantity}`, 10, finalY + 10);

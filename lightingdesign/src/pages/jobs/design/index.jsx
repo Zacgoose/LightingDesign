@@ -145,6 +145,8 @@ const Page = () => {
   const lastSyncedBackgroundImageNaturalSize = useRef(
     activeLayer?.backgroundImageNaturalSize || null,
   );
+  const lastSyncedBackgroundImageType = useRef(activeLayer?.backgroundImageType || null);
+  const lastSyncedBackgroundPdfData = useRef(activeLayer?.backgroundPdfData || null);
   const lastSyncedScaleFactor = useRef(activeLayer?.scaleFactor || 100);
 
   // Ref to always have current activeLayerId for sync effects
@@ -163,6 +165,12 @@ const Page = () => {
   const [backgroundImage, setBackgroundImage] = useState(activeLayer?.backgroundImage || null);
   const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(
     activeLayer?.backgroundImageNaturalSize || null,
+  );
+  const [backgroundImageType, setBackgroundImageType] = useState(
+    activeLayer?.backgroundImageType || null,
+  );
+  const [backgroundPdfData, setBackgroundPdfData] = useState(
+    activeLayer?.backgroundPdfData || null,
   );
   const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100);
 
@@ -265,7 +273,9 @@ const Page = () => {
     // Check if values have changed from what we last synced
     const hasChanged =
       backgroundImage !== lastSyncedBackgroundImage.current ||
-      backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current;
+      backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current ||
+      backgroundImageType !== lastSyncedBackgroundImageType.current ||
+      backgroundPdfData !== lastSyncedBackgroundPdfData.current;
 
     if (!hasChanged) {
       return; // No changes to sync
@@ -280,11 +290,26 @@ const Page = () => {
     console.log("Syncing background to layer:", activeLayerIdRef.current, {
       hasImage: !!backgroundImage,
       imageLength: backgroundImage?.length || 0,
+      imageType: backgroundImageType,
+      hasPdfData: !!backgroundPdfData,
     });
-    updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
+    updateLayer(activeLayerIdRef.current, {
+      backgroundImage,
+      backgroundImageNaturalSize,
+      backgroundImageType,
+      backgroundPdfData,
+    });
     lastSyncedBackgroundImage.current = backgroundImage;
     lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
-  }, [backgroundImage, backgroundImageNaturalSize, updateLayer]);
+    lastSyncedBackgroundImageType.current = backgroundImageType;
+    lastSyncedBackgroundPdfData.current = backgroundPdfData;
+  }, [
+    backgroundImage,
+    backgroundImageNaturalSize,
+    backgroundImageType,
+    backgroundPdfData,
+    updateLayer,
+  ]);
 
   // Keep scale factor in sync with active layer
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
@@ -355,12 +380,21 @@ const Page = () => {
     // Force sync of background image if it hasn't been synced yet
     if (
       backgroundImage !== lastSyncedBackgroundImage.current ||
-      backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current
+      backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current ||
+      backgroundImageType !== lastSyncedBackgroundImageType.current ||
+      backgroundPdfData !== lastSyncedBackgroundPdfData.current
     ) {
       console.log("Forcing background sync before save");
-      updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
+      updateLayer(activeLayerIdRef.current, {
+        backgroundImage,
+        backgroundImageNaturalSize,
+        backgroundImageType,
+        backgroundPdfData,
+      });
       lastSyncedBackgroundImage.current = backgroundImage;
       lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
+      lastSyncedBackgroundImageType.current = backgroundImageType;
+      lastSyncedBackgroundPdfData.current = backgroundPdfData;
     }
 
     // Log layers before stripping to check for corruption
@@ -557,11 +591,15 @@ const Page = () => {
       setTextBoxes(activeLayer.textBoxes || []);
       setBackgroundImage(activeLayer.backgroundImage || null);
       setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
+      setBackgroundImageType(activeLayer.backgroundImageType || null);
+      setBackgroundPdfData(activeLayer.backgroundPdfData || null);
       setScaleFactor(activeLayer.scaleFactor || 100);
 
       // Update sync refs to match the new layer's data
       lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
       lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
+      lastSyncedBackgroundImageType.current = activeLayer.backgroundImageType || null;
+      lastSyncedBackgroundPdfData.current = activeLayer.backgroundPdfData || null;
       lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
 
       // Re-enable sync after layer data is loaded
@@ -997,77 +1035,92 @@ const Page = () => {
         // Check if the file is a PDF
         if (file.type === "application/pdf") {
           try {
-            // Dynamically import pdf-lib
-            const { PDFDocument } = await import("pdf-lib");
+            // Read the PDF file as base64 data URL (to preserve vector data)
+            const reader = new FileReader();
+            reader.onload = async (readerEvent) => {
+              const pdfDataUrl = readerEvent.target.result; // This is the original PDF as data URL
 
-            // Read the PDF file
-            const arrayBuffer = await file.arrayBuffer();
-            const pdfDoc = await PDFDocument.load(arrayBuffer);
+              try {
+                // Now render a preview for display in Konva
+                const arrayBuffer = await file.arrayBuffer();
 
-            // Get the first page
-            const pages = pdfDoc.getPages();
-            if (pages.length === 0) {
-              console.error("PDF has no pages");
-              return;
-            }
+                // Dynamically import pdf-lib to get page dimensions
+                const { PDFDocument } = await import("pdf-lib");
+                const pdfDoc = await PDFDocument.load(arrayBuffer);
 
-            const firstPage = pages[0];
-            const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
+                // Get the first page
+                const pages = pdfDoc.getPages();
+                if (pages.length === 0) {
+                  console.error("PDF has no pages");
+                  return;
+                }
 
-            // Create a canvas to render the PDF page
-            const canvas = document.createElement("canvas");
-            const scale = 2; // Render at 2x for better quality
-            canvas.width = pdfWidth * scale;
-            canvas.height = pdfHeight * scale;
-            const context = canvas.getContext("2d");
+                const firstPage = pages[0];
+                const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
 
-            // Use pdfjs-dist to render the PDF page
-            const pdfjsLib = await import("pdfjs-dist");
+                // Create a canvas to render the PDF page preview
+                const canvas = document.createElement("canvas");
+                const scale = 2; // Render at 2x for better quality
+                canvas.width = pdfWidth * scale;
+                canvas.height = pdfHeight * scale;
+                const context = canvas.getContext("2d");
 
-            // Set worker source
-            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+                // Use pdfjs-dist to render the PDF page
+                const pdfjsLib = await import("pdfjs-dist");
 
-            // Load the PDF with pdfjs
-            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-            const pdf = await loadingTask.promise;
-            const page = await pdf.getPage(1);
+                // Set worker source
+                pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
-            // Render the page
-            const viewport = page.getViewport({ scale });
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
+                // Load the PDF with pdfjs
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                const pdf = await loadingTask.promise;
+                const page = await pdf.getPage(1);
 
-            await page.render({
-              canvasContext: context,
-              viewport: viewport,
-            }).promise;
+                // Render the page
+                const viewport = page.getViewport({ scale });
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
 
-            // Convert canvas to data URL
-            const dataUrl = canvas.toDataURL("image/png");
+                await page.render({
+                  canvasContext: context,
+                  viewport: viewport,
+                }).promise;
 
-            // Set the background image
-            setBackgroundImage(dataUrl);
-            setBackgroundImageNaturalSize({ width: viewport.width, height: viewport.height });
+                // Convert canvas to PNG data URL (for display preview)
+                const previewDataUrl = canvas.toDataURL("image/png");
 
-            // Auto-zoom to fit the background image in the viewport
-            const imageScaleX = canvasWidth / viewport.width;
-            const imageScaleY = canvasHeight / viewport.height;
-            const imageScale = Math.min(imageScaleX, imageScaleY);
+                // Set the background image (preview for display)
+                setBackgroundImage(previewDataUrl);
+                setBackgroundImageNaturalSize({ width: viewport.width, height: viewport.height });
+                // Mark this as a PDF background and store the original PDF data
+                setBackgroundImageType("pdf");
+                setBackgroundPdfData(pdfDataUrl);
 
-            const scaledImageWidth = viewport.width * imageScale;
-            const scaledImageHeight = viewport.height * imageScale;
+                // Auto-zoom to fit the background image in the viewport
+                const imageScaleX = canvasWidth / viewport.width;
+                const imageScaleY = canvasHeight / viewport.height;
+                const imageScale = Math.min(imageScaleX, imageScaleY);
 
-            const padding = 0.9;
-            const zoomX = (viewportWidth * padding) / scaledImageWidth;
-            const zoomY = (viewportHeight * padding) / scaledImageHeight;
+                const scaledImageWidth = viewport.width * imageScale;
+                const scaledImageHeight = viewport.height * imageScale;
 
-            const autoZoom = Math.min(zoomX, zoomY);
-            const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
-            setStageScale(constrainedZoom);
+                const padding = 0.9;
+                const zoomX = (viewportWidth * padding) / scaledImageWidth;
+                const zoomY = (viewportHeight * padding) / scaledImageHeight;
 
-            handleResetView();
+                const autoZoom = Math.min(zoomX, zoomY);
+                const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
+                setStageScale(constrainedZoom);
+
+                handleResetView();
+              } catch (error) {
+                console.error("Error processing PDF preview:", error);
+                alert("Failed to load PDF file. Please try an image file instead.");
+              }
+            };
+            reader.readAsDataURL(file);
           } catch (error) {
-            console.error("Error processing PDF:", error);
+            console.error("Error reading PDF:", error);
             alert("Failed to load PDF file. Please try an image file instead.");
           }
         } else {
@@ -1078,6 +1131,9 @@ const Page = () => {
             img.onload = () => {
               setBackgroundImage(ev.target.result);
               setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+              // Mark this as an image background (no PDF data)
+              setBackgroundImageType("image");
+              setBackgroundPdfData(null);
 
               // Auto-zoom to fit the background image in the viewport
               // The background image is first scaled to fit within the canvas dimensions
@@ -1115,6 +1171,8 @@ const Page = () => {
   }, [
     setBackgroundImage,
     setBackgroundImageNaturalSize,
+    setBackgroundImageType,
+    setBackgroundPdfData,
     canvasWidth,
     canvasHeight,
     viewportWidth,

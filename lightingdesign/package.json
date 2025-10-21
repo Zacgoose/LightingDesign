@@ -92,6 +92,7 @@
     "simplebar-react": "3.3.2",
     "stylis-plugin-rtl": "2.1.1",
     "svg2pdf.js": "^2.6.0",
+    "pdf-lib": "^1.18.1",
     "typescript": "5.9.2",
     "yup": "1.7.0"
   },

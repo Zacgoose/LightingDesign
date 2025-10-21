@@ -1839,18 +1839,6 @@ const Page = () => {
 
         // Get configuration from productTypes.json
         const shapeConfig = productTypesConfig[shapeName] || productTypesConfig.default;
-        
-        // Extract size attributes from the config
-        const sizeAttrs = {};
-        if (shapeConfig.realWorldSize !== undefined) {
-          sizeAttrs.realWorldSize = shapeConfig.realWorldSize;
-        }
-        if (shapeConfig.realWorldWidth !== undefined) {
-          sizeAttrs.realWorldWidth = shapeConfig.realWorldWidth;
-        }
-        if (shapeConfig.realWorldHeight !== undefined) {
-          sizeAttrs.realWorldHeight = shapeConfig.realWorldHeight;
-        }
 
         const newProduct = {
           id: `custom-${crypto.randomUUID()}`,
@@ -1859,17 +1847,21 @@ const Page = () => {
           rotation: 0,
           scaleX: 1,
           scaleY: 1,
+          baseScaleX: 1,
+          baseScaleY: 1,
           color: shapeConfig.fill || "#666666",
           stroke: shapeConfig.stroke || "#424242",
           strokeWidth: shapeConfig.strokeWidth || 2,
           shape: shapeConfig.shapeType || shapeName,
           name: `Custom ${shapeName.charAt(0).toUpperCase() + shapeName.slice(1)}`,
-          product_type: shapeName, // Fix: Add product_type for shape lookup
+          product_type: shapeName,
           product_type_unigram: shapeName,
           isCustomObject: true,
-          // Add scaleFactor to ensure proper rendering and resizing
           scaleFactor: scaleFactor || 100,
-          ...sizeAttrs,
+          // Copy all size properties from config, same as regular products
+          realWorldSize: shapeConfig.realWorldSize,
+          realWorldWidth: shapeConfig.realWorldWidth,
+          realWorldHeight: shapeConfig.realWorldHeight,
         };
 
         const transformed = applyGroupTransform();

@@ -1884,10 +1884,9 @@ const Page = () => {
   );
 
   const handleExport = useCallback(() => {
-    const transformed = applyGroupTransform();
-    if (transformed) updateHistory(transformed);
-    console.log("Export project", { products, connectors });
-  }, [applyGroupTransform, updateHistory, products, connectors]);
+    // Navigate to export page
+    router.push(`/jobs/design/export?id=${id}`);
+  }, [router, id]);
 
   return (
     <>

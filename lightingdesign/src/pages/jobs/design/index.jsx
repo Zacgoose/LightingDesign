@@ -1081,11 +1081,7 @@ const Page = () => {
                 canvas.height = pdfHeight * scale;
                 const context = canvas.getContext("2d");
 
-                // Set worker source for pdfjs
-                console.log("Setting up pdfjs worker...");
-                pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-
-                // Load the PDF with pdfjs
+                // Load the PDF with pdfjs (worker already configured in useEffect)
                 console.log("Loading PDF with pdfjs for rendering...");
                 const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
                 const pdf = await loadingTask.promise;

@@ -43,7 +43,6 @@ import productTypesConfig from "/src/data/productTypes.json";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
 import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
 import { PDFDocument } from "pdf-lib";
-import * as pdfjsLib from "pdfjs-dist";
 
 const Page = () => {
   const router = useRouter();
@@ -54,13 +53,16 @@ const Page = () => {
 
   // Configure pdfjs to work without a worker (synchronous rendering)
   // This avoids all CORS and worker setup issues
+  // Import dynamically to avoid SSR issues with Next.js static export
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // Disable worker - PDF.js will use synchronous rendering on main thread
-      // This is simpler and avoids CORS issues, with minimal performance impact
-      // for typical floor plan PDFs (1-2 pages)
-      pdfjsLib.GlobalWorkerOptions.workerSrc = false;
-      console.log("PDF.js configured for synchronous rendering (no worker)");
+      import("pdfjs-dist").then((pdfjsLib) => {
+        // Disable worker - PDF.js will use synchronous rendering on main thread
+        // This is simpler and avoids CORS issues, with minimal performance impact
+        // for typical floor plan PDFs (1-2 pages)
+        pdfjsLib.GlobalWorkerOptions.workerSrc = false;
+        console.log("PDF.js configured for synchronous rendering (no worker)");
+      });
     }
   }, []);
 
@@ -1081,8 +1083,15 @@ const Page = () => {
                 canvas.height = pdfHeight * scale;
                 const context = canvas.getContext("2d");
 
-                // Load the PDF with pdfjs (worker already configured in useEffect)
+                // Load the PDF with pdfjs (dynamically imported to avoid SSR issues)
                 console.log("Loading PDF with pdfjs for rendering...");
+                const pdfjsLib = await import("pdfjs-dist");
+
+                // Configure worker if not already configured
+                if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                  pdfjsLib.GlobalWorkerOptions.workerSrc = false;
+                }
+
                 const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
                 const pdf = await loadingTask.promise;
                 const page = await pdf.getPage(1);

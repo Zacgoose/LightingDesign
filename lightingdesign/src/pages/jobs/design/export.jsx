@@ -30,6 +30,7 @@ import { Stage, Layer } from "react-konva";
 import { exportStageSVG } from "react-konva-to-svg";
 import "svg2pdf.js";
 import productTypesConfig from "/src/data/productTypes.json";
+import { getShapeFunction } from "/src/components/designer/productShapes";
 
 // Paper size definitions (dimensions in mm)
 const PAPER_SIZES = [
@@ -449,7 +450,7 @@ const Page = () => {
         }
       });
       
-      // Add products to Konva layer
+      // Add products to Konva layer using custom shapes
       products.forEach((product, idx) => {
         const productType = product.product_type?.toLowerCase() || "default";
         const config = productTypesConfig[productType] || productTypesConfig.default;
@@ -458,52 +459,58 @@ const Page = () => {
         const x = product.x - contentOffsetX;
         const y = product.y - contentOffsetY;
         
-        // Calculate product size
+        // Get product scale factors and dimensions
         const productScaleFactor = product.scaleFactor || scaleFactor;
-        const realWorldSize = config.realWorldSize || config.realWorldWidth || 1.0;
-        const canvasPixelSize = realWorldSize * productScaleFactor;
-        const size = canvasPixelSize * (product.scaleX || 1);
+        const realWorldSize = product.realWorldSize || config.realWorldSize;
+        const realWorldWidth = product.realWorldWidth || config.realWorldWidth;
+        const realWorldHeight = product.realWorldHeight || config.realWorldHeight;
+        
+        // Calculate rendered dimensions
+        let width, height;
+        if (realWorldSize) {
+          width = height = realWorldSize * productScaleFactor;
+        } else if (realWorldWidth && realWorldHeight) {
+          width = realWorldWidth * productScaleFactor;
+          height = realWorldHeight * productScaleFactor;
+        } else {
+          width = config.width || 30;
+          height = config.height || 30;
+        }
         
         // Set colors
         const strokeColor = product.strokeColor || config.stroke || "#000000";
         const fillColor = product.color || config.fill || "#FFFFFF";
         
-        // Draw based on shape type
+        // Get custom shape function
         const shapeType = config.shapeType || "circle";
+        const shapeFunction = getShapeFunction(shapeType);
         
-        if (shapeType === "circle" || shapeType === "downlight" || shapeType === "pendant" || shapeType === "spotlight") {
-          const circle = new Konva.Circle({
-            x: x,
-            y: y,
-            radius: size / 2,
-            fill: fillColor,
-            stroke: strokeColor,
-            strokeWidth: 2,
-          });
-          layer.add(circle);
-        } else if (shapeType === "rect" || shapeType === "wall" || shapeType === "ceiling") {
-          const rect = new Konva.Rect({
-            x: x - size / 2,
-            y: y - size / 2,
-            width: size,
-            height: size,
-            fill: fillColor,
-            stroke: strokeColor,
-            strokeWidth: 2,
-          });
-          layer.add(rect);
-        } else {
-          // Default to circle
-          const circle = new Konva.Circle({
-            x: x,
-            y: y,
-            radius: size / 2,
-            fill: fillColor,
-            stroke: strokeColor,
-            strokeWidth: 2,
-          });
-          layer.add(circle);
-        }
+        // Create a group for the product (to apply position and scale)
+        const productGroup = new Konva.Group({
+          x: x,
+          y: y,
+          rotation: product.rotation || 0,
+          scaleX: product.scaleX || 1,
+          scaleY: product.scaleY || 1,
+        });
+        
+        // Create custom shape using the shape function
+        const customShape = new Konva.Shape({
+          sceneFunc: (context, shape) => shapeFunction(context, shape),
+          fill: fillColor,
+          stroke: strokeColor,
+          strokeWidth: config.strokeWidth || 2,
+          width: width,
+          height: height,
+          // Pass attributes needed by shape functions
+          realWorldSize: realWorldSize,
+          realWorldWidth: realWorldWidth,
+          realWorldHeight: realWorldHeight,
+          scaleFactor: productScaleFactor,
+        });
+        
+        productGroup.add(customShape);
+        layer.add(productGroup);
       });
       
       layer.batchDraw();

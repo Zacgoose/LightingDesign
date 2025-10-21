@@ -266,20 +266,20 @@ const Page = () => {
     const hasChanged =
       backgroundImage !== lastSyncedBackgroundImage.current ||
       backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current;
-    
+
     if (!hasChanged) {
       return; // No changes to sync
     }
-    
+
     // Don't sync while loading layer data - this prevents writing stale state to new layer
     if (isLoadingLayerData.current) {
-      console.log('Background sync skipped - loading layer data');
+      console.log("Background sync skipped - loading layer data");
       return;
     }
-    
-    console.log('Syncing background to layer:', activeLayerIdRef.current, {
+
+    console.log("Syncing background to layer:", activeLayerIdRef.current, {
       hasImage: !!backgroundImage,
-      imageLength: backgroundImage?.length || 0
+      imageLength: backgroundImage?.length || 0,
     });
     updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
     lastSyncedBackgroundImage.current = backgroundImage;
@@ -357,20 +357,20 @@ const Page = () => {
       backgroundImage !== lastSyncedBackgroundImage.current ||
       backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current
     ) {
-      console.log('Forcing background sync before save');
+      console.log("Forcing background sync before save");
       updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
       lastSyncedBackgroundImage.current = backgroundImage;
       lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
     }
 
     // Log layers before stripping to check for corruption
-    console.log('=== SAVE: Layers before stripping ===');
+    console.log("=== SAVE: Layers before stripping ===");
     layers.forEach((layer, idx) => {
       console.log(`Layer ${idx} (${layer.id}):`, {
         name: layer.name,
         hasBackground: !!layer.backgroundImage,
         backgroundLength: layer.backgroundImage?.length || 0,
-        backgroundImageNaturalSize: layer.backgroundImageNaturalSize
+        backgroundImageNaturalSize: layer.backgroundImageNaturalSize,
       });
     });
 
@@ -378,13 +378,13 @@ const Page = () => {
     const strippedLayers = stripLayersForSave(layers);
 
     // Log after stripping
-    console.log('=== SAVE: Layers after stripping ===');
+    console.log("=== SAVE: Layers after stripping ===");
     strippedLayers.forEach((layer, idx) => {
       console.log(`Layer ${idx} (${layer.id}):`, {
         name: layer.name,
         hasBackground: !!layer.backgroundImage,
         backgroundLength: layer.backgroundImage?.length || 0,
-        backgroundImageNaturalSize: layer.backgroundImageNaturalSize
+        backgroundImageNaturalSize: layer.backgroundImageNaturalSize,
       });
     });
 
@@ -497,17 +497,17 @@ const Page = () => {
     // Skip if router query is not ready yet - this prevents loading empty layer data
     // when we're on a page that has an ID in the URL but router.query.id is not yet populated
     if (!router.isReady) {
-      console.log('Layer switch effect skipped - router not ready');
+      console.log("Layer switch effect skipped - router not ready");
       return;
     }
 
     // Skip initial render if design data is still loading
     // This prevents loading the default empty layer before the actual design data arrives
     if (designData.isLoading) {
-      console.log('Layer switch effect skipped - design data still loading');
+      console.log("Layer switch effect skipped - design data still loading");
       return;
     }
-    
+
     // CRITICAL FIX: On page refresh/mount, if we haven't loaded layers yet and there's a design ID,
     // wait for the design to load before initializing the canvas with empty layer data.
     // This prevents the canvas from being initialized with wrong dimensions on refresh.
@@ -516,24 +516,24 @@ const Page = () => {
     // 2. layersVersion is 0 (loadLayers() hasn't been called yet)
     // 3. No layer has been loaded yet (lastLoadedLayerId is null)
     if (id && layersVersion === 0 && lastLoadedLayerId.current === null) {
-      console.log('Layer switch effect skipped - waiting for initial design data to load', {
+      console.log("Layer switch effect skipped - waiting for initial design data to load", {
         id,
         layersVersion,
         lastLoadedLayerId: lastLoadedLayerId.current,
         isLoading: designData.isLoading,
-        isSuccess: designData.isSuccess
+        isSuccess: designData.isSuccess,
       });
       return;
     }
-    
-    console.log('Layer switch effect triggered', {
+
+    console.log("Layer switch effect triggered", {
       activeLayerId,
       lastLoadedLayerId: lastLoadedLayerId.current,
       hasActiveLayer: !!activeLayer,
       layersVersion,
-      condition: activeLayerId !== lastLoadedLayerId.current && activeLayer
+      condition: activeLayerId !== lastLoadedLayerId.current && activeLayer,
     });
-    
+
     if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
       console.log(`Switching to layer ${activeLayerId}`, {
         hasBackgroundImage: !!activeLayer.backgroundImage,
@@ -542,8 +542,8 @@ const Page = () => {
 
       lastLoadedLayerId.current = activeLayerId;
       isLoadingLayerData.current = true;
-      console.log('isLoadingLayerData set to TRUE');
-      
+      console.log("isLoadingLayerData set to TRUE");
+
       // Update activeLayerIdRef immediately to ensure sync effects use correct layer
       activeLayerIdRef.current = activeLayerId;
 
@@ -565,14 +565,14 @@ const Page = () => {
       lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
 
       // Re-enable sync after layer data is loaded
-      console.log('Setting up timeout to re-enable sync in 100ms...');
+      console.log("Setting up timeout to re-enable sync in 100ms...");
       const timer = setTimeout(() => {
         isLoadingLayerData.current = false;
-        console.log('Layer switch complete - sync effects re-enabled');
+        console.log("Layer switch complete - sync effects re-enabled");
       }, 100);
 
       return () => {
-        console.log('Layer switch effect cleanup - clearing timeout');
+        console.log("Layer switch effect cleanup - clearing timeout");
         clearTimeout(timer);
       };
     }
@@ -642,7 +642,7 @@ const Page = () => {
 
   // Unified group transform handler that handles both products and text boxes
   const handleUnifiedGroupTransformEnd = useCallback(() => {
-    console.log('[handleUnifiedGroupTransformEnd] Called', {
+    console.log("[handleUnifiedGroupTransformEnd] Called", {
       hasSelectedIds: !!selectedIds.length,
       hasGroupRef: !!selectionGroupRef.current,
       hasSnapshot: !!selectionSnapshot,
@@ -658,10 +658,8 @@ const Page = () => {
     const groupRotation = group.rotation();
 
     // Extract product IDs and text IDs
-    const productIds = selectedIds.filter(id => !id.startsWith('text-'));
-    const textIds = selectedIds
-      .filter(id => id.startsWith('text-'))
-      .map(id => id.substring(5)); // Remove 'text-' prefix
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5)); // Remove 'text-' prefix
 
     // Helper function for floating-point comparison with tolerance
     const isClose = (a, b, tolerance = 0.0001) => Math.abs(a - b) < tolerance;
@@ -676,7 +674,7 @@ const Page = () => {
       isClose(groupRotation, selectionSnapshot.rotation || 0)
     );
 
-    console.log('[handleUnifiedGroupTransformEnd]', {
+    console.log("[handleUnifiedGroupTransformEnd]", {
       hasTransform,
       groupX,
       groupY,
@@ -691,16 +689,16 @@ const Page = () => {
     });
 
     if (!hasTransform) {
-      console.log('[handleUnifiedGroupTransformEnd] No transform, skipping update');
+      console.log("[handleUnifiedGroupTransformEnd] No transform, skipping update");
       setGroupKey((k) => k + 1);
       return;
     }
 
-    console.log('[handleUnifiedGroupTransformEnd] Applying transform to products and text boxes');
+    console.log("[handleUnifiedGroupTransformEnd] Applying transform to products and text boxes");
 
     // Calculate the rotation delta (how much we've rotated from the snapshot)
     const rotationDelta = groupRotation - (selectionSnapshot.rotation || 0);
-    
+
     // Calculate center movement delta
     const centerDeltaX = groupX - selectionSnapshot.centerX;
     const centerDeltaY = groupY - selectionSnapshot.centerY;
@@ -761,10 +759,14 @@ const Page = () => {
         };
       });
 
-      console.log('[handleUnifiedGroupTransformEnd] Calling updateHistory with transformed products', {
-        productCount: transformedProducts.filter(p => productIds.includes(p.id)).length,
-        firstProductRotation: transformedProducts.find(p => productIds.includes(p.id))?.rotation,
-      });
+      console.log(
+        "[handleUnifiedGroupTransformEnd] Calling updateHistory with transformed products",
+        {
+          productCount: transformedProducts.filter((p) => productIds.includes(p.id)).length,
+          firstProductRotation: transformedProducts.find((p) => productIds.includes(p.id))
+            ?.rotation,
+        },
+      );
 
       updateHistory(transformedProducts);
     }
@@ -812,7 +814,7 @@ const Page = () => {
         // Detect if this is a corner resize (proportional) or side/top resize
         const scaleDiff = Math.abs(groupScaleX - groupScaleY);
         const isCornerResize = scaleDiff < 0.1; // Small difference means corner anchor (proportional)
-        
+
         let newFontSize = original.fontSize || 24;
         let newWidth = original.width || 200;
 
@@ -842,13 +844,13 @@ const Page = () => {
       setTextBoxes(transformedTextBoxes);
     }
 
-    console.log('[handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey');
+    console.log("[handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey");
 
     // Force update transformer
     if (transformerRef.current) {
       transformerRef.current.forceUpdate();
     }
-    
+
     // Force update
     setGroupKey((k) => k + 1);
   }, [
@@ -877,8 +879,8 @@ const Page = () => {
       );
       // Include selected text boxes in copy (extract text IDs from text- prefixed IDs)
       const textIds = selectedIds
-        .filter(id => id.startsWith('text-'))
-        .map(id => id.substring(5)); // Remove 'text-' prefix
+        .filter((id) => id.startsWith("text-"))
+        .map((id) => id.substring(5)); // Remove 'text-' prefix
       const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
       clipboard.current = {
         products: selectedProducts.map((p) => ({ ...p })),
@@ -922,14 +924,14 @@ const Page = () => {
       updateHistory([...products, ...newProducts]);
       setConnectors([...connectors, ...newConnectors]);
       setTextBoxes([...textBoxes, ...newTextBoxes]);
-      
+
       // Select pasted products and text boxes
       const allNewIds = [
         ...newProducts.map((p) => p.id),
-        ...newTextBoxes.map((t) => `text-${t.id}`)
+        ...newTextBoxes.map((t) => `text-${t.id}`),
       ];
       setSelectedIds(allNewIds);
-      
+
       // Set selectedTextId for single text box operations
       if (newTextBoxes.length === 1 && newProducts.length === 0) {
         setSelectedTextId(newTextBoxes[0].id);
@@ -941,8 +943,8 @@ const Page = () => {
     onDelete: () => {
       // Delete selected text boxes (from text- prefixed IDs in selectedIds)
       const textIds = selectedIds
-        .filter(id => id.startsWith('text-'))
-        .map(id => id.substring(5));
+        .filter((id) => id.startsWith("text-"))
+        .map((id) => id.substring(5));
       if (textIds.length > 0) {
         setTextBoxes(textBoxes.filter((t) => !textIds.includes(t.id)));
         setSelectedTextId(null);
@@ -956,10 +958,7 @@ const Page = () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
       // Select all products and text boxes
-      const allIds = [
-        ...products.map((p) => p.id),
-        ...textBoxes.map((t) => `text-${t.id}`)
-      ];
+      const allIds = [...products.map((p) => p.id), ...textBoxes.map((t) => `text-${t.id}`)];
       setSelectedIds(allIds);
       forceGroupUpdate();
     },
@@ -991,50 +990,138 @@ const Page = () => {
   const handleUploadFloorPlan = useCallback(() => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
-    input.onchange = (e) => {
+    input.accept = "image/*,application/pdf";
+    input.onchange = async (e) => {
       const file = e.target.files[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const img = new window.Image();
-          img.onload = () => {
-            setBackgroundImage(ev.target.result);
-            setBackgroundImageNaturalSize({ width: img.width, height: img.height });
-            
+        // Check if the file is a PDF
+        if (file.type === "application/pdf") {
+          try {
+            // Dynamically import pdf-lib
+            const { PDFDocument } = await import("pdf-lib");
+
+            // Read the PDF file
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfDoc = await PDFDocument.load(arrayBuffer);
+
+            // Get the first page
+            const pages = pdfDoc.getPages();
+            if (pages.length === 0) {
+              console.error("PDF has no pages");
+              return;
+            }
+
+            const firstPage = pages[0];
+            const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
+
+            // Create a canvas to render the PDF page
+            const canvas = document.createElement("canvas");
+            const scale = 2; // Render at 2x for better quality
+            canvas.width = pdfWidth * scale;
+            canvas.height = pdfHeight * scale;
+            const context = canvas.getContext("2d");
+
+            // Use pdfjs-dist to render the PDF page
+            const pdfjsLib = await import("pdfjs-dist");
+
+            // Set worker source
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+            // Load the PDF with pdfjs
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            const pdf = await loadingTask.promise;
+            const page = await pdf.getPage(1);
+
+            // Render the page
+            const viewport = page.getViewport({ scale });
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            await page.render({
+              canvasContext: context,
+              viewport: viewport,
+            }).promise;
+
+            // Convert canvas to data URL
+            const dataUrl = canvas.toDataURL("image/png");
+
+            // Set the background image
+            setBackgroundImage(dataUrl);
+            setBackgroundImageNaturalSize({ width: viewport.width, height: viewport.height });
+
             // Auto-zoom to fit the background image in the viewport
-            // The background image is first scaled to fit within the canvas dimensions
-            const imageScaleX = canvasWidth / img.width;
-            const imageScaleY = canvasHeight / img.height;
+            const imageScaleX = canvasWidth / viewport.width;
+            const imageScaleY = canvasHeight / viewport.height;
             const imageScale = Math.min(imageScaleX, imageScaleY);
-            
-            // The actual size of the image in canvas coordinates after scaling
-            const scaledImageWidth = img.width * imageScale;
-            const scaledImageHeight = img.height * imageScale;
-            
-            // Now calculate what zoom level we need so that the scaled image
-            // fills approximately 90% of the viewport (leaving 10% margin)
-            const padding = 0.9; // Fill 90% of viewport
+
+            const scaledImageWidth = viewport.width * imageScale;
+            const scaledImageHeight = viewport.height * imageScale;
+
+            const padding = 0.9;
             const zoomX = (viewportWidth * padding) / scaledImageWidth;
             const zoomY = (viewportHeight * padding) / scaledImageHeight;
-            
-            // Use the smaller zoom to ensure the entire image fits within viewport
+
             const autoZoom = Math.min(zoomX, zoomY);
-            
-            // Constrain zoom to reasonable bounds (0.01 to 100)
             const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
             setStageScale(constrainedZoom);
-            
-            // Center the canvas to show the background image in the middle of viewport
+
             handleResetView();
+          } catch (error) {
+            console.error("Error processing PDF:", error);
+            alert("Failed to load PDF file. Please try an image file instead.");
+          }
+        } else {
+          // Handle image files (existing logic)
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const img = new window.Image();
+            img.onload = () => {
+              setBackgroundImage(ev.target.result);
+              setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+
+              // Auto-zoom to fit the background image in the viewport
+              // The background image is first scaled to fit within the canvas dimensions
+              const imageScaleX = canvasWidth / img.width;
+              const imageScaleY = canvasHeight / img.height;
+              const imageScale = Math.min(imageScaleX, imageScaleY);
+
+              // The actual size of the image in canvas coordinates after scaling
+              const scaledImageWidth = img.width * imageScale;
+              const scaledImageHeight = img.height * imageScale;
+
+              // Now calculate what zoom level we need so that the scaled image
+              // fills approximately 90% of the viewport (leaving 10% margin)
+              const padding = 0.9; // Fill 90% of viewport
+              const zoomX = (viewportWidth * padding) / scaledImageWidth;
+              const zoomY = (viewportHeight * padding) / scaledImageHeight;
+
+              // Use the smaller zoom to ensure the entire image fits within viewport
+              const autoZoom = Math.min(zoomX, zoomY);
+
+              // Constrain zoom to reasonable bounds (0.01 to 100)
+              const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
+              setStageScale(constrainedZoom);
+
+              // Center the canvas to show the background image in the middle of viewport
+              handleResetView();
+            };
+            img.src = ev.target.result;
           };
-          img.src = ev.target.result;
-        };
-        reader.readAsDataURL(file);
+          reader.readAsDataURL(file);
+        }
       }
     };
     input.click();
-  }, [setBackgroundImage, setBackgroundImageNaturalSize, canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale, handleResetView]);
+  }, [
+    setBackgroundImage,
+    setBackgroundImageNaturalSize,
+    canvasWidth,
+    canvasHeight,
+    viewportWidth,
+    viewportHeight,
+    setStageScale,
+    handleResetView,
+  ]);
 
   const handleMeasure = useCallback(() => {
     setMeasureMode(true);
@@ -1112,7 +1199,7 @@ const Page = () => {
         contextMenus.handleCloseContextMenu();
         return;
       }
-      
+
       // Handle product assignment
       const transformed = applyGroupTransform();
       const baseProducts = transformed || products;
@@ -1122,7 +1209,16 @@ const Page = () => {
       updateHistory(newProducts);
       contextMenus.handleCloseContextMenu();
     },
-    [products, selectedIds, selectedConnectorId, connectors, applyGroupTransform, updateHistory, contextMenus, setConnectors],
+    [
+      products,
+      selectedIds,
+      selectedConnectorId,
+      connectors,
+      applyGroupTransform,
+      updateHistory,
+      contextMenus,
+      setConnectors,
+    ],
   );
 
   const determineStrokeColorForSku = useCallback(
@@ -1161,74 +1257,86 @@ const Page = () => {
     contextMenus.handleCloseContextMenu();
   }, [contextMenus]);
 
-  const handleProductAdd = useCallback((product) => {
-    // Handle swap mode - replace selected products with new product
-    if (swapMode && selectedIds.length > 0) {
-      const transformed = applyGroupTransform();
-      const baseProducts = transformed || products;
-      
-      // Get product type configuration for real-world dimensions
-      const productType = product.product_type_unigram?.toLowerCase() || "default";
-      const config = productTypesConfig[productType] || productTypesConfig.default;
-      
-      // Replace each selected product with the new product template
-      const newProducts = baseProducts.map((p) => {
-        if (selectedIds.includes(p.id)) {
-          // Create new product from template but preserve position, rotation, scale, etc.
-          const strokeColor = determineStrokeColorForSku(product.sku);
-          return {
-            ...p,
-            name: product.name,
-            sku: product.sku,
-            brand: product.brand,
-            product_type: product.product_type_unigram,
-            product_type_unigram: product.product_type_unigram,
-            price: parseFloat(product.price) || 0,
-            msrp: parseFloat(product.msrp) || 0,
-            imageUrl: product.imageUrl,
-            thumbnailUrl: product.thumbnailImageUrl,
-            thumbnailImageUrl: product.thumbnailImageUrl,
-            url: product.url, // Website link
-            category: product.top_web_category,
-            categories: product.category_hierarchy || [],
-            description: product.short_description,
-            colors: product.item_colours || [],
-            inStock: product.ss_in_stock === "1",
-            stockQty: parseInt(product.stock_qty) || 0,
-            metadata: product,
-            strokeColor: strokeColor,
-            // Update real-world dimensions for the new product type
-            realWorldSize: config.realWorldSize,
-            realWorldWidth: config.realWorldWidth,
-            realWorldHeight: config.realWorldHeight,
-            // Preserve the scaleFactor from the original product (or use current layer scale)
-            scaleFactor: p.scaleFactor || scaleFactor,
-          };
-        }
-        return p;
+  const handleProductAdd = useCallback(
+    (product) => {
+      // Handle swap mode - replace selected products with new product
+      if (swapMode && selectedIds.length > 0) {
+        const transformed = applyGroupTransform();
+        const baseProducts = transformed || products;
+
+        // Get product type configuration for real-world dimensions
+        const productType = product.product_type_unigram?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
+
+        // Replace each selected product with the new product template
+        const newProducts = baseProducts.map((p) => {
+          if (selectedIds.includes(p.id)) {
+            // Create new product from template but preserve position, rotation, scale, etc.
+            const strokeColor = determineStrokeColorForSku(product.sku);
+            return {
+              ...p,
+              name: product.name,
+              sku: product.sku,
+              brand: product.brand,
+              product_type: product.product_type_unigram,
+              product_type_unigram: product.product_type_unigram,
+              price: parseFloat(product.price) || 0,
+              msrp: parseFloat(product.msrp) || 0,
+              imageUrl: product.imageUrl,
+              thumbnailUrl: product.thumbnailImageUrl,
+              thumbnailImageUrl: product.thumbnailImageUrl,
+              url: product.url, // Website link
+              category: product.top_web_category,
+              categories: product.category_hierarchy || [],
+              description: product.short_description,
+              colors: product.item_colours || [],
+              inStock: product.ss_in_stock === "1",
+              stockQty: parseInt(product.stock_qty) || 0,
+              metadata: product,
+              strokeColor: strokeColor,
+              // Update real-world dimensions for the new product type
+              realWorldSize: config.realWorldSize,
+              realWorldWidth: config.realWorldWidth,
+              realWorldHeight: config.realWorldHeight,
+              // Preserve the scaleFactor from the original product (or use current layer scale)
+              scaleFactor: p.scaleFactor || scaleFactor,
+            };
+          }
+          return p;
+        });
+
+        updateHistory(newProducts);
+        setSwapMode(false);
+        setProductDrawerVisible(false);
+        setGroupKey((k) => k + 1);
+        return;
+      }
+
+      // Normal add mode - enter placement mode with the selected product
+      setPlacementMode({
+        template: product,
       });
-      
-      updateHistory(newProducts);
-      setSwapMode(false);
+      setSelectedTool("placement");
       setProductDrawerVisible(false);
-      setGroupKey(k => k + 1);
-      return;
-    }
-    
-    // Normal add mode - enter placement mode with the selected product
-    setPlacementMode({
-      template: product,
-    });
-    setSelectedTool("placement");
-    setProductDrawerVisible(false);
-    pendingInsertPosition.current = null;
-    setSwapMode(false);
-  }, [swapMode, selectedIds, products, applyGroupTransform, updateHistory, determineStrokeColorForSku, setGroupKey, scaleFactor]);
+      pendingInsertPosition.current = null;
+      setSwapMode(false);
+    },
+    [
+      swapMode,
+      selectedIds,
+      products,
+      applyGroupTransform,
+      updateHistory,
+      determineStrokeColorForSku,
+      setGroupKey,
+      scaleFactor,
+    ],
+  );
 
   const createProductFromTemplate = useCallback(
     (template, x, y) => {
       const strokeColor = determineStrokeColorForSku(template.sku);
-      
+
       // Get product type configuration for real-world dimensions
       const productType = template.product_type_unigram?.toLowerCase() || "default";
       const config = productTypesConfig[productType] || productTypesConfig.default;
@@ -1329,7 +1437,7 @@ const Page = () => {
         });
       }
     },
-    [stagePosition, stageScale, DRAG_THRESHOLD]
+    [stagePosition, stageScale, DRAG_THRESHOLD],
   );
 
   const handleCanvasMouseMove = useCallback(
@@ -1385,7 +1493,7 @@ const Page = () => {
           sublayerId: activeLayer?.defaultSublayerId || null,
           scaleFactor: scaleFactor, // Store scaleFactor at creation time, similar to products
         };
-        
+
         // Add the text box and open the dialog immediately
         setTextBoxes([...textBoxes, newTextBox]);
         setPendingTextBoxId(newTextBox.id);
@@ -1403,24 +1511,35 @@ const Page = () => {
         setSelectedConnectorId(null);
       }
     },
-    [selectedTool, textBoxes, stagePosition, stageScale, theme, setSelectedIds, setSelectedConnectorId]
+    [
+      selectedTool,
+      textBoxes,
+      stagePosition,
+      stageScale,
+      theme,
+      setSelectedIds,
+      setSelectedConnectorId,
+    ],
   );
 
-  const handleTextDoubleClick = useCallback((e, textId) => {
-    const textBox = textBoxes.find((t) => t.id === textId);
-    if (textBox) {
-      setPendingTextBoxId(textId);
-      setTextDialogValue(textBox.text);
-      setTextDialogFormatting({
-        fontSize: textBox.fontSize || 24,
-        fontFamily: textBox.fontFamily || "Arial",
-        fontStyle: textBox.fontStyle || "normal",
-        textDecoration: textBox.textDecoration || "",
-        color: textBox.color || "#000000",
-      });
-      setTextDialogOpen(true);
-    }
-  }, [textBoxes]);
+  const handleTextDoubleClick = useCallback(
+    (e, textId) => {
+      const textBox = textBoxes.find((t) => t.id === textId);
+      if (textBox) {
+        setPendingTextBoxId(textId);
+        setTextDialogValue(textBox.text);
+        setTextDialogFormatting({
+          fontSize: textBox.fontSize || 24,
+          fontFamily: textBox.fontFamily || "Arial",
+          fontStyle: textBox.fontStyle || "normal",
+          textDecoration: textBox.textDecoration || "",
+          color: textBox.color || "#000000",
+        });
+        setTextDialogOpen(true);
+      }
+    },
+    [textBoxes],
+  );
 
   const handleTextDialogConfirm = useCallback(
     (formattingData) => {
@@ -1435,36 +1554,36 @@ const Page = () => {
           const isItalic = formattingData.fontStyle?.includes("italic");
           const fontStyle = isItalic ? "italic" : "normal";
           const fontWeight = isBold ? "bold" : "normal";
-          
+
           // Create an offscreen canvas for measuring
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
           // Match the Konva.Text style exactly
           ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-          
+
           // Split into lines and measure each to get the widest line
-          const lines = newText.split('\n');
+          const lines = newText.split("\n");
           const maxWidth = lines.reduce((max, line) => {
             const w = ctx.measureText(line).width;
             return w > max ? w : max;
           }, 0);
-          
+
           // Measure height using the full text metrics
           const metrics = ctx.measureText(newText);
           const lineHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-          
+
           // Add padding to prevent text cutoff
           const padding = 10;
           const width = maxWidth + padding;
-          const height = (lineHeight * lines.length) + padding;
-          
+          const height = lineHeight * lines.length + padding;
+
           // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
           setTextBoxes((boxes) =>
-            boxes.map((box) => 
-              box.id === pendingTextBoxId 
-                ? { 
-                    ...box, 
+            boxes.map((box) =>
+              box.id === pendingTextBoxId
+                ? {
+                    ...box,
                     text: newText,
                     fontSize: formattingData.fontSize,
                     fontFamily: formattingData.fontFamily,
@@ -1473,9 +1592,9 @@ const Page = () => {
                     color: formattingData.color,
                     width: width, // Use canvas measureText width
                     height: height, // Use canvas measureText height
-                  } 
-                : box
-            )
+                  }
+                : box,
+            ),
           );
         } else {
           // User confirmed with empty text - remove the text box
@@ -1486,7 +1605,7 @@ const Page = () => {
       }
       setTextDialogOpen(false);
     },
-    [pendingTextBoxId]
+    [pendingTextBoxId],
   );
 
   const handleTextDialogClose = useCallback(() => {
@@ -1504,34 +1623,40 @@ const Page = () => {
 
   const handleTextChange = useCallback((updatedTextBox) => {
     setTextBoxes((boxes) =>
-      boxes.map((box) => (box.id === updatedTextBox.id ? updatedTextBox : box))
+      boxes.map((box) => (box.id === updatedTextBox.id ? updatedTextBox : box)),
     );
   }, []);
 
-  const handleTextSelect = useCallback((textId) => {
-    // Clear product selections and set only this text
-    setSelectedTextId(textId);
-    setSelectedIds([`text-${textId}`]);
-    setSelectedConnectorId(null);
-    forceGroupUpdate();
-  }, [setSelectedIds, setSelectedConnectorId, forceGroupUpdate]);
+  const handleTextSelect = useCallback(
+    (textId) => {
+      // Clear product selections and set only this text
+      setSelectedTextId(textId);
+      setSelectedIds([`text-${textId}`]);
+      setSelectedConnectorId(null);
+      forceGroupUpdate();
+    },
+    [setSelectedIds, setSelectedConnectorId, forceGroupUpdate],
+  );
 
-  const handleTextContextMenu = useCallback((e, textId) => {
-    e.evt.preventDefault();
-    e.cancelBubble = true;
-    
-    setSelectedTextId(textId);
-    setSelectedIds([`text-${textId}`]); // Keep text in selection for visual feedback
-    setSelectedConnectorId(null);
-    
-    // Use screen coordinates (clientX/Y) like product context menu
-    contextMenus.setContextMenu({
-      type: "text",
-      x: e.evt.clientX,
-      y: e.evt.clientY,
-      textId: textId,
-    });
-  }, [setSelectedIds, setSelectedConnectorId, contextMenus]);
+  const handleTextContextMenu = useCallback(
+    (e, textId) => {
+      e.evt.preventDefault();
+      e.cancelBubble = true;
+
+      setSelectedTextId(textId);
+      setSelectedIds([`text-${textId}`]); // Keep text in selection for visual feedback
+      setSelectedConnectorId(null);
+
+      // Use screen coordinates (clientX/Y) like product context menu
+      contextMenus.setContextMenu({
+        type: "text",
+        x: e.evt.clientX,
+        y: e.evt.clientY,
+        textId: textId,
+      });
+    },
+    [setSelectedIds, setSelectedConnectorId, contextMenus],
+  );
 
   const handleTextEdit = useCallback(() => {
     if (selectedTextId) {
@@ -1560,7 +1685,7 @@ const Page = () => {
           const currentStyle = box.fontStyle || "normal";
           const isBold = currentStyle.includes("bold");
           const isItalic = currentStyle.includes("italic");
-          
+
           let newStyle;
           if (isBold && isItalic) {
             newStyle = "italic";
@@ -1571,9 +1696,9 @@ const Page = () => {
           } else {
             newStyle = "bold";
           }
-          
+
           return { ...box, fontStyle: newStyle };
-        })
+        }),
       );
     }
     contextMenus.handleCloseContextMenu();
@@ -1587,7 +1712,7 @@ const Page = () => {
           const currentStyle = box.fontStyle || "normal";
           const isBold = currentStyle.includes("bold");
           const isItalic = currentStyle.includes("italic");
-          
+
           let newStyle;
           if (isBold && isItalic) {
             newStyle = "bold";
@@ -1598,9 +1723,9 @@ const Page = () => {
           } else {
             newStyle = "italic";
           }
-          
+
           return { ...box, fontStyle: newStyle };
-        })
+        }),
       );
     }
     contextMenus.handleCloseContextMenu();
@@ -1613,7 +1738,7 @@ const Page = () => {
           if (box.id !== selectedTextId) return box;
           const currentDecoration = box.textDecoration || "";
           const hasUnderline = currentDecoration.includes("underline");
-          
+
           let newDecoration;
           if (hasUnderline) {
             // Remove underline
@@ -1622,36 +1747,42 @@ const Page = () => {
             // Add underline
             newDecoration = currentDecoration ? `${currentDecoration} underline` : "underline";
           }
-          
+
           return { ...box, textDecoration: newDecoration };
-        })
+        }),
       );
     }
     contextMenus.handleCloseContextMenu();
   }, [selectedTextId, contextMenus]);
 
-  const handleTextFontSize = useCallback((fontSize) => {
-    if (selectedTextId) {
-      setTextBoxes((boxes) =>
-        boxes.map((box) => (box.id === selectedTextId ? { ...box, fontSize } : box))
-      );
-    }
-    contextMenus.handleCloseContextMenu();
-  }, [selectedTextId, contextMenus]);
+  const handleTextFontSize = useCallback(
+    (fontSize) => {
+      if (selectedTextId) {
+        setTextBoxes((boxes) =>
+          boxes.map((box) => (box.id === selectedTextId ? { ...box, fontSize } : box)),
+        );
+      }
+      contextMenus.handleCloseContextMenu();
+    },
+    [selectedTextId, contextMenus],
+  );
 
-  const handleTextColorChange = useCallback((color) => {
-    if (selectedTextId) {
-      setTextBoxes((boxes) =>
-        boxes.map((box) => (box.id === selectedTextId ? { ...box, color } : box))
-      );
-    }
-  }, [selectedTextId]);
+  const handleTextColorChange = useCallback(
+    (color) => {
+      if (selectedTextId) {
+        setTextBoxes((boxes) =>
+          boxes.map((box) => (box.id === selectedTextId ? { ...box, color } : box)),
+        );
+      }
+    },
+    [selectedTextId],
+  );
 
   // Drag-to-select handlers
   const handleSelectionStart = useCallback(
     (e) => {
       if (selectedTool !== "select" || e.evt.button !== 0) return;
-      
+
       const clickedOnEmpty = e.target === e.target.getStage();
       if (!clickedOnEmpty) return;
 
@@ -1666,7 +1797,7 @@ const Page = () => {
       hasDraggedRef.current = false;
       // Don't set isSelecting yet - wait for actual movement
     },
-    [selectedTool, stagePosition, stageScale]
+    [selectedTool, stagePosition, stageScale],
   );
 
   const handleSelectionEnd = useCallback(() => {
@@ -1689,12 +1820,16 @@ const Page = () => {
     const selectedProducts = products.filter((product) => {
       const productType = product.product_type?.toLowerCase() || "default";
       const config = productTypesConfig[productType] || productTypesConfig.default;
-      
+
       // Calculate product bounds using its real-world size
       const productScaleFactor = product.scaleFactor || scaleFactor;
-      const pixelWidth = ((config.realWorldWidth || config.realWorldSize) / productScaleFactor) * (product.scaleX || 1);
-      const pixelHeight = ((config.realWorldHeight || config.realWorldSize) / productScaleFactor) * (product.scaleY || 1);
-      
+      const pixelWidth =
+        ((config.realWorldWidth || config.realWorldSize) / productScaleFactor) *
+        (product.scaleX || 1);
+      const pixelHeight =
+        ((config.realWorldHeight || config.realWorldSize) / productScaleFactor) *
+        (product.scaleY || 1);
+
       // Calculate product bounding box (considering it's centered)
       const productX1 = product.x - pixelWidth / 2;
       const productY1 = product.y - pixelHeight / 2;
@@ -1711,11 +1846,11 @@ const Page = () => {
       const textScaleFactor = textBox.scaleFactor || scaleFactor;
       const baseFontSize = textBox.fontSize || 24;
       const renderedFontSize = baseFontSize * (textScaleFactor / 100);
-      
+
       // Account for text box scale transforms
       const textWidth = (textBox.width || 200) * (textBox.scaleX || 1);
       const textHeight = renderedFontSize * 1.2 * (textBox.scaleY || 1); // Approximate height with line height multiplier
-      
+
       const textX1 = textBox.x;
       const textY1 = textBox.y;
       const textX2 = textBox.x + textWidth;
@@ -1729,7 +1864,7 @@ const Page = () => {
       // Combine product IDs and text box IDs (with text- prefix)
       const allSelectedIds = [
         ...selectedProducts.map((p) => p.id),
-        ...selectedTexts.map((t) => `text-${t.id}`)
+        ...selectedTexts.map((t) => `text-${t.id}`),
       ];
       setSelectedIds(allSelectedIds);
       // Also set selectedTextId for single text box operations
@@ -1752,7 +1887,7 @@ const Page = () => {
       // Store drag state before handleSelectionEnd clears it
       const wasDragging = hasDraggedRef.current;
       const hadSelectionStart = selectionStartRef.current !== null;
-      
+
       // Handle selection end (this will clear the refs)
       handleSelectionEnd();
 
@@ -1771,7 +1906,7 @@ const Page = () => {
       selectionStartRef.current = null;
       hasDraggedRef.current = false;
     },
-    [selectedTool, handleSelectionEnd, applyGroupTransform, updateHistory, clearSelection]
+    [selectedTool, handleSelectionEnd, applyGroupTransform, updateHistory, clearSelection],
   );
 
   const checkDeselect = useCallback(
@@ -1872,7 +2007,15 @@ const Page = () => {
       }
       contextMenus.handleCloseContextMenu();
     },
-    [contextMenus, products, applyGroupTransform, updateHistory, setSelectedIds, setGroupKey, scaleFactor],
+    [
+      contextMenus,
+      products,
+      applyGroupTransform,
+      updateHistory,
+      setSelectedIds,
+      setGroupKey,
+      scaleFactor,
+    ],
   );
 
   const handleExport = useCallback(() => {

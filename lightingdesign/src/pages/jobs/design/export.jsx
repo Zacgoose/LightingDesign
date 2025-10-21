@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   Box,
   Container,
@@ -26,7 +26,11 @@ import Link from "next/link";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Stage, Layer, Rect, Circle, Line, Text as KonvaText, Group } from "react-konva";
+import { getShapeFunction } from "/src/components/designer/productShapes";
+import Konva from 'konva';
+import 'svg2pdf.js';
 import productTypesConfig from "/src/data/productTypes.json";
+import { ProductShapes } from "/src/components/designer/productShapes";
 
 // Paper size definitions (dimensions in mm)
 const PAPER_SIZES = [
@@ -495,114 +499,256 @@ const Page = () => {
       }
     });
     
-    // Draw products
-    products.forEach((product, idx) => {
-      const productType = product.product_type?.toLowerCase() || "default";
-      const config = productTypesConfig[productType] || productTypesConfig.default;
-      
-      // Convert product position from canvas coordinates to export region coordinates
-      const x = offsetX + (product.x - contentOffsetX) * scale;
-      const y = offsetY + (product.y - contentOffsetY) * scale;
-      
-      // Calculate product size
-      const productScaleFactor = product.scaleFactor || scaleFactor;
-      const realWorldSize = config.realWorldSize || config.realWorldWidth || 1.0;
-      
-      // Size in canvas pixels (scaleFactor is pixels per meter)
-      const canvasPixelSize = realWorldSize * productScaleFactor;
-      
-      // Apply product's scale and convert to PDF coordinates
-      const pdfSize = canvasPixelSize * (product.scaleX || 1) * scale;
-      
-      // Ensure minimum visible size in PDF (at least 2mm)
-      const minSize = 2;
-      const size = Math.max(pdfSize, minSize);
-      
-      if (idx < 3) {
-        console.log(`Product ${idx} (${product.name || 'unnamed'}):`, {
-          canvasPosition: { x: product.x, y: product.y },
-          pdfPosition: { x, y },
-          contentOffset: { x: contentOffsetX, y: contentOffsetY },
-          realWorldSize,
-          productScaleFactor,
-          canvasPixelSize,
-          pdfSize,
-          finalSize: size,
-          type: productType,
-        });
-      }
-      
-      // Draw based on shape type
-      const shapeType = config.shapeType || "circle";
-      
-      // Set colors
-      const strokeColor = product.strokeColor || config.stroke || "#000000";
-      const fillColor = product.color || config.fill || "#FFFFFF";
-      
-      // Parse hex colors to RGB
-      const hexToRgb = (hex) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16)
-        } : { r: 0, g: 0, b: 0 };
-      };
-      
-      const stroke = hexToRgb(strokeColor);
-      const fill = hexToRgb(fillColor);
-      
-      pdf.setDrawColor(stroke.r, stroke.g, stroke.b);
-      pdf.setFillColor(fill.r, fill.g, fill.b);
-      pdf.setLineWidth(0.3);
-      
-      if (shapeType === "circle" || shapeType === "downlight" || shapeType === "pendant" || shapeType === "spotlight") {
-        pdf.circle(x, y, size / 2, "FD");
-      } else if (shapeType === "rect" || shapeType === "wall" || shapeType === "ceiling") {
-        pdf.rect(x - size / 2, y - size / 2, size, size, "FD");
-      } else if (shapeType === "triangle") {
-        // Draw triangle using lines
-        const height = size * Math.sqrt(3) / 2;
-        pdf.setFillColor(fill.r, fill.g, fill.b);
-        pdf.setDrawColor(stroke.r, stroke.g, stroke.b);
-        
-        // Define triangle points
-        const points = [
-          { x: x, y: y - height / 2 },
-          { x: x - size / 2, y: y + height / 2 },
-          { x: x + size / 2, y: y + height / 2 }
-        ];
-        
-        // Draw filled triangle
-        pdf.lines([[points[1].x - points[0].x, points[1].y - points[0].y], 
-                   [points[2].x - points[1].x, points[2].y - points[1].y],
-                   [points[0].x - points[2].x, points[0].y - points[2].y]], 
-                   points[0].x, points[0].y, [1, 1], 'FD');
-      } else {
-        // Default to circle
-        pdf.circle(x, y, size / 2, "FD");
-      }
-    });
-    
-    console.log(`Rendered ${products.length} products and ${connectors.length} connectors to PDF`);
-  };
+    // Create ONE Konva stage for the entire layer (not per product!)
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-10000px';
+    container.style.top = '-10000px';
+    container.style.width = `${Math.max(1, Math.round(exportWidth))}px`;
+    container.style.height = `${Math.max(1, Math.round(exportHeight))}px`;
+    document.body.appendChild(container);
 
-  // DEBUG helper - validates mapping of canvas coords to PDF coordinates
-  // Usage: call validateMapping() in dev to check coordinate transforms for a sample product
-  const validateMapping = (options) => {
-    const { products, drawingArea, canvasSize } = options;
-    // Use a fake export region (full canvas fallback)
-    const exportWidth = canvasSize.width;
-    const exportHeight = canvasSize.height;
-    const scale = Math.min(drawingArea.width / exportWidth, drawingArea.height / exportHeight) * 0.95;
-    const offsetX = drawingArea.x + (drawingArea.width - exportWidth * scale) / 2;
-    const offsetY = drawingArea.y + (drawingArea.height - exportHeight * scale) / 2;
-    console.log('[validateMapping] scale, offset', { scale, offsetX, offsetY });
-    products.slice(0, 3).forEach((p, idx) => {
-      const x = offsetX + (p.x - (-exportWidth / 2)) * scale;
-      const y = offsetY + (p.y - (-exportHeight / 2)) * scale;
-      console.log(`[validateMapping] prod ${idx}`, { id: p.id, canvas: { x: p.x, y: p.y }, pdf: { x, y } });
+    const stage = new Konva.Stage({ 
+      container, 
+      width: Math.max(1, Math.round(exportWidth)), 
+      height: Math.max(1, Math.round(exportHeight)), 
+      listening: false 
     });
+    const layer = new Konva.Layer();
+    stage.add(layer);
+
+    // Add background if present (once per layer)
+    if (backgroundImage && backgroundImageNaturalSize) {
+      try {
+        const normalizedDataUrl = await new Promise((resolve, reject) => {
+          try {
+            const img = new window.Image();
+            img.onload = () => {
+              try {
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, Math.round(exportWidth));
+                canvas.height = Math.max(1, Math.round(exportHeight));
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/png'));
+              } catch (err) { reject(err); }
+            };
+            img.onerror = (err) => reject(err);
+            img.src = backgroundImage;
+          } catch (err) { reject(err); }
+        });
+
+        const bgImg = new window.Image();
+        await new Promise((resolve, reject) => { 
+          bgImg.onload = resolve; 
+          bgImg.onerror = reject; 
+          bgImg.src = normalizedDataUrl; 
+        });
+        const konvaBg = new Konva.Image({ 
+          image: bgImg, 
+          x: 0, 
+          y: 0, 
+          width: exportWidth, 
+          height: exportHeight, 
+          listening: false 
+        });
+        layer.add(konvaBg);
+      } catch (err) {
+        console.warn('Failed to load background for export:', err);
+      }
+    }
+
+    // Add connectors (once per layer)
+    connectors.forEach((connector) => {
+      const fromProduct = products.find((p) => p.id === connector.from);
+      const toProduct = products.find((p) => p.id === connector.to);
+      if (!fromProduct || !toProduct) return;
+      const x1 = fromProduct.x - contentOffsetX;
+      const y1 = fromProduct.y - contentOffsetY;
+      const x2 = toProduct.x - contentOffsetX;
+      const y2 = toProduct.y - contentOffsetY;
+      const line = new Konva.Line({ 
+        points: [x1, y1, x2, y2], 
+        stroke: connector.strokeColor || '#6495ed', 
+        strokeWidth: 2, 
+        listening: false 
+      });
+      layer.add(line);
+    });
+
+    // Add ALL products to the stage
+    for (let pIndex = 0; pIndex < products.length; pIndex++) {
+      const prod = products[pIndex];
+      const productType = prod.product_type?.toLowerCase() || 'default';
+      const configP = productTypesConfig[productType] || productTypesConfig.default;
+      const scaleFactorP = prod.scaleFactor || scaleFactor;
+      const realWorldSizeP = prod.realWorldSize || configP.realWorldSize;
+      const realWorldWidthP = prod.realWorldWidth || configP.realWorldWidth;
+      const realWorldHeightP = prod.realWorldHeight || configP.realWorldHeight;
+
+      let renderedWidth, renderedHeight;
+      if (realWorldSizeP) {
+        renderedWidth = renderedHeight = realWorldSizeP * scaleFactorP;
+      } else if (realWorldWidthP && realWorldHeightP) {
+        renderedWidth = realWorldWidthP * scaleFactorP;
+        renderedHeight = realWorldHeightP * scaleFactorP;
+      } else {
+        renderedWidth = configP.width || 30;
+        renderedHeight = configP.height || 30;
+      }
+
+      const groupX = prod.x - contentOffsetX;
+      const groupY = prod.y - contentOffsetY;
+      const group = new Konva.Group({ 
+        x: groupX, 
+        y: groupY, 
+        rotation: prod.rotation || 0, 
+        scaleX: prod.scaleX || 1, 
+        scaleY: prod.scaleY || 1, 
+        listening: false 
+      });
+
+      const shapeFn = getShapeFunction(productType);
+      const shape = new Konva.Shape({
+        sceneFunc: (context, shapeNode) => shapeFn(context, shapeNode),
+        fill: prod.color || configP.fill,
+        stroke: prod.strokeColor || configP.stroke,
+        strokeWidth: (configP.strokeWidth || 1) + 1,
+        width: renderedWidth,
+        height: renderedHeight,
+        listening: false,
+      });
+      shape.setAttr('scaleFactor', renderedWidth / (realWorldSizeP || realWorldWidthP || 1));
+      shape.setAttr('realWorldSize', realWorldSizeP);
+      shape.setAttr('realWorldWidth', realWorldWidthP);
+      shape.setAttr('realWorldHeight', realWorldHeightP);
+
+      group.add(shape);
+
+      // Text labels
+      const maxDimensionP = Math.max(renderedWidth, renderedHeight);
+      const baselineDimensionP = 50;
+      const textScaleP = maxDimensionP / baselineDimensionP;
+      const skuFontSize = Math.max(11 * textScaleP, 8);
+      const nameFontSize = Math.max(10 * textScaleP, 7);
+      const textWidth = 120 * textScaleP;
+      const skuYOffset = -(maxDimensionP / 2 + 20 * textScaleP);
+      const textYOffset = maxDimensionP / 2 + 10 * textScaleP;
+
+      if (prod.sku) {
+        const skuText = new Konva.Text({ 
+          text: prod.sku, 
+          fontSize: skuFontSize, 
+          fill: '#000', 
+          fontStyle: 'bold', 
+          align: 'center', 
+          width: textWidth, 
+          x: -textWidth / 2, 
+          y: skuYOffset, 
+          listening: false 
+        });
+        group.add(skuText);
+      }
+      
+      const label = prod.customLabel || prod.name;
+      if (label) {
+        const labelText = new Konva.Text({ 
+          text: label, 
+          fontSize: nameFontSize, 
+          fill: '#666', 
+          align: 'center', 
+          width: textWidth, 
+          x: -textWidth / 2, 
+          y: textYOffset, 
+          listening: false 
+        });
+        group.add(labelText);
+      }
+
+      // Quantity badge
+      if (prod.quantity > 1) {
+        const badgeRadius = 12 * textScaleP;
+        const badgeX = maxDimensionP * 0.6;
+        const badgeY = -maxDimensionP * 0.4;
+        const badge = new Konva.Circle({ 
+          x: badgeX, 
+          y: badgeY, 
+          radius: badgeRadius, 
+          fill: '#d32f2f', 
+          stroke: '#fff', 
+          strokeWidth: 2, 
+          listening: false 
+        });
+        const qText = new Konva.Text({ 
+          x: badgeX - 6 * textScaleP, 
+          y: badgeY - 5 * textScaleP, 
+          text: `${prod.quantity}`, 
+          fontSize: Math.max(10 * textScaleP, 8), 
+          fill: '#fff', 
+          listening: false 
+        });
+        group.add(badge);
+        group.add(qText);
+      }
+
+      layer.add(group);
+    }
+
+    // Draw the layer
+    layer.draw();
+
+    // Debug: Check if toSVG is available
+    console.log('Konva version:', Konva.version);
+    console.log('Stage prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(stage)).filter(m => m.includes('SVG') || m.includes('svg')));
+    console.log('Has toSVG?', typeof stage.toSVG === 'function');
+
+    // Check if toSVG is available
+    if (typeof stage.toSVG !== 'function') {
+      stage.destroy();
+      container.parentNode && container.parentNode.removeChild(container);
+      throw new Error(
+        `Konva Stage does not support toSVG(). ` +
+        `Konva version: ${Konva.version || 'unknown'}. ` +
+        `Try reinstalling: npm uninstall konva && npm install konva@latest`
+      );
+    }
+
+    // Convert stage to SVG (ONCE per layer, not per product!)
+    const svgStr = stage.toSVG();
+    console.log('SVG generated successfully, length:', svgStr.length);
+
+    // Verify pdf.svg is available
+    if (typeof pdf.svg !== 'function') {
+      stage.destroy();
+      container.parentNode && container.parentNode.removeChild(container);
+      throw new Error(
+        'jsPDF SVG plugin not loaded. ' +
+        'svg2pdf.js is installed but not being used by jsPDF. ' +
+        'Make sure you have: import "svg2pdf.js"; at the top of your file.'
+      );
+    }
+
+    // Render SVG to PDF as vectors
+    try {
+      await pdf.svg(svgStr, { 
+        x: offsetX, 
+        y: offsetY, 
+        width: scaledWidth, 
+        height: scaledHeight 
+      });
+      console.log('SVG rendered to PDF successfully');
+    } catch (err) {
+      console.error('Failed to render SVG to PDF:', err);
+      stage.destroy();
+      container.parentNode && container.parentNode.removeChild(container);
+      throw err;
+    }
+
+    // Cleanup
+    stage.destroy();
+    container.parentNode && container.parentNode.removeChild(container);
+
+    console.log(`Rendered ${products.length} products and ${connectors.length} connectors to PDF as vectors`);
   };
   
   // Helper function to add product legend
@@ -611,7 +757,7 @@ const Page = () => {
     pdf.setFontSize(16);
     pdf.setFont("helvetica", "bold");
     pdf.text("Product Legend", 10, 15);
-    
+
     // Group products by SKU
     const productMap = new Map();
     allProducts.forEach((product) => {
@@ -629,15 +775,15 @@ const Page = () => {
       }
       const entry = productMap.get(sku);
       entry.quantity += product.quantity || 1;
-      entry.layers.add(product.layerName);
+      entry.layers.add(product.layerName || "");
     });
-    
+
     // Convert to array and sort
     const legendData = Array.from(productMap.values()).map((item) => ({
       ...item,
       layers: Array.from(item.layers).join(", "),
     }));
-    
+
     // Create table
     autoTable(pdf, {
       startY: 25,

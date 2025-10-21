@@ -542,23 +542,42 @@ const Page = () => {
       }
 
   console.log('Manual builder: exportProducts=', exportProducts.length, 'exportConnectors=', exportConnectors.length, 'exportTextBoxes=', exportTextBoxes.length);
-      // Draw connectors as lines
+      // Draw connectors as smooth cubic Bézier paths using control points
+      // This mirrors the ConnectorLine component used in the designer so exported
+      // SVGs honor connector control points when present.
       let connectorCount = 0;
       exportConnectors.forEach((connector) => {
         const fromProduct = exportProducts.find((p) => p.id === connector.from);
         const toProduct = exportProducts.find((p) => p.id === connector.to);
         if (fromProduct && toProduct) {
-          console.log('Adding connector between', fromProduct.id, 'and', toProduct.id, 'coords', { x1: mapX(fromProduct.x), y1: mapY(fromProduct.y), x2: mapX(toProduct.x), y2: mapY(toProduct.y) });
-          const lineEl = document.createElementNS(SVG_NS, 'line');
-          // Absolute coordinates (viewBox is contentOffset-based)
-          lineEl.setAttribute('x1', String(fromProduct.x));
-          lineEl.setAttribute('y1', String(fromProduct.y));
-          lineEl.setAttribute('x2', String(toProduct.x));
-          lineEl.setAttribute('y2', String(toProduct.y));
-          lineEl.setAttribute('stroke', '#6464FF');
-          lineEl.setAttribute('stroke-width', '2');
-          lineEl.setAttribute('stroke-linecap', 'round');
-          svgElement.appendChild(lineEl);
+          // Compute default control points (same heuristic as ConnectorLine)
+          const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25;
+          const defaultControl1Y = Math.min(fromProduct.y, toProduct.y) - 60;
+          const defaultControl2X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.5;
+          const defaultControl2Y = Math.min(fromProduct.y, toProduct.y) - 80;
+          const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75;
+          const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - 60;
+
+          const c1 = connector.control1 || { x: defaultControl1X, y: defaultControl1Y };
+          const c2 = connector.control2 || { x: defaultControl2X, y: defaultControl2Y };
+          const c3 = connector.control3 || { x: defaultControl3X, y: defaultControl3Y };
+
+          // Use midpoints between control points to approximate a smooth multi-point path
+          const midX = (c1.x + c2.x) / 2;
+          const midY = (c1.y + c2.y) / 2;
+          const mid2X = (c2.x + c3.x) / 2;
+          const mid2Y = (c2.y + c3.y) / 2;
+
+          // Build SVG path string with two cubic bezier segments (mirrors ConnectorLine)
+          const d = `M ${fromProduct.x} ${fromProduct.y} C ${c1.x} ${c1.y}, ${midX} ${midY}, ${c2.x} ${c2.y} C ${mid2X} ${mid2Y}, ${c3.x} ${c3.y}, ${toProduct.x} ${toProduct.y}`;
+          const pathEl = document.createElementNS(SVG_NS, 'path');
+          pathEl.setAttribute('d', d);
+          pathEl.setAttribute('fill', 'none');
+          pathEl.setAttribute('stroke', connector.color || '#6464FF');
+          pathEl.setAttribute('stroke-width', '4');
+          pathEl.setAttribute('stroke-linecap', 'round');
+          pathEl.setAttribute('stroke-linejoin', 'round');
+          svgElement.appendChild(pathEl);
           connectorCount++;
         }
       });

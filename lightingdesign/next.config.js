@@ -4,11 +4,21 @@ const config = {
   images: {
     unoptimized: true,
   },
-  webpack(config) {
+  webpack(config, { isServer }) {
     config.module.rules.push({
       test: /\.svg$/,
       use: ["@svgr/webpack"],
     });
+    
+    // Exclude pdf-lib and pdfjs-dist from server-side bundling
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        'pdf-lib': 'pdf-lib',
+        'pdfjs-dist': 'pdfjs-dist',
+      });
+    }
+    
     return config;
   },
   async redirects() {

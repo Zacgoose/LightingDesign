@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   Box,
   Container,
@@ -25,6 +25,10 @@ import { ApiGetCall } from "/src/api/ApiCall";
 import Link from "next/link";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import Konva from "konva";
+import { Stage, Layer } from "react-konva";
+import { exportStageSVG } from "react-konva-to-svg";
+import "svg2pdf.js";
 import productTypesConfig from "/src/data/productTypes.json";
 
 // Paper size definitions (dimensions in mm)
@@ -313,11 +317,11 @@ const Page = () => {
     pdf.text(`Date: ${info.date}`, pageWidth - 70, yPos);
   };
   
-  // Helper function to render canvas to PDF
+  // Helper function to render canvas to PDF using SVG
   const renderCanvasToPDF = async (pdf, options) => {
     const { products, connectors, backgroundImage, backgroundImageNaturalSize, scaleFactor, drawingArea, canvasSize } = options;
     
-    console.log('renderCanvasToPDF called:', {
+    console.log('renderCanvasToPDF called (SVG mode):', {
       productsCount: products.length,
       connectorsCount: connectors.length,
       scaleFactor,
@@ -330,27 +334,20 @@ const Page = () => {
     let exportWidth, exportHeight, contentOffsetX, contentOffsetY;
     
     if (backgroundImage && backgroundImageNaturalSize) {
-      // If there's a background image, use its displayed size as the export region
       const canvasImgScaleX = canvasSize.width / backgroundImageNaturalSize.width;
       const canvasImgScaleY = canvasSize.height / backgroundImageNaturalSize.height;
       const canvasImgScale = Math.min(canvasImgScaleX, canvasImgScaleY);
       
-      // The actual displayed size in canvas coordinates
       exportWidth = backgroundImageNaturalSize.width * canvasImgScale;
       exportHeight = backgroundImageNaturalSize.height * canvasImgScale;
-      
-      // The background is centered in the canvas
       contentOffsetX = (canvasSize.width - exportWidth) / 2;
       contentOffsetY = (canvasSize.height - exportHeight) / 2;
       
       console.log('Export region based on background:', {
         exportSize: { width: exportWidth, height: exportHeight },
         contentOffset: { x: contentOffsetX, y: contentOffsetY },
-        backgroundNaturalSize: backgroundImageNaturalSize,
-        canvasImgScale,
       });
     } else {
-      // No background - calculate bounding box from products
       if (products.length > 0) {
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         
@@ -368,25 +365,12 @@ const Page = () => {
           maxY = Math.max(maxY, product.y + halfSize);
         });
         
-        // Add 10% padding
         const padding = Math.max((maxX - minX), (maxY - minY)) * 0.1;
-        minX -= padding;
-        minY -= padding;
-        maxX += padding;
-        maxY += padding;
-        
-        exportWidth = maxX - minX;
-        exportHeight = maxY - minY;
-        contentOffsetX = minX;
-        contentOffsetY = minY;
-        
-        console.log('Export region based on products:', {
-          exportSize: { width: exportWidth, height: exportHeight },
-          contentOffset: { x: contentOffsetX, y: contentOffsetY },
-          productBounds: { minX, minY, maxX, maxY },
-        });
+        exportWidth = (maxX - minX) + 2 * padding;
+        exportHeight = (maxY - minY) + 2 * padding;
+        contentOffsetX = minX - padding;
+        contentOffsetY = minY - padding;
       } else {
-        // Fallback to full canvas if no content
         exportWidth = canvasSize.width;
         exportHeight = canvasSize.height;
         contentOffsetX = 0;
@@ -394,163 +378,169 @@ const Page = () => {
       }
     }
     
-    // Calculate scale to fit the export region in the drawing area
+    // Calculate scale to fit in PDF
     const scaleX = drawingArea.width / exportWidth;
     const scaleY = drawingArea.height / exportHeight;
-    const scale = Math.min(scaleX, scaleY) * 0.95; // Use 95% to leave small margin
+    const scale = Math.min(scaleX, scaleY) * 0.95;
     
-    console.log('PDF scale calculation:', { 
-      scaleX, 
-      scaleY, 
-      finalScale: scale,
-      exportSize: { width: exportWidth, height: exportHeight }
-    });
-    
-    // Center the scaled export region in the drawing area
     const scaledWidth = exportWidth * scale;
     const scaledHeight = exportHeight * scale;
     const offsetX = drawingArea.x + (drawingArea.width - scaledWidth) / 2;
     const offsetY = drawingArea.y + (drawingArea.height - scaledHeight) / 2;
     
-    console.log('PDF positioning:', {
+    console.log('PDF scale and positioning:', {
+      scale,
       scaledSize: { width: scaledWidth, height: scaledHeight },
       offset: { x: offsetX, y: offsetY },
     });
     
-    // Draw background image if available
-    if (backgroundImage && backgroundImageNaturalSize) {
-      try {
-        // The background fills the entire export region (it IS the export region)
-        const pdfImgX = offsetX;
-        const pdfImgY = offsetY;
-        const pdfImgWidth = scaledWidth;
-        const pdfImgHeight = scaledHeight;
-        
-        console.log('Background image rendering:', {
-          naturalSize: backgroundImageNaturalSize,
-          pdfPosition: { x: pdfImgX, y: pdfImgY },
-          pdfSize: { width: pdfImgWidth, height: pdfImgHeight },
+    // Create Konva stage for SVG export
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.top = '-10000px';
+    document.body.appendChild(container);
+    
+    try {
+      const stage = new Konva.Stage({
+        container: container,
+        width: exportWidth,
+        height: exportHeight,
+      });
+      
+      const layer = new Konva.Layer();
+      stage.add(layer);
+      
+      // Add background image if available
+      if (backgroundImage && backgroundImageNaturalSize) {
+        const img = new window.Image();
+        img.src = backgroundImage;
+        await new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
         });
         
-        pdf.addImage(backgroundImage, 'PNG', pdfImgX, pdfImgY, pdfImgWidth, pdfImgHeight);
-      } catch (err) {
-        console.warn("Failed to add background image to PDF:", err);
+        const konvaImage = new Konva.Image({
+          x: 0,
+          y: 0,
+          image: img,
+          width: exportWidth,
+          height: exportHeight,
+        });
+        layer.add(konvaImage);
+      }
+      
+      // Add connectors (cables)
+      connectors.forEach((connector) => {
+        const fromProduct = products.find((p) => p.id === connector.from);
+        const toProduct = products.find((p) => p.id === connector.to);
+        
+        if (fromProduct && toProduct) {
+          const line = new Konva.Line({
+            points: [
+              fromProduct.x - contentOffsetX,
+              fromProduct.y - contentOffsetY,
+              toProduct.x - contentOffsetX,
+              toProduct.y - contentOffsetY,
+            ],
+            stroke: '#6464FF',
+            strokeWidth: 2,
+          });
+          layer.add(line);
+        }
+      });
+      
+      // Add products to Konva layer
+      products.forEach((product, idx) => {
+        const productType = product.product_type?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
+        
+        // Calculate product position in export coordinates
+        const x = product.x - contentOffsetX;
+        const y = product.y - contentOffsetY;
+        
+        // Calculate product size
+        const productScaleFactor = product.scaleFactor || scaleFactor;
+        const realWorldSize = config.realWorldSize || config.realWorldWidth || 1.0;
+        const canvasPixelSize = realWorldSize * productScaleFactor;
+        const size = canvasPixelSize * (product.scaleX || 1);
+        
+        // Set colors
+        const strokeColor = product.strokeColor || config.stroke || "#000000";
+        const fillColor = product.color || config.fill || "#FFFFFF";
+        
+        // Draw based on shape type
+        const shapeType = config.shapeType || "circle";
+        
+        if (shapeType === "circle" || shapeType === "downlight" || shapeType === "pendant" || shapeType === "spotlight") {
+          const circle = new Konva.Circle({
+            x: x,
+            y: y,
+            radius: size / 2,
+            fill: fillColor,
+            stroke: strokeColor,
+            strokeWidth: 2,
+          });
+          layer.add(circle);
+        } else if (shapeType === "rect" || shapeType === "wall" || shapeType === "ceiling") {
+          const rect = new Konva.Rect({
+            x: x - size / 2,
+            y: y - size / 2,
+            width: size,
+            height: size,
+            fill: fillColor,
+            stroke: strokeColor,
+            strokeWidth: 2,
+          });
+          layer.add(rect);
+        } else {
+          // Default to circle
+          const circle = new Konva.Circle({
+            x: x,
+            y: y,
+            radius: size / 2,
+            fill: fillColor,
+            stroke: strokeColor,
+            strokeWidth: 2,
+          });
+          layer.add(circle);
+        }
+      });
+      
+      layer.batchDraw();
+      
+      // Export stage to SVG using react-konva-to-svg
+      console.log('Exporting Konva stage to SVG...');
+      const svgString = await exportStageSVG(stage, true); // true for pixelRatio
+      
+      console.log('SVG exported, length:', svgString.length);
+      
+      // Convert SVG string to PDF using svg2pdf.js
+      const element = document.createElement('div');
+      element.innerHTML = svgString;
+      const svgElement = element.querySelector('svg');
+      
+      if (!svgElement) {
+        throw new Error('Failed to parse SVG from exported string');
+      }
+      
+      // Render SVG to PDF at the calculated position and size
+      await pdf.svg(svgElement, {
+        x: offsetX,
+        y: offsetY,
+        width: scaledWidth,
+        height: scaledHeight,
+      });
+      
+      console.log(`SVG rendered to PDF at (${offsetX}, ${offsetY}) with size ${scaledWidth}x${scaledHeight}`);
+      
+    } finally {
+      // Cleanup
+      if (container.parentNode) {
+        document.body.removeChild(container);
       }
     }
     
-    // Draw border around export area for reference
-    pdf.setDrawColor(200, 200, 200);
-    pdf.setLineWidth(0.2);
-    pdf.rect(offsetX, offsetY, scaledWidth, scaledHeight);
-    
-    // Draw connectors (cables)
-    pdf.setLineWidth(0.5);
-    pdf.setDrawColor(100, 100, 255);
-    connectors.forEach((connector) => {
-      const fromProduct = products.find((p) => p.id === connector.from);
-      const toProduct = products.find((p) => p.id === connector.to);
-      
-      if (fromProduct && toProduct) {
-        // Convert product positions from canvas coordinates to export region coordinates
-        const x1 = offsetX + (fromProduct.x - contentOffsetX) * scale;
-        const y1 = offsetY + (fromProduct.y - contentOffsetY) * scale;
-        const x2 = offsetX + (toProduct.x - contentOffsetX) * scale;
-        const y2 = offsetY + (toProduct.y - contentOffsetY) * scale;
-        
-        pdf.line(x1, y1, x2, y2);
-      }
-    });
-    
-    // Draw products
-    products.forEach((product, idx) => {
-      const productType = product.product_type?.toLowerCase() || "default";
-      const config = productTypesConfig[productType] || productTypesConfig.default;
-      
-      // Convert product position from canvas coordinates to export region coordinates
-      const x = offsetX + (product.x - contentOffsetX) * scale;
-      const y = offsetY + (product.y - contentOffsetY) * scale;
-      
-      // Calculate product size
-      const productScaleFactor = product.scaleFactor || scaleFactor;
-      const realWorldSize = config.realWorldSize || config.realWorldWidth || 1.0;
-      
-      // Size in canvas pixels (scaleFactor is pixels per meter)
-      const canvasPixelSize = realWorldSize * productScaleFactor;
-      
-      // Apply product's scale and convert to PDF coordinates
-      const pdfSize = canvasPixelSize * (product.scaleX || 1) * scale;
-      
-      // Ensure minimum visible size in PDF (at least 2mm)
-      const minSize = 2;
-      const size = Math.max(pdfSize, minSize);
-      
-      if (idx < 3) {
-        console.log(`Product ${idx} (${product.name || 'unnamed'}):`, {
-          canvasPosition: { x: product.x, y: product.y },
-          pdfPosition: { x, y },
-          contentOffset: { x: contentOffsetX, y: contentOffsetY },
-          realWorldSize,
-          productScaleFactor,
-          canvasPixelSize,
-          pdfSize,
-          finalSize: size,
-          type: productType,
-        });
-      }
-      
-      // Draw based on shape type
-      const shapeType = config.shapeType || "circle";
-      
-      // Set colors
-      const strokeColor = product.strokeColor || config.stroke || "#000000";
-      const fillColor = product.color || config.fill || "#FFFFFF";
-      
-      // Parse hex colors to RGB
-      const hexToRgb = (hex) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16)
-        } : { r: 0, g: 0, b: 0 };
-      };
-      
-      const stroke = hexToRgb(strokeColor);
-      const fill = hexToRgb(fillColor);
-      
-      pdf.setDrawColor(stroke.r, stroke.g, stroke.b);
-      pdf.setFillColor(fill.r, fill.g, fill.b);
-      pdf.setLineWidth(0.3);
-      
-      if (shapeType === "circle" || shapeType === "downlight" || shapeType === "pendant" || shapeType === "spotlight") {
-        pdf.circle(x, y, size / 2, "FD");
-      } else if (shapeType === "rect" || shapeType === "wall" || shapeType === "ceiling") {
-        pdf.rect(x - size / 2, y - size / 2, size, size, "FD");
-      } else if (shapeType === "triangle") {
-        // Draw triangle using lines
-        const height = size * Math.sqrt(3) / 2;
-        pdf.setFillColor(fill.r, fill.g, fill.b);
-        pdf.setDrawColor(stroke.r, stroke.g, stroke.b);
-        
-        // Define triangle points
-        const points = [
-          { x: x, y: y - height / 2 },
-          { x: x - size / 2, y: y + height / 2 },
-          { x: x + size / 2, y: y + height / 2 }
-        ];
-        
-        // Draw filled triangle
-        pdf.lines([[points[1].x - points[0].x, points[1].y - points[0].y], 
-                   [points[2].x - points[1].x, points[2].y - points[1].y],
-                   [points[0].x - points[2].x, points[0].y - points[2].y]], 
-                   points[0].x, points[0].y, [1, 1], 'FD');
-      } else {
-        // Default to circle
-        pdf.circle(x, y, size / 2, "FD");
-      }
-    });
-    
-    console.log(`Rendered ${products.length} products and ${connectors.length} connectors to PDF`);
+    console.log(`Rendered ${products.length} products and ${connectors.length} connectors as SVG to PDF`);
   };
   
   // Helper function to add product legend

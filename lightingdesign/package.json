@@ -72,6 +72,7 @@
     "react-html-parser": "^2.0.2",
     "react-i18next": "15.7.3",
     "react-konva": "^19.0.10",
+    "react-konva-to-svg": "^1.0.2",
     "react-leaflet": "5.0.0",
     "react-leaflet-markercluster": "^5.0.0-rc.0",
     "react-markdown": "10.1.0",

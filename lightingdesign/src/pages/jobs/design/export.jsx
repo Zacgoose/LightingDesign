@@ -529,6 +529,207 @@ const Page = () => {
 
       // Draw products as circles/ellipses
   let productCount = 0;
+  // Helper: build minimal shape object for productShapes functions
+  const makeShapeObj = (w, h, realWorldSize, realWorldWidth, realWorldHeight, productScaleFactor, stroke, strokeWidth) => ({
+    width: () => w,
+    height: () => h,
+    getAttr: (name) => {
+      switch (name) {
+        case 'scaleFactor':
+          return productScaleFactor;
+        case 'realWorldSize':
+          return realWorldSize;
+        case 'realWorldWidth':
+          return realWorldWidth;
+        case 'realWorldHeight':
+          return realWorldHeight;
+        case 'stroke':
+          return stroke;
+        case 'strokeWidth':
+          return strokeWidth;
+        default:
+          return undefined;
+      }
+    },
+  });
+
+  // Minimal SVG drawing context that records paths to an SVG group
+  function createSvgContext(svgGroup) {
+    const ctx = {
+      _d: '',
+      _currentX: 0,
+      _currentY: 0,
+      strokeStyle: '#000',
+      fillStyle: 'none',
+      lineWidth: 1,
+      _transformStack: [],
+      _matrix: [1,0,0,1,0,0], // a,b,c,d,e,f
+    };
+
+    const applyMatrix = (x, y) => {
+      const [a,b,c,d,e,f] = ctx._matrix;
+      return [a*x + c*y + e, b*x + d*y + f];
+    };
+
+    ctx.save = () => {
+      ctx._transformStack.push(ctx._matrix.slice());
+    };
+    ctx.restore = () => {
+      const m = ctx._transformStack.pop();
+      if (m) ctx._matrix = m;
+    };
+    ctx.rotate = (angle) => {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const [a,b,c,d,e,f] = ctx._matrix;
+      ctx._matrix = [a*cos + c*sin, b*cos + d*sin, -a*sin + c*cos, -b*sin + d*cos, e, f];
+    };
+    ctx.translate = (tx, ty) => {
+      const [a,b,c,d,e,f] = ctx._matrix;
+      ctx._matrix = [a,b,c,d, a*tx + c*ty + e, b*tx + d*ty + f];
+    };
+    ctx.scale = (sx, sy) => {
+      const [a,b,c,d,e,f] = ctx._matrix;
+      ctx._matrix = [a*sx, b*sx, c*sy, d*sy, e, f];
+    };
+
+    // Path commands builder
+    ctx.beginPath = () => {
+      ctx._d = '';
+      ctx._currentX = 0;
+      ctx._currentY = 0;
+    };
+    ctx.moveTo = (x, y) => {
+      const [mx, my] = applyMatrix(x, y);
+      ctx._d += `M ${mx} ${my} `;
+      ctx._currentX = mx; ctx._currentY = my;
+    };
+    ctx.lineTo = (x,y) => {
+      const [lx, ly] = applyMatrix(x, y);
+      ctx._d += `L ${lx} ${ly} `;
+      ctx._currentX = lx; ctx._currentY = ly;
+    };
+    ctx.closePath = () => { ctx._d += 'Z '; };
+
+    ctx.rect = (x,y,w,h) => {
+      ctx.beginPath();
+      ctx.moveTo(x,y);
+      ctx.lineTo(x+w,y);
+      ctx.lineTo(x+w,y+h);
+      ctx.lineTo(x,y+h);
+      ctx.closePath();
+    };
+
+    ctx.roundRect = (x,y,w,h,r) => {
+      // rounded rect path
+      const [rx, ry] = [r, r];
+      const [x0,y0] = applyMatrix(x + rx, y);
+      // simpler approximation: use rect for now
+      ctx.rect(x,y,w,h);
+    };
+
+    ctx.ellipse = (cx, cy, rx, ry, rotation, startAngle, endAngle) => {
+      // For simplicity create an <ellipse> element for full ellipses
+      const [ecx, ecy] = applyMatrix(cx, cy);
+  const scaleX = Math.sqrt(ctx._matrix[0]*ctx._matrix[0] + ctx._matrix[1]*ctx._matrix[1]);
+  const scaleY = Math.sqrt(ctx._matrix[2]*ctx._matrix[2] + ctx._matrix[3]*ctx._matrix[3]);
+  // compute rotation angle from matrix
+  const matrixAngle = Math.atan2(ctx._matrix[2], ctx._matrix[0]);
+      const ellipseEl = document.createElementNS(SVG_NS, 'ellipse');
+      ellipseEl.setAttribute('cx', String(ecx));
+      ellipseEl.setAttribute('cy', String(ecy));
+      ellipseEl.setAttribute('rx', String(Math.abs(rx * scaleX)));
+      ellipseEl.setAttribute('ry', String(Math.abs(ry * scaleY)));
+  // Apply rotation (matrix + provided rotation)
+  let rotDeg = matrixAngle * 180 / Math.PI;
+  if (rotation) rotDeg += rotation * 180 / Math.PI;
+  if (rotDeg) ellipseEl.setAttribute('transform', `rotate(${rotDeg} ${ecx} ${ecy})`);
+      ellipseEl.setAttribute('fill', ctx.fillStyle || 'none');
+      ellipseEl.setAttribute('stroke', ctx.strokeStyle || 'none');
+      ellipseEl.setAttribute('stroke-width', String(ctx.lineWidth || 1));
+      svgGroup.appendChild(ellipseEl);
+    };
+
+    ctx.arc = (cx, cy, r, startAngle, endAngle) => {
+      const full = Math.abs(endAngle - startAngle) >= Math.PI * 2 - 1e-6;
+      if (full) {
+        const [acx, acy] = applyMatrix(cx, cy);
+        const scaleX = Math.sqrt(ctx._matrix[0]*ctx._matrix[0] + ctx._matrix[1]*ctx._matrix[1]);
+        const scaleY = Math.sqrt(ctx._matrix[2]*ctx._matrix[2] + ctx._matrix[3]*ctx._matrix[3]);
+        if (Math.abs(scaleX - scaleY) < 1e-6) {
+          const circleEl = document.createElementNS(SVG_NS, 'circle');
+          circleEl.setAttribute('cx', String(acx));
+          circleEl.setAttribute('cy', String(acy));
+          circleEl.setAttribute('r', String(Math.abs(r * scaleX)));
+          circleEl.setAttribute('fill', ctx.fillStyle || 'none');
+          circleEl.setAttribute('stroke', ctx.strokeStyle || 'none');
+          circleEl.setAttribute('stroke-width', String(ctx.lineWidth || 1));
+          svgGroup.appendChild(circleEl);
+        } else {
+          const ellipseEl = document.createElementNS(SVG_NS, 'ellipse');
+          ellipseEl.setAttribute('cx', String(acx));
+          ellipseEl.setAttribute('cy', String(acy));
+          ellipseEl.setAttribute('rx', String(Math.abs(r * scaleX)));
+          ellipseEl.setAttribute('ry', String(Math.abs(r * scaleY)));
+          // rotate ellipse to account for context rotation
+          const matrixAngle = Math.atan2(ctx._matrix[2], ctx._matrix[0]);
+          const rotDeg = matrixAngle * 180 / Math.PI;
+          if (rotDeg) ellipseEl.setAttribute('transform', `rotate(${rotDeg} ${acx} ${acy})`);
+          ellipseEl.setAttribute('fill', ctx.fillStyle || 'none');
+          ellipseEl.setAttribute('stroke', ctx.strokeStyle || 'none');
+          ellipseEl.setAttribute('stroke-width', String(ctx.lineWidth || 1));
+          svgGroup.appendChild(ellipseEl);
+        }
+        return;
+      }
+      // For partial arcs fallback to path approximation
+      const segs = 16;
+      const angleStep = (endAngle - startAngle) / segs;
+      for (let i = 0; i <= segs; i++) {
+        const a = startAngle + i * angleStep;
+        const x = cx + r * Math.cos(a);
+        const y = cy + r * Math.sin(a);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    };
+
+    ctx.fillStrokeShape = (shape) => {
+      if (!ctx._d.trim()) return; // nothing to draw
+      const pathEl = document.createElementNS(SVG_NS, 'path');
+      pathEl.setAttribute('d', ctx._d.trim());
+      pathEl.setAttribute('fill', ctx.fillStyle || shape.fill || 'none');
+      pathEl.setAttribute('stroke', ctx.strokeStyle || shape.getAttr('stroke') || 'none');
+      pathEl.setAttribute('stroke-width', String(ctx.lineWidth || shape.getAttr('strokeWidth') || 1));
+      svgGroup.appendChild(pathEl);
+      ctx._d = '';
+    };
+
+    ctx.stroke = () => {
+      if (!ctx._d.trim()) return;
+      const pathEl = document.createElementNS(SVG_NS, 'path');
+      pathEl.setAttribute('d', ctx._d.trim());
+      pathEl.setAttribute('fill', 'none');
+      pathEl.setAttribute('stroke', ctx.strokeStyle || 'none');
+      pathEl.setAttribute('stroke-width', String(ctx.lineWidth || 1));
+      svgGroup.appendChild(pathEl);
+      ctx._d = '';
+    };
+
+    ctx.fill = () => {
+      if (!ctx._d.trim()) return;
+      const pathEl = document.createElementNS(SVG_NS, 'path');
+      pathEl.setAttribute('d', ctx._d.trim());
+      pathEl.setAttribute('fill', ctx.fillStyle || 'none');
+      pathEl.setAttribute('stroke', 'none');
+      svgGroup.appendChild(pathEl);
+      ctx._d = '';
+    };
+
+    return ctx;
+  }
+
   exportProducts.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || 'default';
         const config = productTypesConfig[productType] || productTypesConfig.default;
@@ -555,34 +756,39 @@ const Page = () => {
   const cy = product.y;
 
   console.log('Adding product', product.id, 'pos', { cx, cy }, 'size', { width, height }, 'scale', { sx, sy });
-  if (Math.abs(sx - sy) < 1e-6) {
+  // Create a group for the product and transform it to its canvas position
+        const productGroupEl = document.createElementNS(SVG_NS, 'g');
+        const rotation = product.rotation || 0;
+        productGroupEl.setAttribute('transform', `translate(${cx} ${cy}) rotate(${rotation})`);
+        svgElement.appendChild(productGroupEl);
+
+        // Build shape object and SVG context
+        const shapeObj = makeShapeObj(width, height, realWorldSize, realWorldWidth, realWorldHeight, productScaleFactor, strokeColor, config.strokeWidth || 2);
+        shapeObj.fill = fillColor;
+        const ctx = createSvgContext(productGroupEl);
+        // Provide default style hints
+        ctx.fillStyle = fillColor;
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = config.strokeWidth || 2;
+
+        try {
+          const shapeFunction = getShapeFunction(config.shapeType || 'circle');
+          // Draw at origin within the group
+          shapeFunction(ctx, shapeObj);
+        } catch (err) {
+          // Fallback to a circle if custom shape fails
           const r = (width / 2) * sx;
           const circleEl = document.createElementNS(SVG_NS, 'circle');
-          circleEl.setAttribute('cx', String(cx));
-          circleEl.setAttribute('cy', String(cy));
+          circleEl.setAttribute('cx', '0');
+          circleEl.setAttribute('cy', '0');
           circleEl.setAttribute('r', String(r));
           circleEl.setAttribute('fill', fillColor);
           circleEl.setAttribute('stroke', strokeColor);
           circleEl.setAttribute('stroke-width', String(config.strokeWidth || 2));
-          svgElement.appendChild(circleEl);
-          productCount++;
-        } else {
-          const rx = (width / 2) * sx;
-          const ry = (height / 2) * sy;
-          const ellipseEl = document.createElementNS(SVG_NS, 'ellipse');
-          ellipseEl.setAttribute('cx', String(cx));
-          ellipseEl.setAttribute('cy', String(cy));
-          ellipseEl.setAttribute('rx', String(rx));
-          ellipseEl.setAttribute('ry', String(ry));
-          ellipseEl.setAttribute('fill', fillColor);
-          ellipseEl.setAttribute('stroke', strokeColor);
-          ellipseEl.setAttribute('stroke-width', String(config.strokeWidth || 2));
-          if (product.rotation) {
-            ellipseEl.setAttribute('transform', `rotate(${product.rotation} ${cx} ${cy})`);
-          }
-          svgElement.appendChild(ellipseEl);
-          productCount++;
+          productGroupEl.appendChild(circleEl);
+          console.error('Custom shape rendering failed for', product.id, err);
         }
+        productCount++;
       });
       console.log('Manual builder appended products:', productCount);
 

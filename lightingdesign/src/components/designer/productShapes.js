@@ -192,9 +192,13 @@ export const ProductShapes = {
   },
 
   circle: (context, shape) => {
-    // Use pre-calculated dimensions from ProductShape component
-    const width = shape.width() || 50;
+    console.log('[ProductShapes.circle] sceneFunc called', { isSVG: context.isSvg });
+    const scaleFactor = shape.getAttr("scaleFactor") || 50;
+    const realWorldSize =
+      shape.getAttr("realWorldSize") || (shape.width() ? shape.width() / scaleFactor : 1);
+    const width = realWorldSize * scaleFactor;
     const radius = width / 2;
+
     context.beginPath();
     context.arc(0, 0, radius, 0, Math.PI * 2);
     context.closePath();

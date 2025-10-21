@@ -60,7 +60,7 @@ function Invoke-GetCippAlerts {
                 type  = 'error'
             })
     }
-    if ((!$env:WEBSITE_RUN_FROM_PACKAGE -or [string]::IsNullOrEmpty($env:WEBSITE_RUN_FROM_PACKAGE)) -and ($env:AzureWebJobsStorage -ne 'UseDevelopmentStorage=true' -or $env:NonLocalHostAzurite -ne 'true')) {
+    if ((!$env:WEBSITE_RUN_FROM_PACKAGE -or [string]::IsNullOrEmpty($env:WEBSITE_RUN_FROM_PACKAGE)) -and -not ($env:AzureWebJobsStorage -eq 'UseDevelopmentStorage=true' -or $env:NonLocalHostAzurite -eq 'true')) {
         $Alerts.Add(
             @{
                 title = 'Function App in Write Mode'

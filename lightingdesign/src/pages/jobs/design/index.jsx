@@ -1821,6 +1821,8 @@ const Page = () => {
           rotation: 0,
           scaleX: 1,
           scaleY: 1,
+          baseScaleX: 1,
+          baseScaleY: 1,
           color: shapeConfig.fill || "#666666",
           stroke: shapeConfig.stroke || "#424242",
           strokeWidth: shapeConfig.strokeWidth || 2,

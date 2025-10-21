@@ -228,6 +228,7 @@ const Page = () => {
           connectorsCount: connectors.length,
           hasBackground: !!layer.backgroundImage,
           backgroundSize: layer.backgroundImageNaturalSize,
+          backgroundFileType: layer.backgroundFileType || "image",
           scaleFactor: layer.scaleFactor || 100,
         });
         
@@ -237,6 +238,8 @@ const Page = () => {
           textBoxes,
           backgroundImage: layer.backgroundImage,
           backgroundImageNaturalSize: layer.backgroundImageNaturalSize,
+          backgroundFileType: layer.backgroundFileType,
+          backgroundPdfData: layer.backgroundPdfData,
           scaleFactor: layer.scaleFactor || 100,
           drawingArea: {
             x: 10,
@@ -325,16 +328,30 @@ const Page = () => {
   
   // Helper function to render canvas to PDF using SVG
   const renderCanvasToPDF = async (pdf, options) => {
-    const { products, connectors, textBoxes = [], backgroundImage, backgroundImageNaturalSize, scaleFactor, drawingArea, canvasSize } = options;
+    const { products, connectors, textBoxes = [], backgroundImage, backgroundImageNaturalSize, scaleFactor, drawingArea, canvasSize, backgroundFileType, backgroundPdfData } = options;
     
-    console.log('renderCanvasToPDF called (SVG mode):', {
+    console.log('renderCanvasToPDF called:', {
       productsCount: products.length,
       connectorsCount: connectors.length,
       scaleFactor,
       canvasSize,
       drawingArea,
       backgroundImageNaturalSize,
+      backgroundFileType,
+      hasPdfData: !!backgroundPdfData,
     });
+    
+    // Note: For PDF backgrounds, we currently export them as rasterized images
+    // A future enhancement would be to use pdf-lib to embed the vector PDF
+    // See issue comments for more details on the technical challenges
+    // For now, both image and PDF backgrounds are rendered the same way (as raster images)
+    
+    await renderWithStandardBackground(pdf, options);
+  };
+  
+  // Standard SVG rendering (works for both image and PDF backgrounds)
+  const renderWithStandardBackground = async (pdf, options) => {
+    const { products, connectors, textBoxes = [], backgroundImage, backgroundImageNaturalSize, scaleFactor, drawingArea, canvasSize } = options;
     
     // --- NEW LOGIC: Compute union of background and product/connector bounds ---
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;

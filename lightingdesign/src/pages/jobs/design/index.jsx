@@ -988,53 +988,146 @@ const Page = () => {
     },
   });
 
-  const handleUploadFloorPlan = useCallback(() => {
+  const handleUploadFloorPlan = useCallback(async () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
-    input.onchange = (e) => {
+    input.accept = "image/*,application/pdf";
+    input.onchange = async (e) => {
       const file = e.target.files[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const img = new window.Image();
-          img.onload = () => {
-            setBackgroundImage(ev.target.result);
-            setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+        const isPdf = file.type === "application/pdf";
+        
+        if (isPdf) {
+          // Handle PDF file
+          try {
+            // Dynamically import pdf-lib
+            const { PDFDocument } = await import("pdf-lib");
             
-            // Auto-zoom to fit the background image in the viewport
-            // The background image is first scaled to fit within the canvas dimensions
-            const imageScaleX = canvasWidth / img.width;
-            const imageScaleY = canvasHeight / img.height;
-            const imageScale = Math.min(imageScaleX, imageScaleY);
-            
-            // The actual size of the image in canvas coordinates after scaling
-            const scaledImageWidth = img.width * imageScale;
-            const scaledImageHeight = img.height * imageScale;
-            
-            // Now calculate what zoom level we need so that the scaled image
-            // fills approximately 90% of the viewport (leaving 10% margin)
-            const padding = 0.9; // Fill 90% of viewport
-            const zoomX = (viewportWidth * padding) / scaledImageWidth;
-            const zoomY = (viewportHeight * padding) / scaledImageHeight;
-            
-            // Use the smaller zoom to ensure the entire image fits within viewport
-            const autoZoom = Math.min(zoomX, zoomY);
-            
-            // Constrain zoom to reasonable bounds (0.01 to 100)
-            const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
-            setStageScale(constrainedZoom);
-            
-            // Center the canvas to show the background image in the middle of viewport
-            handleResetView();
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+              try {
+                // Load the PDF
+                const pdfBytes = new Uint8Array(ev.target.result);
+                const pdfDoc = await PDFDocument.load(pdfBytes);
+                
+                // Get first page
+                const pages = pdfDoc.getPages();
+                if (pages.length === 0) {
+                  console.error("PDF has no pages");
+                  return;
+                }
+                
+                const firstPage = pages[0];
+                const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
+                
+                // Convert PDF to image for canvas display
+                // We'll use a canvas to render the PDF page as an image
+                const canvas = document.createElement("canvas");
+                const scale = 2; // Higher scale for better quality
+                canvas.width = pdfWidth * scale;
+                canvas.height = pdfHeight * scale;
+                const ctx = canvas.getContext("2d");
+                
+                // Use pdf.js to render the PDF page
+                // Dynamically import pdfjs-dist
+                const pdfjsLib = await import("pdfjs-dist");
+                pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+                
+                const loadingTask = pdfjsLib.getDocument(pdfBytes);
+                const pdf = await loadingTask.promise;
+                const page = await pdf.getPage(1);
+                
+                const viewport = page.getViewport({ scale: scale });
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                
+                await page.render({
+                  canvasContext: ctx,
+                  viewport: viewport,
+                }).promise;
+                
+                // Convert canvas to data URL for display
+                const imageDataUrl = canvas.toDataURL("image/png");
+                
+                // Store both the rasterized image and the original PDF
+                setBackgroundImage(imageDataUrl);
+                setBackgroundImageNaturalSize({ 
+                  width: viewport.width / scale, 
+                  height: viewport.height / scale 
+                });
+                
+                // Store PDF metadata for export
+                updateLayer(activeLayerIdRef.current, {
+                  backgroundFileType: "pdf",
+                  backgroundPdfData: ev.target.result, // Store original PDF bytes
+                });
+                
+                // Auto-zoom to fit the background image in the viewport
+                const imageScaleX = canvasWidth / (viewport.width / scale);
+                const imageScaleY = canvasHeight / (viewport.height / scale);
+                const imageScale = Math.min(imageScaleX, imageScaleY);
+                
+                const scaledImageWidth = (viewport.width / scale) * imageScale;
+                const scaledImageHeight = (viewport.height / scale) * imageScale;
+                
+                const padding = 0.9;
+                const zoomX = (viewportWidth * padding) / scaledImageWidth;
+                const zoomY = (viewportHeight * padding) / scaledImageHeight;
+                
+                const autoZoom = Math.min(zoomX, zoomY);
+                const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
+                setStageScale(constrainedZoom);
+                
+                handleResetView();
+              } catch (error) {
+                console.error("Error processing PDF:", error);
+              }
+            };
+            reader.readAsArrayBuffer(file);
+          } catch (error) {
+            console.error("Error loading PDF:", error);
+          }
+        } else {
+          // Handle image file (existing logic)
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const img = new window.Image();
+            img.onload = () => {
+              setBackgroundImage(ev.target.result);
+              setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+              
+              // Store image metadata for export
+              updateLayer(activeLayerIdRef.current, {
+                backgroundFileType: "image",
+                backgroundPdfData: null,
+              });
+              
+              // Auto-zoom to fit the background image in the viewport
+              const imageScaleX = canvasWidth / img.width;
+              const imageScaleY = canvasHeight / img.height;
+              const imageScale = Math.min(imageScaleX, imageScaleY);
+              
+              const scaledImageWidth = img.width * imageScale;
+              const scaledImageHeight = img.height * imageScale;
+              
+              const padding = 0.9;
+              const zoomX = (viewportWidth * padding) / scaledImageWidth;
+              const zoomY = (viewportHeight * padding) / scaledImageHeight;
+              
+              const autoZoom = Math.min(zoomX, zoomY);
+              const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
+              setStageScale(constrainedZoom);
+              
+              handleResetView();
+            };
+            img.src = ev.target.result;
           };
-          img.src = ev.target.result;
-        };
-        reader.readAsDataURL(file);
+          reader.readAsDataURL(file);
+        }
       }
     };
     input.click();
-  }, [setBackgroundImage, setBackgroundImageNaturalSize, canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale, handleResetView]);
+  }, [setBackgroundImage, setBackgroundImageNaturalSize, canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale, handleResetView, updateLayer]);
 
   const handleMeasure = useCallback(() => {
     setMeasureMode(true);

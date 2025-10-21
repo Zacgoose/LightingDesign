@@ -513,13 +513,32 @@ const Page = () => {
         layer.add(productGroup);
       });
       
+      // Draw the layer and wait for it to complete
       layer.batchDraw();
+      
+      // Small delay to ensure rendering is complete before export
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Export stage to SVG using react-konva-to-svg
       console.log('Exporting Konva stage to SVG...');
-      const svgString = await exportStageSVG(stage, true); // true for pixelRatio
+      console.log('Stage size:', { width: stage.width(), height: stage.height() });
+      console.log('Layer children count:', layer.children.length);
       
-      console.log('SVG exported, length:', svgString.length);
+      let svgString;
+      try {
+        // exportStageSVG expects the stage, not options
+        svgString = await exportStageSVG(stage);
+        console.log('SVG exported successfully, length:', svgString.length);
+        console.log('SVG preview (first 500 chars):', svgString.substring(0, 500));
+      } catch (err) {
+        console.error('Error exporting stage to SVG:', err);
+        throw new Error(`Failed to export stage to SVG: ${err.message}`);
+      }
+      
+      // Validate SVG string
+      if (!svgString || typeof svgString !== 'string' || svgString.length === 0) {
+        throw new Error('SVG export returned empty or invalid string');
+      }
       
       // Convert SVG string to PDF using svg2pdf.js
       const element = document.createElement('div');
@@ -527,18 +546,30 @@ const Page = () => {
       const svgElement = element.querySelector('svg');
       
       if (!svgElement) {
+        console.error('SVG string that failed to parse:', svgString);
         throw new Error('Failed to parse SVG from exported string');
       }
       
-      // Render SVG to PDF at the calculated position and size
-      await pdf.svg(svgElement, {
-        x: offsetX,
-        y: offsetY,
-        width: scaledWidth,
-        height: scaledHeight,
+      console.log('SVG element found:', {
+        width: svgElement.getAttribute('width'),
+        height: svgElement.getAttribute('height'),
+        viewBox: svgElement.getAttribute('viewBox'),
+        childrenCount: svgElement.children.length,
       });
       
-      console.log(`SVG rendered to PDF at (${offsetX}, ${offsetY}) with size ${scaledWidth}x${scaledHeight}`);
+      // Render SVG to PDF at the calculated position and size
+      try {
+        await pdf.svg(svgElement, {
+          x: offsetX,
+          y: offsetY,
+          width: scaledWidth,
+          height: scaledHeight,
+        });
+        console.log(`SVG rendered to PDF at (${offsetX}, ${offsetY}) with size ${scaledWidth}x${scaledHeight}`);
+      } catch (err) {
+        console.error('Error rendering SVG to PDF:', err);
+        throw new Error(`Failed to render SVG to PDF: ${err.message}`);
+      }
       
     } finally {
       // Cleanup

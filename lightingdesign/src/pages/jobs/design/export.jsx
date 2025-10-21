@@ -330,7 +330,7 @@ const Page = () => {
     // Determine the export region based on content, not the full canvas
     let exportWidth, exportHeight, contentOffsetX, contentOffsetY;
     
-    if (backgroundImage && backgroundImageNaturalSize) {
+  if (backgroundImage && backgroundImageNaturalSize) {
       // If there's a background image, use its displayed size as the export region
       const canvasImgScaleX = canvasSize.width / backgroundImageNaturalSize.width;
       const canvasImgScaleY = canvasSize.height / backgroundImageNaturalSize.height;
@@ -340,9 +340,12 @@ const Page = () => {
       exportWidth = backgroundImageNaturalSize.width * canvasImgScale;
       exportHeight = backgroundImageNaturalSize.height * canvasImgScale;
       
-      // The background is centered in the canvas
-      contentOffsetX = (canvasSize.width - exportWidth) / 2;
-      contentOffsetY = (canvasSize.height - exportHeight) / 2;
+  // The background is centered in the canvas so its top-left in canvas coords
+  // is at (-exportWidth/2, -exportHeight/2). Use that to map object coordinates
+  // consistently with the DesignerCanvas rendering (which centers the image
+  // on the canvas by placing it at [-w/2, -h/2]).
+  contentOffsetX = -exportWidth / 2;
+  contentOffsetY = -exportHeight / 2;
       
       console.log('Export region based on background:', {
         exportSize: { width: exportWidth, height: exportHeight },
@@ -387,11 +390,12 @@ const Page = () => {
           productBounds: { minX, minY, maxX, maxY },
         });
       } else {
-        // Fallback to full canvas if no content
-        exportWidth = canvasSize.width;
-        exportHeight = canvasSize.height;
-        contentOffsetX = 0;
-        contentOffsetY = 0;
+    // Fallback to full canvas if no content - align with DesignerCanvas centre origin
+    exportWidth = canvasSize.width;
+    exportHeight = canvasSize.height;
+    // DesignerCanvas centers the virtual canvas, so the top-left is at -width/2
+    contentOffsetX = -exportWidth / 2;
+    contentOffsetY = -exportHeight / 2;
       }
     }
     
@@ -420,7 +424,7 @@ const Page = () => {
     
     // Draw background image if available
     if (backgroundImage && backgroundImageNaturalSize) {
-      try {
+  try {
         // The background fills the entire export region (it IS the export region)
         const pdfImgX = offsetX;
         const pdfImgY = offsetY;
@@ -433,7 +437,36 @@ const Page = () => {
           pdfSize: { width: pdfImgWidth, height: pdfImgHeight },
         });
         
-        pdf.addImage(backgroundImage, 'PNG', pdfImgX, pdfImgY, pdfImgWidth, pdfImgHeight);
+        // Normalize image by drawing it onto an offscreen canvas first.
+        // This ensures any browser-applied EXIF orientation is preserved and
+        // gives us a guaranteed PNG data URL to feed into jsPDF.
+        const normalizedDataUrl = await new Promise((resolve, reject) => {
+          try {
+            const img = new window.Image();
+            img.onload = () => {
+              try {
+                // Create an offscreen canvas sized to the export region (in canvas pixels)
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, Math.round(exportWidth));
+                canvas.height = Math.max(1, Math.round(exportHeight));
+                const ctx = canvas.getContext('2d');
+                // Draw the image to the canvas scaled to fit the export region
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                // Convert to PNG data URL
+                const dataUrl = canvas.toDataURL('image/png');
+                resolve(dataUrl);
+              } catch (err) {
+                reject(err);
+              }
+            };
+            img.onerror = (err) => reject(err);
+            img.src = backgroundImage;
+          } catch (err) {
+            reject(err);
+          }
+        });
+
+        pdf.addImage(normalizedDataUrl, 'PNG', pdfImgX, pdfImgY, pdfImgWidth, pdfImgHeight);
       } catch (err) {
         console.warn("Failed to add background image to PDF:", err);
       }
@@ -552,6 +585,24 @@ const Page = () => {
     });
     
     console.log(`Rendered ${products.length} products and ${connectors.length} connectors to PDF`);
+  };
+
+  // DEBUG helper - validates mapping of canvas coords to PDF coordinates
+  // Usage: call validateMapping() in dev to check coordinate transforms for a sample product
+  const validateMapping = (options) => {
+    const { products, drawingArea, canvasSize } = options;
+    // Use a fake export region (full canvas fallback)
+    const exportWidth = canvasSize.width;
+    const exportHeight = canvasSize.height;
+    const scale = Math.min(drawingArea.width / exportWidth, drawingArea.height / exportHeight) * 0.95;
+    const offsetX = drawingArea.x + (drawingArea.width - exportWidth * scale) / 2;
+    const offsetY = drawingArea.y + (drawingArea.height - exportHeight * scale) / 2;
+    console.log('[validateMapping] scale, offset', { scale, offsetX, offsetY });
+    products.slice(0, 3).forEach((p, idx) => {
+      const x = offsetX + (p.x - (-exportWidth / 2)) * scale;
+      const y = offsetY + (p.y - (-exportHeight / 2)) * scale;
+      console.log(`[validateMapping] prod ${idx}`, { id: p.id, canvas: { x: p.x, y: p.y }, pdf: { x, y } });
+    });
   };
   
   // Helper function to add product legend

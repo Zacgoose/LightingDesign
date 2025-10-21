@@ -52,6 +52,18 @@ const Page = () => {
   const queryClient = useQueryClient();
   const settings = useSettings();
 
+  // Configure pdfjs worker once on component mount
+  useEffect(() => {
+    // Set up the PDF.js worker using local path to avoid CORS issues
+    // The worker file should be copied to public folder during build
+    if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      // Use a relative path to serve from public folder
+      // This avoids CORS issues with external CDNs
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+      console.log("PDF.js worker configured:", pdfjsLib.GlobalWorkerOptions.workerSrc);
+    }
+  }, []);
+
   // State for tracking save status
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);

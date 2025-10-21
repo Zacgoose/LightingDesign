@@ -112,6 +112,8 @@
     "export": "next export",
     "lint": "next lint",
     "lint-fix": "next lint --fix",
-    "start-swa": "swa start --swa-config-location .vscode http://127.0.0.1:3000 --api-location http://127.0.0.1:7071 --verbose=silly"
+    "start-swa": "swa start --swa-config-location .vscode http://127.0.0.1:3000 --api-location http://127.0.0.1:7071 --verbose=silly",
+    "setup-pdf-worker": "bash copy-pdf-worker.sh",
+    "postinstall": "bash copy-pdf-worker.sh || true"
   }
 }

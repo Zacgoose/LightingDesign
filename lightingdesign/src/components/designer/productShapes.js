@@ -212,6 +212,7 @@ export const ProductShapes = {
   },
 
   circle: (context, shape) => {
+    console.log('[ProductShapes.circle] sceneFunc called', { isSVG: context.isSvg });
     const scaleFactor = shape.getAttr("scaleFactor") || 50;
     const realWorldSize =
       shape.getAttr("realWorldSize") || (shape.width() ? shape.width() / scaleFactor : 1);

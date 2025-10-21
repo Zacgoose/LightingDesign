@@ -24,10 +24,9 @@ import { Download, ArrowBack } from "@mui/icons-material";
 import { ApiGetCall } from "/src/api/ApiCall";
 import Link from "next/link";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import Konva from "konva";
 import { Stage, Layer } from "react-konva";
-import { exportStageSVG } from "react-konva-to-svg";
 import "svg2pdf.js";
 import productTypesConfig from "/src/data/productTypes.json";
 import { getShapeFunction } from "/src/components/designer/productShapes";
@@ -331,53 +330,94 @@ const Page = () => {
       backgroundImageNaturalSize,
     });
     
-    // Determine the export region based on content, not the full canvas
-    let exportWidth, exportHeight, contentOffsetX, contentOffsetY;
-    
+    // --- NEW LOGIC: Compute union of background and product/connector bounds ---
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    // Product bounds
+    products.forEach((product) => {
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      const productScaleFactor = product.scaleFactor || scaleFactor;
+      const realWorldSize = config.realWorldSize || config.realWorldWidth || 1.0;
+      const canvasPixelSize = realWorldSize * productScaleFactor * (product.scaleX || 1);
+      const halfSize = canvasPixelSize / 2;
+      minX = Math.min(minX, product.x - halfSize);
+      minY = Math.min(minY, product.y - halfSize);
+      maxX = Math.max(maxX, product.x + halfSize);
+      maxY = Math.max(maxY, product.y + halfSize);
+    });
+    // Connector bounds: use product endpoints (connectors may not have x/y themselves)
+    connectors.forEach((conn) => {
+      const fromP = products.find((p) => p.id === conn.from);
+      const toP = products.find((p) => p.id === conn.to);
+      if (fromP) {
+        minX = Math.min(minX, fromP.x);
+        minY = Math.min(minY, fromP.y);
+        maxX = Math.max(maxX, fromP.x);
+        maxY = Math.max(maxY, fromP.y);
+      }
+      if (toP) {
+        minX = Math.min(minX, toP.x);
+        minY = Math.min(minY, toP.y);
+        maxX = Math.max(maxX, toP.x);
+        maxY = Math.max(maxY, toP.y);
+      }
+    });
+    // Background bounds
+    let bgX = 0, bgY = 0, bgWidth = 0, bgHeight = 0;
     if (backgroundImage && backgroundImageNaturalSize) {
       const canvasImgScaleX = canvasSize.width / backgroundImageNaturalSize.width;
       const canvasImgScaleY = canvasSize.height / backgroundImageNaturalSize.height;
       const canvasImgScale = Math.min(canvasImgScaleX, canvasImgScaleY);
-      
-      exportWidth = backgroundImageNaturalSize.width * canvasImgScale;
-      exportHeight = backgroundImageNaturalSize.height * canvasImgScale;
-      contentOffsetX = (canvasSize.width - exportWidth) / 2;
-      contentOffsetY = (canvasSize.height - exportHeight) / 2;
-      
-      console.log('Export region based on background:', {
-        exportSize: { width: exportWidth, height: exportHeight },
-        contentOffset: { x: contentOffsetX, y: contentOffsetY },
-      });
-    } else {
-      if (products.length > 0) {
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        
-        products.forEach((product) => {
-          const productType = product.product_type?.toLowerCase() || "default";
-          const config = productTypesConfig[productType] || productTypesConfig.default;
-          const productScaleFactor = product.scaleFactor || scaleFactor;
-          const realWorldSize = config.realWorldSize || config.realWorldWidth || 1.0;
-          const canvasPixelSize = realWorldSize * productScaleFactor * (product.scaleX || 1);
-          const halfSize = canvasPixelSize / 2;
-          
-          minX = Math.min(minX, product.x - halfSize);
-          minY = Math.min(minY, product.y - halfSize);
-          maxX = Math.max(maxX, product.x + halfSize);
-          maxY = Math.max(maxY, product.y + halfSize);
-        });
-        
-        const padding = Math.max((maxX - minX), (maxY - minY)) * 0.1;
-        exportWidth = (maxX - minX) + 2 * padding;
-        exportHeight = (maxY - minY) + 2 * padding;
-        contentOffsetX = minX - padding;
-        contentOffsetY = minY - padding;
-      } else {
-        exportWidth = canvasSize.width;
-        exportHeight = canvasSize.height;
-        contentOffsetX = 0;
-        contentOffsetY = 0;
+  bgWidth = backgroundImageNaturalSize.width * canvasImgScale;
+  bgHeight = backgroundImageNaturalSize.height * canvasImgScale;
+  // Designer uses centered coordinates (0,0 at center of canvas). Background image
+  // is drawn centered on stage: x = -bgWidth/2, y = -bgHeight/2
+  bgX = -bgWidth / 2;
+  bgY = -bgHeight / 2;
+      minX = Math.min(minX, bgX);
+      minY = Math.min(minY, bgY);
+      maxX = Math.max(maxX, bgX + bgWidth);
+      maxY = Math.max(maxY, bgY + bgHeight);
+      console.log('Background bounds:', { bgX, bgY, bgWidth, bgHeight });
+    }
+    // If background exists but product outliers are very far away, prefer background bounds
+    if (backgroundImage && backgroundImageNaturalSize) {
+      const dLeft = Math.max(0, bgX - minX);
+      const dRight = Math.max(0, maxX - (bgX + bgWidth));
+      const dTop = Math.max(0, bgY - minY);
+      const dBottom = Math.max(0, maxY - (bgY + bgHeight));
+      const maxDelta = Math.max(dLeft, dRight, dTop, dBottom);
+      const threshold = Math.max(bgWidth, bgHeight) * 0.25; // if outliers >25% of bg size, ignore them
+      console.log('Background-outlier deltas:', { dLeft, dRight, dTop, dBottom, maxDelta, threshold });
+      if (maxDelta > threshold) {
+        console.log('Outliers too large; using background bounds only for export region');
+        minX = bgX;
+        minY = bgY;
+        maxX = bgX + bgWidth;
+        maxY = bgY + bgHeight;
       }
     }
+    // Fallback if no products/connectors/background
+    if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+      minX = 0;
+      minY = 0;
+      maxX = canvasSize.width;
+      maxY = canvasSize.height;
+    }
+    // Add padding (use no padding when background-only to keep background full-size)
+    const usingBackgroundOnly = backgroundImage && backgroundImageNaturalSize &&
+      (minX === bgX && minY === bgY && maxX === bgX + bgWidth && maxY === bgY + bgHeight);
+    const padding = usingBackgroundOnly ? 0 : Math.max((maxX - minX), (maxY - minY)) * 0.05;
+    const exportWidth = (maxX - minX) + 2 * padding;
+    const exportHeight = (maxY - minY) + 2 * padding;
+    const contentOffsetX = minX - padding;
+    const contentOffsetY = minY - padding;
+    console.log('Export region (union):', {
+      contentOffsetX,
+      contentOffsetY,
+      exportWidth,
+      exportHeight,
+    });
     
     // Calculate scale to fit in PDF
     const scaleX = drawingArea.width / exportWidth;
@@ -402,70 +442,100 @@ const Page = () => {
     document.body.appendChild(container);
     
     try {
-      const stage = new Konva.Stage({
-        container: container,
-        width: exportWidth,
-        height: exportHeight,
+      // No Konva stage required for manual SVG export - keep a hidden container for cleanup
+      const stage = null;
+      
+      // Log product coordinate bounds
+      let minProdX = Infinity, minProdY = Infinity, maxProdX = -Infinity, maxProdY = -Infinity;
+      products.forEach((p) => {
+        minProdX = Math.min(minProdX, p.x);
+        minProdY = Math.min(minProdY, p.y);
+        maxProdX = Math.max(maxProdX, p.x);
+        maxProdY = Math.max(maxProdY, p.y);
       });
+      console.log('Product coordinate bounds:', { minProdX, minProdY, maxProdX, maxProdY });
+      console.log('Export region:', { contentOffsetX, contentOffsetY, exportWidth, exportHeight });
+      const exportProducts = products.filter((p) => {
+        const relX = p.x - contentOffsetX;
+        const relY = p.y - contentOffsetY;
+        return relX >= 0 && relX <= exportWidth && relY >= 0 && relY <= exportHeight;
+      });
+      console.log('Products in export region:', exportProducts.length, 'of', products.length);
+
+      const exportProductIds = new Set(exportProducts.map((p) => p.id));
+      const exportConnectors = connectors.filter(
+        (c) => exportProductIds.has(c.from) && exportProductIds.has(c.to),
+      );
+      console.log('Connectors in export region:', exportConnectors.length, 'of', connectors.length);
+
+  // Add connectors (cables)
+      // Connectors will be drawn directly into the SVG
       
-      const layer = new Konva.Layer();
-      stage.add(layer);
-      
-      // Add background image if available
-      if (backgroundImage && backgroundImageNaturalSize) {
-        const img = new window.Image();
-        img.src = backgroundImage;
-        await new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve;
-        });
-        
-        const konvaImage = new Konva.Image({
-          x: 0,
-          y: 0,
-          image: img,
-          width: exportWidth,
-          height: exportHeight,
-        });
-        layer.add(konvaImage);
+  // Add products to Konva layer using custom shapes
+      // Products will be drawn directly into the SVG
+      // --- Build SVG manually to avoid Konva canvas size limits and ensure primitives ---
+      console.log('Building manual SVG for export...');
+      const SVG_NS = 'http://www.w3.org/2000/svg';
+      const XLINK_NS = 'http://www.w3.org/1999/xlink';
+      const svgElement = document.createElementNS(SVG_NS, 'svg');
+      svgElement.setAttribute('xmlns', SVG_NS);
+      svgElement.setAttribute('xmlns:xlink', XLINK_NS);
+  // Use an absolute viewBox that maps to the canvas coordinate system
+  svgElement.setAttribute('viewBox', `${contentOffsetX} ${contentOffsetY} ${exportWidth} ${exportHeight}`);
+      svgElement.setAttribute('width', String(exportWidth));
+      svgElement.setAttribute('height', String(exportHeight));
+
+      // Helpers to map to export coordinates
+      const mapX = (v) => v - contentOffsetX;
+      const mapY = (v) => v - contentOffsetY;
+
+      // Background image (preserve aspect ratio and natural size)
+      if (backgroundImage) {
+        const imgEl = document.createElementNS(SVG_NS, 'image');
+        imgEl.setAttributeNS(XLINK_NS, 'xlink:href', backgroundImage);
+        imgEl.setAttribute('href', backgroundImage);
+        // Position image using its calculated background bounds
+  // Position image using absolute canvas coordinates
+  imgEl.setAttribute('x', String(bgX));
+  imgEl.setAttribute('y', String(bgY));
+        imgEl.setAttribute('width', String(bgWidth));
+        imgEl.setAttribute('height', String(bgHeight));
+        imgEl.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+        svgElement.appendChild(imgEl);
       }
-      
-      // Add connectors (cables)
-      connectors.forEach((connector) => {
-        const fromProduct = products.find((p) => p.id === connector.from);
-        const toProduct = products.find((p) => p.id === connector.to);
-        
+
+      console.log('Manual builder: exportProducts=', exportProducts.length, 'exportConnectors=', exportConnectors.length);
+      // Draw connectors as lines
+      let connectorCount = 0;
+      exportConnectors.forEach((connector) => {
+        const fromProduct = exportProducts.find((p) => p.id === connector.from);
+        const toProduct = exportProducts.find((p) => p.id === connector.to);
         if (fromProduct && toProduct) {
-          const line = new Konva.Line({
-            points: [
-              fromProduct.x - contentOffsetX,
-              fromProduct.y - contentOffsetY,
-              toProduct.x - contentOffsetX,
-              toProduct.y - contentOffsetY,
-            ],
-            stroke: '#6464FF',
-            strokeWidth: 2,
-          });
-          layer.add(line);
+          console.log('Adding connector between', fromProduct.id, 'and', toProduct.id, 'coords', { x1: mapX(fromProduct.x), y1: mapY(fromProduct.y), x2: mapX(toProduct.x), y2: mapY(toProduct.y) });
+          const lineEl = document.createElementNS(SVG_NS, 'line');
+          // Absolute coordinates (viewBox is contentOffset-based)
+          lineEl.setAttribute('x1', String(fromProduct.x));
+          lineEl.setAttribute('y1', String(fromProduct.y));
+          lineEl.setAttribute('x2', String(toProduct.x));
+          lineEl.setAttribute('y2', String(toProduct.y));
+          lineEl.setAttribute('stroke', '#6464FF');
+          lineEl.setAttribute('stroke-width', '2');
+          lineEl.setAttribute('stroke-linecap', 'round');
+          svgElement.appendChild(lineEl);
+          connectorCount++;
         }
       });
-      
-      // Add products to Konva layer using custom shapes
-      products.forEach((product, idx) => {
-        const productType = product.product_type?.toLowerCase() || "default";
+      console.log('Manual builder appended connectors:', connectorCount);
+
+      // Draw products as circles/ellipses
+  let productCount = 0;
+  exportProducts.forEach((product) => {
+        const productType = product.product_type?.toLowerCase() || 'default';
         const config = productTypesConfig[productType] || productTypesConfig.default;
-        
-        // Calculate product position in export coordinates
-        const x = product.x - contentOffsetX;
-        const y = product.y - contentOffsetY;
-        
-        // Get product scale factors and dimensions
         const productScaleFactor = product.scaleFactor || scaleFactor;
         const realWorldSize = product.realWorldSize || config.realWorldSize;
         const realWorldWidth = product.realWorldWidth || config.realWorldWidth;
         const realWorldHeight = product.realWorldHeight || config.realWorldHeight;
-        
-        // Calculate rendered dimensions
         let width, height;
         if (realWorldSize) {
           width = height = realWorldSize * productScaleFactor;
@@ -476,60 +546,53 @@ const Page = () => {
           width = config.width || 30;
           height = config.height || 30;
         }
-        
-        // Set colors
-        const strokeColor = product.strokeColor || config.stroke || "#000000";
-        const fillColor = product.color || config.fill || "#FFFFFF";
-        
-        // Get custom shape function
-        const shapeType = config.shapeType || "circle";
-        const shapeFunction = getShapeFunction(shapeType);
-        
-        // Create a group for the product (to apply position and scale)
-        const productGroup = new Konva.Group({
-          x: x,
-          y: y,
-          rotation: product.rotation || 0,
-          scaleX: product.scaleX || 1,
-          scaleY: product.scaleY || 1,
-        });
-        
-        // Create custom shape using the shape function
-        const customShape = new Konva.Shape({
-          sceneFunc: (context, shape) => shapeFunction(context, shape),
-          fill: fillColor,
-          stroke: strokeColor,
-          strokeWidth: config.strokeWidth || 2,
-          width: width,
-          height: height,
-          // Pass attributes needed by shape functions
-          realWorldSize: realWorldSize,
-          realWorldWidth: realWorldWidth,
-          realWorldHeight: realWorldHeight,
-          scaleFactor: productScaleFactor,
-        });
-        
-        productGroup.add(customShape);
-        layer.add(productGroup);
+        const strokeColor = product.strokeColor || config.stroke || '#000000';
+        const fillColor = product.color || config.fill || '#FFFFFF';
+        const sx = product.scaleX || 1;
+        const sy = product.scaleY || 1;
+  // Use absolute canvas coordinates
+  const cx = product.x;
+  const cy = product.y;
+
+  console.log('Adding product', product.id, 'pos', { cx, cy }, 'size', { width, height }, 'scale', { sx, sy });
+  if (Math.abs(sx - sy) < 1e-6) {
+          const r = (width / 2) * sx;
+          const circleEl = document.createElementNS(SVG_NS, 'circle');
+          circleEl.setAttribute('cx', String(cx));
+          circleEl.setAttribute('cy', String(cy));
+          circleEl.setAttribute('r', String(r));
+          circleEl.setAttribute('fill', fillColor);
+          circleEl.setAttribute('stroke', strokeColor);
+          circleEl.setAttribute('stroke-width', String(config.strokeWidth || 2));
+          svgElement.appendChild(circleEl);
+          productCount++;
+        } else {
+          const rx = (width / 2) * sx;
+          const ry = (height / 2) * sy;
+          const ellipseEl = document.createElementNS(SVG_NS, 'ellipse');
+          ellipseEl.setAttribute('cx', String(cx));
+          ellipseEl.setAttribute('cy', String(cy));
+          ellipseEl.setAttribute('rx', String(rx));
+          ellipseEl.setAttribute('ry', String(ry));
+          ellipseEl.setAttribute('fill', fillColor);
+          ellipseEl.setAttribute('stroke', strokeColor);
+          ellipseEl.setAttribute('stroke-width', String(config.strokeWidth || 2));
+          if (product.rotation) {
+            ellipseEl.setAttribute('transform', `rotate(${product.rotation} ${cx} ${cy})`);
+          }
+          svgElement.appendChild(ellipseEl);
+          productCount++;
+        }
       });
-      
-      layer.batchDraw();
-      
-      // Export stage to SVG using react-konva-to-svg
-      console.log('Exporting Konva stage to SVG...');
-      const svgString = await exportStageSVG(stage, true); // true for pixelRatio
-      
-      console.log('SVG exported, length:', svgString.length);
-      
-      // Convert SVG string to PDF using svg2pdf.js
-      const element = document.createElement('div');
-      element.innerHTML = svgString;
-      const svgElement = element.querySelector('svg');
-      
-      if (!svgElement) {
-        throw new Error('Failed to parse SVG from exported string');
-      }
-      
+      console.log('Manual builder appended products:', productCount);
+
+      // Diagnostics
+      const primitives = svgElement.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+      console.log('SVG primitives count:', primitives.length);
+      const imageCount = svgElement.querySelectorAll('image').length;
+      console.log('SVG image count:', imageCount);
+      console.log('SVG outerHTML length:', svgElement.outerHTML.length);
+
       // Render SVG to PDF at the calculated position and size
       await pdf.svg(svgElement, {
         x: offsetX,

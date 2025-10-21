@@ -324,48 +324,111 @@ const Page = () => {
       scaleFactor,
       canvasSize,
       drawingArea,
+      backgroundImageNaturalSize,
     });
     
-    // Calculate scale to fit canvas in drawing area while maintaining aspect ratio
-    const scaleX = drawingArea.width / canvasSize.width;
-    const scaleY = drawingArea.height / canvasSize.height;
-    const scale = Math.min(scaleX, scaleY) * 0.9; // Use 90% to leave margin
+    // Determine the export region based on content, not the full canvas
+    let exportWidth, exportHeight, contentOffsetX, contentOffsetY;
     
-    console.log('PDF scale calculation:', { scaleX, scaleY, finalScale: scale });
+    if (backgroundImage && backgroundImageNaturalSize) {
+      // If there's a background image, use its displayed size as the export region
+      const canvasImgScaleX = canvasSize.width / backgroundImageNaturalSize.width;
+      const canvasImgScaleY = canvasSize.height / backgroundImageNaturalSize.height;
+      const canvasImgScale = Math.min(canvasImgScaleX, canvasImgScaleY);
+      
+      // The actual displayed size in canvas coordinates
+      exportWidth = backgroundImageNaturalSize.width * canvasImgScale;
+      exportHeight = backgroundImageNaturalSize.height * canvasImgScale;
+      
+      // The background is centered in the canvas
+      contentOffsetX = (canvasSize.width - exportWidth) / 2;
+      contentOffsetY = (canvasSize.height - exportHeight) / 2;
+      
+      console.log('Export region based on background:', {
+        exportSize: { width: exportWidth, height: exportHeight },
+        contentOffset: { x: contentOffsetX, y: contentOffsetY },
+        backgroundNaturalSize: backgroundImageNaturalSize,
+        canvasImgScale,
+      });
+    } else {
+      // No background - calculate bounding box from products
+      if (products.length > 0) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        
+        products.forEach((product) => {
+          const productType = product.product_type?.toLowerCase() || "default";
+          const config = productTypesConfig[productType] || productTypesConfig.default;
+          const productScaleFactor = product.scaleFactor || scaleFactor;
+          const realWorldSize = config.realWorldSize || config.realWorldWidth || 1.0;
+          const canvasPixelSize = realWorldSize * productScaleFactor * (product.scaleX || 1);
+          const halfSize = canvasPixelSize / 2;
+          
+          minX = Math.min(minX, product.x - halfSize);
+          minY = Math.min(minY, product.y - halfSize);
+          maxX = Math.max(maxX, product.x + halfSize);
+          maxY = Math.max(maxY, product.y + halfSize);
+        });
+        
+        // Add 10% padding
+        const padding = Math.max((maxX - minX), (maxY - minY)) * 0.1;
+        minX -= padding;
+        minY -= padding;
+        maxX += padding;
+        maxY += padding;
+        
+        exportWidth = maxX - minX;
+        exportHeight = maxY - minY;
+        contentOffsetX = minX;
+        contentOffsetY = minY;
+        
+        console.log('Export region based on products:', {
+          exportSize: { width: exportWidth, height: exportHeight },
+          contentOffset: { x: contentOffsetX, y: contentOffsetY },
+          productBounds: { minX, minY, maxX, maxY },
+        });
+      } else {
+        // Fallback to full canvas if no content
+        exportWidth = canvasSize.width;
+        exportHeight = canvasSize.height;
+        contentOffsetX = 0;
+        contentOffsetY = 0;
+      }
+    }
     
-    // Center the scaled canvas in the drawing area
-    const scaledCanvasWidth = canvasSize.width * scale;
-    const scaledCanvasHeight = canvasSize.height * scale;
-    const offsetX = drawingArea.x + (drawingArea.width - scaledCanvasWidth) / 2;
-    const offsetY = drawingArea.y + (drawingArea.height - scaledCanvasHeight) / 2;
+    // Calculate scale to fit the export region in the drawing area
+    const scaleX = drawingArea.width / exportWidth;
+    const scaleY = drawingArea.height / exportHeight;
+    const scale = Math.min(scaleX, scaleY) * 0.95; // Use 95% to leave small margin
     
-    // Draw background image if available - maintain its original aspect ratio
+    console.log('PDF scale calculation:', { 
+      scaleX, 
+      scaleY, 
+      finalScale: scale,
+      exportSize: { width: exportWidth, height: exportHeight }
+    });
+    
+    // Center the scaled export region in the drawing area
+    const scaledWidth = exportWidth * scale;
+    const scaledHeight = exportHeight * scale;
+    const offsetX = drawingArea.x + (drawingArea.width - scaledWidth) / 2;
+    const offsetY = drawingArea.y + (drawingArea.height - scaledHeight) / 2;
+    
+    console.log('PDF positioning:', {
+      scaledSize: { width: scaledWidth, height: scaledHeight },
+      offset: { x: offsetX, y: offsetY },
+    });
+    
+    // Draw background image if available
     if (backgroundImage && backgroundImageNaturalSize) {
       try {
-        // The background image in the canvas is scaled to fit the canvas while maintaining aspect ratio
-        // Calculate how it's displayed in the canvas
-        const canvasImgScaleX = canvasSize.width / backgroundImageNaturalSize.width;
-        const canvasImgScaleY = canvasSize.height / backgroundImageNaturalSize.height;
-        const canvasImgScale = Math.min(canvasImgScaleX, canvasImgScaleY);
-        
-        // The actual displayed size in canvas coordinates
-        const displayedWidth = backgroundImageNaturalSize.width * canvasImgScale;
-        const displayedHeight = backgroundImageNaturalSize.height * canvasImgScale;
-        
-        // Center the image in canvas (same as in DesignerCanvas)
-        const imgOffsetX = (canvasSize.width - displayedWidth) / 2;
-        const imgOffsetY = (canvasSize.height - displayedHeight) / 2;
-        
-        // Now scale to PDF coordinates
-        const pdfImgX = offsetX + imgOffsetX * scale;
-        const pdfImgY = offsetY + imgOffsetY * scale;
-        const pdfImgWidth = displayedWidth * scale;
-        const pdfImgHeight = displayedHeight * scale;
+        // The background fills the entire export region (it IS the export region)
+        const pdfImgX = offsetX;
+        const pdfImgY = offsetY;
+        const pdfImgWidth = scaledWidth;
+        const pdfImgHeight = scaledHeight;
         
         console.log('Background image rendering:', {
           naturalSize: backgroundImageNaturalSize,
-          canvasImgScale,
-          displayedSize: { width: displayedWidth, height: displayedHeight },
           pdfPosition: { x: pdfImgX, y: pdfImgY },
           pdfSize: { width: pdfImgWidth, height: pdfImgHeight },
         });
@@ -376,10 +439,10 @@ const Page = () => {
       }
     }
     
-    // Draw border around canvas area
+    // Draw border around export area for reference
     pdf.setDrawColor(200, 200, 200);
     pdf.setLineWidth(0.2);
-    pdf.rect(offsetX, offsetY, scaledCanvasWidth, scaledCanvasHeight);
+    pdf.rect(offsetX, offsetY, scaledWidth, scaledHeight);
     
     // Draw connectors (cables)
     pdf.setLineWidth(0.5);
@@ -389,10 +452,11 @@ const Page = () => {
       const toProduct = products.find((p) => p.id === connector.to);
       
       if (fromProduct && toProduct) {
-        const x1 = offsetX + fromProduct.x * scale;
-        const y1 = offsetY + fromProduct.y * scale;
-        const x2 = offsetX + toProduct.x * scale;
-        const y2 = offsetY + toProduct.y * scale;
+        // Convert product positions from canvas coordinates to export region coordinates
+        const x1 = offsetX + (fromProduct.x - contentOffsetX) * scale;
+        const y1 = offsetY + (fromProduct.y - contentOffsetY) * scale;
+        const x2 = offsetX + (toProduct.x - contentOffsetX) * scale;
+        const y2 = offsetY + (toProduct.y - contentOffsetY) * scale;
         
         pdf.line(x1, y1, x2, y2);
       }
@@ -403,12 +467,11 @@ const Page = () => {
       const productType = product.product_type?.toLowerCase() || "default";
       const config = productTypesConfig[productType] || productTypesConfig.default;
       
-      // Calculate product position in PDF coordinates
-      const x = offsetX + product.x * scale;
-      const y = offsetY + product.y * scale;
+      // Convert product position from canvas coordinates to export region coordinates
+      const x = offsetX + (product.x - contentOffsetX) * scale;
+      const y = offsetY + (product.y - contentOffsetY) * scale;
       
       // Calculate product size
-      // The product's real-world size is in meters, scaleFactor converts meters to pixels
       const productScaleFactor = product.scaleFactor || scaleFactor;
       const realWorldSize = config.realWorldSize || config.realWorldWidth || 1.0;
       
@@ -424,8 +487,9 @@ const Page = () => {
       
       if (idx < 3) {
         console.log(`Product ${idx} (${product.name || 'unnamed'}):`, {
-          position: { x: product.x, y: product.y },
+          canvasPosition: { x: product.x, y: product.y },
           pdfPosition: { x, y },
+          contentOffset: { x: contentOffsetX, y: contentOffsetY },
           realWorldSize,
           productScaleFactor,
           canvasPixelSize,

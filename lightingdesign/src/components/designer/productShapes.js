@@ -10,21 +10,6 @@ export const ProductShapes = {
     // Current center without offset: (-radius*1.5 + radius) / 2 = -radius*0.25
     // We want center at y=0, so offset by +radius*0.25
     const yOffset = radius * 0.25;
-    
-    // Debug logging (only log occasionally to avoid spam)
-    if (Math.random() < 0.01) {
-      console.log(`[pendant shape] Drawing with:`, {
-        width,
-        height,
-        radius,
-        yOffset,
-        wireTop: -radius * 1.5 + yOffset,
-        wireBottom: -radius + yOffset,
-        circleCenter: yOffset,
-        circleTop: -radius + yOffset,
-        circleBottom: radius + yOffset,
-      });
-    }
 
     // Hanging wire
     context.save();

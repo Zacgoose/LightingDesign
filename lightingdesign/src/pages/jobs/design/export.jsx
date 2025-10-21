@@ -351,7 +351,7 @@ const Page = () => {
       maxX = Math.max(maxX, product.x + halfSize);
       maxY = Math.max(maxY, product.y + halfSize);
     });
-  // Connector bounds: use product endpoints (connectors may not have x/y themselves)
+    // Connector bounds: use product endpoints (connectors may not have x/y themselves)
     connectors.forEach((conn) => {
       const fromP = products.find((p) => p.id === conn.from);
       const toP = products.find((p) => p.id === conn.to);
@@ -388,12 +388,12 @@ const Page = () => {
       const canvasImgScaleX = canvasSize.width / backgroundImageNaturalSize.width;
       const canvasImgScaleY = canvasSize.height / backgroundImageNaturalSize.height;
       const canvasImgScale = Math.min(canvasImgScaleX, canvasImgScaleY);
-  bgWidth = backgroundImageNaturalSize.width * canvasImgScale;
-  bgHeight = backgroundImageNaturalSize.height * canvasImgScale;
-  // Designer uses centered coordinates (0,0 at center of canvas). Background image
-  // is drawn centered on stage: x = -bgWidth/2, y = -bgHeight/2
-  bgX = -bgWidth / 2;
-  bgY = -bgHeight / 2;
+      bgWidth = backgroundImageNaturalSize.width * canvasImgScale;
+      bgHeight = backgroundImageNaturalSize.height * canvasImgScale;
+      // Designer uses centered coordinates (0,0 at center of canvas). Background image
+      // is drawn centered on stage: x = -bgWidth/2, y = -bgHeight/2
+      bgX = -bgWidth / 2;
+      bgY = -bgHeight / 2;
       minX = Math.min(minX, bgX);
       minY = Math.min(minY, bgY);
       maxX = Math.max(maxX, bgX + bgWidth);

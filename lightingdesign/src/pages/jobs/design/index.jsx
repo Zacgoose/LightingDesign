@@ -42,6 +42,8 @@ import { useSettings } from "/src/hooks/use-settings";
 import productTypesConfig from "/src/data/productTypes.json";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
 import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
+import { PDFDocument } from "pdf-lib";
+import * as pdfjsLib from "pdfjs-dist";
 
 const Page = () => {
   const router = useRouter();
@@ -1044,19 +1046,21 @@ const Page = () => {
                 // Now render a preview for display in Konva
                 const arrayBuffer = await file.arrayBuffer();
 
-                // Dynamically import pdf-lib to get page dimensions
-                const { PDFDocument } = await import("pdf-lib");
+                // Load PDF with pdf-lib to get page dimensions
+                console.log("Loading PDF with pdf-lib...");
                 const pdfDoc = await PDFDocument.load(arrayBuffer);
 
                 // Get the first page
                 const pages = pdfDoc.getPages();
                 if (pages.length === 0) {
                   console.error("PDF has no pages");
+                  alert("The PDF file appears to be empty. Please try another file.");
                   return;
                 }
 
                 const firstPage = pages[0];
                 const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
+                console.log("PDF dimensions:", pdfWidth, "x", pdfHeight);
 
                 // Create a canvas to render the PDF page preview
                 const canvas = document.createElement("canvas");
@@ -1065,13 +1069,12 @@ const Page = () => {
                 canvas.height = pdfHeight * scale;
                 const context = canvas.getContext("2d");
 
-                // Use pdfjs-dist to render the PDF page
-                const pdfjsLib = await import("pdfjs-dist");
-
-                // Set worker source
+                // Set worker source for pdfjs
+                console.log("Setting up pdfjs worker...");
                 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
                 // Load the PDF with pdfjs
+                console.log("Loading PDF with pdfjs for rendering...");
                 const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
                 const pdf = await loadingTask.promise;
                 const page = await pdf.getPage(1);
@@ -1081,6 +1084,7 @@ const Page = () => {
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
 
+                console.log("Rendering PDF to canvas...");
                 await page.render({
                   canvasContext: context,
                   viewport: viewport,
@@ -1088,6 +1092,7 @@ const Page = () => {
 
                 // Convert canvas to PNG data URL (for display preview)
                 const previewDataUrl = canvas.toDataURL("image/png");
+                console.log("PDF preview generated successfully");
 
                 // Set the background image (preview for display)
                 setBackgroundImage(previewDataUrl);
@@ -1113,15 +1118,22 @@ const Page = () => {
                 setStageScale(constrainedZoom);
 
                 handleResetView();
+                console.log("PDF background loaded successfully");
               } catch (error) {
                 console.error("Error processing PDF preview:", error);
-                alert("Failed to load PDF file. Please try an image file instead.");
+                console.error("Error details:", error.message, error.stack);
+                alert(
+                  `Failed to load PDF file: ${error.message}\n\nPlease try an image file instead or check that the PDF is not corrupted.`,
+                );
               }
             };
             reader.readAsDataURL(file);
           } catch (error) {
             console.error("Error reading PDF:", error);
-            alert("Failed to load PDF file. Please try an image file instead.");
+            console.error("Error details:", error.message, error.stack);
+            alert(
+              `Failed to read PDF file: ${error.message}\n\nPlease try again or use an image file.`,
+            );
           }
         } else {
           // Handle image files (existing logic)

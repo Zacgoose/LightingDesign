@@ -42,7 +42,6 @@ import { useSettings } from "/src/hooks/use-settings";
 import productTypesConfig from "/src/data/productTypes.json";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
 import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
-import { PDFDocument } from "pdf-lib";
 
 const Page = () => {
   const router = useRouter();
@@ -1060,8 +1059,9 @@ const Page = () => {
                 // Now render a preview for display in Konva
                 const arrayBuffer = await file.arrayBuffer();
 
-                // Load PDF with pdf-lib to get page dimensions
+                // Load PDF with pdf-lib to get page dimensions (dynamic import for SSR compatibility)
                 console.log("Loading PDF with pdf-lib...");
+                const { PDFDocument } = await import("pdf-lib");
                 const pdfDoc = await PDFDocument.load(arrayBuffer);
 
                 // Get the first page

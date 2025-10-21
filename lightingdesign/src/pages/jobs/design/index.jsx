@@ -52,6 +52,16 @@ const Page = () => {
   const queryClient = useQueryClient();
   const settings = useSettings();
 
+  // Configure pdfjs worker once on component mount
+  useEffect(() => {
+    // Set up the PDF.js worker
+    // Use unpkg CDN which works better with Next.js
+    if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+      console.log("PDF.js worker configured:", pdfjsLib.GlobalWorkerOptions.workerSrc);
+    }
+  }, []);
+
   // State for tracking save status
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
@@ -1069,11 +1079,7 @@ const Page = () => {
                 canvas.height = pdfHeight * scale;
                 const context = canvas.getContext("2d");
 
-                // Set worker source for pdfjs
-                console.log("Setting up pdfjs worker...");
-                pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-
-                // Load the PDF with pdfjs
+                // Load the PDF with pdfjs (worker already configured in useEffect)
                 console.log("Loading PDF with pdfjs for rendering...");
                 const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
                 const pdf = await loadingTask.promise;

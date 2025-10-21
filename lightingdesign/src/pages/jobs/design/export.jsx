@@ -145,12 +145,27 @@ const Page = () => {
       const pageWidth = isLandscape ? paper.height : paper.width;
       const pageHeight = isLandscape ? paper.width : paper.height;
 
-      // Create PDF
-      const pdf = new jsPDF({
-        orientation: orientation,
-        unit: "mm",
-        format: [paper.width, paper.height],
+      // Check if any layers have PDF backgrounds - if so, use pdf-lib for everything
+      const hasPdfBackgrounds = selectedLayers.some((layerId) => {
+        const layer = layers.find((l) => l.id === layerId);
+        return layer?.backgroundImageType === "pdf" && layer?.backgroundPdfData;
       });
+
+      let pdf;
+      if (hasPdfBackgrounds) {
+        // Use pdf-lib for vector PDF support
+        console.log("Using pdf-lib export pipeline (vector PDF support)");
+        const { PDFDocument, rgb, StandardFonts } = await import("pdf-lib");
+        pdf = await PDFDocument.create();
+      } else {
+        // Use jsPDF for traditional export (image backgrounds)
+        console.log("Using jsPDF export pipeline (image backgrounds)");
+        pdf = new jsPDF({
+          orientation: orientation,
+          unit: "mm",
+          format: [paper.width, paper.height],
+        });
+      }
 
       setExportProgress(10);
       setExportStatus("Loading job information...");
@@ -206,23 +221,8 @@ const Page = () => {
       for (let i = 0; i < selectedLayerData.length; i++) {
         const { layer, products, connectors, textBoxes } = selectedLayerData[i];
 
-        if (i > 0) {
-          pdf.addPage();
-        }
-
         setExportStatus(`Rendering ${layer.name}...`);
         setExportProgress(20 + (i / selectedLayerData.length) * 50);
-
-        // Add title block
-        await addTitleBlock(pdf, pageWidth, pageHeight, {
-          jobNumber,
-          customerName,
-          address: jobAddress,
-          floorName: layer.name,
-          pageNumber: i + 1,
-          totalPages: selectedLayerData.length,
-          date: new Date().toLocaleDateString(),
-        });
 
         // Define drawing area (below title block)
         const titleBlockHeight = 40;
@@ -230,50 +230,131 @@ const Page = () => {
         const drawingAreaHeight = pageHeight - titleBlockHeight - 10;
         const drawingAreaWidth = pageWidth - 20;
 
-        // Render canvas to PDF
-        console.log(`Exporting floor: ${layer.name}`, {
-          productsCount: products.length,
-          connectorsCount: connectors.length,
-          hasBackground: !!layer.backgroundImage,
-          backgroundSize: layer.backgroundImageNaturalSize,
-          scaleFactor: layer.scaleFactor || 100,
-        });
+        if (hasPdfBackgrounds) {
+          // pdf-lib export path
+          const { PDFDocument, rgb, StandardFonts, degrees } = await import("pdf-lib");
 
-        await renderCanvasToPDF(pdf, {
-          products,
-          connectors,
-          textBoxes,
-          backgroundImage: layer.backgroundImage,
-          backgroundImageNaturalSize: layer.backgroundImageNaturalSize,
-          backgroundImageType: layer.backgroundImageType,
-          backgroundPdfData: layer.backgroundPdfData,
-          scaleFactor: layer.scaleFactor || 100,
-          drawingArea: {
-            x: 10,
-            y: drawingAreaY,
-            width: drawingAreaWidth,
-            height: drawingAreaHeight,
-          },
-          canvasSize: {
-            width: designData.data?.designData?.canvasSettings?.width || 4200,
-            height: designData.data?.designData?.canvasSettings?.height || 2970,
-          },
-        });
+          // Add new page (or use first page)
+          const page =
+            i === 0
+              ? pdf.addPage([pageWidth * 2.83465, pageHeight * 2.83465]) // mm to points
+              : pdf.addPage([pageWidth * 2.83465, pageHeight * 2.83465]);
+
+          // Add title block using pdf-lib
+          await addTitleBlockPdfLib(pdf, page, pageWidth, pageHeight, {
+            jobNumber,
+            customerName,
+            address: jobAddress,
+            floorName: layer.name,
+            pageNumber: i + 1,
+            totalPages: selectedLayerData.length,
+            date: new Date().toLocaleDateString(),
+          });
+
+          // Render content using pdf-lib
+          await renderLayerWithPdfLib(pdf, page, {
+            products,
+            connectors,
+            textBoxes,
+            backgroundImage: layer.backgroundImage,
+            backgroundImageNaturalSize: layer.backgroundImageNaturalSize,
+            backgroundImageType: layer.backgroundImageType,
+            backgroundPdfData: layer.backgroundPdfData,
+            scaleFactor: layer.scaleFactor || 100,
+            drawingArea: {
+              x: 10,
+              y: drawingAreaY,
+              width: drawingAreaWidth,
+              height: drawingAreaHeight,
+            },
+            canvasSize: {
+              width: designData.data?.designData?.canvasSettings?.width || 4200,
+              height: designData.data?.designData?.canvasSettings?.height || 2970,
+            },
+            pageWidth,
+            pageHeight,
+          });
+        } else {
+          // jsPDF export path (original)
+          if (i > 0) {
+            pdf.addPage();
+          }
+
+          // Add title block
+          await addTitleBlock(pdf, pageWidth, pageHeight, {
+            jobNumber,
+            customerName,
+            address: jobAddress,
+            floorName: layer.name,
+            pageNumber: i + 1,
+            totalPages: selectedLayerData.length,
+            date: new Date().toLocaleDateString(),
+          });
+
+          // Render canvas to PDF
+          console.log(`Exporting floor: ${layer.name}`, {
+            productsCount: products.length,
+            connectorsCount: connectors.length,
+            hasBackground: !!layer.backgroundImage,
+            backgroundSize: layer.backgroundImageNaturalSize,
+            scaleFactor: layer.scaleFactor || 100,
+          });
+
+          await renderCanvasToPDF(pdf, {
+            products,
+            connectors,
+            textBoxes,
+            backgroundImage: layer.backgroundImage,
+            backgroundImageNaturalSize: layer.backgroundImageNaturalSize,
+            backgroundImageType: layer.backgroundImageType,
+            backgroundPdfData: layer.backgroundPdfData,
+            scaleFactor: layer.scaleFactor || 100,
+            drawingArea: {
+              x: 10,
+              y: drawingAreaY,
+              width: drawingAreaWidth,
+              height: drawingAreaHeight,
+            },
+            canvasSize: {
+              width: designData.data?.designData?.canvasSettings?.width || 4200,
+              height: designData.data?.designData?.canvasSettings?.height || 2970,
+            },
+          });
+        }
       }
 
       setExportProgress(75);
       setExportStatus("Generating product legend...");
 
       // Add legend page
-      pdf.addPage();
-      await addProductLegend(pdf, pageWidth, pageHeight, allProducts);
+      if (hasPdfBackgrounds) {
+        const { PDFDocument } = await import("pdf-lib");
+        const page = pdf.addPage([pageWidth * 2.83465, pageHeight * 2.83465]);
+        await addProductLegendPdfLib(pdf, page, pageWidth, pageHeight, allProducts);
+      } else {
+        pdf.addPage();
+        await addProductLegend(pdf, pageWidth, pageHeight, allProducts);
+      }
 
       setExportProgress(90);
       setExportStatus("Finalizing PDF...");
 
       // Save the PDF
       const fileName = `${jobNumber || "design"}_export_${new Date().toISOString().split("T")[0]}.pdf`;
-      pdf.save(fileName);
+
+      if (hasPdfBackgrounds) {
+        // pdf-lib save
+        const pdfBytes = await pdf.save();
+        const blob = new Blob([pdfBytes], { type: "application/pdf" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        link.click();
+        URL.revokeObjectURL(link.href);
+      } else {
+        // jsPDF save
+        pdf.save(fileName);
+      }
 
       setExportProgress(100);
       setExportStatus("Export complete!");
@@ -1112,6 +1193,452 @@ const Page = () => {
     pdf.setFont("helvetica", "bold");
     pdf.text(`Total Products: ${totalQuantity}`, 10, finalY + 10);
     pdf.text(`Total Value: $${totalValue.toFixed(2)}`, 10, finalY + 16);
+  };
+
+  // pdf-lib helper functions for vector PDF export
+
+  const addTitleBlockPdfLib = async (pdfDoc, page, pageWidth, pageHeight, info) => {
+    const { rgb, StandardFonts } = await import("pdf-lib");
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    const mmToPoints = 2.83465;
+    const titleBlockHeight = 40 * mmToPoints;
+    const pageHeightPts = pageHeight * mmToPoints;
+
+    // Background for title block
+    page.drawRectangle({
+      x: 0,
+      y: pageHeightPts - titleBlockHeight,
+      width: pageWidth * mmToPoints,
+      height: titleBlockHeight,
+      color: rgb(0.94, 0.94, 0.94),
+    });
+
+    // Border
+    page.drawRectangle({
+      x: 0,
+      y: pageHeightPts - titleBlockHeight,
+      width: pageWidth * mmToPoints,
+      height: titleBlockHeight,
+      borderColor: rgb(0.39, 0.39, 0.39),
+      borderWidth: 0.5,
+    });
+
+    // Title
+    page.drawText("Lighting Design Export", {
+      x: 10 * mmToPoints,
+      y: pageHeightPts - 12 * mmToPoints,
+      size: 18,
+      font: helveticaBold,
+      color: rgb(0, 0, 0),
+    });
+
+    // Job information
+    let yPos = 20 * mmToPoints;
+    page.drawText(`Job: ${info.jobNumber}`, {
+      x: 10 * mmToPoints,
+      y: pageHeightPts - yPos,
+      size: 10,
+      font: helveticaFont,
+      color: rgb(0, 0, 0),
+    });
+    yPos += 5 * mmToPoints;
+    page.drawText(`Customer: ${info.customerName}`, {
+      x: 10 * mmToPoints,
+      y: pageHeightPts - yPos,
+      size: 10,
+      font: helveticaFont,
+      color: rgb(0, 0, 0),
+    });
+    yPos += 5 * mmToPoints;
+    page.drawText(`Address: ${info.address}`, {
+      x: 10 * mmToPoints,
+      y: pageHeightPts - yPos,
+      size: 10,
+      font: helveticaFont,
+      color: rgb(0, 0, 0),
+    });
+
+    // Right side info
+    yPos = 20 * mmToPoints;
+    const rightX = pageWidth * mmToPoints - 70 * mmToPoints;
+    page.drawText(`Floor: ${info.floorName}`, {
+      x: rightX,
+      y: pageHeightPts - yPos,
+      size: 10,
+      font: helveticaFont,
+      color: rgb(0, 0, 0),
+    });
+    yPos += 5 * mmToPoints;
+    page.drawText(`Page: ${info.pageNumber} of ${info.totalPages}`, {
+      x: rightX,
+      y: pageHeightPts - yPos,
+      size: 10,
+      font: helveticaFont,
+      color: rgb(0, 0, 0),
+    });
+    yPos += 5 * mmToPoints;
+    page.drawText(`Date: ${info.date}`, {
+      x: rightX,
+      y: pageHeightPts - yPos,
+      size: 10,
+      font: helveticaFont,
+      color: rgb(0, 0, 0),
+    });
+  };
+
+  const renderLayerWithPdfLib = async (pdfDoc, page, options) => {
+    const {
+      products,
+      connectors,
+      textBoxes,
+      backgroundImage,
+      backgroundImageNaturalSize,
+      backgroundImageType,
+      backgroundPdfData,
+      scaleFactor,
+      drawingArea,
+      canvasSize,
+      pageWidth,
+      pageHeight,
+    } = options;
+
+    const { rgb, PDFDocument, degrees } = await import("pdf-lib");
+    const mmToPoints = 2.83465;
+    const pageHeightPts = pageHeight * mmToPoints;
+
+    // Define drawing area in points
+    const drawX = drawingArea.x * mmToPoints;
+    const drawY = pageHeightPts - (drawingArea.y + drawingArea.height) * mmToPoints;
+    const drawWidth = drawingArea.width * mmToPoints;
+    const drawHeight = drawingArea.height * mmToPoints;
+
+    console.log("renderLayerWithPdfLib:", {
+      backgroundImageType,
+      hasPdfData: !!backgroundPdfData,
+      productsCount: products.length,
+      connectorsCount: connectors.length,
+    });
+
+    // Handle background - PDF vector or image
+    if (backgroundImageType === "pdf" && backgroundPdfData) {
+      console.log("Embedding PDF background as vector");
+      try {
+        // Load the background PDF
+        const pdfBase64 = backgroundPdfData.split(",")[1];
+        const pdfBytes = Uint8Array.from(atob(pdfBase64), (c) => c.charCodeAt(0));
+        const bgPdfDoc = await PDFDocument.load(pdfBytes);
+
+        // Get the first page
+        const [embeddedPage] = await pdfDoc.copyPages(bgPdfDoc, [0]);
+        const { width: bgWidth, height: bgHeight } = embeddedPage.getSize();
+
+        // Calculate scale to fit in drawing area
+        const scaleX = drawWidth / bgWidth;
+        const scaleY = drawHeight / bgHeight;
+        const scale = Math.min(scaleX, scaleY);
+
+        const scaledWidth = bgWidth * scale;
+        const scaledHeight = bgHeight * scale;
+
+        // Center in drawing area
+        const bgX = drawX + (drawWidth - scaledWidth) / 2;
+        const bgY = drawY + (drawHeight - scaledHeight) / 2;
+
+        // Draw the PDF page as vector
+        page.drawPage(embeddedPage, {
+          x: bgX,
+          y: bgY,
+          width: scaledWidth,
+          height: scaledHeight,
+        });
+
+        console.log("PDF background embedded successfully as vector");
+      } catch (error) {
+        console.error("Error embedding PDF background:", error);
+      }
+    } else if (backgroundImage) {
+      console.log("Embedding image background");
+      try {
+        // Embed image background
+        let image;
+        if (backgroundImage.startsWith("data:image/png")) {
+          const pngBase64 = backgroundImage.split(",")[1];
+          const pngBytes = Uint8Array.from(atob(pngBase64), (c) => c.charCodeAt(0));
+          image = await pdfDoc.embedPng(pngBytes);
+        } else if (
+          backgroundImage.startsWith("data:image/jpeg") ||
+          backgroundImage.startsWith("data:image/jpg")
+        ) {
+          const jpgBase64 = backgroundImage.split(",")[1];
+          const jpgBytes = Uint8Array.from(atob(jpgBase64), (c) => c.charCodeAt(0));
+          image = await pdfDoc.embedJpg(jpgBytes);
+        }
+
+        if (image) {
+          const { width: imgWidth, height: imgHeight } = image;
+          const scaleX = drawWidth / imgWidth;
+          const scaleY = drawHeight / imgHeight;
+          const scale = Math.min(scaleX, scaleY);
+
+          const scaledWidth = imgWidth * scale;
+          const scaledHeight = imgHeight * scale;
+
+          const imgX = drawX + (drawWidth - scaledWidth) / 2;
+          const imgY = drawY + (drawHeight - scaledHeight) / 2;
+
+          page.drawImage(image, {
+            x: imgX,
+            y: imgY,
+            width: scaledWidth,
+            height: scaledHeight,
+          });
+
+          console.log("Image background embedded successfully");
+        }
+      } catch (error) {
+        console.error("Error embedding image background:", error);
+      }
+    }
+
+    // Calculate bounds for products and connectors
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+
+    products.forEach((product) => {
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      const productScaleFactor = product.scaleFactor || scaleFactor;
+      const realWorldSize = config.realWorldSize || config.realWorldWidth || 1.0;
+      const canvasPixelSize = realWorldSize * productScaleFactor * (product.scaleX || 1);
+      const halfSize = canvasPixelSize / 2;
+      minX = Math.min(minX, product.x - halfSize);
+      minY = Math.min(minY, product.y - halfSize);
+      maxX = Math.max(maxX, product.x + halfSize);
+      maxY = Math.max(maxY, product.y + halfSize);
+    });
+
+    connectors.forEach((conn) => {
+      const fromP = products.find((p) => p.id === conn.from);
+      const toP = products.find((p) => p.id === conn.to);
+      if (fromP) {
+        minX = Math.min(minX, fromP.x);
+        minY = Math.min(minY, fromP.y);
+        maxX = Math.max(maxX, fromP.x);
+        maxY = Math.max(maxY, fromP.y);
+      }
+      if (toP) {
+        minX = Math.min(minX, toP.x);
+        minY = Math.min(minY, toP.y);
+        maxX = Math.max(maxX, toP.x);
+        maxY = Math.max(maxY, toP.y);
+      }
+    });
+
+    // Fallback if no products/connectors
+    if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+      minX = 0;
+      minY = 0;
+      maxX = canvasSize.width;
+      maxY = canvasSize.height;
+    }
+
+    const padding = Math.max(maxX - minX, maxY - minY) * 0.05;
+    const contentWidth = maxX - minX + 2 * padding;
+    const contentHeight = maxY - minY + 2 * padding;
+    const contentOffsetX = minX - padding;
+    const contentOffsetY = minY - padding;
+
+    // Calculate scale to fit products in drawing area
+    const productScaleX = drawWidth / contentWidth;
+    const productScaleY = drawHeight / contentHeight;
+    const productScale = Math.min(productScaleX, productScaleY) * 0.95;
+
+    // Transform coordinates from canvas to PDF
+    const canvasToPdf = (x, y) => {
+      const relX = x - contentOffsetX;
+      const relY = y - contentOffsetY;
+      const pdfX = drawX + relX * productScale;
+      const pdfY = drawY + drawHeight - relY * productScale; // Flip Y axis
+      return [pdfX, pdfY];
+    };
+
+    // Draw connectors
+    connectors.forEach((connector) => {
+      const fromProduct = products.find((p) => p.id === connector.from);
+      const toProduct = products.find((p) => p.id === connector.to);
+      if (fromProduct && toProduct) {
+        const [fromX, fromY] = canvasToPdf(fromProduct.x, fromProduct.y);
+        const [toX, toY] = canvasToPdf(toProduct.x, toProduct.y);
+
+        // Draw connector line
+        const colorHex = connector.color || "#6464FF";
+        const r = parseInt(colorHex.slice(1, 3), 16) / 255;
+        const g = parseInt(colorHex.slice(3, 5), 16) / 255;
+        const b = parseInt(colorHex.slice(5, 7), 16) / 255;
+
+        page.drawLine({
+          start: { x: fromX, y: fromY },
+          end: { x: toX, y: toY },
+          thickness: 4 * productScale,
+          color: rgb(r, g, b),
+          opacity: 1,
+        });
+      }
+    });
+
+    // Draw products as circles/ellipses
+    products.forEach((product) => {
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      const productScaleFactor = product.scaleFactor || scaleFactor;
+      const realWorldSize = config.realWorldSize || config.realWorldWidth || 1.0;
+      const size = realWorldSize * productScaleFactor * (product.scaleX || 1);
+      const radius = (size / 2) * productScale;
+
+      const [pdfX, pdfY] = canvasToPdf(product.x, product.y);
+
+      // Parse colors
+      const fillColorHex = product.color || config.fill || "#FFFFFF";
+      const strokeColorHex = product.strokeColor || config.stroke || "#000000";
+
+      const fillR = parseInt(fillColorHex.slice(1, 3), 16) / 255;
+      const fillG = parseInt(fillColorHex.slice(3, 5), 16) / 255;
+      const fillB = parseInt(fillColorHex.slice(5, 7), 16) / 255;
+
+      const strokeR = parseInt(strokeColorHex.slice(1, 3), 16) / 255;
+      const strokeG = parseInt(strokeColorHex.slice(3, 5), 16) / 255;
+      const strokeB = parseInt(strokeColorHex.slice(5, 7), 16) / 255;
+
+      // Draw circle (simplified - could draw actual shapes)
+      page.drawCircle({
+        x: pdfX,
+        y: pdfY,
+        size: radius,
+        color: rgb(fillR, fillG, fillB),
+        borderColor: rgb(strokeR, strokeG, strokeB),
+        borderWidth: (config.strokeWidth || 2) * productScale,
+      });
+    });
+
+    console.log(
+      `Rendered ${products.length} products and ${connectors.length} connectors with pdf-lib`,
+    );
+  };
+
+  const addProductLegendPdfLib = async (pdfDoc, page, pageWidth, pageHeight, allProducts) => {
+    const { rgb, StandardFonts } = await import("pdf-lib");
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    const mmToPoints = 2.83465;
+    const pageHeightPts = pageHeight * mmToPoints;
+
+    // Title
+    page.drawText("Product Legend", {
+      x: 10 * mmToPoints,
+      y: pageHeightPts - 15 * mmToPoints,
+      size: 16,
+      font: helveticaBold,
+      color: rgb(0, 0, 0),
+    });
+
+    // Group products by SKU
+    const productMap = new Map();
+    allProducts.forEach((product) => {
+      const sku = product.sku || "N/A";
+      if (!productMap.has(sku)) {
+        productMap.set(sku, {
+          sku,
+          name: product.name || "Unnamed Product",
+          brand: product.brand || "",
+          type: product.product_type || "",
+          quantity: 0,
+          price: product.price || 0,
+          layers: new Set(),
+        });
+      }
+      const entry = productMap.get(sku);
+      entry.quantity += product.quantity || 1;
+      entry.layers.add(product.layerName);
+    });
+
+    // Convert to array
+    const legendData = Array.from(productMap.values()).map((item) => ({
+      ...item,
+      layers: Array.from(item.layers).join(", "),
+    }));
+
+    // Draw simple table (simplified - no full table library)
+    let yPos = 30 * mmToPoints;
+    const fontSize = 8;
+    const lineHeight = 5 * mmToPoints;
+
+    // Header
+    page.drawText("SKU", {
+      x: 10 * mmToPoints,
+      y: pageHeightPts - yPos,
+      size: fontSize,
+      font: helveticaBold,
+    });
+    page.drawText("Name", {
+      x: 40 * mmToPoints,
+      y: pageHeightPts - yPos,
+      size: fontSize,
+      font: helveticaBold,
+    });
+    page.drawText("Qty", {
+      x: 120 * mmToPoints,
+      y: pageHeightPts - yPos,
+      size: fontSize,
+      font: helveticaBold,
+    });
+    yPos += lineHeight;
+
+    // Data rows
+    legendData.forEach((item) => {
+      if (yPos > (pageHeight - 20) * mmToPoints) return; // Don't overflow page
+      page.drawText(item.sku.substring(0, 20), {
+        x: 10 * mmToPoints,
+        y: pageHeightPts - yPos,
+        size: fontSize,
+        font: helveticaFont,
+      });
+      page.drawText(item.name.substring(0, 40), {
+        x: 40 * mmToPoints,
+        y: pageHeightPts - yPos,
+        size: fontSize,
+        font: helveticaFont,
+      });
+      page.drawText(String(item.quantity), {
+        x: 120 * mmToPoints,
+        y: pageHeightPts - yPos,
+        size: fontSize,
+        font: helveticaFont,
+      });
+      yPos += lineHeight;
+    });
+
+    // Summary
+    const totalQuantity = legendData.reduce((sum, item) => sum + item.quantity, 0);
+    const totalValue = legendData.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    yPos += lineHeight;
+    page.drawText(`Total Products: ${totalQuantity}`, {
+      x: 10 * mmToPoints,
+      y: pageHeightPts - yPos,
+      size: 10,
+      font: helveticaBold,
+    });
+    yPos += lineHeight;
+    page.drawText(`Total Value: $${totalValue.toFixed(2)}`, {
+      x: 10 * mmToPoints,
+      y: pageHeightPts - yPos,
+      size: 10,
+      font: helveticaBold,
+    });
   };
 
   const canExport = selectedLayers.length > 0;

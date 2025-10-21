@@ -6,12 +6,10 @@ export const ProductShapes = {
     const radius = width / 2;
     
     // Calculate vertical offset to center the shape within its height
-    // Wire extends 0.5*radius above the circle (0.25*width total)
-    // Total drawn height: 2*radius + 0.5*radius = 2.5*radius
-    // Center of drawn content: -0.25*radius (since wire is 0.5*radius and circle is 2*radius)
-    // We need to shift to center it at y=0 within the height bounds
-    const drawnHeight = radius * 2.5;
-    const yOffset = (height - drawnHeight) / 2 + radius * 0.25;
+    // The pendant is drawn with wire at top (-radius*1.5) and circle bottom (+radius)
+    // Current center without offset: (-radius*1.5 + radius) / 2 = -radius*0.25
+    // We want center at y=0, so offset by +radius*0.25
+    const yOffset = radius * 0.25;
     
     // Debug logging (only log occasionally to avoid spam)
     if (Math.random() < 0.01) {
@@ -19,7 +17,6 @@ export const ProductShapes = {
         width,
         height,
         radius,
-        drawnHeight,
         yOffset,
         wireTop: -radius * 1.5 + yOffset,
         wireBottom: -radius + yOffset,
@@ -83,16 +80,17 @@ export const ProductShapes = {
     const radius = width / 2;
 
     // Calculate vertical offset to center the shape within its height
-    // Mounting bracket extends 0.2*radius above the light body
-    // Light body extends from -radius to +radius (2*radius tall)
-    // Total drawn height: 2*radius + 0.2*radius = 2.2*radius
-    // Center of drawn content: -0.1*radius
-    const drawnHeight = radius * 2.2;
-    const yOffset = (height - drawnHeight) / 2 + radius * 0.1;
+    // For height = width * 1.2, the extension above should be 0.2 * width = 0.4 * radius
+    // Light body: from -radius to +radius (2*radius = width)
+    // Bracket extends 0.4*radius above light body
+    // Total: 2*radius + 0.4*radius = 2.4*radius = 1.2*width
+    // Current center: (-radius*1.4 + radius) / 2 = -radius*0.2
+    // We want center at y=0, so offset by +radius*0.2
+    const yOffset = radius * 0.2;
 
-    // Mounting bracket
+    // Mounting bracket (extends 0.4*radius above light body)
     context.beginPath();
-    context.rect(-radius / 2, -radius * 1.2 + yOffset, radius, radius * 0.4);
+    context.rect(-radius / 2, -radius * 1.4 + yOffset, radius, radius * 0.4);
     context.fillStrokeShape(shape);
 
     // Light body (cone-ish shape)

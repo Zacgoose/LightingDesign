@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import {
   Box,
   Container,
@@ -24,8 +24,7 @@ import { Download, ArrowBack } from "@mui/icons-material";
 import { ApiGetCall } from "/src/api/ApiCall";
 import Link from "next/link";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { Stage, Layer, Rect, Circle, Line, Text as KonvaText, Group } from "react-konva";
+import "jspdf-autotable";
 import productTypesConfig from "/src/data/productTypes.json";
 
 // Paper size definitions (dimensions in mm)

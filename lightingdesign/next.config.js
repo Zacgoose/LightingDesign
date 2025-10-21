@@ -10,12 +10,17 @@ const config = {
       use: ["@svgr/webpack"],
     });
     
-    // Exclude pdf-lib and pdfjs-dist from server-side bundling
+    // Exclude all PDF-related libraries from server-side bundling
+    // These are client-only libraries that use browser APIs
     if (isServer) {
       config.externals = config.externals || [];
       config.externals.push({
         'pdf-lib': 'pdf-lib',
         'pdfjs-dist': 'pdfjs-dist',
+        'jspdf': 'jspdf',
+        'jspdf-autotable': 'jspdf-autotable',
+        'svg2pdf.js': 'svg2pdf.js',
+        'konva': 'konva',
       });
     }
     

@@ -358,20 +358,23 @@ const Page = () => {
   };
   
   // Helper to convert PDF data URL to raster image for export
+  // Uses react-pdf's internal pdfjs-dist with automatic worker handling
   const convertPdfToRasterForExport = async (pdfDataUrl) => {
     try {
+      // Dynamically import pdfjs-dist from react-pdf
+      // react-pdf automatically handles worker setup
+      const pdfjs = await import("pdfjs-dist");
+      
+      // react-pdf includes the worker in the package
+      const pdfjsWorker = await import("pdfjs-dist/build/pdf.worker.min.mjs");
+      pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
+      
       // Extract base64 data from data URL
       const base64Data = pdfDataUrl.split(',')[1];
       const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
       
-      // Dynamically import pdfjs-dist
-      const pdfjsLib = await import("pdfjs-dist");
-      
-      // Set worker source to local file
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
-      
       // Load PDF document
-      const loadingTask = pdfjsLib.getDocument({
+      const loadingTask = pdfjs.getDocument({
         data: pdfBytes,
       });
       const pdf = await loadingTask.promise;
@@ -394,6 +397,7 @@ const Page = () => {
       }).promise;
       
       // Convert to data URL
+      console.log('PDF converted to raster for export using react-pdf');
       return canvas.toDataURL("image/png");
     } catch (error) {
       console.error('Error in convertPdfToRasterForExport:', error);

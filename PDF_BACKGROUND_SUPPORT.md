@@ -15,16 +15,17 @@ The application now supports uploading both PDF and image files as backgrounds f
 ### 2. PDF Rendering for Canvas Display
 When a PDF is uploaded or loaded:
 1. The PDF data URL is stored in the layer
-2. When the layer is displayed, the PDF is converted to raster on-the-fly:
-   - PDF dimensions are extracted using `pdf-lib`
-   - The first page is rendered to a canvas using `pdfjs-dist`
-   - The canvas is converted to a PNG data URL for display
-3. The PNG is displayed as the background image in the designer canvas
+2. PDF dimensions are extracted using `pdf-lib`
+3. A placeholder grid pattern is displayed in the canvas to indicate a PDF background is loaded
+4. The placeholder shows the PDF dimensions and a visual grid for reference
+
+**Note**: Actual PDF rendering (showing the PDF content as raster) requires libraries like `pdfjs-dist` which have complex worker requirements and CORS issues. The current implementation prioritizes simplicity and stores the original PDF for future vector export capabilities.
 
 This approach:
-- Reduces storage size by not storing duplicate rasterized images
-- Allows seamless editing with PDF backgrounds just like image backgrounds
-- Performs conversion only when needed (on upload and layer switching)
+- Reduces complexity by avoiding worker configuration
+- Stores original PDF quality for future vector export
+- Provides visual feedback that a PDF background is loaded
+- Allows designers to place products on the canvas with correct dimensions
 
 ### 3. Background Metadata Storage
 For each layer, the application now stores:
@@ -50,10 +51,9 @@ Currently, both image and PDF backgrounds are exported as rasterized images in t
 ## Technical Implementation
 
 ### Dependencies Added
-- `pdfjs-dist@^4.0.379`: For rendering PDF pages to canvas (using legacy build without workers)
 - `pdf-lib@^1.17.1`: For PDF manipulation and metadata extraction (already installed)
 
-**Note on pdfjs-dist**: We use the legacy build (`pdfjs-dist/legacy/build/pdf.mjs`) which doesn't require Web Workers. This avoids CORS issues in local development and simplifies the implementation.
+**Note on PDF Rendering**: We use pdf-lib to extract PDF dimensions and metadata. For display, we create a placeholder grid pattern. To get actual PDF rendering, you would need to add a library like `react-pdf` or `pdfjs-dist` with proper worker configuration, but this adds complexity and CORS issues. The current implementation focuses on storing the original PDF for future vector export capabilities.
 
 ### Key Files Modified
 1. **`src/pages/jobs/design/index.jsx`**
@@ -116,15 +116,20 @@ To implement true vector PDF export:
 
 ### Current Limitations
 1. Only the first page of multi-page PDFs is used
-2. PDF backgrounds are rasterized in exports (not vector)
-3. PDF quality depends on the resolution used during rasterization
+2. **PDF backgrounds display as placeholder grid pattern** (not actual PDF content)
+3. To see actual PDF rendering, you would need to add `pdfjs-dist` or `react-pdf` with worker configuration
+4. The original PDF is preserved for future vector export capabilities
+5. Designers can place products accurately using the dimensional grid and measurements
 
 ### Technical Limitations
-1. **jsPDF/pdf-lib Integration**: These libraries have different approaches and don't integrate well
-   - jsPDF: Imperative API, builds PDF incrementally
-   - pdf-lib: Declarative API, manipulates complete PDF documents
-2. **Layer Order**: Ensuring PDF background stays behind SVG content requires careful content stream manipulation
-3. **Performance**: Large PDFs may take time to render to canvas
+1. **PDF Rendering Complexity**: Libraries like `pdfjs-dist` require Web Workers and complex configuration
+   - Worker files need to be served correctly (CORS issues in development)
+   - GlobalWorkerOptions.workerSrc must be configured
+   - Adds significant complexity to the build process
+2. **Current Approach**: Uses placeholder grid pattern to avoid these issues
+   - Stores original PDF for future capabilities
+   - Simpler implementation without worker dependencies
+3. **Future Enhancement**: Could add `react-pdf` library for actual PDF rendering if needed
 
 ## Testing
 
@@ -141,12 +146,15 @@ To implement true vector PDF export:
 - [ ] Test with various PDF versions (1.4, 1.7, 2.0, etc.)
 
 ### Known Issues
-- None at this time
+- PDF backgrounds show as placeholder grid pattern (actual PDF rendering not yet implemented)
+- For actual PDF content display, consider adding `react-pdf` library in the future
 
 ## Browser Compatibility
-- **Chrome/Edge**: Full support
-- **Firefox**: Full support
-- **Safari**: Full support (requires recent version for pdf.js)
+- **Chrome/Edge**: Full support for PDF upload and storage
+- **Firefox**: Full support for PDF upload and storage
+- **Safari**: Full support for PDF upload and storage
+
+Note: All browsers support the PDF upload and storage features. The placeholder grid pattern displays correctly in all modern browsers.
 
 ## Performance Considerations
 - PDF rendering is performed on the client side

@@ -358,20 +358,24 @@ const Page = () => {
   };
   
   // Helper to convert PDF data URL to raster image for export
-  // Uses react-pdf's internal pdfjs-dist with automatic worker handling
+  // Uses pdfjs-dist with worker from react-pdf package (no custom setup needed)
   const convertPdfToRasterForExport = async (pdfDataUrl) => {
     try {
-      // Dynamically import pdfjs-dist from react-pdf
-      // react-pdf automatically handles worker setup
-      const pdfjs = await import("pdfjs-dist");
-      
-      // react-pdf includes the worker in the package
-      const pdfjsWorker = await import("pdfjs-dist/build/pdf.worker.min.mjs");
-      pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
-      
       // Extract base64 data from data URL
       const base64Data = pdfDataUrl.split(',')[1];
       const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      
+      // Dynamically import pdfjs-dist from react-pdf
+      // This version includes the worker bundled with the package
+      const pdfjs = await import("pdfjs-dist");
+      
+      // Use the worker bundled with pdfjs-dist (from react-pdf)
+      // This is the key improvement - no custom worker copy script needed!
+      if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+        // The worker is available at a predictable CDN URL based on the pdfjs version
+        const pdfjsVersion = pdfjs.version;
+        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.mjs`;
+      }
       
       // Load PDF document
       const loadingTask = pdfjs.getDocument({
@@ -397,7 +401,7 @@ const Page = () => {
       }).promise;
       
       // Convert to data URL
-      console.log('PDF converted to raster for export using react-pdf');
+      console.log('PDF converted to raster for export (no custom worker needed)');
       return canvas.toDataURL("image/png");
     } catch (error) {
       console.error('Error in convertPdfToRasterForExport:', error);

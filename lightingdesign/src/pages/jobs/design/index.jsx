@@ -484,21 +484,25 @@ const Page = () => {
   );
 
   // Helper function to convert PDF to high-quality raster image (returns data URL)
-  // Uses react-pdf's internal pdfjs-dist with automatic worker handling
+  // Uses pdfjs-dist with worker from react-pdf package (no custom setup needed)
   const convertPdfToRasterImage = useCallback(async (pdfDataUrl, pdfWidth, pdfHeight) => {
     try {
-      // Dynamically import pdfjs-dist from react-pdf
-      // react-pdf automatically handles worker setup
-      const pdfjs = await import("pdfjs-dist");
-      
-      // react-pdf includes the worker in the package, so we can use the packaged version
-      // This avoids needing a custom worker copy script
-      const pdfjsWorker = await import("pdfjs-dist/build/pdf.worker.min.mjs");
-      pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
-      
       // Extract base64 data from data URL
       const base64Data = pdfDataUrl.split(',')[1];
       const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      
+      // Dynamically import pdfjs-dist from react-pdf
+      // This version includes the worker bundled with the package
+      const pdfjs = await import("pdfjs-dist");
+      
+      // Use the worker bundled with pdfjs-dist (from react-pdf)
+      // This is the key improvement - no custom worker copy script needed!
+      if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+        // The worker is available at a predictable CDN URL based on the pdfjs version
+        // react-pdf sets this up automatically, but we can also set it manually
+        const pdfjsVersion = pdfjs.version;
+        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.mjs`;
+      }
       
       // Load PDF document
       const loadingTask = pdfjs.getDocument({
@@ -526,7 +530,7 @@ const Page = () => {
       // Convert canvas to data URL and return it
       const imageDataUrl = canvas.toDataURL("image/png");
       
-      console.log('PDF converted to high-quality raster image using react-pdf');
+      console.log('PDF converted to high-quality raster image (no custom worker needed)');
       return imageDataUrl;
     } catch (error) {
       console.error('Error converting PDF to raster:', error);

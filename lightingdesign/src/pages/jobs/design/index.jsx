@@ -490,11 +490,14 @@ const Page = () => {
       const base64Data = pdfDataUrl.split(',')[1];
       const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
       
-      // Render PDF to canvas using pdf.js
-      const pdfjsLib = await import("pdfjs-dist");
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      // Render PDF to canvas using pdf.js (legacy build without workers)
+      const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
       
-      const loadingTask = pdfjsLib.getDocument(pdfBytes);
+      const loadingTask = pdfjsLib.getDocument({
+        data: pdfBytes,
+        // Disable worker to avoid CORS issues in development
+        disableWorker: true,
+      });
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
       

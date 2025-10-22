@@ -50,8 +50,10 @@ Currently, both image and PDF backgrounds are exported as rasterized images in t
 ## Technical Implementation
 
 ### Dependencies Added
-- `pdfjs-dist@^4.0.379`: For rendering PDF pages to canvas
+- `pdfjs-dist@^4.0.379`: For rendering PDF pages to canvas (using legacy build without workers)
 - `pdf-lib@^1.17.1`: For PDF manipulation and metadata extraction (already installed)
+
+**Note on pdfjs-dist**: We use the legacy build (`pdfjs-dist/legacy/build/pdf.mjs`) which doesn't require Web Workers. This avoids CORS issues in local development and simplifies the implementation.
 
 ### Key Files Modified
 1. **`src/pages/jobs/design/index.jsx`**

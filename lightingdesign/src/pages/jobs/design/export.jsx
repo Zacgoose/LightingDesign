@@ -377,8 +377,9 @@ const Page = () => {
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
       
-      // Use high scale for better export quality
-      const scale = 3;
+      // Use moderate scale to balance export quality and file size
+      // Reduced from 3 to 2 for export (higher than editor for better print quality)
+      const scale = 2;
       const viewport = page.getViewport({ scale: scale });
       
       // Create canvas
@@ -393,8 +394,18 @@ const Page = () => {
         viewport: viewport,
       }).promise;
       
-      // Convert to data URL
-      return canvas.toDataURL("image/png");
+      // Convert to JPEG with quality setting for smaller file size while maintaining print quality
+      // Quality 0.9 provides excellent quality for export while reducing file size
+      const imageDataUrl = canvas.toDataURL("image/jpeg", 0.9);
+      
+      console.log('PDF converted for export', {
+        scale,
+        width: canvas.width,
+        height: canvas.height,
+        estimatedSizeMB: (imageDataUrl.length / 1024 / 1024).toFixed(2)
+      });
+      
+      return imageDataUrl;
     } catch (error) {
       console.error('Error in convertPdfToRasterForExport:', error);
       throw error;

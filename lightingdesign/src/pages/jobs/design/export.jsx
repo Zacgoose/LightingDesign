@@ -377,23 +377,8 @@ const Page = () => {
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
       
-      // Check the natural resolution at scale 1
-      const naturalViewport = page.getViewport({ scale: 1 });
-      const naturalWidth = naturalViewport.width;
-      const naturalHeight = naturalViewport.height;
-      
-      // Only apply scaling optimization if the natural resolution is below 2000px
-      // For high-resolution PDFs (e.g., 4000x4000), preserve the original resolution
-      const HIGH_RES_THRESHOLD = 2000;
-      let scale;
-      if (naturalWidth >= HIGH_RES_THRESHOLD || naturalHeight >= HIGH_RES_THRESHOLD) {
-        // High resolution PDF - preserve original resolution
-        scale = 1;
-      } else {
-        // Lower resolution PDF - apply higher scale for better print quality
-        scale = 2;
-      }
-      
+      // Always preserve the original resolution (scale = 1)
+      const scale = 1;
       const viewport = page.getViewport({ scale: scale });
       
       // Create canvas
@@ -413,9 +398,8 @@ const Page = () => {
       const imageDataUrl = canvas.toDataURL("image/jpeg", 0.9);
       
       console.log('PDF converted for export', {
-        naturalResolution: `${naturalWidth.toFixed(0)}x${naturalHeight.toFixed(0)}`,
+        resolution: `${canvas.width}x${canvas.height}`,
         scale,
-        outputResolution: `${canvas.width}x${canvas.height}`,
         estimatedSizeMB: (imageDataUrl.length / 1024 / 1024).toFixed(2)
       });
       

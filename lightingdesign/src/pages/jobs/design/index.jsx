@@ -483,6 +483,51 @@ const Page = () => {
     [products, selectedIds, updateHistory, forceGroupUpdate, transformerRef, selectionGroupRef],
   );
 
+  // Helper function to convert PDF data URL to raster image
+  const convertPdfToRasterBackground = useCallback(async (pdfDataUrl, pdfWidth, pdfHeight) => {
+    try {
+      // Extract base64 data from data URL
+      const base64Data = pdfDataUrl.split(',')[1];
+      const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      
+      // Render PDF to canvas using pdf.js
+      const pdfjsLib = await import("pdfjs-dist");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      
+      const loadingTask = pdfjsLib.getDocument(pdfBytes);
+      const pdf = await loadingTask.promise;
+      const page = await pdf.getPage(1);
+      
+      // Use scale of 2 for better quality
+      const scale = 2;
+      const viewport = page.getViewport({ scale: scale });
+      
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      
+      await page.render({
+        canvasContext: ctx,
+        viewport: viewport,
+      }).promise;
+      
+      // Convert canvas to data URL
+      const imageDataUrl = canvas.toDataURL("image/png");
+      
+      // Update state with rasterized image
+      setBackgroundImage(imageDataUrl);
+      setBackgroundImageNaturalSize({ 
+        width: viewport.width / scale, 
+        height: viewport.height / scale 
+      });
+      
+      console.log('PDF converted to raster for display');
+    } catch (error) {
+      console.error('Error converting PDF to raster:', error);
+    }
+  }, [setBackgroundImage, setBackgroundImageNaturalSize]);
+
   // Force transformer update when text boxes change dimensions
   useEffect(() => {
     if (transformerRef.current && selectionGroupRef.current) {
@@ -1121,51 +1166,6 @@ const Page = () => {
     };
     input.click();
   }, [canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale, handleResetView, updateLayer, convertPdfToRasterBackground]);
-
-  // Helper function to convert PDF data URL to raster image
-  const convertPdfToRasterBackground = useCallback(async (pdfDataUrl, pdfWidth, pdfHeight) => {
-    try {
-      // Extract base64 data from data URL
-      const base64Data = pdfDataUrl.split(',')[1];
-      const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-      
-      // Render PDF to canvas using pdf.js
-      const pdfjsLib = await import("pdfjs-dist");
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-      
-      const loadingTask = pdfjsLib.getDocument(pdfBytes);
-      const pdf = await loadingTask.promise;
-      const page = await pdf.getPage(1);
-      
-      // Use scale of 2 for better quality
-      const scale = 2;
-      const viewport = page.getViewport({ scale: scale });
-      
-      const canvas = document.createElement("canvas");
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext("2d");
-      
-      await page.render({
-        canvasContext: ctx,
-        viewport: viewport,
-      }).promise;
-      
-      // Convert canvas to data URL
-      const imageDataUrl = canvas.toDataURL("image/png");
-      
-      // Update state with rasterized image
-      setBackgroundImage(imageDataUrl);
-      setBackgroundImageNaturalSize({ 
-        width: viewport.width / scale, 
-        height: viewport.height / scale 
-      });
-      
-      console.log('PDF converted to raster for display');
-    } catch (error) {
-      console.error('Error converting PDF to raster:', error);
-    }
-  }, [setBackgroundImage, setBackgroundImageNaturalSize]);
 
   const handleMeasure = useCallback(() => {
     setMeasureMode(true);

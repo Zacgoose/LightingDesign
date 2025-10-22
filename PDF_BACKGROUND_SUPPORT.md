@@ -15,17 +15,23 @@ The application now supports uploading both PDF and image files as backgrounds f
 ### 2. PDF Rendering for Canvas Display
 When a PDF is uploaded or loaded:
 1. The PDF data URL is stored in the layer
-2. PDF dimensions are extracted using `pdf-lib`
-3. A placeholder grid pattern is displayed in the canvas to indicate a PDF background is loaded
-4. The placeholder shows the PDF dimensions and a visual grid for reference
+2. PDF is converted to high-quality raster image using pdfjs-dist:
+   - PDF dimensions are extracted using `pdf-lib`
+   - First page is rendered to canvas using `pdfjs-dist` at 3x scale
+   - Canvas is converted to PNG data URL for display
+3. The high-quality raster image is displayed as the background
 
-**Note**: Actual PDF rendering (showing the PDF content as raster) requires libraries like `pdfjs-dist` which have complex worker requirements and CORS issues. The current implementation prioritizes simplicity and stores the original PDF for future vector export capabilities.
+**Worker Configuration**:
+- Worker file is copied from `node_modules` to `/public/pdfjs/` during build
+- Reference local worker: `GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs'`
+- No CDN dependencies, works offline
+- No CORS issues since worker is served from same domain
 
 This approach:
-- Reduces complexity by avoiding worker configuration
-- Stores original PDF quality for future vector export
-- Provides visual feedback that a PDF background is loaded
-- Allows designers to place products on the canvas with correct dimensions
+- Provides actual PDF content rendering (not placeholder)
+- High quality at 3x resolution
+- Simple worker configuration using local file
+- Works in all environments
 
 ### 3. Background Metadata Storage
 For each layer, the application now stores:
@@ -51,9 +57,13 @@ Currently, both image and PDF backgrounds are exported as rasterized images in t
 ## Technical Implementation
 
 ### Dependencies Added
-- `pdf-lib@^1.17.1`: For PDF manipulation and metadata extraction (already installed)
+- `pdf-lib@^1.17.1`: For PDF manipulation and metadata extraction
+- `pdfjs-dist@^4.0.379`: For rendering PDF pages to canvas with high quality
 
-**Note on PDF Rendering**: We use pdf-lib to extract PDF dimensions and metadata. For display, we create a placeholder grid pattern. To get actual PDF rendering, you would need to add a library like `react-pdf` or `pdfjs-dist` with proper worker configuration, but this adds complexity and CORS issues. The current implementation focuses on storing the original PDF for future vector export capabilities.
+**Worker Setup**:
+- Build script copies worker file to `/public/pdfjs/` directory
+- Worker is served from same domain (no CORS issues)
+- Worker file is gitignored (generated during build)
 
 ### Key Files Modified
 1. **`src/pages/jobs/design/index.jsx`**
@@ -116,20 +126,19 @@ To implement true vector PDF export:
 
 ### Current Limitations
 1. Only the first page of multi-page PDFs is used
-2. **PDF backgrounds display as placeholder grid pattern** (not actual PDF content)
-3. To see actual PDF rendering, you would need to add `pdfjs-dist` or `react-pdf` with worker configuration
-4. The original PDF is preserved for future vector export capabilities
-5. Designers can place products accurately using the dimensional grid and measurements
+2. PDF rendering quality depends on the scale factor (currently 3x for high quality)
+3. Large PDFs may take a moment to convert on upload/layer switch
 
 ### Technical Limitations
-1. **PDF Rendering Complexity**: Libraries like `pdfjs-dist` require Web Workers and complex configuration
-   - Worker files need to be served correctly (CORS issues in development)
-   - GlobalWorkerOptions.workerSrc must be configured
-   - Adds significant complexity to the build process
-2. **Current Approach**: Uses placeholder grid pattern to avoid these issues
-   - Stores original PDF for future capabilities
-   - Simpler implementation without worker dependencies
-3. **Future Enhancement**: Could add `react-pdf` library for actual PDF rendering if needed
+1. **Worker File Management**: Worker file must be copied during build process
+   - Automated via build script in package.json
+   - Worker file is in `/public/pdfjs/` and gitignored
+2. **PDF Rendering Performance**: Large PDFs take time to render
+   - Rendering happens on upload and layer switch
+   - Cached as raster image after initial conversion
+3. **Memory Usage**: High-resolution rendering uses more memory
+   - 3x scale provides excellent quality
+   - May impact performance with many large PDFs
 
 ## Testing
 
@@ -146,8 +155,9 @@ To implement true vector PDF export:
 - [ ] Test with various PDF versions (1.4, 1.7, 2.0, etc.)
 
 ### Known Issues
-- PDF backgrounds show as placeholder grid pattern (actual PDF rendering not yet implemented)
-- For actual PDF content display, consider adding `react-pdf` library in the future
+- None at this time
+
+**Note**: PDF rendering is now fully functional with high-quality output!
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support for PDF upload and storage

@@ -486,17 +486,54 @@ const Page = () => {
   // Helper function to convert PDF data URL to raster image
   const convertPdfToRasterBackground = useCallback(async (pdfDataUrl, pdfWidth, pdfHeight) => {
     try {
-      // For PDFs, we'll render them using the browser's built-in PDF rendering
-      // by embedding the PDF in an object/embed element, capturing it, then converting to image
+      // Extract base64 data from data URL
+      const base64Data = pdfDataUrl.split(',')[1];
+      const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
       
-      // However, due to CORS and security restrictions, we cannot easily convert
-      // PDF to raster in the browser without external libraries
+      // Dynamically import pdfjs-dist
+      const pdfjsLib = await import("pdfjs-dist");
       
-      // Alternative approach: Just use the PDF data URL directly as the background
-      // The canvas can display it using an HTML image element that accepts PDF data URLs
-      // For now, we'll create a placeholder that indicates a PDF is loaded
+      // Set worker source to local file (copied during build)
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
       
-      // Create a simple placeholder canvas
+      // Load PDF document
+      const loadingTask = pdfjsLib.getDocument({
+        data: pdfBytes,
+      });
+      const pdf = await loadingTask.promise;
+      const page = await pdf.getPage(1);
+      
+      // Use high scale for better quality
+      const scale = 3; // Higher scale for better quality
+      const viewport = page.getViewport({ scale: scale });
+      
+      // Create canvas
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      
+      // Render PDF page to canvas
+      await page.render({
+        canvasContext: ctx,
+        viewport: viewport,
+      }).promise;
+      
+      // Convert canvas to data URL
+      const imageDataUrl = canvas.toDataURL("image/png");
+      
+      // Update state with rasterized image
+      setBackgroundImage(imageDataUrl);
+      setBackgroundImageNaturalSize({ 
+        width: viewport.width / scale, 
+        height: viewport.height / scale 
+      });
+      
+      console.log('PDF converted to high-quality raster image');
+    } catch (error) {
+      console.error('Error converting PDF to raster:', error);
+      
+      // Fallback: create a placeholder
       const canvas = document.createElement("canvas");
       const scale = 2;
       canvas.width = pdfWidth * scale;
@@ -507,45 +544,21 @@ const Page = () => {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Draw a simple grid pattern to indicate this is a PDF background
-      ctx.strokeStyle = '#e0e0e0';
-      ctx.lineWidth = 1;
-      const gridSize = 50 * scale;
-      for (let x = 0; x <= canvas.width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= canvas.height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
-      
-      // Draw PDF indicator text
+      // Draw error message
       ctx.fillStyle = '#666666';
-      ctx.font = `${24 * scale}px Arial`;
+      ctx.font = `${20 * scale}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('📄 PDF Background', canvas.width / 2, canvas.height / 2 - 20 * scale);
-      ctx.font = `${16 * scale}px Arial`;
-      ctx.fillText(`${pdfWidth} × ${pdfHeight}`, canvas.width / 2, canvas.height / 2 + 20 * scale);
+      ctx.fillText('PDF Rendering Failed', canvas.width / 2, canvas.height / 2 - 20 * scale);
+      ctx.font = `${14 * scale}px Arial`;
+      ctx.fillText('See console for details', canvas.width / 2, canvas.height / 2 + 20 * scale);
       
-      // Convert to data URL
       const imageDataUrl = canvas.toDataURL("image/png");
-      
-      // Update state
       setBackgroundImage(imageDataUrl);
       setBackgroundImageNaturalSize({ 
         width: pdfWidth, 
         height: pdfHeight 
       });
-      
-      console.log('PDF placeholder created for display');
-    } catch (error) {
-      console.error('Error converting PDF to raster:', error);
     }
   }, [setBackgroundImage, setBackgroundImageNaturalSize]);
 

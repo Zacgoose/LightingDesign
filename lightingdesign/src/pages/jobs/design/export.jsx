@@ -360,48 +360,40 @@ const Page = () => {
   // Helper to convert PDF data URL to raster image for export
   const convertPdfToRasterForExport = async (pdfDataUrl) => {
     try {
-      // Extract PDF dimensions from the data
-      // Since we can't easily render PDF to canvas without pdfjs-dist,
-      // we'll create a placeholder image for export
+      // Extract base64 data from data URL
+      const base64Data = pdfDataUrl.split(',')[1];
+      const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
       
-      // Create a placeholder canvas
+      // Dynamically import pdfjs-dist
+      const pdfjsLib = await import("pdfjs-dist");
+      
+      // Set worker source to local file
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
+      
+      // Load PDF document
+      const loadingTask = pdfjsLib.getDocument({
+        data: pdfBytes,
+      });
+      const pdf = await loadingTask.promise;
+      const page = await pdf.getPage(1);
+      
+      // Use high scale for better export quality
+      const scale = 3;
+      const viewport = page.getViewport({ scale: scale });
+      
+      // Create canvas
       const canvas = document.createElement("canvas");
-      const width = 1600; // Default export size
-      const height = 1200;
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
       const ctx = canvas.getContext("2d");
       
-      // White background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, width, height);
+      // Render PDF page to canvas
+      await page.render({
+        canvasContext: ctx,
+        viewport: viewport,
+      }).promise;
       
-      // Draw grid
-      ctx.strokeStyle = '#e0e0e0';
-      ctx.lineWidth = 1;
-      const gridSize = 50;
-      for (let x = 0; x <= width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-      }
-      
-      // Draw PDF indicator
-      ctx.fillStyle = '#666666';
-      ctx.font = '24px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('📄 PDF Background (Export)', width / 2, height / 2 - 20);
-      ctx.font = '16px Arial';
-      ctx.fillText('PDF backgrounds require a PDF rendering library', width / 2, height / 2 + 20);
-      
+      // Convert to data URL
       return canvas.toDataURL("image/png");
     } catch (error) {
       console.error('Error in convertPdfToRasterForExport:', error);

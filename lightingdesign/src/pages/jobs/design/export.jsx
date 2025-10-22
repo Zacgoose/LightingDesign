@@ -239,7 +239,6 @@ const Page = () => {
           backgroundImage: layer.backgroundImage,
           backgroundImageNaturalSize: layer.backgroundImageNaturalSize,
           backgroundFileType: layer.backgroundFileType,
-          backgroundPdfData: layer.backgroundPdfData,
           scaleFactor: layer.scaleFactor || 100,
           drawingArea: {
             x: 10,
@@ -328,7 +327,7 @@ const Page = () => {
   
   // Helper function to render canvas to PDF using SVG
   const renderCanvasToPDF = async (pdf, options) => {
-    const { products, connectors, textBoxes = [], backgroundImage, backgroundImageNaturalSize, scaleFactor, drawingArea, canvasSize, backgroundFileType, backgroundPdfData } = options;
+    const { products, connectors, textBoxes = [], backgroundImage, backgroundImageNaturalSize, scaleFactor, drawingArea, canvasSize, backgroundFileType } = options;
     
     console.log('renderCanvasToPDF called:', {
       productsCount: products.length,
@@ -338,15 +337,61 @@ const Page = () => {
       drawingArea,
       backgroundImageNaturalSize,
       backgroundFileType,
-      hasPdfData: !!backgroundPdfData,
     });
     
-    // Note: For PDF backgrounds, we currently export them as rasterized images
-    // A future enhancement would be to use pdf-lib to embed the vector PDF
-    // See issue comments for more details on the technical challenges
-    // For now, both image and PDF backgrounds are rendered the same way (as raster images)
+    // If background is a PDF, convert it to raster for export
+    let exportBackgroundImage = backgroundImage;
+    if (backgroundFileType === 'pdf' && backgroundImage) {
+      console.log('Converting PDF background to raster for export');
+      try {
+        exportBackgroundImage = await convertPdfToRasterForExport(backgroundImage);
+      } catch (error) {
+        console.error('Error converting PDF to raster for export:', error);
+        exportBackgroundImage = null;
+      }
+    }
     
-    await renderWithStandardBackground(pdf, options);
+    await renderWithStandardBackground(pdf, {
+      ...options,
+      backgroundImage: exportBackgroundImage,
+    });
+  };
+  
+  // Helper to convert PDF data URL to raster image for export
+  const convertPdfToRasterForExport = async (pdfDataUrl) => {
+    try {
+      // Extract base64 data from data URL
+      const base64Data = pdfDataUrl.split(',')[1];
+      const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      
+      // Render PDF to canvas using pdf.js
+      const pdfjsLib = await import("pdfjs-dist");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      
+      const loadingTask = pdfjsLib.getDocument(pdfBytes);
+      const pdf = await loadingTask.promise;
+      const page = await pdf.getPage(1);
+      
+      // Use scale of 2 for better quality
+      const scale = 2;
+      const viewport = page.getViewport({ scale: scale });
+      
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      
+      await page.render({
+        canvasContext: ctx,
+        viewport: viewport,
+      }).promise;
+      
+      // Convert canvas to data URL
+      return canvas.toDataURL("image/png");
+    } catch (error) {
+      console.error('Error in convertPdfToRasterForExport:', error);
+      throw error;
+    }
   };
   
   // Standard SVG rendering (works for both image and PDF backgrounds)

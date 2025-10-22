@@ -555,8 +555,24 @@ const Page = () => {
       resetHistoryBaseline(activeLayer.products || []);
       setConnectors(activeLayer.connectors || []);
       setTextBoxes(activeLayer.textBoxes || []);
-      setBackgroundImage(activeLayer.backgroundImage || null);
-      setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
+      
+      // Handle background based on file type
+      if (activeLayer.backgroundFileType === 'pdf' && activeLayer.backgroundImage) {
+        // Convert PDF to raster for display
+        const naturalSize = activeLayer.backgroundImageNaturalSize;
+        if (naturalSize) {
+          convertPdfToRasterBackground(
+            activeLayer.backgroundImage,
+            naturalSize.width,
+            naturalSize.height
+          );
+        }
+      } else {
+        // Regular image - set directly
+        setBackgroundImage(activeLayer.backgroundImage || null);
+        setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
+      }
+      
       setScaleFactor(activeLayer.scaleFactor || 100);
 
       // Update sync refs to match the new layer's data
@@ -585,6 +601,7 @@ const Page = () => {
     designData.isLoading,
     designData.isSuccess,
     designData.data,
+    convertPdfToRasterBackground,
     // Note: updateHistory is not memoized in useHistory hook, so it changes every render
     // We don't include it here to prevent infinite re-runs
     // Note: setConnectors, setBackgroundImage, setBackgroundImageNaturalSize, setScaleFactor
@@ -998,20 +1015,17 @@ const Page = () => {
         const isPdf = file.type === "application/pdf";
         
         if (isPdf) {
-          // Handle PDF file
+          // Handle PDF file - store only the PDF data, convert to raster on load
           try {
-            // Dynamically import pdf-lib
-            const { PDFDocument } = await import("pdf-lib");
-            
             const reader = new FileReader();
             reader.onload = async (ev) => {
               try {
-                // Load the PDF
+                // Get PDF dimensions using pdf-lib
+                const { PDFDocument } = await import("pdf-lib");
                 const pdfBytes = new Uint8Array(ev.target.result);
                 const pdfDoc = await PDFDocument.load(pdfBytes);
-                
-                // Get first page
                 const pages = pdfDoc.getPages();
+                
                 if (pages.length === 0) {
                   console.error("PDF has no pages");
                   return;
@@ -1020,55 +1034,33 @@ const Page = () => {
                 const firstPage = pages[0];
                 const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
                 
-                // Convert PDF to image for canvas display
-                // We'll use a canvas to render the PDF page as an image
-                const canvas = document.createElement("canvas");
-                const scale = 2; // Higher scale for better quality
-                canvas.width = pdfWidth * scale;
-                canvas.height = pdfHeight * scale;
-                const ctx = canvas.getContext("2d");
+                // Convert PDF data to base64 for storage
+                const base64Pdf = btoa(
+                  new Uint8Array(ev.target.result).reduce(
+                    (data, byte) => data + String.fromCharCode(byte),
+                    ''
+                  )
+                );
+                const pdfDataUrl = `data:application/pdf;base64,${base64Pdf}`;
                 
-                // Use pdf.js to render the PDF page
-                // Dynamically import pdfjs-dist
-                const pdfjsLib = await import("pdfjs-dist");
-                pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-                
-                const loadingTask = pdfjsLib.getDocument(pdfBytes);
-                const pdf = await loadingTask.promise;
-                const page = await pdf.getPage(1);
-                
-                const viewport = page.getViewport({ scale: scale });
-                canvas.width = viewport.width;
-                canvas.height = viewport.height;
-                
-                await page.render({
-                  canvasContext: ctx,
-                  viewport: viewport,
-                }).promise;
-                
-                // Convert canvas to data URL for display
-                const imageDataUrl = canvas.toDataURL("image/png");
-                
-                // Store both the rasterized image and the original PDF
-                setBackgroundImage(imageDataUrl);
-                setBackgroundImageNaturalSize({ 
-                  width: viewport.width / scale, 
-                  height: viewport.height / scale 
-                });
-                
-                // Store PDF metadata for export
+                // Store only the PDF data (not the rasterized image)
+                // The conversion will happen on load
                 updateLayer(activeLayerIdRef.current, {
+                  backgroundImage: pdfDataUrl, // Store PDF data URL
+                  backgroundImageNaturalSize: { width: pdfWidth, height: pdfHeight },
                   backgroundFileType: "pdf",
-                  backgroundPdfData: ev.target.result, // Store original PDF bytes
                 });
                 
-                // Auto-zoom to fit the background image in the viewport
-                const imageScaleX = canvasWidth / (viewport.width / scale);
-                const imageScaleY = canvasHeight / (viewport.height / scale);
+                // Convert to raster for immediate display
+                await convertPdfToRasterBackground(pdfDataUrl, pdfWidth, pdfHeight);
+                
+                // Auto-zoom to fit the background in the viewport
+                const imageScaleX = canvasWidth / pdfWidth;
+                const imageScaleY = canvasHeight / pdfHeight;
                 const imageScale = Math.min(imageScaleX, imageScaleY);
                 
-                const scaledImageWidth = (viewport.width / scale) * imageScale;
-                const scaledImageHeight = (viewport.height / scale) * imageScale;
+                const scaledImageWidth = pdfWidth * imageScale;
+                const scaledImageHeight = pdfHeight * imageScale;
                 
                 const padding = 0.9;
                 const zoomX = (viewportWidth * padding) / scaledImageWidth;
@@ -1093,14 +1085,15 @@ const Page = () => {
           reader.onload = (ev) => {
             const img = new window.Image();
             img.onload = () => {
+              // Store image data URL directly
+              updateLayer(activeLayerIdRef.current, {
+                backgroundImage: ev.target.result,
+                backgroundImageNaturalSize: { width: img.width, height: img.height },
+                backgroundFileType: "image",
+              });
+              
               setBackgroundImage(ev.target.result);
               setBackgroundImageNaturalSize({ width: img.width, height: img.height });
-              
-              // Store image metadata for export
-              updateLayer(activeLayerIdRef.current, {
-                backgroundFileType: "image",
-                backgroundPdfData: null,
-              });
               
               // Auto-zoom to fit the background image in the viewport
               const imageScaleX = canvasWidth / img.width;
@@ -1127,7 +1120,52 @@ const Page = () => {
       }
     };
     input.click();
-  }, [setBackgroundImage, setBackgroundImageNaturalSize, canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale, handleResetView, updateLayer]);
+  }, [canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale, handleResetView, updateLayer, convertPdfToRasterBackground]);
+
+  // Helper function to convert PDF data URL to raster image
+  const convertPdfToRasterBackground = useCallback(async (pdfDataUrl, pdfWidth, pdfHeight) => {
+    try {
+      // Extract base64 data from data URL
+      const base64Data = pdfDataUrl.split(',')[1];
+      const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      
+      // Render PDF to canvas using pdf.js
+      const pdfjsLib = await import("pdfjs-dist");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      
+      const loadingTask = pdfjsLib.getDocument(pdfBytes);
+      const pdf = await loadingTask.promise;
+      const page = await pdf.getPage(1);
+      
+      // Use scale of 2 for better quality
+      const scale = 2;
+      const viewport = page.getViewport({ scale: scale });
+      
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      
+      await page.render({
+        canvasContext: ctx,
+        viewport: viewport,
+      }).promise;
+      
+      // Convert canvas to data URL
+      const imageDataUrl = canvas.toDataURL("image/png");
+      
+      // Update state with rasterized image
+      setBackgroundImage(imageDataUrl);
+      setBackgroundImageNaturalSize({ 
+        width: viewport.width / scale, 
+        height: viewport.height / scale 
+      });
+      
+      console.log('PDF converted to raster for display');
+    } catch (error) {
+      console.error('Error converting PDF to raster:', error);
+    }
+  }, [setBackgroundImage, setBackgroundImageNaturalSize]);
 
   const handleMeasure = useCallback(() => {
     setMeasureMode(true);

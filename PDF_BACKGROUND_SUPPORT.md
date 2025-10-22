@@ -13,24 +13,33 @@ The application now supports uploading both PDF and image files as backgrounds f
   - PDFs: Any valid PDF file
 
 ### 2. PDF Rendering for Canvas Display
-When a PDF is uploaded:
-1. The first page is extracted using `pdf-lib`
-2. The page is rendered to a canvas using `pdfjs-dist`
-3. The canvas is converted to a PNG data URL
-4. The PNG is displayed as the background image in the designer canvas
+When a PDF is uploaded or loaded:
+1. The PDF data URL is stored in the layer
+2. When the layer is displayed, the PDF is converted to raster on-the-fly:
+   - PDF dimensions are extracted using `pdf-lib`
+   - The first page is rendered to a canvas using `pdfjs-dist`
+   - The canvas is converted to a PNG data URL for display
+3. The PNG is displayed as the background image in the designer canvas
 
-This allows seamless editing with PDF backgrounds just like image backgrounds.
+This approach:
+- Reduces storage size by not storing duplicate rasterized images
+- Allows seamless editing with PDF backgrounds just like image backgrounds
+- Performs conversion only when needed (on upload and layer switching)
 
 ### 3. Background Metadata Storage
 For each layer, the application now stores:
-- `backgroundImage`: Rasterized image data URL (for display)
+- `backgroundImage`: Original file data URL (PDF data URL for PDFs, image data URL for images)
 - `backgroundImageNaturalSize`: Dimensions of the background
 - `backgroundFileType`: "image" or "pdf" (NEW)
-- `backgroundPdfData`: Original PDF bytes as ArrayBuffer (NEW)
+
+**Storage Optimization**: 
+- Only the original file is stored (not both PDF and rasterized image)
+- PDF-to-raster conversion happens on-the-fly when loading/switching layers
+- This significantly reduces save data size for designs with PDF backgrounds
 
 This metadata is preserved when saving designs, enabling:
 - Backward compatibility with existing image-only designs
-- Future vector PDF export capabilities
+- Optimized storage (single file per background)
 - Type-aware processing
 
 ### 4. Export Functionality
@@ -47,13 +56,15 @@ Currently, both image and PDF backgrounds are exported as rasterized images in t
 ### Key Files Modified
 1. **`src/pages/jobs/design/index.jsx`**
    - Updated `handleUploadFloorPlan()` to accept PDFs
-   - Added PDF-to-image conversion logic
-   - Added metadata storage for PDF backgrounds
+   - Added `convertPdfToRasterBackground()` helper for on-the-fly conversion
+   - Stores only PDF data URL (not rasterized image)
+   - Layer switching now converts PDFs to raster on-the-fly
+   - Added metadata storage for background type
 
 2. **`src/pages/jobs/design/export.jsx`**
-   - Added `backgroundFileType` and `backgroundPdfData` to export options
+   - Added `convertPdfToRasterForExport()` to handle PDF backgrounds
+   - Converts PDFs to raster before adding to export
    - Added logging for background type during export
-   - Prepared structure for future vector PDF export
 
 3. **`package.json`**
    - Updated `pdf-lib` version to `^1.17.1`
@@ -85,9 +96,11 @@ The process remains unchanged:
 ### Vector PDF Export
 To implement true vector PDF export:
 1. Use `pdf-lib` to create a new PDF document
-2. Embed the original PDF background as a page
+2. Embed the original PDF background (stored in `backgroundImage` as data URL) as a page
 3. Render SVG content on top using pdf-lib's drawing APIs
 4. This would require rewriting the export pipeline to bypass jsPDF for PDF backgrounds
+
+**Note**: The current storage format already supports vector PDF export - the original PDF data is preserved in the `backgroundImage` field as a data URL when `backgroundFileType` is "pdf".
 
 ### Multiple Page Support
 - Allow users to select which page of a multi-page PDF to use

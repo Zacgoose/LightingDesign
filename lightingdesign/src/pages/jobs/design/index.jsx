@@ -1070,6 +1070,13 @@ const Page = () => {
       if (file) {
         const isPdf = file.type === "application/pdf";
         
+        console.log('Uploading floor plan:', {
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          isPdf,
+        });
+        
         if (isPdf) {
           // Handle PDF file - store only the PDF data, convert to raster on load
           try {
@@ -1141,7 +1148,14 @@ const Page = () => {
         } else {
           // Handle image file - use orientation utility to ensure correct orientation
           try {
+            console.log('Processing image file with orientation correction...');
             const result = await createOrientedDataUrl(file);
+            
+            console.log('Image processed successfully:', {
+              originalFileName: file.name,
+              finalDimensions: { width: result.width, height: result.height },
+              dataUrlLength: result.dataUrl.length,
+            });
             
             // Store correctly-oriented image data URL
             updateLayer(activeLayerIdRef.current, {

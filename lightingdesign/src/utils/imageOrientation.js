@@ -174,9 +174,20 @@ export function getOrientedDimensions(width, height, orientation) {
  */
 export async function createOrientedDataUrl(file, maxWidth = null, maxHeight = null) {
   try {
+    console.log('createOrientedDataUrl: Processing file', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+    });
+    
     // Use createImageBitmap with imageOrientation: 'from-image' to apply EXIF orientation
     const imageBitmap = await createImageBitmap(file, {
       imageOrientation: 'from-image', // Apply EXIF orientation
+    });
+    
+    console.log('createOrientedDataUrl: ImageBitmap created', {
+      width: imageBitmap.width,
+      height: imageBitmap.height,
     });
     
     // Get final dimensions (after orientation)
@@ -191,6 +202,11 @@ export async function createOrientedDataUrl(file, maxWidth = null, maxHeight = n
       scale = Math.min(scaleX, scaleY);
       finalWidth = Math.round(finalWidth * scale);
       finalHeight = Math.round(finalHeight * scale);
+      console.log('createOrientedDataUrl: Downscaling applied', {
+        scale,
+        finalWidth,
+        finalHeight,
+      });
     }
     
     // Create canvas with final dimensions
@@ -208,13 +224,19 @@ export async function createOrientedDataUrl(file, maxWidth = null, maxHeight = n
     // Convert to data URL
     const dataUrl = canvas.toDataURL('image/png');
     
+    console.log('createOrientedDataUrl: Success', {
+      finalWidth,
+      finalHeight,
+      dataUrlLength: dataUrl.length,
+    });
+    
     return {
       dataUrl,
       width: finalWidth,
       height: finalHeight,
     };
   } catch (error) {
-    console.error('Error creating oriented data URL:', error);
+    console.error('createOrientedDataUrl: Error, falling back to standard loading', error);
     
     // Fallback: use regular Image loading without orientation correction
     const img = await new Promise((resolve, reject) => {
@@ -244,6 +266,12 @@ export async function createOrientedDataUrl(file, maxWidth = null, maxHeight = n
     URL.revokeObjectURL(img.src);
     
     const dataUrl = canvas.toDataURL('image/png');
+    
+    console.log('createOrientedDataUrl: Fallback success', {
+      finalWidth,
+      finalHeight,
+      dataUrlLength: dataUrl.length,
+    });
     
     return {
       dataUrl,

@@ -92,7 +92,8 @@
     "simplebar-react": "3.3.2",
     "stylis-plugin-rtl": "2.1.1",
     "svg2pdf.js": "^2.6.0",
-    "pdf-lib": "^1.18.1",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.0.379",
     "typescript": "5.9.2",
     "yup": "1.7.0"
   },
@@ -105,8 +106,8 @@
     "prettier": "^3.6.2"
   },
   "scripts": {
-    "dev": "next -H 127.0.0.1",
-    "build": "next build && rm -rf package.json yarn.lock",
+    "dev": "node scripts/copy-pdfjs-worker.js && next -H 127.0.0.1",
+    "build": "node scripts/copy-pdfjs-worker.js && next build && rm -rf package.json yarn.lock",
     "start": "next start",
     "export": "next export",
     "lint": "next lint",

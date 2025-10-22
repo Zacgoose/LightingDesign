@@ -483,6 +483,75 @@ const Page = () => {
     [products, selectedIds, updateHistory, forceGroupUpdate, transformerRef, selectionGroupRef],
   );
 
+  // Helper function to convert PDF data URL to raster image
+  // Helper function to convert PDF to high-quality raster image (returns data URL)
+  const convertPdfToRasterImage = useCallback(async (pdfDataUrl, pdfWidth, pdfHeight) => {
+    try {
+      // Extract base64 data from data URL
+      const base64Data = pdfDataUrl.split(',')[1];
+      const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      
+      // Dynamically import pdfjs-dist
+      const pdfjsLib = await import("pdfjs-dist");
+      
+      // Set worker source to local file (copied during build)
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
+      
+      // Load PDF document
+      const loadingTask = pdfjsLib.getDocument({
+        data: pdfBytes,
+      });
+      const pdf = await loadingTask.promise;
+      const page = await pdf.getPage(1);
+      
+      // Use high scale for better quality
+      const scale = 3; // Higher scale for better quality
+      const viewport = page.getViewport({ scale: scale });
+      
+      // Create canvas
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      
+      // Render PDF page to canvas
+      await page.render({
+        canvasContext: ctx,
+        viewport: viewport,
+      }).promise;
+      
+      // Convert canvas to data URL and return it
+      const imageDataUrl = canvas.toDataURL("image/png");
+      
+      console.log('PDF converted to high-quality raster image');
+      return imageDataUrl;
+    } catch (error) {
+      console.error('Error converting PDF to raster:', error);
+      
+      // Fallback: create a placeholder
+      const canvas = document.createElement("canvas");
+      const scale = 2;
+      canvas.width = pdfWidth * scale;
+      canvas.height = pdfHeight * scale;
+      const ctx = canvas.getContext("2d");
+      
+      // White background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw error message
+      ctx.fillStyle = '#666666';
+      ctx.font = `${20 * scale}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('PDF Rendering Failed', canvas.width / 2, canvas.height / 2 - 20 * scale);
+      ctx.font = `${14 * scale}px Arial`;
+      ctx.fillText('See console for details', canvas.width / 2, canvas.height / 2 + 20 * scale);
+      
+      return canvas.toDataURL("image/png");
+    }
+  }, []);
+
   // Force transformer update when text boxes change dimensions
   useEffect(() => {
     if (transformerRef.current && selectionGroupRef.current) {
@@ -555,8 +624,11 @@ const Page = () => {
       resetHistoryBaseline(activeLayer.products || []);
       setConnectors(activeLayer.connectors || []);
       setTextBoxes(activeLayer.textBoxes || []);
+      
+      // Set background image directly (no conversion needed - PDFs are already rasterized)
       setBackgroundImage(activeLayer.backgroundImage || null);
       setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
+      
       setScaleFactor(activeLayer.scaleFactor || 100);
 
       // Update sync refs to match the new layer's data
@@ -988,53 +1060,125 @@ const Page = () => {
     },
   });
 
-  const handleUploadFloorPlan = useCallback(() => {
+  const handleUploadFloorPlan = useCallback(async () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
-    input.onchange = (e) => {
+    input.accept = "image/*,application/pdf";
+    input.onchange = async (e) => {
       const file = e.target.files[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const img = new window.Image();
-          img.onload = () => {
-            setBackgroundImage(ev.target.result);
-            setBackgroundImageNaturalSize({ width: img.width, height: img.height });
-            
-            // Auto-zoom to fit the background image in the viewport
-            // The background image is first scaled to fit within the canvas dimensions
-            const imageScaleX = canvasWidth / img.width;
-            const imageScaleY = canvasHeight / img.height;
-            const imageScale = Math.min(imageScaleX, imageScaleY);
-            
-            // The actual size of the image in canvas coordinates after scaling
-            const scaledImageWidth = img.width * imageScale;
-            const scaledImageHeight = img.height * imageScale;
-            
-            // Now calculate what zoom level we need so that the scaled image
-            // fills approximately 90% of the viewport (leaving 10% margin)
-            const padding = 0.9; // Fill 90% of viewport
-            const zoomX = (viewportWidth * padding) / scaledImageWidth;
-            const zoomY = (viewportHeight * padding) / scaledImageHeight;
-            
-            // Use the smaller zoom to ensure the entire image fits within viewport
-            const autoZoom = Math.min(zoomX, zoomY);
-            
-            // Constrain zoom to reasonable bounds (0.01 to 100)
-            const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
-            setStageScale(constrainedZoom);
-            
-            // Center the canvas to show the background image in the middle of viewport
-            handleResetView();
+        const isPdf = file.type === "application/pdf";
+        
+        if (isPdf) {
+          // Handle PDF file - store only the PDF data, convert to raster on load
+          try {
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+              try {
+                // Get PDF dimensions using pdf-lib
+                const { PDFDocument } = await import("pdf-lib");
+                const pdfBytes = new Uint8Array(ev.target.result);
+                const pdfDoc = await PDFDocument.load(pdfBytes);
+                const pages = pdfDoc.getPages();
+                
+                if (pages.length === 0) {
+                  console.error("PDF has no pages");
+                  return;
+                }
+                
+                const firstPage = pages[0];
+                const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
+                
+                // Convert PDF to high-quality raster image immediately
+                const base64Data = btoa(
+                  new Uint8Array(ev.target.result).reduce(
+                    (data, byte) => data + String.fromCharCode(byte),
+                    ''
+                  )
+                );
+                const pdfDataUrl = `data:application/pdf;base64,${base64Data}`;
+                
+                // Convert to raster for storage and display
+                const rasterImageDataUrl = await convertPdfToRasterImage(pdfDataUrl, pdfWidth, pdfHeight);
+                
+                // Store the rasterized image (not the PDF)
+                updateLayer(activeLayerIdRef.current, {
+                  backgroundImage: rasterImageDataUrl, // Store rasterized image
+                  backgroundImageNaturalSize: { width: pdfWidth, height: pdfHeight },
+                  backgroundFileType: "image", // It's now an image, not a PDF
+                });
+                
+                // Set for immediate display
+                setBackgroundImage(rasterImageDataUrl);
+                setBackgroundImageNaturalSize({ width: pdfWidth, height: pdfHeight });
+                
+                // Auto-zoom to fit the background in the viewport
+                const imageScaleX = canvasWidth / pdfWidth;
+                const imageScaleY = canvasHeight / pdfHeight;
+                const imageScale = Math.min(imageScaleX, imageScaleY);
+                
+                const scaledImageWidth = pdfWidth * imageScale;
+                const scaledImageHeight = pdfHeight * imageScale;
+                
+                const padding = 0.9;
+                const zoomX = (viewportWidth * padding) / scaledImageWidth;
+                const zoomY = (viewportHeight * padding) / scaledImageHeight;
+                
+                const autoZoom = Math.min(zoomX, zoomY);
+                const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
+                setStageScale(constrainedZoom);
+                
+                handleResetView();
+              } catch (error) {
+                console.error("Error processing PDF:", error);
+              }
+            };
+            reader.readAsArrayBuffer(file);
+          } catch (error) {
+            console.error("Error loading PDF:", error);
+          }
+        } else {
+          // Handle image file (existing logic)
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const img = new window.Image();
+            img.onload = () => {
+              // Store image data URL directly
+              updateLayer(activeLayerIdRef.current, {
+                backgroundImage: ev.target.result,
+                backgroundImageNaturalSize: { width: img.width, height: img.height },
+                backgroundFileType: "image",
+              });
+              
+              setBackgroundImage(ev.target.result);
+              setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+              
+              // Auto-zoom to fit the background image in the viewport
+              const imageScaleX = canvasWidth / img.width;
+              const imageScaleY = canvasHeight / img.height;
+              const imageScale = Math.min(imageScaleX, imageScaleY);
+              
+              const scaledImageWidth = img.width * imageScale;
+              const scaledImageHeight = img.height * imageScale;
+              
+              const padding = 0.9;
+              const zoomX = (viewportWidth * padding) / scaledImageWidth;
+              const zoomY = (viewportHeight * padding) / scaledImageHeight;
+              
+              const autoZoom = Math.min(zoomX, zoomY);
+              const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
+              setStageScale(constrainedZoom);
+              
+              handleResetView();
+            };
+            img.src = ev.target.result;
           };
-          img.src = ev.target.result;
-        };
-        reader.readAsDataURL(file);
+          reader.readAsDataURL(file);
+        }
       }
     };
     input.click();
-  }, [setBackgroundImage, setBackgroundImageNaturalSize, canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale, handleResetView]);
+  }, [canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale, handleResetView, updateLayer]);
 
   const handleMeasure = useCallback(() => {
     setMeasureMode(true);

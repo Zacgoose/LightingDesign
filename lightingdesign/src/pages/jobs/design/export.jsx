@@ -377,8 +377,8 @@ const Page = () => {
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
       
-      // Always preserve the original resolution (scale = 1)
-      const scale = 1;
+      // set image PDF scale (scale = 3) based on desired image quality
+      const scale = 3;
       const viewport = page.getViewport({ scale: scale });
       
       // Create canvas

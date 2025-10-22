@@ -504,9 +504,23 @@ const Page = () => {
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
       
-      // Use moderate scale to balance quality and file size
-      // Reduced from 3 to 1.5 to significantly reduce image file size
-      const scale = 1.5;
+      // Check the natural resolution at scale 1
+      const naturalViewport = page.getViewport({ scale: 1 });
+      const naturalWidth = naturalViewport.width;
+      const naturalHeight = naturalViewport.height;
+      
+      // Only apply scaling optimization if the natural resolution is below 2000px
+      // For high-resolution PDFs (e.g., 4000x4000), preserve the original resolution
+      const HIGH_RES_THRESHOLD = 2000;
+      let scale;
+      if (naturalWidth >= HIGH_RES_THRESHOLD || naturalHeight >= HIGH_RES_THRESHOLD) {
+        // High resolution PDF - preserve original resolution
+        scale = 1;
+      } else {
+        // Lower resolution PDF - apply optimization
+        scale = 1.5;
+      }
+      
       const viewport = page.getViewport({ scale: scale });
       
       // Create canvas
@@ -527,9 +541,9 @@ const Page = () => {
       const imageDataUrl = canvas.toDataURL("image/jpeg", 0.85);
       
       console.log('PDF converted to raster image', {
+        naturalResolution: `${naturalWidth.toFixed(0)}x${naturalHeight.toFixed(0)}`,
         scale,
-        width: canvas.width,
-        height: canvas.height,
+        outputResolution: `${canvas.width}x${canvas.height}`,
         estimatedSizeMB: (imageDataUrl.length / 1024 / 1024).toFixed(2)
       });
       return imageDataUrl;

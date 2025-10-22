@@ -484,7 +484,8 @@ const Page = () => {
   );
 
   // Helper function to convert PDF data URL to raster image
-  const convertPdfToRasterBackground = useCallback(async (pdfDataUrl, pdfWidth, pdfHeight) => {
+  // Helper function to convert PDF to high-quality raster image (returns data URL)
+  const convertPdfToRasterImage = useCallback(async (pdfDataUrl, pdfWidth, pdfHeight) => {
     try {
       // Extract base64 data from data URL
       const base64Data = pdfDataUrl.split(',')[1];
@@ -519,17 +520,11 @@ const Page = () => {
         viewport: viewport,
       }).promise;
       
-      // Convert canvas to data URL
+      // Convert canvas to data URL and return it
       const imageDataUrl = canvas.toDataURL("image/png");
       
-      // Update state with rasterized image
-      setBackgroundImage(imageDataUrl);
-      setBackgroundImageNaturalSize({ 
-        width: viewport.width / scale, 
-        height: viewport.height / scale 
-      });
-      
       console.log('PDF converted to high-quality raster image');
+      return imageDataUrl;
     } catch (error) {
       console.error('Error converting PDF to raster:', error);
       
@@ -553,14 +548,9 @@ const Page = () => {
       ctx.font = `${14 * scale}px Arial`;
       ctx.fillText('See console for details', canvas.width / 2, canvas.height / 2 + 20 * scale);
       
-      const imageDataUrl = canvas.toDataURL("image/png");
-      setBackgroundImage(imageDataUrl);
-      setBackgroundImageNaturalSize({ 
-        width: pdfWidth, 
-        height: pdfHeight 
-      });
+      return canvas.toDataURL("image/png");
     }
-  }, [setBackgroundImage, setBackgroundImageNaturalSize]);
+  }, []);
 
   // Force transformer update when text boxes change dimensions
   useEffect(() => {
@@ -635,22 +625,9 @@ const Page = () => {
       setConnectors(activeLayer.connectors || []);
       setTextBoxes(activeLayer.textBoxes || []);
       
-      // Handle background based on file type
-      if (activeLayer.backgroundFileType === 'pdf' && activeLayer.backgroundImage) {
-        // Convert PDF to raster for display
-        const naturalSize = activeLayer.backgroundImageNaturalSize;
-        if (naturalSize) {
-          convertPdfToRasterBackground(
-            activeLayer.backgroundImage,
-            naturalSize.width,
-            naturalSize.height
-          );
-        }
-      } else {
-        // Regular image - set directly
-        setBackgroundImage(activeLayer.backgroundImage || null);
-        setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
-      }
+      // Set background image directly (no conversion needed - PDFs are already rasterized)
+      setBackgroundImage(activeLayer.backgroundImage || null);
+      setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
       
       setScaleFactor(activeLayer.scaleFactor || 100);
 
@@ -680,7 +657,6 @@ const Page = () => {
     designData.isLoading,
     designData.isSuccess,
     designData.data,
-    convertPdfToRasterBackground,
     // Note: updateHistory is not memoized in useHistory hook, so it changes every render
     // We don't include it here to prevent infinite re-runs
     // Note: setConnectors, setBackgroundImage, setBackgroundImageNaturalSize, setScaleFactor
@@ -1113,25 +1089,28 @@ const Page = () => {
                 const firstPage = pages[0];
                 const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
                 
-                // Convert PDF data to base64 for storage
-                const base64Pdf = btoa(
+                // Convert PDF to high-quality raster image immediately
+                const base64Data = btoa(
                   new Uint8Array(ev.target.result).reduce(
                     (data, byte) => data + String.fromCharCode(byte),
                     ''
                   )
                 );
-                const pdfDataUrl = `data:application/pdf;base64,${base64Pdf}`;
+                const pdfDataUrl = `data:application/pdf;base64,${base64Data}`;
                 
-                // Store only the PDF data (not the rasterized image)
-                // The conversion will happen on load
+                // Convert to raster for storage and display
+                const rasterImageDataUrl = await convertPdfToRasterImage(pdfDataUrl, pdfWidth, pdfHeight);
+                
+                // Store the rasterized image (not the PDF)
                 updateLayer(activeLayerIdRef.current, {
-                  backgroundImage: pdfDataUrl, // Store PDF data URL
+                  backgroundImage: rasterImageDataUrl, // Store rasterized image
                   backgroundImageNaturalSize: { width: pdfWidth, height: pdfHeight },
-                  backgroundFileType: "pdf",
+                  backgroundFileType: "image", // It's now an image, not a PDF
                 });
                 
-                // Convert to raster for immediate display
-                await convertPdfToRasterBackground(pdfDataUrl, pdfWidth, pdfHeight);
+                // Set for immediate display
+                setBackgroundImage(rasterImageDataUrl);
+                setBackgroundImageNaturalSize({ width: pdfWidth, height: pdfHeight });
                 
                 // Auto-zoom to fit the background in the viewport
                 const imageScaleX = canvasWidth / pdfWidth;
@@ -1199,7 +1178,7 @@ const Page = () => {
       }
     };
     input.click();
-  }, [canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale, handleResetView, updateLayer, convertPdfToRasterBackground]);
+  }, [canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale, handleResetView, updateLayer]);
 
   const handleMeasure = useCallback(() => {
     setMeasureMode(true);

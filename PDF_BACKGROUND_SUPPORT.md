@@ -13,13 +13,17 @@ The application now supports uploading both PDF and image files as backgrounds f
   - PDFs: Any valid PDF file
 
 ### 2. PDF Rendering for Canvas Display
-When a PDF is uploaded or loaded:
-1. The PDF data URL is stored in the layer
-2. PDF is converted to high-quality raster image using pdfjs-dist:
-   - PDF dimensions are extracted using `pdf-lib`
-   - First page is rendered to canvas using `pdfjs-dist` at 3x scale
-   - Canvas is converted to PNG data URL for display
-3. The high-quality raster image is displayed as the background
+When a PDF is uploaded:
+1. PDF is immediately converted to high-quality raster image (3x resolution)
+2. Rasterized PNG image is stored in `backgroundImage`
+3. `backgroundFileType` is set to "image" (not "pdf")
+4. No conversion needed on layer load/switch - it's just a regular image
+
+**One-Time Conversion**:
+- PDF → Raster conversion happens **only on upload**
+- Result is stored as standard image data URL
+- Loading/switching layers is instant (no re-conversion)
+- Export uses the stored rasterized image
 
 **Worker Configuration**:
 - Worker file is copied from `node_modules` to `/public/pdfjs/` during build
@@ -30,24 +34,25 @@ When a PDF is uploaded or loaded:
 This approach:
 - Provides actual PDF content rendering (not placeholder)
 - High quality at 3x resolution
-- Simple worker configuration using local file
-- Works in all environments
+- Simple storage - just images (no special handling)
+- Fast loading - no conversion on every load
 
 ### 3. Background Metadata Storage
 For each layer, the application now stores:
-- `backgroundImage`: Original file data URL (PDF data URL for PDFs, image data URL for images)
+- `backgroundImage`: Rasterized image data URL (for both PDFs and images)
 - `backgroundImageNaturalSize`: Dimensions of the background
-- `backgroundFileType`: "image" or "pdf" (NEW)
+- `backgroundFileType`: "image" (always - PDFs are converted to images on upload)
 
 **Storage Optimization**: 
-- Only the original file is stored (not both PDF and rasterized image)
-- PDF-to-raster conversion happens on-the-fly when loading/switching layers
-- This significantly reduces save data size for designs with PDF backgrounds
+- PDFs are converted to high-quality raster images on upload (one-time)
+- Only the rasterized image is stored (not the original PDF)
+- Loading/switching layers is instant (no conversion needed)
+- All backgrounds are treated as images after upload
 
 This metadata is preserved when saving designs, enabling:
 - Backward compatibility with existing image-only designs
-- Optimized storage (single file per background)
-- Type-aware processing
+- Fast loading (no on-the-fly conversion)
+- Consistent storage (everything is an image)
 
 ### 4. Export Functionality
 Currently, both image and PDF backgrounds are exported as rasterized images in the PDF output. This maintains consistency and ensures compatibility with existing export logic.

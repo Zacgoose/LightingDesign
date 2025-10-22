@@ -164,8 +164,8 @@ export function getOrientedDimensions(width, height, orientation) {
 
 /**
  * Create a correctly-oriented data URL from an image file
- * This reads the EXIF orientation, applies the transformation to a canvas,
- * and returns a data URL without EXIF metadata (but with correct orientation baked in)
+ * This reads the EXIF orientation and uses createImageBitmap to apply the transformation,
+ * then exports as a data URL without EXIF metadata (but with correct orientation baked in)
  * 
  * @param {File} file - The image file
  * @param {number} maxWidth - Optional max width (for downscaling large images)
@@ -173,66 +173,82 @@ export function getOrientedDimensions(width, height, orientation) {
  * @returns {Promise<{dataUrl: string, width: number, height: number}>}
  */
 export async function createOrientedDataUrl(file, maxWidth = null, maxHeight = null) {
-  // Read EXIF orientation
-  const orientation = await getImageOrientation(file);
-  
-  // Load the image
-  const img = await new Promise((resolve, reject) => {
-    const image = new window.Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = URL.createObjectURL(file);
-  });
-  
-  // Get original dimensions (as displayed by browser with EXIF applied)
-  let width = img.naturalWidth;
-  let height = img.naturalHeight;
-  
-  // Get dimensions after orientation (orientations 5-8 swap width/height)
-  const oriented = getOrientedDimensions(width, height, orientation);
-  let finalWidth = oriented.width;
-  let finalHeight = oriented.height;
-  
-  // Apply downscaling if needed
-  if (maxWidth || maxHeight) {
-    const scaleX = maxWidth ? Math.min(1, maxWidth / finalWidth) : 1;
-    const scaleY = maxHeight ? Math.min(1, maxHeight / finalHeight) : 1;
-    const scale = Math.min(scaleX, scaleY);
-    finalWidth = Math.round(finalWidth * scale);
-    finalHeight = Math.round(finalHeight * scale);
+  try {
+    // Use createImageBitmap with imageOrientation: 'from-image' to apply EXIF orientation
+    const imageBitmap = await createImageBitmap(file, {
+      imageOrientation: 'from-image', // Apply EXIF orientation
+    });
+    
+    // Get final dimensions (after orientation)
+    let finalWidth = imageBitmap.width;
+    let finalHeight = imageBitmap.height;
+    
+    // Apply downscaling if needed
+    let scale = 1;
+    if (maxWidth || maxHeight) {
+      const scaleX = maxWidth ? Math.min(1, maxWidth / finalWidth) : 1;
+      const scaleY = maxHeight ? Math.min(1, maxHeight / finalHeight) : 1;
+      scale = Math.min(scaleX, scaleY);
+      finalWidth = Math.round(finalWidth * scale);
+      finalHeight = Math.round(finalHeight * scale);
+    }
+    
+    // Create canvas with final dimensions
+    const canvas = document.createElement('canvas');
+    canvas.width = finalWidth;
+    canvas.height = finalHeight;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw the image bitmap (already oriented)
+    ctx.drawImage(imageBitmap, 0, 0, finalWidth, finalHeight);
+    
+    // Clean up
+    imageBitmap.close();
+    
+    // Convert to data URL
+    const dataUrl = canvas.toDataURL('image/png');
+    
+    return {
+      dataUrl,
+      width: finalWidth,
+      height: finalHeight,
+    };
+  } catch (error) {
+    console.error('Error creating oriented data URL:', error);
+    
+    // Fallback: use regular Image loading without orientation correction
+    const img = await new Promise((resolve, reject) => {
+      const image = new window.Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = URL.createObjectURL(file);
+    });
+    
+    let finalWidth = img.naturalWidth;
+    let finalHeight = img.naturalHeight;
+    
+    if (maxWidth || maxHeight) {
+      const scaleX = maxWidth ? Math.min(1, maxWidth / finalWidth) : 1;
+      const scaleY = maxHeight ? Math.min(1, maxHeight / finalHeight) : 1;
+      const scale = Math.min(scaleX, scaleY);
+      finalWidth = Math.round(finalWidth * scale);
+      finalHeight = Math.round(finalHeight * scale);
+    }
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = finalWidth;
+    canvas.height = finalHeight;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.drawImage(img, 0, 0, finalWidth, finalHeight);
+    URL.revokeObjectURL(img.src);
+    
+    const dataUrl = canvas.toDataURL('image/png');
+    
+    return {
+      dataUrl,
+      width: finalWidth,
+      height: finalHeight,
+    };
   }
-  
-  // Create canvas with oriented dimensions
-  const canvas = document.createElement('canvas');
-  canvas.width = finalWidth;
-  canvas.height = finalHeight;
-  const ctx = canvas.getContext('2d');
-  
-  // Apply orientation transformations
-  ctx.save();
-  
-  // Scale if downscaling
-  if (maxWidth || maxHeight) {
-    const scale = finalWidth / oriented.width;
-    ctx.scale(scale, scale);
-  }
-  
-  // Apply EXIF orientation
-  applyOrientation(ctx, orientation, width, height);
-  
-  // Draw image
-  ctx.drawImage(img, 0, 0, width, height);
-  ctx.restore();
-  
-  // Clean up object URL
-  URL.revokeObjectURL(img.src);
-  
-  // Convert to data URL
-  const dataUrl = canvas.toDataURL('image/png');
-  
-  return {
-    dataUrl,
-    width: finalWidth,
-    height: finalHeight,
-  };
 }

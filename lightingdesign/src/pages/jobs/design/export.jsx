@@ -595,18 +595,20 @@ const Page = () => {
       const mapX = (v) => v - contentOffsetX;
       const mapY = (v) => v - contentOffsetY;
 
-      // Background image (preserve aspect ratio and natural size)
+      // Background image (preserve exact dimensions and orientation from designer)
       if (backgroundImage) {
         const imgEl = document.createElementNS(SVG_NS, 'image');
         imgEl.setAttributeNS(XLINK_NS, 'xlink:href', backgroundImage);
         imgEl.setAttribute('href', backgroundImage);
-        // Position image using its calculated background bounds
-  // Position image using absolute canvas coordinates
-  imgEl.setAttribute('x', String(bgX));
-  imgEl.setAttribute('y', String(bgY));
+        // Position image using absolute canvas coordinates
+        // bgX, bgY, bgWidth, bgHeight are calculated to match the designer's positioning
+        imgEl.setAttribute('x', String(bgX));
+        imgEl.setAttribute('y', String(bgY));
         imgEl.setAttribute('width', String(bgWidth));
         imgEl.setAttribute('height', String(bgHeight));
-        imgEl.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+        // The image is already correctly oriented (EXIF applied during upload)
+        // so we preserve aspect ratio but the calculated dimensions should match exactly
+        imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
         svgElement.appendChild(imgEl);
       }
 

@@ -42,6 +42,7 @@ import { useSettings } from "/src/hooks/use-settings";
 import productTypesConfig from "/src/data/productTypes.json";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
 import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
+import { createOrientedDataUrl } from "/src/utils/imageOrientation";
 
 const Page = () => {
   const router = useRouter();
@@ -1138,42 +1139,40 @@ const Page = () => {
             console.error("Error loading PDF:", error);
           }
         } else {
-          // Handle image file (existing logic)
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            const img = new window.Image();
-            img.onload = () => {
-              // Store image data URL directly
-              updateLayer(activeLayerIdRef.current, {
-                backgroundImage: ev.target.result,
-                backgroundImageNaturalSize: { width: img.width, height: img.height },
-                backgroundFileType: "image",
-              });
-              
-              setBackgroundImage(ev.target.result);
-              setBackgroundImageNaturalSize({ width: img.width, height: img.height });
-              
-              // Auto-zoom to fit the background image in the viewport
-              const imageScaleX = canvasWidth / img.width;
-              const imageScaleY = canvasHeight / img.height;
-              const imageScale = Math.min(imageScaleX, imageScaleY);
-              
-              const scaledImageWidth = img.width * imageScale;
-              const scaledImageHeight = img.height * imageScale;
-              
-              const padding = 0.9;
-              const zoomX = (viewportWidth * padding) / scaledImageWidth;
-              const zoomY = (viewportHeight * padding) / scaledImageHeight;
-              
-              const autoZoom = Math.min(zoomX, zoomY);
-              const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
-              setStageScale(constrainedZoom);
-              
-              handleResetView();
-            };
-            img.src = ev.target.result;
-          };
-          reader.readAsDataURL(file);
+          // Handle image file - use orientation utility to ensure correct orientation
+          try {
+            const result = await createOrientedDataUrl(file);
+            
+            // Store correctly-oriented image data URL
+            updateLayer(activeLayerIdRef.current, {
+              backgroundImage: result.dataUrl,
+              backgroundImageNaturalSize: { width: result.width, height: result.height },
+              backgroundFileType: "image",
+            });
+            
+            setBackgroundImage(result.dataUrl);
+            setBackgroundImageNaturalSize({ width: result.width, height: result.height });
+            
+            // Auto-zoom to fit the background image in the viewport
+            const imageScaleX = canvasWidth / result.width;
+            const imageScaleY = canvasHeight / result.height;
+            const imageScale = Math.min(imageScaleX, imageScaleY);
+            
+            const scaledImageWidth = result.width * imageScale;
+            const scaledImageHeight = result.height * imageScale;
+            
+            const padding = 0.9;
+            const zoomX = (viewportWidth * padding) / scaledImageWidth;
+            const zoomY = (viewportHeight * padding) / scaledImageHeight;
+            
+            const autoZoom = Math.min(zoomX, zoomY);
+            const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
+            setStageScale(constrainedZoom);
+            
+            handleResetView();
+          } catch (error) {
+            console.error("Error processing image:", error);
+          }
         }
       }
     };

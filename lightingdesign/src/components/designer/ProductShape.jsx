@@ -70,7 +70,8 @@ export const ProductShape = memo(
         onDragEnd={onDragEnd}
         onContextMenu={onContextMenu}
       >
-        {/* Invisible Rect to define correct bounding box for Transformer */}
+        {/* Invisible rect to provide correct centered bounding box for Transformer */}
+        {/* This doesn't affect rendering but helps Transformer calculate correct bounds */}
         <Rect
           x={-renderedWidth / 2}
           y={-renderedHeight / 2}

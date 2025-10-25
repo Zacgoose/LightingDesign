@@ -155,6 +155,11 @@ export const ProductsLayer = memo(
                 scaleY: node.scaleY(),
                 selectionSnapshot,
               });
+              // Keep the group centered at its original position during rotation/scale
+              node.x(selectionSnapshot.centerX || 0);
+              node.y(selectionSnapshot.centerY || 0);
+              node.offsetX((selectionSnapshot.width || 0) / 2);
+              node.offsetY((selectionSnapshot.height || 0) / 2);
               // Debug: Log selected products relative positions
               console.log('[ProductsLayer] Selected products relative:', selectionSnapshot.products?.map(p => ({ id: p.id, relX: p.relativeX, relY: p.relativeY, absX: selectionSnapshot.centerX + (p.relativeX || 0), absY: selectionSnapshot.centerY + (p.relativeY || 0) })));
               // Debug: Log group and transformer positions

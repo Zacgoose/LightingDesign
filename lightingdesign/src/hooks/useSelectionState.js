@@ -6,7 +6,6 @@
  */
 
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
-import productTypesConfig from "/src/data/productTypes.json";
 
 export const useSelectionState = (products, textBoxes = []) => {
   // Selection state
@@ -41,46 +40,23 @@ export const useSelectionState = (products, textBoxes = []) => {
     // Calculate bounding box using visual bounds (x/y + width/height)
     const allItems = [...productSnapshot, ...textSnapshot];
     const bounds = allItems.map(item => {
-      let width, height;
-      
-      // For products, calculate rendered dimensions based on their configuration
-      if (!item.text) { // This is a product (not a text box)
-        const productType = item.product_type?.toLowerCase() || "default";
-        const config = productTypesConfig[productType] || productTypesConfig.default;
-        const scaleFactor = item.scaleFactor || 100;
-        const realWorldSize = item.realWorldSize || config.realWorldSize;
-        const realWorldWidth = item.realWorldWidth || config.realWorldWidth;
-        const realWorldHeight = item.realWorldHeight || config.realWorldHeight;
-
-        if (realWorldSize) {
-          width = height = realWorldSize * scaleFactor;
-        } else if (realWorldWidth && realWorldHeight) {
-          width = realWorldWidth * scaleFactor;
-          height = realWorldHeight * scaleFactor;
-        } else {
-          width = config.width || 30;
-          height = config.height || 30;
-        }
-        
-        // Apply product's scale transforms
-        width *= (item.scaleX || 1);
-        height *= (item.scaleY || 1);
+      // For products, use x/y and width/height if available
+      if (item.width && item.height) {
+        return {
+          minX: item.x - item.width / 2,
+          maxX: item.x + item.width / 2,
+          minY: item.y - item.height / 2,
+          maxY: item.y + item.height / 2,
+        };
       } else {
-        // For text boxes, calculate height from font size
-        const baseFontSize = item.fontSize || 24;
-        const scaleFactor = item.scaleFactor || 100;
-        const renderedFontSize = baseFontSize * (scaleFactor / 100);
-        
-        width = item.width || 200;
-        height = renderedFontSize * 1.2; // Match the calculation in ProductsLayer
+        // Fallback: treat x/y as center, no size
+        return {
+          minX: item.x,
+          maxX: item.x,
+          minY: item.y,
+          maxY: item.y,
+        };
       }
-      
-      return {
-        minX: item.x - width / 2,
-        maxX: item.x + width / 2,
-        minY: item.y - height / 2,
-        maxY: item.y + height / 2,
-      };
     });
     const minX = bounds.length ? Math.min(...bounds.map(b => b.minX)) : 0;
     const maxX = bounds.length ? Math.max(...bounds.map(b => b.maxX)) : 0;

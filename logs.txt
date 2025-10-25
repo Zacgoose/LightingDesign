@@ -68,10 +68,6 @@ length: 1
 useSelectionState.js:155:13
 [SelectionState] Selected text positions: 
 Array []
-​
-length: 0
-​
-<prototype>: Array []
 useSelectionState.js:156:13
 [SelectionState] Bounding box: 
 Object { minX: -54.49358145361474, minY: -580.1725913178435, maxX: 280.8399737908945, maxY: -244.8390360733343, centerX: 113.17319616863986, centerY: -412.5058136955889 }
@@ -126,10 +122,10 @@ ProductShape.jsx:41:13
 Object { selectedCount: 1, currentRotation: 0, groupX: 113.17319616863986, groupY: -412.5058136955889, centerX: 113.17319616863986, centerY: -412.5058136955889, snapshotWidth: 335.3335552445092, snapshotHeight: 335.33355524450917 }
 useSelectionState.js:199:15
 [useEffect transformer] Group client rect: 
-Object { x: 857.3281908991006, y: 346.94863456928033, width: 38.95549866835108, height: 38.95549866835108 }
+Object { x: 867.933246971948, y: 175.34700022448772, width: 124.51642241581692, height: 124.51642241581698 }
 useSelectionState.js:224:15
 [useEffect transformer] Transformer client rect: 
-Object { x: 853.0008998932183, y: 292.621343563398, width: 47.61008068011574, height: 97.61008068011574 }
+Object { x: 863.433246971948, y: 120.84700022448772, width: 133.14620534864002, height: 183.14620534864002 }
 useSelectionState.js:228:15
 [useEffect transformer] Transformer and Group event handlers: 
 Object { hasGroupOnTransformEnd: "undefined", hasGroupOnDragEnd: "undefined" }
@@ -139,3 +135,4 @@ Object { width: 335.3335552445092, radius: 167.6667776222546 }
 productShapes.js:117:13
 [ProductShapes.fan] 
 Object { width: 335.3335552445092, radius: 167.6667776222546 }
+productShapes.js:117:13

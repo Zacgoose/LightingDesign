@@ -84,32 +84,50 @@ export const ProductsLayer = memo(
 
     // NEW: Attach Transformer directly to selected product nodes (Konva standard pattern)
     useEffect(() => {
-      if (!transformerRef.current) return;
+      if (!transformerRef.current) {
+        console.log('[ProductsLayer] No transformer ref yet');
+        return;
+      }
 
       const productOnlyIds = selectedIds.filter(id => !id.startsWith('text-'));
+      
+      console.log('[ProductsLayer] Attaching transformer effect:', {
+        selectedIds,
+        productOnlyIds,
+        refsMapSize: productRefsMap.current.size,
+        refsMapKeys: Array.from(productRefsMap.current.keys()),
+      });
       
       if (productOnlyIds.length > 0) {
         // Get the refs for selected products
         const selectedNodes = productOnlyIds
-          .map(id => productRefsMap.current.get(id))
+          .map(id => {
+            const node = productRefsMap.current.get(id);
+            console.log(`[ProductsLayer] Getting ref for ${id}:`, node != null);
+            return node;
+          })
           .filter(node => node != null);
         
+        console.log('[ProductsLayer] Selected nodes:', {
+          selectedIds: productOnlyIds,
+          nodeCount: selectedNodes.length,
+          nodes: selectedNodes,
+        });
+        
         if (selectedNodes.length > 0) {
-          console.log('[ProductsLayer] Attaching transformer to nodes:', {
-            selectedIds: productOnlyIds,
-            nodeCount: selectedNodes.length,
-          });
-          
           // Attach transformer to the selected nodes directly
           transformerRef.current.nodes(selectedNodes);
           transformerRef.current.getLayer()?.batchDraw();
+          console.log('[ProductsLayer] Transformer attached successfully');
         } else {
           transformerRef.current.nodes([]);
+          console.log('[ProductsLayer] No nodes found, cleared transformer');
         }
       } else {
         transformerRef.current.nodes([]);
+        console.log('[ProductsLayer] No product IDs selected, cleared transformer');
       }
-    }, [selectedIds, transformerRef]);
+    }, [selectedIds, transformerRef, products]); // Added products dependency to re-attach when products change
 
     const isPlacementMode = selectedTool === "placement" || placementMode;
     const isPanMode = selectedTool === "pan";
@@ -146,7 +164,7 @@ export const ProductsLayer = memo(
               product={product}
               config={config}
               isSelected={isSelected}
-              draggable={selectedTool === "select" && canInteract && !isSelected}
+              draggable={selectedTool === "select" && canInteract && !isSelected} // Unselected products are draggable individually
               onDragStart={(e) =>
                 selectedTool === "select" && canInteract && !isSelected && onProductDragStart(e, product.id)
               }
@@ -159,19 +177,6 @@ export const ProductsLayer = memo(
               onDragEnd={(e) =>
                 selectedTool === "select" && canInteract && !isSelected && onProductDragEnd(e, product.id)
               }
-              onTransformEnd={(e) => {
-                // Handle transform end for selected products
-                if (isSelected) {
-                  console.log('[ProductShape] Transform end:', {
-                    id: product.id,
-                    x: e.target.x(),
-                    y: e.target.y(),
-                    rotation: e.target.rotation(),
-                    scaleX: e.target.scaleX(),
-                    scaleY: e.target.scaleY(),
-                  });
-                }
-              }}
               onContextMenu={(e) =>
                 selectedTool === "select" && canInteract && onContextMenu(e, product.id)
               }

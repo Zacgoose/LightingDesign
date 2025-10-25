@@ -62,6 +62,10 @@ export const ProductShape = memo(
         onTap={onMouseDown}
         onDragEnd={onDragEnd}
         onContextMenu={onContextMenu}
+        // Set explicit offset to center the group's coordinate system
+        // This ensures the transformer bounding box is calculated correctly
+        offsetX={0}
+        offsetY={0}
       >
         <Shape
           sceneFunc={(context, shape) => shapeFunction(context, shape)}
@@ -75,6 +79,9 @@ export const ProductShape = memo(
           realWorldHeight={product.realWorldHeight}
           realWorldSize={product.realWorldSize}
           scaleFactor={product.scaleFactor}
+          // Center the shape within the group
+          offsetX={renderedWidth / 2}
+          offsetY={renderedHeight / 2}
         />
 
         {/* Text labels removed - now shown in preview panel */}
@@ -84,8 +91,9 @@ export const ProductShape = memo(
             <Shape
               sceneFunc={(context, shape) => {
                 const badgeRadius = 12 * textScale;
+                // Badge position adjusted for centered shape
                 context.beginPath();
-                context.arc(maxDimension * 0.6, -maxDimension * 0.4, badgeRadius, 0, Math.PI * 2);
+                context.arc(maxDimension * 0.1, -maxDimension * 0.4, badgeRadius, 0, Math.PI * 2);
                 context.fillStrokeShape(shape);
               }}
               fill={theme.palette.error.main}
@@ -99,7 +107,7 @@ export const ProductShape = memo(
               fill={theme.palette.error.contrastText}
               fontStyle="bold"
               align="center"
-              x={maxDimension * 0.6 - 6 * textScale}
+              x={maxDimension * 0.1 - 6 * textScale}
               y={-maxDimension * 0.4 - 5 * textScale}
               width={12 * textScale}
               listening={listening}

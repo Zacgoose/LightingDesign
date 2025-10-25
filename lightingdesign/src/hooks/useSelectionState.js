@@ -156,15 +156,8 @@ export const useSelectionState = (products, textBoxes = []) => {
       // Ensure the transformer's rotation matches
       transformerRef.current.rotation(currentRotation);
 
-      // Cache the group for better performance with many objects
-      // Only cache if there are multiple selected items and not during dragging
-      // Caching improves rendering performance significantly with large selections
-      if (selectedIds.length > 5 && !isDragging) {
-        selectionGroupRef.current.cache();
-      } else {
-        // Clear cache for small selections to avoid overhead
-        selectionGroupRef.current.clearCache();
-      }
+      // Caching removed - was causing performance issues during transforms
+      // Performance is better without caching due to reduced overhead
 
       // Force update
       transformerRef.current.getLayer()?.batchDraw();
@@ -175,9 +168,6 @@ export const useSelectionState = (products, textBoxes = []) => {
       });
     } else if (transformerRef.current) {
       transformerRef.current.nodes([]);
-      if (selectionGroupRef.current) {
-        selectionGroupRef.current.clearCache();
-      }
     }
   }, [selectedIds, groupKey, isDragging, selectionSnapshot.rotation]);
 

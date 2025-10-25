@@ -66,9 +66,13 @@ export const useSelectionState = (products, textBoxes = []) => {
         width *= (item.scaleX || 1);
         height *= (item.scaleY || 1);
       } else {
-        // For text boxes, use their width and height properties
+        // For text boxes, calculate height from font size
+        const baseFontSize = item.fontSize || 24;
+        const scaleFactor = item.scaleFactor || 100;
+        const renderedFontSize = baseFontSize * (scaleFactor / 100);
+        
         width = item.width || 200;
-        height = item.height || 50;
+        height = renderedFontSize * 1.2; // Match the calculation in ProductsLayer
       }
       
       return {

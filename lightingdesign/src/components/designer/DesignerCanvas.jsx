@@ -1,8 +1,7 @@
 import { Box, useTheme } from "@mui/material";
 import { Stage, Layer, Image as KonvaImage } from "react-konva";
-import { useState, useEffect, useMemo, useRef, memo, forwardRef } from "react";
+import { useState, useEffect, memo, forwardRef } from "react";
 import { GridLayer } from "./GridLayer";
-import { usePerformanceMonitor, logRender } from "/src/utils/performanceLogger";
 
 export const DesignerCanvas = memo(
   forwardRef((
@@ -39,20 +38,6 @@ export const DesignerCanvas = memo(
     // Use viewport dimensions for Stage if provided, otherwise use virtual canvas dimensions
     const stageWidth = viewportWidth || width;
     const stageHeight = viewportHeight || height;
-
-    // Performance monitoring
-    const renderCount = useRef(0);
-    useEffect(() => {
-      renderCount.current++;
-      logRender("DesignerCanvas", {
-        renderCount: renderCount.current,
-        width,
-        height,
-        stageScale,
-        showGrid,
-        childrenCount: Array.isArray(children) ? children.length : children ? 1 : 0,
-      });
-    });
 
     // Load background image
     useEffect(() => {

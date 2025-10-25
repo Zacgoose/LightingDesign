@@ -1,7 +1,6 @@
 import { Shape, Text, Group } from "react-konva";
 import { getShapeFunction } from "/src/components/designer/productShapes";
-import { useEffect, useRef, memo } from "react";
-import { logRender } from "/src/utils/performanceLogger";
+import { memo } from "react";
 
 export const ProductShape = memo(
   ({
@@ -17,18 +16,6 @@ export const ProductShape = memo(
     opacity = 1,
     listening,
   }) => {
-    // Performance monitoring
-    const renderCount = useRef(0);
-    useEffect(() => {
-      renderCount.current++;
-      if (renderCount.current > 1) {
-        logRender(`ProductShape-${product.id}`, {
-          renderCount: renderCount.current,
-          sku: product.sku,
-          draggable,
-        });
-      }
-    });
 
     const shapeFunction = getShapeFunction(config.shapeType);
     

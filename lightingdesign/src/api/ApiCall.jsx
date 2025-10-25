@@ -177,7 +177,6 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
       }
     },
     onSuccess: () => {
-      console.log("ApiPostCall onSuccess triggered with relatedQueryKeys:", relatedQueryKeys);
 
       if (relatedQueryKeys) {
         const clearKeys = Array.isArray(relatedQueryKeys) ? relatedQueryKeys : [relatedQueryKeys];
@@ -233,7 +232,6 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
           }
         }, 1000);
       } else {
-        console.log("No relatedQueryKeys provided to ApiPostCall");
       }
     },
   });

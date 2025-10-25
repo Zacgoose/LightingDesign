@@ -1,8 +1,7 @@
 import { Group, Transformer, Text } from "react-konva";
 import { ProductShape } from "./ProductShape";
 import productTypesConfig from "/src/data/productTypes.json";
-import { useEffect, useRef, memo } from "react";
-import { logRender } from "/src/utils/performanceLogger";
+import { useEffect, memo } from "react";
 
 export const COLOR_PALETTE = [
   "#1976d2",
@@ -59,18 +58,6 @@ export const ProductsLayer = memo(
     textBoxes = [], // Add textBoxes support
     onTextContextMenu, // Add text context menu handler
   }) => {
-    // Performance monitoring
-    const renderCount = useRef(0);
-    useEffect(() => {
-      renderCount.current++;
-      logRender("ProductsLayer", {
-        renderCount: renderCount.current,
-        productsCount: products.length,
-        selectedCount: selectedIds.length,
-        selectedTool,
-        groupKey,
-      });
-    });
 
     // Manually attach transformend event listener to Transformer
     // This is necessary because the Group's onTransformEnd prop doesn't fire reliably
@@ -79,10 +66,7 @@ export const ProductsLayer = memo(
 
       const transformer = transformerRef.current;
       
-      console.log('[ProductsLayer] Attaching transformend listener to Transformer');
-      
       const handleTransformEnd = () => {
-        console.log('[ProductsLayer] Transformer transformend event fired');
         onGroupTransformEnd();
       };
 
@@ -91,7 +75,6 @@ export const ProductsLayer = memo(
 
       // Cleanup
       return () => {
-        console.log('[ProductsLayer] Removing transformend listener from Transformer');
         transformer.off('transformend', handleTransformEnd);
       };
     }, [transformerRef, onGroupTransformEnd]);

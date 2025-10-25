@@ -363,30 +363,8 @@ const Page = () => {
       lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
     }
 
-    // Log layers before stripping to check for corruption
-    console.log('=== SAVE: Layers before stripping ===');
-    layers.forEach((layer, idx) => {
-      console.log(`Layer ${idx} (${layer.id}):`, {
-        name: layer.name,
-        hasBackground: !!layer.backgroundImage,
-        backgroundLength: layer.backgroundImage?.length || 0,
-        backgroundImageNaturalSize: layer.backgroundImageNaturalSize
-      });
-    });
-
     // Strip metadata from all layers (products and connectors are already in layers)
     const strippedLayers = stripLayersForSave(layers);
-
-    // Log after stripping
-    console.log('=== SAVE: Layers after stripping ===');
-    strippedLayers.forEach((layer, idx) => {
-      console.log(`Layer ${idx} (${layer.id}):`, {
-        name: layer.name,
-        hasBackground: !!layer.backgroundImage,
-        backgroundLength: layer.backgroundImage?.length || 0,
-        backgroundImageNaturalSize: layer.backgroundImageNaturalSize
-      });
-    });
 
     // Use new format: only save layers (not root products/connectors)
     // Products and connectors are stored within their respective layers
@@ -606,14 +584,6 @@ const Page = () => {
       return;
     }
     
-    console.log('Layer switch effect triggered', {
-      activeLayerId,
-      lastLoadedLayerId: lastLoadedLayerId.current,
-      hasActiveLayer: !!activeLayer,
-      layersVersion,
-      condition: activeLayerId !== lastLoadedLayerId.current && activeLayer
-    });
-    
     if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
       console.log(`Switching to layer ${activeLayerId}`, {
         hasBackgroundImage: !!activeLayer.backgroundImage,
@@ -622,7 +592,6 @@ const Page = () => {
 
       lastLoadedLayerId.current = activeLayerId;
       isLoadingLayerData.current = true;
-      console.log('isLoadingLayerData set to TRUE');
       
       // Update activeLayerIdRef immediately to ensure sync effects use correct layer
       activeLayerIdRef.current = activeLayerId;
@@ -647,17 +616,8 @@ const Page = () => {
       lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
       lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
 
-      // Re-enable sync after layer data is loaded
-      console.log('Setting up timeout to re-enable sync in 100ms...');
-      const timer = setTimeout(() => {
-        isLoadingLayerData.current = false;
-        console.log('Layer switch complete - sync effects re-enabled');
-      }, 100);
-
-      return () => {
-        console.log('Layer switch effect cleanup - clearing timeout');
-        clearTimeout(timer);
-      };
+      // enable sync after layer data is loaded
+      isLoadingLayerData.current = false;
     }
   }, [
     router.isReady,

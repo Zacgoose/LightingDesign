@@ -35,19 +35,6 @@ export const ObjectPreviewPanel = ({
         zIndex: 1000,
       }}
     >
-      <Box
-        sx={{
-          p: 2,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Object Preview
-        </Typography>
-      </Box>
-      <Divider />
       
       <Box sx={{ p: 2 }}>
         {/* Thumbnail Image */}

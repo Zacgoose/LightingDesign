@@ -72,6 +72,23 @@ useSelectionState.js:156:13
 [SelectionState] Bounding box: 
 Object { minX: -54.49358145361474, minY: -580.1725913178435, maxX: 280.8399737908945, maxY: -244.8390360733343, centerX: 113.17319616863986, centerY: -412.5058136955889 }
 useSelectionState.js:157:13
+[ProductsLayer] Transformer render check: 
+Object { selectedTool: "select", isPlacementMode: null, hasSelection: true, productOnlyIds: (1) […], textIds: [], shouldRender: true }
+​
+hasSelection: true
+​
+isPlacementMode: null
+​
+productOnlyIds: Array [ "product-1761381781978-0.8693799526071119" ]
+​
+selectedTool: "select"
+​
+shouldRender: true
+​
+textIds: Array []
+​
+<prototype>: Object { … }
+ProductsLayer.jsx:398:19
 [ProductShape:render] 
 Object { id: "product-1761381781978-0.8693799526071119", x: 113.17319616863988, y: -412.5058136955889, rotation: 0, scaleX: 1, scaleY: 1, renderedWidth: 335.3335552445092, renderedHeight: 335.3335552445092, rectBounds: {…}, draggable: false, … }
 ​
@@ -88,16 +105,6 @@ listening: undefined
 opacity: 1
 ​
 rectBounds: Object { x: -167.6667776222546, y: -167.6667776222546, width: 335.3335552445092, … }
-​​
-height: 335.3335552445092
-​​
-width: 335.3335552445092
-​​
-x: -167.6667776222546
-​​
-y: -167.6667776222546
-​​
-<prototype>: Object { … }
 ​
 renderedHeight: 335.3335552445092
 ​
@@ -117,16 +124,6 @@ y: -412.5058136955889
 ProductShape.jsx:42:13
 [ProductsLayer] Attaching transformer effect: 
 Object { selectedIds: (1) […], productOnlyIds: (1) […], refsMapSize: 1, refsMapKeys: (1) […] }
-​
-productOnlyIds: Array [ "product-1761381781978-0.8693799526071119" ]
-​
-refsMapKeys: Array [ "product-1761381781978-0.8693799526071119" ]
-​
-refsMapSize: 1
-​
-selectedIds: Array [ "product-1761381781978-0.8693799526071119" ]
-​
-<prototype>: Object { … }
 ProductsLayer.jsx:94:15
 [ProductsLayer] Getting ref for product-1761381781978-0.8693799526071119: true ProductsLayer.jsx:106:21
 [ProductsLayer] Selected nodes: 
@@ -136,7 +133,7 @@ nodeCount: 1
 ​
 nodes: Array [ {…} ]
 ​​
-0: Object { _id: 2276, index: 0, _batchingTransformChange: false, … }
+0: Object { _id: 499, index: 0, _batchingTransformChange: false, … }
 ​​​
 _allEventListeners: null
 ​​​
@@ -156,7 +153,7 @@ _dragEventId: null
 ​​​
 _filterUpToDate: false
 ​​​
-_id: 2276
+_id: 499
 ​​​
 _isUnderCache: false
 ​​​
@@ -191,18 +188,46 @@ eventListeners: Object { dragstart: (1) […], mousedown: (1) […], tap: (1) [�
 contextmenu: Array [ {…} ]
 ​​​​
 dragend: Array [ {…} ]
+​​​​​
+0: Object { name: "react-konva-event", handler: onDragEnd(e)
+ }
+​​​​​
+length: 1
+​​​​​
+<prototype>: Array []
 ​​​​
 dragstart: Array [ {…} ]
+​​​​​
+0: Object { name: "react-konva-event", handler: onDragStart(e)
+ }
+​​​​​
+length: 1
+​​​​​
+<prototype>: Array []
 ​​​​
 mousedown: Array [ {…} ]
+​​​​​
+0: Object { name: "react-konva-event", handler: onMouseDown(e)
+ }
+​​​​​
+length: 1
+​​​​​
+<prototype>: Array []
 ​​​​
 tap: Array [ {…} ]
+​​​​​
+0: Object { name: "react-konva-event", handler: onMouseDown(e)
+ }
+​​​​​
+length: 1
+​​​​​
+<prototype>: Array []
 ​​​​
 <prototype>: Object { … }
 ​​​
 index: 0
 ​​​
-parent: Object { _id: 1835, index: 2, _batchingTransformChange: false, … }
+parent: Object { _id: 205, index: 2, _batchingTransformChange: false, … }
 ​​​​
 _allEventListeners: null
 ​​​​
@@ -210,13 +235,13 @@ _attachedDepsListeners: Map(0)
 ​​​​
 _batchingTransformChange: false
 ​​​​
-_cache: Map(6) { visible → true, absoluteOpacity → 1, listening → true, … }
+_cache: Map(6) { visible → true, listening → true, absoluteOpacity → 1, … }
 ​​​​
 _dragEventId: null
 ​​​​
 _filterUpToDate: false
 ​​​​
-_id: 1835
+_id: 205
 ​​​​
 _isUnderCache: false
 ​​​​
@@ -231,16 +256,193 @@ _waitingForDraw: false
 attrs: Object {  }
 ​​​​
 canvas: Object { pixelRatio: 1, width: 1672, height: 817, … }
+​​​​​
+_canvas: <canvas style="padding: 0px; margin: 0p… 817px; display: block;" width="1672" height="817">​​​​​
+context: Object { canvas: {…}, _context: CanvasRenderingContext2D }
+​​​​​
+height: 817
+​​​​​
+isCache: false
+​​​​​
+pixelRatio: 1
+​​​​​
+width: 1672
+​​​​​
+<prototype>: Object { … }
 ​​​​
 children: Array [ {…}, {…} ]
 ​​​​
 eventListeners: Object { visibleChange: (1) […], imageSmoothingEnabledChange: (1) […] }
+​​​​​
+imageSmoothingEnabledChange: Array [ {…} ]
+​​​​​​
+0: Object { name: "konva", handler: _setSmoothEnabled()
+ }
+​​​​​​
+length: 1
+​​​​​​
+<prototype>: Array []
+​​​​​
+visibleChange: Array [ {…} ]
+​​​​​​
+0: Object { name: "konva", handler: _checkVisibility()
+ }
+​​​​​​
+length: 1
+​​​​​​
+<prototype>: Array []
+​​​​​
+<prototype>: Object { … }
 ​​​​
 hitCanvas: Object { pixelRatio: 1, width: 1672, height: 817, … }
+​​​​​
+_canvas: <canvas style="padding: 0px; margin: 0p… 1672px; height: 817px;" width="1672" height="817">
+​​​​​
+context: Object { canvas: {…}, _context: CanvasRenderingContext2D }
+​​​​​​
+_context: CanvasRenderingContext2D { globalAlpha: 1, globalCompositeOperation: "source-over", strokeStyle: "#000000", … }
+​​​​​​​
+canvas: <canvas style="padding: 0px; margin: 0p… 1672px; height: 817px;" width="1672" height="817">
+​​​​​​​
+direction: "inherit"
+​​​​​​​
+fillStyle: "#000000"
+​​​​​​​
+filter: "none"
+​​​​​​​
+font: "10px sans-serif"
+​​​​​​​
+fontKerning: "auto"
+​​​​​​​
+fontStretch: "normal"
+​​​​​​​
+fontVariantCaps: "normal"
+​​​​​​​
+globalAlpha: 1
+​​​​​​​
+globalCompositeOperation: "source-over"
+​​​​​​​
+imageSmoothingEnabled: true
+​​​​​​​
+letterSpacing: "0px"
+​​​​​​​
+lineCap: "butt"
+​​​​​​​
+lineDashOffset: 0
+​​​​​​​
+lineJoin: "miter"
+​​​​​​​
+lineWidth: 1
+​​​​​​​
+miterLimit: 10
+​​​​​​​
+shadowBlur: 0
+​​​​​​​
+shadowColor: "rgba(0, 0, 0, 0)"
+​​​​​​​
+shadowOffsetX: 0
+​​​​​​​
+shadowOffsetY: 0
+​​​​​​​
+strokeStyle: "#000000"
+​​​​​​​
+textAlign: "start"
+​​​​​​​
+textBaseline: "alphabetic"
+​​​​​​​
+textRendering: "auto"
+​​​​​​​
+wordSpacing: "0px"
+​​​​​​​
+<prototype>: CanvasRenderingContext2DPrototype { getContextAttributes: getContextAttributes(), drawImage: drawImage(), beginPath: beginPath(), … }
+​​​​​​
+canvas: Object { pixelRatio: 1, width: 1672, height: 817, … }
+​​​​​​
+<prototype>: Object { … }
+​​​​​
+height: 817
+​​​​​
+hitCanvas: true
+​​​​​
+isCache: false
+​​​​​
+pixelRatio: 1
+​​​​​
+width: 1672
+​​​​​
+<prototype>: Object { … }
 ​​​​
 index: 2
 ​​​​
 parent: Object { _id: 1, index: 0, _batchingTransformChange: false, … }
+​​​​​
+_allEventListeners: null
+​​​​​
+_attachedDepsListeners: Map(0)
+​​​​​
+_batchingTransformChange: false
+​​​​​
+_cache: Map(5) { transform → {…}, absoluteOpacity → 1, listening → true, … }
+​​​​​
+_changedPointerPositions: Array [ {…} ]
+​​​​​​
+0: Object { x: 1693, y: 273, id: 999 }
+​​​​​​
+length: 1
+​​​​​​
+<prototype>: Array []
+​​​​​
+_dragEventId: null
+​​​​​
+_filterUpToDate: false
+​​​​​
+_id: 1
+​​​​​
+_isUnderCache: false
+​​​​​
+_lastPos: null
+​​​​​
+_needClearTransformCache: false
+​​​​​
+_pointerPositions: Array []
+​​​​​
+_shouldFireChangeEvents: true
+​​​​​
+attrs: Object { width: 1672, height: 817, scaleX: 0.22437398010723889, … }
+​​​​​
+bufferCanvas: Object { pixelRatio: 1, width: 1672, height: 817, … }
+​​​​​
+bufferHitCanvas: Object { pixelRatio: 1, width: 1672, height: 817, … }
+​​​​​
+children: Array(3) [ {…}, {…}, {…} ]
+​​​​​
+content: <div class="konvajs-content" style="position: relative; user… 1672px; height: 817px;" role="presentation">​​​​​
+eventListeners: Object { widthChange: (1) […], heightChange: (1) […], visibleChange: (1) […], … }
+​​​​​
+index: 0
+​​​​​
+mouseClickEndShape: Object { _id: 498, index: 1, _batchingTransformChange: false, … }
+​​​​​
+mouseClickStartShape: Object { _id: 498, index: 1, _batchingTransformChange: false, … }
+​​​​​
+mouseDblTimeout: 244
+​​​​​
+mousetargetShape: null
+​​​​​
+parent: null
+​​​​​
+pointerClickEndShape: Object { _id: 498, index: 1, _batchingTransformChange: false, … }
+​​​​​
+pointerClickStartShape: Object { _id: 498, index: 1, _batchingTransformChange: false, … }
+​​​​​
+pointerDblTimeout: 243
+​​​​​
+pointerPos: null
+​​​​​
+pointertargetShape: null
+​​​​​
+<prototype>: Object { nodeType: "Stage", getContainer: addGetter/constructor.prototype[method]<(), container: attr()
+, … }
 ​​​​
 <prototype>: Object { nodeType: "Layer", getImageSmoothingEnabled: addGetter/constructor.prototype[method]<(), setImageSmoothingEnabled: method(val)
 , … }

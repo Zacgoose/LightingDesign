@@ -35,11 +35,11 @@ export const ProductShapes = {
     // Light rays (8 rays)
     context.save();
     context.strokeStyle = shape.getAttr("stroke");
-    context.lineWidth = 1.5;
+    context.lineWidth = 2.5;
     for (let i = 0; i < 8; i++) {
       const angle = (i * Math.PI * 2) / 8;
-      const startX = Math.cos(angle) * (radius + 2);
-      const startY = Math.sin(angle) * (radius + 2);
+      const startX = Math.cos(angle) * (radius + 1);
+      const startY = Math.sin(angle) * (radius + 1);
       const endX = Math.cos(angle) * (radius + 8);
       const endY = Math.sin(angle) * (radius + 8);
 

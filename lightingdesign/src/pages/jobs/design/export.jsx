@@ -394,7 +394,7 @@ const Page = () => {
       }).promise;
       
       // Convert to data URL
-      return canvas.toDataURL("image/png");
+      return canvas.toDataURL("image/jpeg");
     } catch (error) {
       console.error('Error in convertPdfToRasterForExport:', error);
       throw error;

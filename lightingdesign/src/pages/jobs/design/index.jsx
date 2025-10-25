@@ -445,6 +445,13 @@ const Page = () => {
     contextMenus.handleCloseContextMenu();
   }, []);
 
+  // Reset view when design loads
+  useEffect(() => {
+    if (designData.isSuccess) {
+      handleResetView();
+    }
+  }, [designData.isSuccess, handleResetView]);
+
   // Handler for applying scale to selected products
   const handleScaleConfirm = useCallback(
     (scaleValue) => {
@@ -521,7 +528,7 @@ const Page = () => {
       }).promise;
       
       // Convert canvas to data URL and return it
-      const imageDataUrl = canvas.toDataURL("image/png");
+      const imageDataUrl = canvas.toDataURL("image/jpeg");
       
       console.log('PDF converted to high-quality raster image');
       return imageDataUrl;
@@ -548,7 +555,7 @@ const Page = () => {
       ctx.font = `${14 * scale}px Arial`;
       ctx.fillText('See console for details', canvas.width / 2, canvas.height / 2 + 20 * scale);
       
-      return canvas.toDataURL("image/png");
+      return canvas.toDataURL("image/jpeg");
     }
   }, []);
 

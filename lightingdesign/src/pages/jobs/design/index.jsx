@@ -445,6 +445,13 @@ const Page = () => {
     contextMenus.handleCloseContextMenu();
   }, []);
 
+  // Reset view when design loads
+  useEffect(() => {
+    if (designData.isSuccess) {
+      handleResetView();
+    }
+  }, [designData.isSuccess, handleResetView]);
+
   // Handler for applying scale to selected products
   const handleScaleConfirm = useCallback(
     (scaleValue) => {
@@ -520,10 +527,8 @@ const Page = () => {
         viewport: viewport,
       }).promise;
       
-      // Convert canvas to JPEG with quality setting for smaller file size
-      // JPEG is more efficient for photographs and scanned documents (typical PDF backgrounds)
-      // Quality 0.85 provides good visual quality while significantly reducing file size
-      const imageDataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      // Convert canvas to data URL and return it
+      const imageDataUrl = canvas.toDataURL("image/jpeg");
       
       console.log('PDF converted to raster image', {
         resolution: `${canvas.width}x${canvas.height}`,
@@ -554,7 +559,7 @@ const Page = () => {
       ctx.font = `${14 * scale}px Arial`;
       ctx.fillText('See console for details', canvas.width / 2, canvas.height / 2 + 20 * scale);
       
-      return canvas.toDataURL("image/jpeg", 0.85);
+      return canvas.toDataURL("image/jpeg");
     }
   }, []);
 
@@ -1107,24 +1112,29 @@ const Page = () => {
                 // Convert to raster for storage and display
                 const rasterImageDataUrl = await convertPdfToRasterImage(pdfDataUrl, pdfWidth, pdfHeight);
                 
+                // The rasterized image is scaled 3x for quality, so we need to use the actual image dimensions
+                const scale = 3; // Must match the scale factor in convertPdfToRasterImage
+                const rasterWidth = pdfWidth * scale;
+                const rasterHeight = pdfHeight * scale;
+                
                 // Store the rasterized image (not the PDF)
                 updateLayer(activeLayerIdRef.current, {
                   backgroundImage: rasterImageDataUrl, // Store rasterized image
-                  backgroundImageNaturalSize: { width: pdfWidth, height: pdfHeight },
+                  backgroundImageNaturalSize: { width: rasterWidth, height: rasterHeight },
                   backgroundFileType: "image", // It's now an image, not a PDF
                 });
                 
                 // Set for immediate display
                 setBackgroundImage(rasterImageDataUrl);
-                setBackgroundImageNaturalSize({ width: pdfWidth, height: pdfHeight });
+                setBackgroundImageNaturalSize({ width: rasterWidth, height: rasterHeight });
                 
-                // Auto-zoom to fit the background in the viewport
-                const imageScaleX = canvasWidth / pdfWidth;
-                const imageScaleY = canvasHeight / pdfHeight;
+                // Auto-zoom to fit the background in the viewport (use raster dimensions)
+                const imageScaleX = canvasWidth / rasterWidth;
+                const imageScaleY = canvasHeight / rasterHeight;
                 const imageScale = Math.min(imageScaleX, imageScaleY);
                 
-                const scaledImageWidth = pdfWidth * imageScale;
-                const scaledImageHeight = pdfHeight * imageScale;
+                const scaledImageWidth = rasterWidth * imageScale;
+                const scaledImageHeight = rasterHeight * imageScale;
                 
                 const padding = 0.9;
                 const zoomX = (viewportWidth * padding) / scaledImageWidth;

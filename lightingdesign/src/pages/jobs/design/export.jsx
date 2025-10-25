@@ -393,17 +393,8 @@ const Page = () => {
         viewport: viewport,
       }).promise;
       
-      // Convert to JPEG with quality setting for smaller file size while maintaining print quality
-      // Quality 0.9 provides excellent quality for export while reducing file size
-      const imageDataUrl = canvas.toDataURL("image/jpeg", 0.9);
-      
-      console.log('PDF converted for export', {
-        resolution: `${canvas.width}x${canvas.height}`,
-        scale,
-        estimatedSizeMB: (imageDataUrl.length / 1024 / 1024).toFixed(2)
-      });
-      
-      return imageDataUrl;
+      // Convert to data URL
+      return canvas.toDataURL("image/jpeg");
     } catch (error) {
       console.error('Error in convertPdfToRasterForExport:', error);
       throw error;

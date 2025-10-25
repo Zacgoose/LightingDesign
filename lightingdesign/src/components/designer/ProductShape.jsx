@@ -70,6 +70,8 @@ export const ProductShape = memo(
           strokeWidth={config.strokeWidth + 1}
           width={renderedWidth}
           height={renderedHeight}
+          x={-renderedWidth / 2}
+          y={-renderedHeight / 2}
           listening={listening}
           realWorldWidth={product.realWorldWidth}
           realWorldHeight={product.realWorldHeight}
@@ -85,6 +87,7 @@ export const ProductShape = memo(
               sceneFunc={(context, shape) => {
                 const badgeRadius = 12 * textScale;
                 context.beginPath();
+                // Badge positioned in Group coordinate system (centered at 0,0)
                 context.arc(maxDimension * 0.6, -maxDimension * 0.4, badgeRadius, 0, Math.PI * 2);
                 context.fillStrokeShape(shape);
               }}

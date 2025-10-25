@@ -19,6 +19,7 @@ export const ProductShapes = {
     context.arc(0, 0, radius, 0, Math.PI * 2);
     context.closePath();
     context.fillStrokeShape(shape);
+    console.log('[ProductShapes.pendant]', { width, radius });
   },
 
   downlight: (context, shape) => {
@@ -69,6 +70,7 @@ export const ProductShapes = {
     context.lineTo(-radius * 0.8, radius);
     context.closePath();
     context.fillStrokeShape(shape);
+    console.log('[ProductShapes.spotlight]', { width, radius });
   },
 
   wall: (context, shape) => {
@@ -86,6 +88,7 @@ export const ProductShapes = {
     context.arc(0, 0, width / 2, 0, Math.PI, false);
     context.closePath();
     context.fillStrokeShape(shape);
+    console.log('[ProductShapes.wall]', { width, height });
   },
 
   fan: (context, shape) => {
@@ -111,6 +114,7 @@ export const ProductShapes = {
 
       context.restore();
     }
+    console.log('[ProductShapes.fan]', { width, radius });
   },
 
   lamp: (context, shape) => {
@@ -136,6 +140,7 @@ export const ProductShapes = {
     context.lineTo(-width / 3, -height / 2);
     context.closePath();
     context.fillStrokeShape(shape);
+    console.log('[ProductShapes.lamp]', { width, height });
   },
 
   strip: (context, shape) => {
@@ -189,6 +194,7 @@ export const ProductShapes = {
     context.arc(0, 0, radius * 0.2, 0, Math.PI * 2);
     context.fill();
     context.restore();
+    console.log('[ProductShapes.ceiling]', { width, radius });
   },
 
   circle: (context, shape) => {
@@ -203,6 +209,7 @@ export const ProductShapes = {
     context.arc(0, 0, radius, 0, Math.PI * 2);
     context.closePath();
     context.fillStrokeShape(shape);
+    console.log('[ProductShapes.circle]', { width, radius, scaleFactor, realWorldSize });
   },
 
   rect: (context, shape) => {
@@ -212,6 +219,7 @@ export const ProductShapes = {
     context.beginPath();
     context.rect(-width / 2, -height / 2, width, height);
     context.fillStrokeShape(shape);
+    console.log('[ProductShapes.rect]', { width, height });
   },
 
   arrow: (context, shape) => {
@@ -240,6 +248,7 @@ export const ProductShapes = {
     context.lineTo(-width / 2, shaftHeight / 2);
     context.closePath();
     context.fillStrokeShape(shape);
+    console.log('[ProductShapes.arrow]', { width, height });
   },
 
   boxoutline: (context, shape) => {
@@ -255,6 +264,7 @@ export const ProductShapes = {
     context.rect(-width / 2, -height / 2, width, height);
     context.stroke();
     context.restore();
+    console.log('[ProductShapes.boxoutline]', { width, height });
   },
 };
 

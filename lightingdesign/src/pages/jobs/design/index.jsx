@@ -511,8 +511,8 @@ const Page = () => {
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
       
-      // Use high scale for better quality
-      const scale = 3; // Higher scale for better quality
+      // set image PDF scale (scale = 3) based on desired image quality
+      const scale = 3;
       const viewport = page.getViewport({ scale: scale });
       
       // Create canvas
@@ -530,14 +530,18 @@ const Page = () => {
       // Convert canvas to data URL and return it
       const imageDataUrl = canvas.toDataURL("image/jpeg");
       
-      console.log('PDF converted to high-quality raster image');
+      console.log('PDF converted to raster image', {
+        resolution: `${canvas.width}x${canvas.height}`,
+        scale,
+        estimatedSizeMB: (imageDataUrl.length / 1024 / 1024).toFixed(2)
+      });
       return imageDataUrl;
     } catch (error) {
       console.error('Error converting PDF to raster:', error);
       
       // Fallback: create a placeholder
       const canvas = document.createElement("canvas");
-      const scale = 2;
+      const scale = 1.5;
       canvas.width = pdfWidth * scale;
       canvas.height = pdfHeight * scale;
       const ctx = canvas.getContext("2d");

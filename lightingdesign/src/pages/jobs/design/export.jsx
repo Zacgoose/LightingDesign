@@ -377,7 +377,7 @@ const Page = () => {
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
       
-      // Use high scale for better export quality
+      // set image PDF scale (scale = 3) based on desired image quality
       const scale = 3;
       const viewport = page.getViewport({ scale: scale });
       

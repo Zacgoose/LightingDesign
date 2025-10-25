@@ -76,15 +76,19 @@ export const ProductShape = memo(
         onDragEnd={onDragEnd}
         onContextMenu={onContextMenu}
       >
-        {/* Invisible rect to provide correct centered bounding box for Transformer */}
-        {/* This doesn't affect rendering but helps Transformer calculate correct bounds */}
+        {/* Bounding box Rect to define correct centered bounds for Transformer */}
+        {/* Konva's getClientRect ignores invisible shapes, so we use opacity=0.001 instead of visible=false */}
         <Rect
           x={-renderedWidth / 2}
           y={-renderedHeight / 2}
           width={renderedWidth}
           height={renderedHeight}
+          fill="transparent"
+          stroke="transparent"
+          strokeWidth={0}
+          opacity={0.001}
           listening={false}
-          visible={false}
+          perfectDrawEnabled={false}
         />
         <Shape
           sceneFunc={(context, shape) => shapeFunction(context, shape)}

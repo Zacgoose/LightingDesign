@@ -276,12 +276,13 @@ export const useSelectionState = (products, textBoxes = []) => {
       selectedCount: selectedIds.length,
     });
 
-    const { products: snapshotProducts, textBoxes: snapshotTextBoxes } = selectionSnapshot;
+    const { products: snapshotProducts } = selectionSnapshot;
 
-    // Transform products
+    // Transform products using Konva's transform.point() for accurate position calculation
     const transformedProducts = products.map((product) => {
       const productId = product.id;
-      if (!selectedIds.includes(productId)) return product;
+      // Skip non-selected products and text boxes (text boxes are handled separately)
+      if (!selectedIds.includes(productId) || productId.startsWith('text-')) return product;
 
       const original = snapshotProducts?.find((p) => p.id === productId);
       if (!original) return product;
@@ -328,37 +329,8 @@ export const useSelectionState = (products, textBoxes = []) => {
       };
     });
 
-    // Also transform text boxes if any are selected
-    const transformedTextBoxes = textBoxes?.map((textBox) => {
-      const textId = textBox.id;
-      if (!selectedIds.includes(`text-${textId}`)) return textBox;
-
-      const original = snapshotTextBoxes?.find((t) => t.id === textId);
-      if (!original) return textBox;
-
-      // Use transform.point() to get the new position
-      const newPos = transform.point({ 
-        x: original.x, 
-        y: original.y 
-      });
-
-      const groupRotation = group.rotation();
-      
-      return {
-        ...textBox,
-        x: newPos.x,
-        y: newPos.y,
-        rotation: (original.rotation || 0) + groupRotation,
-        scaleX: (original.scaleX || 1) * groupScaleX,
-        scaleY: (original.scaleY || 1) * groupScaleY,
-      };
-    });
-
-    return { 
-      products: transformedProducts, 
-      textBoxes: transformedTextBoxes 
-    };
-  }, [selectedIds, selectionSnapshot, products, textBoxes]);
+    return transformedProducts;
+  }, [selectedIds, selectionSnapshot, products]);
 
   // Clear selection
   const clearSelection = useCallback(() => {

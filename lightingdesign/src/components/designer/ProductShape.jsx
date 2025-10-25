@@ -1,4 +1,4 @@
-import { Shape, Group } from "react-konva";
+import { Shape, Group, Rect } from "react-konva";
 import { getShapeFunction } from "/src/components/designer/productShapes";
 import { memo } from "react";
 
@@ -70,6 +70,15 @@ export const ProductShape = memo(
         onDragEnd={onDragEnd}
         onContextMenu={onContextMenu}
       >
+        {/* Invisible Rect to define correct bounding box for Transformer */}
+        <Rect
+          x={-renderedWidth / 2}
+          y={-renderedHeight / 2}
+          width={renderedWidth}
+          height={renderedHeight}
+          listening={false}
+          visible={false}
+        />
         <Shape
           sceneFunc={(context, shape) => shapeFunction(context, shape)}
           fill={product.color || config.fill}
@@ -77,8 +86,6 @@ export const ProductShape = memo(
           strokeWidth={config.strokeWidth + 1}
           width={renderedWidth}
           height={renderedHeight}
-          offsetX={renderedWidth / 2}
-          offsetY={renderedHeight / 2}
           listening={listening}
           realWorldWidth={product.realWorldWidth}
           realWorldHeight={product.realWorldHeight}

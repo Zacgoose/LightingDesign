@@ -101,6 +101,8 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
     zoomLevel,
     showLayers,
     onToggleLayers,
+    showPreview,
+    onTogglePreview,
   } = viewProps || {};
 
   return (
@@ -206,6 +208,9 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
           </Button>
           <Button variant={showLayers ? "contained" : "outlined"} size="small" onClick={onToggleLayers}>
             Layers
+          </Button>
+          <Button variant={showPreview ? "contained" : "outlined"} size="small" onClick={onTogglePreview}>
+            Preview
           </Button>
           {/* Group zoom controls together so they don't separate when wrapping */}
           <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexShrink: 0 }}>

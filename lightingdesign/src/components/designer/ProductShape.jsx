@@ -43,18 +43,9 @@ export const ProductShape = memo(
     
     const maxDimension = Math.max(renderedWidth, renderedHeight);
     
-    // Scale text size based on rendered dimensions
-    // Base font sizes: 11 for SKU, 10 for name (designed for ~50px baseline)
-    // Scale proportionally with object size
+    // Scale for quantity badge
     const baselineDimension = 50; // Original config baseline size
     const textScale = maxDimension / baselineDimension;
-    const skuFontSize = Math.max(11 * textScale, 8); // Min 8px
-    const nameFontSize = Math.max(10 * textScale, 7); // Min 7px
-    const textWidth = 120 * textScale;
-    
-    // Position text relative to rendered dimensions
-    const textYOffset = maxDimension / 2 + 10 * textScale;
-    const skuYOffset = -(maxDimension / 2 + 20 * textScale);
 
     return (
       <Group
@@ -86,30 +77,7 @@ export const ProductShape = memo(
           scaleFactor={product.scaleFactor}
         />
 
-        {product.sku && (
-          <Text
-            text={product.sku}
-            fontSize={skuFontSize}
-            fill={theme.palette.text.primary}
-            fontStyle="bold"
-            align="center"
-            y={skuYOffset}
-            x={-textWidth / 2}
-            width={textWidth}
-            listening={listening}
-          />
-        )}
-
-        <Text
-          text={product.customLabel || product.name}
-          fontSize={nameFontSize}
-          fill={theme.palette.text.secondary}
-          align="center"
-          y={textYOffset}
-          x={-textWidth / 2}
-          width={textWidth}
-          listening={listening}
-        />
+        {/* Text labels removed - now shown in preview panel */}
 
         {product.quantity > 1 && (
           <>

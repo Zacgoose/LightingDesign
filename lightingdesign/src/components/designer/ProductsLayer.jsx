@@ -50,6 +50,7 @@ export const ProductsLayer = memo(
     theme,
     groupKey,
     placementMode,
+    isDragging = false, // Add isDragging prop for performance optimization
     onProductClick,
     onProductDragStart,
     onProductDragEnd,
@@ -187,6 +188,7 @@ export const ProductsLayer = memo(
                   config={config}
                   isSelected={true}
                   draggable={false}
+                  listening={!isDragging} // Disable listening during drag for performance
                   onMouseDown={(e) =>
                     (canInteract || isConnectMode) && onProductClick(e, product.id)
                   }
@@ -352,6 +354,7 @@ export const ProductsLayer = memo(
       prevProps.selectionSnapshot === nextProps.selectionSnapshot &&
       prevProps.groupKey === nextProps.groupKey &&
       prevProps.placementMode === nextProps.placementMode &&
+      prevProps.isDragging === nextProps.isDragging &&
       prevProps.rotationSnaps === nextProps.rotationSnaps &&
       prevProps.theme === nextProps.theme &&
       prevProps.onProductClick === nextProps.onProductClick &&

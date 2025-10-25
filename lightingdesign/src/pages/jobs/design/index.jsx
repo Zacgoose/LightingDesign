@@ -26,6 +26,7 @@ import { MeasurementLayer } from "/src/components/designer/MeasurementLayer";
 import { MeasurementConfirmation } from "/src/components/designer/MeasurementConfirmation";
 import { LayerSwitcher } from "/src/components/designer/LayerSwitcher";
 import { SubLayerControls } from "/src/components/designer/SubLayerControls";
+import { ObjectPreviewPanel } from "/src/components/designer/ObjectPreviewPanel";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
 import { TextLayer } from "/src/components/designer/TextLayer";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
@@ -83,12 +84,14 @@ const Page = () => {
     stagePosition,
     showGrid,
     showLayers,
+    showPreview,
     selectedTool,
     rotationSnaps,
     canvasContainerRef,
     setStageScale,
     setShowGrid,
     setShowLayers,
+    setShowPreview,
     setSelectedTool,
     setRotationSnaps,
     handleWheel,
@@ -2049,6 +2052,8 @@ const Page = () => {
                 onToggleGrid: () => setShowGrid(!showGrid),
                 showLayers: showLayers,
                 onToggleLayers: () => setShowLayers(!showLayers),
+                showPreview: showPreview,
+                onTogglePreview: () => setShowPreview(!showPreview),
                 onZoomIn: handleZoomIn,
                 onZoomOut: handleZoomOut,
                 onResetView: handleResetView,
@@ -2184,6 +2189,7 @@ const Page = () => {
                       theme={theme}
                       groupKey={groupKey}
                       placementMode={placementMode}
+                      isDragging={isDragging}
                       onProductClick={handleProductClick}
                       onProductDragStart={handleProductDragStart}
                       onProductDragEnd={handleProductDragEnd}
@@ -2305,6 +2311,14 @@ const Page = () => {
                       />
                     </>
                   )}
+
+                  {/* Object Preview Panel */}
+                  <ObjectPreviewPanel
+                    product={selectedIds.length === 1 && !selectedIds[0].startsWith('text-') 
+                      ? products.find(p => p.id === selectedIds[0]) 
+                      : null}
+                    visible={showPreview && selectedIds.length === 1 && !selectedIds[0].startsWith('text-')}
+                  />
                 </Box>
               </CardContent>
             </Card>

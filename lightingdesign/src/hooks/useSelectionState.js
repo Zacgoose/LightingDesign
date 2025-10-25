@@ -156,10 +156,14 @@ export const useSelectionState = (products, textBoxes = []) => {
       // Ensure the transformer's rotation matches
       transformerRef.current.rotation(currentRotation);
 
-      // Only cache if there are multiple selected items (caching is expensive)
-      // and skip caching during dragging operations
-      if (selectedIds.length > 1 && !isDragging) {
+      // Cache the group for better performance with many objects
+      // Only cache if there are multiple selected items and not during dragging
+      // Caching improves rendering performance significantly with large selections
+      if (selectedIds.length > 5 && !isDragging) {
         selectionGroupRef.current.cache();
+      } else {
+        // Clear cache for small selections to avoid overhead
+        selectionGroupRef.current.clearCache();
       }
 
       // Force update

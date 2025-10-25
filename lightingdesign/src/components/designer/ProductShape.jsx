@@ -1,4 +1,4 @@
-import { Shape, Text, Group, Rect } from "react-konva";
+import { Shape, Text, Group } from "react-konva";
 import { getShapeFunction } from "/src/components/designer/productShapes";
 import { memo } from "react";
 
@@ -43,9 +43,18 @@ export const ProductShape = memo(
     
     const maxDimension = Math.max(renderedWidth, renderedHeight);
     
-    // Scale for quantity badge
+    // Scale text size based on rendered dimensions
+    // Base font sizes: 11 for SKU, 10 for name (designed for ~50px baseline)
+    // Scale proportionally with object size
     const baselineDimension = 50; // Original config baseline size
     const textScale = maxDimension / baselineDimension;
+    const skuFontSize = Math.max(11 * textScale, 8); // Min 8px
+    const nameFontSize = Math.max(10 * textScale, 7); // Min 7px
+    const textWidth = 120 * textScale;
+    
+    // Position text relative to rendered dimensions
+    const textYOffset = maxDimension / 2 + 10 * textScale;
+    const skuYOffset = -(maxDimension / 2 + 20 * textScale);
 
     return (
       <Group
@@ -63,17 +72,6 @@ export const ProductShape = memo(
         onDragEnd={onDragEnd}
         onContextMenu={onContextMenu}
       >
-        {/* Invisible rect to define bounds for transformer */}
-        <Rect
-          x={-renderedWidth / 2}
-          y={-renderedHeight / 2}
-          width={renderedWidth}
-          height={renderedHeight}
-          fill="transparent"
-          stroke="transparent"
-          listening={false}
-        />
-        
         <Shape
           sceneFunc={(context, shape) => shapeFunction(context, shape)}
           fill={product.color || config.fill}
@@ -96,7 +94,6 @@ export const ProductShape = memo(
               sceneFunc={(context, shape) => {
                 const badgeRadius = 12 * textScale;
                 context.beginPath();
-                // Badge positioned in Group coordinate system (centered at 0,0)
                 context.arc(maxDimension * 0.6, -maxDimension * 0.4, badgeRadius, 0, Math.PI * 2);
                 context.fillStrokeShape(shape);
               }}

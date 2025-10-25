@@ -569,10 +569,6 @@ const Page = () => {
     // CRITICAL FIX: On page refresh/mount, if we haven't loaded layers yet and there's a design ID,
     // wait for the design to load before initializing the canvas with empty layer data.
     // This prevents the canvas from being initialized with wrong dimensions on refresh.
-    // We skip if:
-    // 1. We have a design ID (loading existing design, not creating new)
-    // 2. layersVersion is 0 (loadLayers() hasn't been called yet)
-    // 3. No layer has been loaded yet (lastLoadedLayerId is null)
     if (id && layersVersion === 0 && lastLoadedLayerId.current === null) {
       console.log('Layer switch effect skipped - waiting for initial design data to load', {
         id,

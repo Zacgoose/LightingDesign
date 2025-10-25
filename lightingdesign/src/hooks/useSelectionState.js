@@ -190,18 +190,16 @@ export const useSelectionState = (products, textBoxes = []) => {
     const groupScaleY = group.scaleY();
     const groupRotation = group.rotation();
 
-    // Helper function for floating-point comparison with tolerance
-    const isClose = (a, b, tolerance = 0.0001) => Math.abs(a - b) < tolerance;
-
     // Check if the group has actually been transformed
     // If all values are at their defaults, skip the update
     // Use tolerance for floating-point comparisons to avoid precision issues
+    const tolerance = 0.0001;
     if (
-      isClose(groupX, selectionSnapshot.centerX) &&
-      isClose(groupY, selectionSnapshot.centerY) &&
-      isClose(groupScaleX, 1) &&
-      isClose(groupScaleY, 1) &&
-      isClose(groupRotation, selectionSnapshot.rotation || 0)
+      Math.abs(groupX - selectionSnapshot.centerX) < tolerance &&
+      Math.abs(groupY - selectionSnapshot.centerY) < tolerance &&
+      Math.abs(groupScaleX - 1) < tolerance &&
+      Math.abs(groupScaleY - 1) < tolerance &&
+      Math.abs(groupRotation - (selectionSnapshot.rotation || 0)) < tolerance
     ) {
       console.log('[applyGroupTransform] No transform detected, skipping update', {
         groupX,

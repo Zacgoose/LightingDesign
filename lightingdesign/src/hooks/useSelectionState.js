@@ -240,91 +240,125 @@ export const useSelectionState = (products, textBoxes = []) => {
   }, [selectedIds, groupKey, isDragging, selectionSnapshot.rotation]);
 
   // Apply group transform to actual product data
+  // Following Konva best practices from: https://konvajs.org/docs/sandbox/Resizing_Stress_Test.html
   const applyGroupTransform = useCallback(() => {
-    if (!selectedIds.length || !selectionGroupRef.current || !selectionSnapshot.products?.length) {
+    if (!selectedIds.length || !selectionGroupRef.current) {
       return null;
     }
 
     const group = selectionGroupRef.current;
-    const groupX = group.x();
-    const groupY = group.y();
-    const groupScaleX = group.scaleX();
-    const groupScaleY = group.scaleY();
-    const groupRotation = group.rotation();
-
+    
+    // Get the absolute transform matrix from the group
+    const transform = group.getAbsoluteTransform();
+    
+    // Decompose to get the scale factor
+    const { scaleX: groupScaleX, scaleY: groupScaleY } = transform.decompose();
+    
     // Check if the group has actually been transformed
-    // If all values are at their defaults, skip the update
-    // Use tolerance for floating-point comparisons to avoid precision issues
+    // Compare against identity transform
     const tolerance = 0.0001;
-    if (
-      Math.abs(groupX - selectionSnapshot.centerX) < tolerance &&
-      Math.abs(groupY - selectionSnapshot.centerY) < tolerance &&
-      Math.abs(groupScaleX - 1) < tolerance &&
-      Math.abs(groupScaleY - 1) < tolerance &&
-      Math.abs(groupRotation - (selectionSnapshot.rotation || 0)) < tolerance
-    ) {
-      console.log('[applyGroupTransform] No transform detected, skipping update', {
-        groupX,
-        groupY,
-        centerX: selectionSnapshot.centerX,
-        centerY: selectionSnapshot.centerY,
-        groupRotation,
-        snapshotRotation: selectionSnapshot.rotation || 0,
-      });
+    const isIdentity = 
+      Math.abs(transform.m[0] - 1) < tolerance && // scaleX
+      Math.abs(transform.m[1]) < tolerance && // skewY
+      Math.abs(transform.m[2]) < tolerance && // skewX
+      Math.abs(transform.m[3] - 1) < tolerance && // scaleY
+      Math.abs(transform.m[4]) < tolerance && // translateX relative to parent
+      Math.abs(transform.m[5]) < tolerance; // translateY relative to parent
+    
+    if (isIdentity) {
+      console.log('[applyGroupTransform] No transform detected (identity matrix), skipping update');
       return null;
     }
 
     console.log('[applyGroupTransform] Transform detected, applying changes', {
-      groupX,
-      groupY,
-      centerX: selectionSnapshot.centerX,
-      centerY: selectionSnapshot.centerY,
-      groupScaleX,
-      groupScaleY,
-      groupRotation,
-      snapshotRotation: selectionSnapshot.rotation || 0,
+      matrix: transform.m,
+      decomposed: transform.decompose(),
       selectedCount: selectedIds.length,
     });
 
-    const { products: snapshotProducts } = selectionSnapshot;
+    const { products: snapshotProducts, textBoxes: snapshotTextBoxes } = selectionSnapshot;
 
+    // Transform products
     const transformedProducts = products.map((product) => {
-      if (!selectedIds.includes(product.id)) return product;
+      const productId = product.id;
+      if (!selectedIds.includes(productId)) return product;
 
-      const original = snapshotProducts.find((p) => p.id === product.id);
+      const original = snapshotProducts?.find((p) => p.id === productId);
       if (!original) return product;
 
-      let relX = original.relativeX;
-      let relY = original.relativeY;
+      // Use transform.point() to get the new position
+      // This applies the full transform matrix (rotation + scale + translation)
+      const newPos = transform.point({ 
+        x: original.x, 
+        y: original.y 
+      });
 
-      if (groupRotation !== 0) {
-        const angle = (groupRotation * Math.PI) / 180;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        const rotatedX = relX * cos - relY * sin;
-        const rotatedY = relX * sin + relY * cos;
-        relX = rotatedX;
-        relY = rotatedY;
+      // For rotation and scale, we need to apply them to the product's existing values
+      const groupRotation = group.rotation();
+      
+      // Calculate new scale - for products with realWorldSize, scale affects the size
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      
+      // Determine if this product uses realWorldSize or direct width/height
+      const usesRealWorldSize = original.realWorldSize || config.realWorldSize;
+      
+      let newScaleX = (original.scaleX || 1) * groupScaleX;
+      let newScaleY = (original.scaleY || 1) * groupScaleY;
+      
+      // For products with realWorldSize, we can also update the scaleFactor
+      let newScaleFactor = original.scaleFactor;
+      if (usesRealWorldSize) {
+        // Average the scale factors if they differ
+        const avgScale = (groupScaleX + groupScaleY) / 2;
+        newScaleFactor = (original.scaleFactor || 100) * avgScale;
+        // Reset the scaleX/Y to 1 since we're encoding it in scaleFactor
+        newScaleX = 1;
+        newScaleY = 1;
       }
-
-      relX *= groupScaleX;
-      relY *= groupScaleY;
-
-      const newX = groupX + relX;
-      const newY = groupY + relY;
 
       return {
         ...product,
-        x: newX,
-        y: newY,
-        rotation: original.rotation + groupRotation,
-        scaleX: original.scaleX * groupScaleX,
-        scaleY: original.scaleY * groupScaleY,
+        x: newPos.x,
+        y: newPos.y,
+        rotation: (original.rotation || 0) + groupRotation,
+        scaleX: newScaleX,
+        scaleY: newScaleY,
+        scaleFactor: newScaleFactor,
       };
     });
 
-    return transformedProducts;
-  }, [selectedIds, selectionSnapshot, products]);
+    // Also transform text boxes if any are selected
+    const transformedTextBoxes = textBoxes?.map((textBox) => {
+      const textId = textBox.id;
+      if (!selectedIds.includes(`text-${textId}`)) return textBox;
+
+      const original = snapshotTextBoxes?.find((t) => t.id === textId);
+      if (!original) return textBox;
+
+      // Use transform.point() to get the new position
+      const newPos = transform.point({ 
+        x: original.x, 
+        y: original.y 
+      });
+
+      const groupRotation = group.rotation();
+      
+      return {
+        ...textBox,
+        x: newPos.x,
+        y: newPos.y,
+        rotation: (original.rotation || 0) + groupRotation,
+        scaleX: (original.scaleX || 1) * groupScaleX,
+        scaleY: (original.scaleY || 1) * groupScaleY,
+      };
+    });
+
+    return { 
+      products: transformedProducts, 
+      textBoxes: transformedTextBoxes 
+    };
+  }, [selectedIds, selectionSnapshot, products, textBoxes]);
 
   // Clear selection
   const clearSelection = useCallback(() => {

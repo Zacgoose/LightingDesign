@@ -47,6 +47,12 @@ export const ProductShape = memo(
       scaleY: product.scaleY || 1,
       renderedWidth,
       renderedHeight,
+      rectBounds: {
+        x: -renderedWidth / 2,
+        y: -renderedHeight / 2,
+        width: renderedWidth,
+        height: renderedHeight,
+      },
       draggable,
       listening,
       opacity,

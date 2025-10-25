@@ -51,6 +51,14 @@ export const useSelectionState = (products, textBoxes = []) => {
         const renderedFontSize = baseFontSize * (scaleFactor / 100);
         width = item.width || 200;
         height = renderedFontSize * 1.2;
+        console.log('[useSelectionState] Text box dimensions:', {
+          id: item.id,
+          baseFontSize,
+          scaleFactor,
+          renderedFontSize,
+          width,
+          height,
+        });
       } else {
         // For products: calculate rendered dimensions from their configuration
         const productType = item.product_type?.toLowerCase() || "default";
@@ -73,14 +81,40 @@ export const useSelectionState = (products, textBoxes = []) => {
         // Apply product's scale transforms
         width *= (item.scaleX || 1);
         height *= (item.scaleY || 1);
+        
+        console.log('[useSelectionState] Product dimensions:', {
+          id: item.id,
+          productType,
+          scaleFactor,
+          realWorldSize,
+          realWorldWidth,
+          realWorldHeight,
+          configWidth: config.width,
+          configHeight: config.height,
+          scaleX: item.scaleX || 1,
+          scaleY: item.scaleY || 1,
+          finalWidth: width,
+          finalHeight: height,
+        });
       }
       
-      return {
+      const bounds = {
         minX: item.x - width / 2,
         maxX: item.x + width / 2,
         minY: item.y - height / 2,
         maxY: item.y + height / 2,
       };
+      
+      console.log('[useSelectionState] Item bounds:', {
+        id: item.id,
+        x: item.x,
+        y: item.y,
+        width,
+        height,
+        bounds,
+      });
+      
+      return bounds;
     });
     const minX = bounds.length ? Math.min(...bounds.map(b => b.minX)) : 0;
     const maxX = bounds.length ? Math.max(...bounds.map(b => b.maxX)) : 0;
@@ -91,6 +125,18 @@ export const useSelectionState = (products, textBoxes = []) => {
     const centerY = (minY + maxY) / 2;
     const width = maxX - minX;
     const height = maxY - minY;
+    
+    console.log('[useSelectionState] Final bounding box:', {
+      minX,
+      maxX,
+      minY,
+      maxY,
+      centerX,
+      centerY,
+      width,
+      height,
+      itemCount: allItems.length,
+    });
 
     // Calculate average rotation for single selection only
     let totalRotation = 0;
@@ -157,6 +203,8 @@ export const useSelectionState = (products, textBoxes = []) => {
         groupY: selectionGroupRef.current.y(),
         centerX: selectionSnapshot.centerX,
         centerY: selectionSnapshot.centerY,
+        snapshotWidth: selectionSnapshot.width,
+        snapshotHeight: selectionSnapshot.height,
       });
 
       // Set the group's rotation first
@@ -170,6 +218,14 @@ export const useSelectionState = (products, textBoxes = []) => {
 
       // Ensure the transformer's rotation matches
       transformerRef.current.rotation(currentRotation);
+
+      // Get the Group's client rect to see what Konva is calculating
+      const groupRect = selectionGroupRef.current.getClientRect();
+      console.log('[useEffect transformer] Group client rect:', groupRect);
+      
+      // Get transformer bounds
+      const transformerRect = transformerRef.current.getClientRect();
+      console.log('[useEffect transformer] Transformer client rect:', transformerRect);
 
       // Force update
       transformerRef.current.getLayer()?.batchDraw();

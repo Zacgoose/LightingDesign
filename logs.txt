@@ -1,0 +1,141 @@
+[useSelectionState] Product dimensions: 
+Object { id: "product-1761381781978-0.8693799526071119", productType: "fan", scaleFactor: 239.52396803179232, realWorldSize: 1.4, realWorldWidth: undefined, realWorldHeight: undefined, configWidth: 40, configHeight: 40, scaleX: 1, scaleY: 1, … }
+​
+configHeight: 40
+​
+configWidth: 40
+​
+finalHeight: 335.3335552445092
+​
+finalWidth: 335.3335552445092
+​
+id: "product-1761381781978-0.8693799526071119"
+​
+productType: "fan"
+​
+realWorldHeight: undefined
+​
+realWorldSize: 1.4
+​
+realWorldWidth: undefined
+​
+scaleFactor: 239.52396803179232
+​
+scaleX: 1
+​
+scaleY: 1
+​
+<prototype>: Object { … }
+useSelectionState.js:85:17
+[useSelectionState] Item bounds: 
+Object { id: "product-1761381781978-0.8693799526071119", x: 113.17319616863988, y: -412.5058136955889, width: 335.3335552445092, height: 335.3335552445092, bounds: {…} }
+​
+bounds: Object { minX: -54.49358145361474, maxX: 280.8399737908945, minY: -580.1725913178435, … }
+​​
+maxX: 280.8399737908945
+​​
+maxY: -244.8390360733343
+​​
+minX: -54.49358145361474
+​​
+minY: -580.1725913178435
+​​
+<prototype>: Object { … }
+​
+height: 335.3335552445092
+​
+id: "product-1761381781978-0.8693799526071119"
+​
+width: 335.3335552445092
+​
+x: 113.17319616863988
+​
+y: -412.5058136955889
+​
+<prototype>: Object { … }
+useSelectionState.js:108:15
+[useSelectionState] Final bounding box: 
+Object { minX: -54.49358145361474, maxX: 280.8399737908945, minY: -580.1725913178435, maxY: -244.8390360733343, centerX: 113.17319616863986, centerY: -412.5058136955889, width: 335.3335552445092, height: 335.33355524450917, itemCount: 1 }
+useSelectionState.js:129:13
+[SelectionState] Selected product positions: 
+Array [ {…} ]
+​
+0: Object { id: "product-1761381781978-0.8693799526071119", x: 113.17319616863988, y: -412.5058136955889 }
+​
+length: 1
+​
+<prototype>: Array []
+useSelectionState.js:155:13
+[SelectionState] Selected text positions: 
+Array []
+​
+length: 0
+​
+<prototype>: Array []
+useSelectionState.js:156:13
+[SelectionState] Bounding box: 
+Object { minX: -54.49358145361474, minY: -580.1725913178435, maxX: 280.8399737908945, maxY: -244.8390360733343, centerX: 113.17319616863986, centerY: -412.5058136955889 }
+useSelectionState.js:157:13
+[ProductShape:selected] 
+Object { id: "product-1761381781978-0.8693799526071119", x: 1.4210854715202004e-14, y: 0, rotation: 0, isSelected: true, groupX: 113.17319616863986, groupY: -412.5058136955889 }
+ProductsLayer.jsx:195:23
+[ProductShape:render] 
+Object { id: "product-1761381781978-0.8693799526071119", x: 1.4210854715202004e-14, y: 0, rotation: 0, scaleX: 1, scaleY: 1, renderedWidth: 335.3335552445092, renderedHeight: 335.3335552445092, rectBounds: {…}, draggable: false, … }
+​
+customStroke: "#1976d2"
+​
+draggable: false
+​
+fill: "#B2EBF2"
+​
+id: "product-1761381781978-0.8693799526071119"
+​
+listening: true
+​
+opacity: 1
+​
+rectBounds: Object { x: -167.6667776222546, y: -167.6667776222546, width: 335.3335552445092, … }
+​​
+height: 335.3335552445092
+​​
+width: 335.3335552445092
+​​
+x: -167.6667776222546
+​​
+y: -167.6667776222546
+​​
+<prototype>: Object { … }
+​
+renderedHeight: 335.3335552445092
+​
+renderedWidth: 335.3335552445092
+​
+rotation: 0
+​
+scaleX: 1
+​
+scaleY: 1
+​
+x: 1.4210854715202004e-14
+​
+y: 0
+​
+<prototype>: Object { … }
+ProductShape.jsx:41:13
+[useEffect transformer] Attaching transformer 
+Object { selectedCount: 1, currentRotation: 0, groupX: 113.17319616863986, groupY: -412.5058136955889, centerX: 113.17319616863986, centerY: -412.5058136955889, snapshotWidth: 335.3335552445092, snapshotHeight: 335.33355524450917 }
+useSelectionState.js:199:15
+[useEffect transformer] Group client rect: 
+Object { x: 857.3281908991006, y: 346.94863456928033, width: 38.95549866835108, height: 38.95549866835108 }
+useSelectionState.js:224:15
+[useEffect transformer] Transformer client rect: 
+Object { x: 853.0008998932183, y: 292.621343563398, width: 47.61008068011574, height: 97.61008068011574 }
+useSelectionState.js:228:15
+[useEffect transformer] Transformer and Group event handlers: 
+Object { hasGroupOnTransformEnd: "undefined", hasGroupOnDragEnd: "undefined" }
+useSelectionState.js:233:15
+[ProductShapes.fan] 
+Object { width: 335.3335552445092, radius: 167.6667776222546 }
+productShapes.js:117:13
+[ProductShapes.fan] 
+Object { width: 335.3335552445092, radius: 167.6667776222546 }

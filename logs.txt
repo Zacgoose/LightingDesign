@@ -1,465 +1,195 @@
-[useSelectionState] Product dimensions: 
-Object { id: "product-1761381781978-0.8693799526071119", productType: "fan", scaleFactor: 239.52396803179232, realWorldSize: 1.4, realWorldWidth: undefined, realWorldHeight: undefined, configWidth: 40, configHeight: 40, scaleX: 1, scaleY: 1, … }
-​
-configHeight: 40
-​
-configWidth: 40
-​
-finalHeight: 335.3335552445092
-​
-finalWidth: 335.3335552445092
-​
-id: "product-1761381781978-0.8693799526071119"
-​
-productType: "fan"
-​
-realWorldHeight: undefined
-​
-realWorldSize: 1.4
-​
-realWorldWidth: undefined
-​
-scaleFactor: 239.52396803179232
-​
-scaleX: 1
-​
-scaleY: 1
-​
-<prototype>: Object { … }
-useSelectionState.js:85:17
-[useSelectionState] Item bounds: 
-Object { id: "product-1761381781978-0.8693799526071119", x: 113.17319616863988, y: -412.5058136955889, width: 335.3335552445092, height: 335.3335552445092, bounds: {…} }
-​
-bounds: Object { minX: -54.49358145361474, maxX: 280.8399737908945, minY: -580.1725913178435, … }
-​​
-maxX: 280.8399737908945
-​​
-maxY: -244.8390360733343
-​​
-minX: -54.49358145361474
-​​
-minY: -580.1725913178435
-​​
-<prototype>: Object { … }
-​
-height: 335.3335552445092
-​
-id: "product-1761381781978-0.8693799526071119"
-​
-width: 335.3335552445092
-​
-x: 113.17319616863988
-​
-y: -412.5058136955889
-​
-<prototype>: Object { … }
-useSelectionState.js:108:15
-[useSelectionState] Final bounding box: 
-Object { minX: -54.49358145361474, maxX: 280.8399737908945, minY: -580.1725913178435, maxY: -244.8390360733343, centerX: 113.17319616863986, centerY: -412.5058136955889, width: 335.3335552445092, height: 335.33355524450917, itemCount: 1 }
-useSelectionState.js:129:13
-[SelectionState] Selected product positions: 
-Array [ {…} ]
-​
-0: Object { id: "product-1761381781978-0.8693799526071119", x: 113.17319616863988, y: -412.5058136955889 }
-​
-length: 1
-​
-<prototype>: Array []
-useSelectionState.js:155:13
-[SelectionState] Selected text positions: 
-Array []
-useSelectionState.js:156:13
-[SelectionState] Bounding box: 
-Object { minX: -54.49358145361474, minY: -580.1725913178435, maxX: 280.8399737908945, maxY: -244.8390360733343, centerX: 113.17319616863986, centerY: -412.5058136955889 }
-useSelectionState.js:157:13
-[ProductsLayer] Transformer render check: 
-Object { selectedTool: "select", isPlacementMode: null, hasSelection: true, productOnlyIds: (1) […], textIds: [], shouldRender: true }
-​
-hasSelection: true
-​
-isPlacementMode: null
-​
-productOnlyIds: Array [ "product-1761381781978-0.8693799526071119" ]
-​
-selectedTool: "select"
-​
-shouldRender: true
-​
-textIds: Array []
-​
-<prototype>: Object { … }
-ProductsLayer.jsx:398:19
-[ProductShape:render] 
-Object { id: "product-1761381781978-0.8693799526071119", x: 113.17319616863988, y: -412.5058136955889, rotation: 0, scaleX: 1, scaleY: 1, renderedWidth: 335.3335552445092, renderedHeight: 335.3335552445092, rectBounds: {…}, draggable: false, … }
-​
-customStroke: "#1976d2"
-​
-draggable: false
-​
-fill: "#B2EBF2"
-​
-id: "product-1761381781978-0.8693799526071119"
-​
-listening: undefined
-​
-opacity: 1
-​
-rectBounds: Object { x: -167.6667776222546, y: -167.6667776222546, width: 335.3335552445092, … }
-​
-renderedHeight: 335.3335552445092
-​
-renderedWidth: 335.3335552445092
-​
-rotation: 0
-​
-scaleX: 1
-​
-scaleY: 1
-​
-x: 113.17319616863988
-​
-y: -412.5058136955889
-​
-<prototype>: Object { … }
-ProductShape.jsx:42:13
-[ProductsLayer] Attaching transformer effect: 
-Object { selectedIds: (1) […], productOnlyIds: (1) […], refsMapSize: 1, refsMapKeys: (1) […] }
-ProductsLayer.jsx:94:15
-[ProductsLayer] Getting ref for product-1761381781978-0.8693799526071119: true ProductsLayer.jsx:106:21
-[ProductsLayer] Selected nodes: 
-Object { selectedIds: (1) […], nodeCount: 1, nodes: (1) […] }
-​
-nodeCount: 1
-​
-nodes: Array [ {…} ]
-​​
-0: Object { _id: 499, index: 0, _batchingTransformChange: false, … }
-​​​
-_allEventListeners: null
-​​​
-_attachedDepsListeners: Map(0)
-​​​
-_batchingTransformChange: false
-​​​
-_cache: Map(7) { visible → true, absoluteOpacity → 1, listening → true, … }
-​​​​
-size: 7
-​​​​
-<entries>
-​​​​
-<prototype>: Map.prototype { … }
-​​​
-_dragEventId: null
-​​​
-_filterUpToDate: false
-​​​
-_id: 499
-​​​
-_isUnderCache: false
-​​​
-_lastPos: null
-​​​
-_needClearTransformCache: false
-​​​
-_shouldFireChangeEvents: true
-​​​
-attrs: Object { x: 113.17319616863988, y: -412.5058136955889, rotation: 0, … }
-​​​​
-draggable: false
-​​​​
-opacity: 1
-​​​​
-rotation: 0
-​​​​
-scaleX: 1
-​​​​
-scaleY: 1
-​​​​
-x: 113.17319616863988
-​​​​
-y: -412.5058136955889
-​​​​
-<prototype>: Object { … }
-​​​
-children: Array [ {…}, {…} ]
-​​​
-eventListeners: Object { dragstart: (1) […], mousedown: (1) […], tap: (1) […], … }
-​​​​
-contextmenu: Array [ {…} ]
-​​​​
-dragend: Array [ {…} ]
-​​​​​
-0: Object { name: "react-konva-event", handler: onDragEnd(e)
- }
-​​​​​
-length: 1
-​​​​​
-<prototype>: Array []
-​​​​
-dragstart: Array [ {…} ]
-​​​​​
-0: Object { name: "react-konva-event", handler: onDragStart(e)
- }
-​​​​​
-length: 1
-​​​​​
-<prototype>: Array []
-​​​​
-mousedown: Array [ {…} ]
-​​​​​
-0: Object { name: "react-konva-event", handler: onMouseDown(e)
- }
-​​​​​
-length: 1
-​​​​​
-<prototype>: Array []
-​​​​
-tap: Array [ {…} ]
-​​​​​
-0: Object { name: "react-konva-event", handler: onMouseDown(e)
- }
-​​​​​
-length: 1
-​​​​​
-<prototype>: Array []
-​​​​
-<prototype>: Object { … }
-​​​
-index: 0
-​​​
-parent: Object { _id: 205, index: 2, _batchingTransformChange: false, … }
-​​​​
-_allEventListeners: null
-​​​​
-_attachedDepsListeners: Map(0)
-​​​​
-_batchingTransformChange: false
-​​​​
-_cache: Map(6) { visible → true, listening → true, absoluteOpacity → 1, … }
-​​​​
-_dragEventId: null
-​​​​
-_filterUpToDate: false
-​​​​
-_id: 205
-​​​​
-_isUnderCache: false
-​​​​
-_lastPos: null
-​​​​
-_needClearTransformCache: false
-​​​​
-_shouldFireChangeEvents: true
-​​​​
-_waitingForDraw: false
-​​​​
-attrs: Object {  }
-​​​​
-canvas: Object { pixelRatio: 1, width: 1672, height: 817, … }
-​​​​​
-_canvas: <canvas style="padding: 0px; margin: 0p… 817px; display: block;" width="1672" height="817">​​​​​
-context: Object { canvas: {…}, _context: CanvasRenderingContext2D }
-​​​​​
-height: 817
-​​​​​
-isCache: false
-​​​​​
-pixelRatio: 1
-​​​​​
-width: 1672
-​​​​​
-<prototype>: Object { … }
-​​​​
-children: Array [ {…}, {…} ]
-​​​​
-eventListeners: Object { visibleChange: (1) […], imageSmoothingEnabledChange: (1) […] }
-​​​​​
-imageSmoothingEnabledChange: Array [ {…} ]
-​​​​​​
-0: Object { name: "konva", handler: _setSmoothEnabled()
- }
-​​​​​​
-length: 1
-​​​​​​
-<prototype>: Array []
-​​​​​
-visibleChange: Array [ {…} ]
-​​​​​​
-0: Object { name: "konva", handler: _checkVisibility()
- }
-​​​​​​
-length: 1
-​​​​​​
-<prototype>: Array []
-​​​​​
-<prototype>: Object { … }
-​​​​
-hitCanvas: Object { pixelRatio: 1, width: 1672, height: 817, … }
-​​​​​
-_canvas: <canvas style="padding: 0px; margin: 0p… 1672px; height: 817px;" width="1672" height="817">
-​​​​​
-context: Object { canvas: {…}, _context: CanvasRenderingContext2D }
-​​​​​​
-_context: CanvasRenderingContext2D { globalAlpha: 1, globalCompositeOperation: "source-over", strokeStyle: "#000000", … }
-​​​​​​​
-canvas: <canvas style="padding: 0px; margin: 0p… 1672px; height: 817px;" width="1672" height="817">
-​​​​​​​
-direction: "inherit"
-​​​​​​​
-fillStyle: "#000000"
-​​​​​​​
-filter: "none"
-​​​​​​​
-font: "10px sans-serif"
-​​​​​​​
-fontKerning: "auto"
-​​​​​​​
-fontStretch: "normal"
-​​​​​​​
-fontVariantCaps: "normal"
-​​​​​​​
-globalAlpha: 1
-​​​​​​​
-globalCompositeOperation: "source-over"
-​​​​​​​
-imageSmoothingEnabled: true
-​​​​​​​
-letterSpacing: "0px"
-​​​​​​​
-lineCap: "butt"
-​​​​​​​
-lineDashOffset: 0
-​​​​​​​
-lineJoin: "miter"
-​​​​​​​
-lineWidth: 1
-​​​​​​​
-miterLimit: 10
-​​​​​​​
-shadowBlur: 0
-​​​​​​​
-shadowColor: "rgba(0, 0, 0, 0)"
-​​​​​​​
-shadowOffsetX: 0
-​​​​​​​
-shadowOffsetY: 0
-​​​​​​​
-strokeStyle: "#000000"
-​​​​​​​
-textAlign: "start"
-​​​​​​​
-textBaseline: "alphabetic"
-​​​​​​​
-textRendering: "auto"
-​​​​​​​
-wordSpacing: "0px"
-​​​​​​​
-<prototype>: CanvasRenderingContext2DPrototype { getContextAttributes: getContextAttributes(), drawImage: drawImage(), beginPath: beginPath(), … }
-​​​​​​
-canvas: Object { pixelRatio: 1, width: 1672, height: 817, … }
-​​​​​​
-<prototype>: Object { … }
-​​​​​
-height: 817
-​​​​​
-hitCanvas: true
-​​​​​
-isCache: false
-​​​​​
-pixelRatio: 1
-​​​​​
-width: 1672
-​​​​​
-<prototype>: Object { … }
-​​​​
-index: 2
-​​​​
-parent: Object { _id: 1, index: 0, _batchingTransformChange: false, … }
-​​​​​
-_allEventListeners: null
-​​​​​
-_attachedDepsListeners: Map(0)
-​​​​​
-_batchingTransformChange: false
-​​​​​
-_cache: Map(5) { transform → {…}, absoluteOpacity → 1, listening → true, … }
-​​​​​
-_changedPointerPositions: Array [ {…} ]
-​​​​​​
-0: Object { x: 1693, y: 273, id: 999 }
-​​​​​​
-length: 1
-​​​​​​
-<prototype>: Array []
-​​​​​
-_dragEventId: null
-​​​​​
-_filterUpToDate: false
-​​​​​
-_id: 1
-​​​​​
-_isUnderCache: false
-​​​​​
-_lastPos: null
-​​​​​
-_needClearTransformCache: false
-​​​​​
-_pointerPositions: Array []
-​​​​​
-_shouldFireChangeEvents: true
-​​​​​
-attrs: Object { width: 1672, height: 817, scaleX: 0.22437398010723889, … }
-​​​​​
-bufferCanvas: Object { pixelRatio: 1, width: 1672, height: 817, … }
-​​​​​
-bufferHitCanvas: Object { pixelRatio: 1, width: 1672, height: 817, … }
-​​​​​
-children: Array(3) [ {…}, {…}, {…} ]
-​​​​​
-content: <div class="konvajs-content" style="position: relative; user… 1672px; height: 817px;" role="presentation">​​​​​
-eventListeners: Object { widthChange: (1) […], heightChange: (1) […], visibleChange: (1) […], … }
-​​​​​
-index: 0
-​​​​​
-mouseClickEndShape: Object { _id: 498, index: 1, _batchingTransformChange: false, … }
-​​​​​
-mouseClickStartShape: Object { _id: 498, index: 1, _batchingTransformChange: false, … }
-​​​​​
-mouseDblTimeout: 244
-​​​​​
-mousetargetShape: null
-​​​​​
-parent: null
-​​​​​
-pointerClickEndShape: Object { _id: 498, index: 1, _batchingTransformChange: false, … }
-​​​​​
-pointerClickStartShape: Object { _id: 498, index: 1, _batchingTransformChange: false, … }
-​​​​​
-pointerDblTimeout: 243
-​​​​​
-pointerPos: null
-​​​​​
-pointertargetShape: null
-​​​​​
-<prototype>: Object { nodeType: "Stage", getContainer: addGetter/constructor.prototype[method]<(), container: attr()
-, … }
-​​​​
-<prototype>: Object { nodeType: "Layer", getImageSmoothingEnabled: addGetter/constructor.prototype[method]<(), setImageSmoothingEnabled: method(val)
-, … }
-​​​
-<prototype>: Object { nodeType: "Group", … }
-​​
-length: 1
-​​
-<prototype>: Array []
-​
-selectedIds: Array [ "product-1761381781978-0.8693799526071119" ]
-​
-<prototype>: Object { … }
-ProductsLayer.jsx:111:17
-[ProductsLayer] Transformer attached successfully ProductsLayer.jsx:121:19
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
+import { useState, useRef, useEffect } from 'react';
+import { Stage, Layer, Circle, Group, Transformer, Rect } from 'react-konva';
+import Konva from 'konva';
+
+const App = () => {
+  const [shapes, setShapes] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [selectionRect, setSelectionRect] = useState({
+    visible: false,
+    x1: 0,
+    y1: 0,
+    x2: 0,
+    y2: 0,
+  });
+  const [groupKey, setGroupKey] = useState(0);
+
+  const groupRef = useRef();
+  const trRef = useRef();
+  const selectionRectRef = useRef();
+
+  // Generate 10k shapes once
+  useEffect(() => {
+    const items = [];
+    for (let i = 0; i < 10000; i++) {
+      items.push({
+        id: i,
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        radius: 10,
+        fill: Konva.Util.getRandomColor(),
+      });
+    }
+    setShapes(items);
+  }, []);
+
+  // Attach/Detach transformer & cache
+  useEffect(() => {
+    if (selectedIds.length && groupRef.current) {
+      trRef.current.nodes([groupRef.current]);
+      groupRef.current.cache();
+    } else {
+      trRef.current.nodes([]);
+      if (groupRef.current) groupRef.current.clearCache();
+    }
+  }, [selectedIds]);
+
+  // Utility to apply group transform to shapes and commit into React state
+  const applyGroupTransform = () => {
+    if (!selectedIds.length || !groupRef.current) return;
+
+    const transform = groupRef.current.getAbsoluteTransform();
+    const { scaleX } = transform.decompose();
+
+    setShapes((prev) =>
+      prev.map((shape) => {
+        if (!selectedIds.includes(shape.id)) return shape;
+        const pos = transform.point({ x: shape.x, y: shape.y });
+        return {
+          ...shape,
+          x: pos.x,
+          y: pos.y,
+          radius: shape.radius * scaleX,
+        };
+      })
+    );
+  };
+
+  const pointerPos = (e) => e.target.getStage().getPointerPosition();
+
+  const handleMouseDown = (e) => {
+    // ignore click on transformer or group
+    if (e.target.getParent() === trRef.current || e.target.parent === groupRef.current) {
+      return;
+    }
+
+    // finalise previous selection (if any)
+    applyGroupTransform();
+    if (selectedIds.length) {
+      setSelectedIds([]);
+      setGroupKey((k) => k + 1); // reset group for fresh transform
+    }
+
+    const p = pointerPos(e);
+    setSelectionRect({ visible: true, x1: p.x, y1: p.y, x2: p.x, y2: p.y });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!selectionRect.visible) return;
+    const p = pointerPos(e);
+    setSelectionRect((prev) => ({ ...prev, x2: p.x, y2: p.y }));
+  };
+
+  const handleMouseUp = (e) => {
+    if (!selectionRect.visible) return;
+
+    setTimeout(() => setSelectionRect((prev) => ({ ...prev, visible: false })), 0);
+
+    const stage = e.target.getStage();
+    const nodes = stage.find('.shape');
+
+    const box = {
+      x: Math.min(selectionRect.x1, selectionRect.x2),
+      y: Math.min(selectionRect.y1, selectionRect.y2),
+      width: Math.abs(selectionRect.x2 - selectionRect.x1),
+      height: Math.abs(selectionRect.y2 - selectionRect.y1),
+    };
+
+    const ids = [];
+    nodes.forEach((node) => {
+      if (Konva.Util.haveIntersection(box, node.getClientRect())) {
+        ids.push(Number(node.id()));
+      }
+    });
+
+    setSelectedIds(ids);
+  };
+
+  const handleStageClick = (e) => {
+    // ignore clicks that are part of selection rectangle drawing
+    if (selectionRect.visible) return;
+
+    if (e.target === e.target.getStage()) {
+      // clicked on empty area: apply transform and clear selection
+      applyGroupTransform();
+      if (selectedIds.length) {
+        setSelectedIds([]);
+        setGroupKey((k) => k + 1);
+      }
+    }
+  };
+
+  const selectionRectProps = {
+    fill: 'rgba(0,0,255,0.5)',
+    visible: selectionRect.visible,
+    x: Math.min(selectionRect.x1, selectionRect.x2),
+    y: Math.min(selectionRect.y1, selectionRect.y2),
+    width: Math.abs(selectionRect.x2 - selectionRect.x1),
+    height: Math.abs(selectionRect.y2 - selectionRect.y1),
+    ref: selectionRectRef,
+  };
+
+  return (
+    <Stage
+      width={window.innerWidth}
+      height={window.innerHeight}
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onTouchMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onTouchEnd={handleMouseUp}
+      onClick={handleStageClick}
+      onTap={handleStageClick}
+    >
+      <Layer>
+        {shapes
+          .filter((s) => !selectedIds.includes(s.id))
+          .map((shape) => (
+            <Circle
+              key={shape.id}
+              id={String(shape.id)}
+              x={shape.x}
+              y={shape.y}
+              radius={shape.radius}
+              fill={shape.fill}
+              name="shape"
+            />
+          ))}
+      </Layer>
+      <Layer>
+        <Group key={groupKey} ref={groupRef} draggable>
+          {shapes
+            .filter((s) => selectedIds.includes(s.id))
+            .map((shape) => (
+              <Circle
+                key={shape.id}
+                id={String(shape.id)}
+                x={shape.x}
+                y={shape.y}
+                radius={shape.radius}
+                fill={shape.fill}
+                stroke="blue"
+                strokeWidth={2}
+                name="shape"
+              />
+            ))}
+        </Group>
+        <Transformer ref={trRef} />
+        <Rect {...selectionRectProps} />
+      </Layer>
+    </Stage>
+  );
+};
+
+export default App;

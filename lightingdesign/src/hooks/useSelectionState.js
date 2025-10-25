@@ -156,9 +156,6 @@ export const useSelectionState = (products, textBoxes = []) => {
       // Ensure the transformer's rotation matches
       transformerRef.current.rotation(currentRotation);
 
-      // Caching removed - was causing performance issues during transforms
-      // Performance is better without caching due to reduced overhead
-
       // Force update
       transformerRef.current.getLayer()?.batchDraw();
       

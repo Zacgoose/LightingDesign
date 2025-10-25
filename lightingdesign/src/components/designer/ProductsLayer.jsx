@@ -1,7 +1,7 @@
 import { Group, Transformer, Text } from "react-konva";
 import { ProductShape } from "./ProductShape";
 import productTypesConfig from "/src/data/productTypes.json";
-import { useEffect, memo } from "react";
+import { useEffect, memo, useRef } from "react";
 
 export const COLOR_PALETTE = [
   "#1976d2",
@@ -59,6 +59,8 @@ export const ProductsLayer = memo(
     textBoxes = [], // Add textBoxes support
     onTextContextMenu, // Add text context menu handler
   }) => {
+    // Ref map to store references to all product Groups
+    const productRefsMap = useRef(new Map());
 
     // Manually attach transformend event listener to Transformer
     // This is necessary because the Group's onTransformEnd prop doesn't fire reliably
@@ -80,6 +82,35 @@ export const ProductsLayer = memo(
       };
     }, [transformerRef, onGroupTransformEnd]);
 
+    // NEW: Attach Transformer directly to selected product nodes (Konva standard pattern)
+    useEffect(() => {
+      if (!transformerRef.current) return;
+
+      const productOnlyIds = selectedIds.filter(id => !id.startsWith('text-'));
+      
+      if (productOnlyIds.length > 0) {
+        // Get the refs for selected products
+        const selectedNodes = productOnlyIds
+          .map(id => productRefsMap.current.get(id))
+          .filter(node => node != null);
+        
+        if (selectedNodes.length > 0) {
+          console.log('[ProductsLayer] Attaching transformer to nodes:', {
+            selectedIds: productOnlyIds,
+            nodeCount: selectedNodes.length,
+          });
+          
+          // Attach transformer to the selected nodes directly
+          transformerRef.current.nodes(selectedNodes);
+          transformerRef.current.getLayer()?.batchDraw();
+        } else {
+          transformerRef.current.nodes([]);
+        }
+      } else {
+        transformerRef.current.nodes([]);
+      }
+    }, [selectedIds, transformerRef]);
+
     const isPlacementMode = selectedTool === "placement" || placementMode;
     const isPanMode = selectedTool === "pan";
     const isConnectMode = selectedTool === "connect";
@@ -95,8 +126,64 @@ export const ProductsLayer = memo(
     
     return (
       <>
-        {/* Unselected products - individually draggable */}
-        {products
+        {/* Render all products - selected ones will be handled by Transformer */}
+        {products.map((product) => {
+          const productType = product.product_type?.toLowerCase() || "default";
+          const config = productTypesConfig[productType] || productTypesConfig.default;
+          const customStroke = getProductStrokeColor(product, products, config.stroke);
+          const isSelected = productOnlyIds.includes(product.id);
+
+          return (
+            <ProductShape
+              key={product.id}
+              ref={(node) => {
+                if (node) {
+                  productRefsMap.current.set(product.id, node);
+                } else {
+                  productRefsMap.current.delete(product.id);
+                }
+              }}
+              product={product}
+              config={config}
+              isSelected={isSelected}
+              draggable={selectedTool === "select" && canInteract && !isSelected}
+              onDragStart={(e) =>
+                selectedTool === "select" && canInteract && !isSelected && onProductDragStart(e, product.id)
+              }
+              onMouseDown={(e) => {
+                // Allow click in connect mode or select mode
+                if (selectedTool === "connect" || selectedTool === "select") {
+                  onProductClick(e, product.id);
+                }
+              }}
+              onDragEnd={(e) =>
+                selectedTool === "select" && canInteract && !isSelected && onProductDragEnd(e, product.id)
+              }
+              onTransformEnd={(e) => {
+                // Handle transform end for selected products
+                if (isSelected) {
+                  console.log('[ProductShape] Transform end:', {
+                    id: product.id,
+                    x: e.target.x(),
+                    y: e.target.y(),
+                    rotation: e.target.rotation(),
+                    scaleX: e.target.scaleX(),
+                    scaleY: e.target.scaleY(),
+                  });
+                }
+              }}
+              onContextMenu={(e) =>
+                selectedTool === "select" && canInteract && onContextMenu(e, product.id)
+              }
+              customStroke={customStroke}
+              theme={theme}
+            />
+          );
+        })}
+
+        {/* OLD: Unselected products - individually draggable */}
+        {/* DEPRECATED: Now all products are rendered above with refs */}
+        {false && products
           .filter((p) => !productOnlyIds.includes(p.id))
           .map((product) => {
             const productType = product.product_type?.toLowerCase() || "default";
@@ -106,6 +193,13 @@ export const ProductsLayer = memo(
             return (
               <ProductShape
                 key={product.id}
+                ref={(node) => {
+                  if (node) {
+                    productRefsMap.current.set(product.id, node);
+                  } else {
+                    productRefsMap.current.delete(product.id);
+                  }
+                }}
                 product={product}
                 config={config}
                 isSelected={false}
@@ -131,8 +225,9 @@ export const ProductsLayer = memo(
             );
           })}
 
-        {/* Selected products and text boxes in a draggable group */}
-        {hasSelection && (
+        {/* OLD: Selected products and text boxes in a draggable group */}
+        {/* DEPRECATED: Now using direct Transformer attachment to individual nodes */}
+        {false && hasSelection && (
           <Group
             key={groupKey}
             ref={selectionGroupRef}

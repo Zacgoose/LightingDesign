@@ -1,9 +1,9 @@
 import { Shape, Group, Rect } from "react-konva";
 import { getShapeFunction } from "/src/components/designer/productShapes";
-import { memo } from "react";
+import { memo, forwardRef } from "react";
 
 export const ProductShape = memo(
-  ({
+  forwardRef(({
     product,
     config,
     onMouseDown,
@@ -15,7 +15,8 @@ export const ProductShape = memo(
     draggable = false,
     opacity = 1,
     listening,
-  }) => {
+    onTransformEnd,
+  }, ref) => {
 
     const shapeFunction = getShapeFunction(config.shapeType);
     
@@ -62,6 +63,7 @@ export const ProductShape = memo(
 
     return (
       <Group
+        ref={ref}
         x={product.x}
         y={product.y}
         rotation={product.rotation || 0}
@@ -74,6 +76,7 @@ export const ProductShape = memo(
         onMouseDown={onMouseDown}
         onTap={onMouseDown}
         onDragEnd={onDragEnd}
+        onTransformEnd={onTransformEnd}
         onContextMenu={onContextMenu}
       >
         {/* Bounding box Rect to define correct centered bounds for Transformer */}
@@ -105,5 +108,5 @@ export const ProductShape = memo(
         />
       </Group>
     );
-  },
+  }),
 );

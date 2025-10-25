@@ -393,7 +393,18 @@ export const ProductsLayer = memo(
         )}
 
         {/* Transformer for selected group - visible in both select and text modes */}
-        {(selectedTool === "select" || selectedTool === "text") && !isPlacementMode && hasSelection && (
+        {(() => {
+          const shouldRender = (selectedTool === "select" || selectedTool === "text") && !isPlacementMode && hasSelection;
+          console.log('[ProductsLayer] Transformer render check:', {
+            selectedTool,
+            isPlacementMode,
+            hasSelection,
+            productOnlyIds,
+            textIds,
+            shouldRender
+          });
+          return shouldRender;
+        })() && (
           <Transformer
             ref={transformerRef}
             rotationSnaps={

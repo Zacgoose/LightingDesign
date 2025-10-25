@@ -117,7 +117,13 @@ export const ProductsLayer = memo(
         if (selectedNodes.length > 0) {
           // Attach transformer to the selected nodes directly
           transformerRef.current.nodes(selectedNodes);
-          transformerRef.current.getLayer()?.batchDraw();
+          // Force layer redraw to make transformer visible
+          const layer = transformerRef.current.getLayer();
+          if (layer) {
+            layer.batchDraw();
+            // Also call draw() to ensure transformer appears immediately
+            transformerRef.current.forceUpdate();
+          }
           console.log('[ProductsLayer] Transformer attached successfully');
         } else {
           transformerRef.current.nodes([]);
@@ -164,9 +170,9 @@ export const ProductsLayer = memo(
               product={product}
               config={config}
               isSelected={isSelected}
-              draggable={selectedTool === "select" && canInteract && !isSelected} // Unselected products are draggable individually
+              draggable={selectedTool === "select" && canInteract} // Both selected and unselected are draggable (Transformer needs draggable nodes)
               onDragStart={(e) =>
-                selectedTool === "select" && canInteract && !isSelected && onProductDragStart(e, product.id)
+                selectedTool === "select" && canInteract && onProductDragStart(e, product.id)
               }
               onMouseDown={(e) => {
                 // Allow click in connect mode or select mode
@@ -175,7 +181,7 @@ export const ProductsLayer = memo(
                 }
               }}
               onDragEnd={(e) =>
-                selectedTool === "select" && canInteract && !isSelected && onProductDragEnd(e, product.id)
+                selectedTool === "select" && canInteract && onProductDragEnd(e, product.id)
               }
               onContextMenu={(e) =>
                 selectedTool === "select" && canInteract && onContextMenu(e, product.id)

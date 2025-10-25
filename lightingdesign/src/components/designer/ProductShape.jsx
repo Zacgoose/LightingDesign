@@ -79,20 +79,8 @@ export const ProductShape = memo(
         onTransformEnd={onTransformEnd}
         onContextMenu={onContextMenu}
       >
-        {/* Bounding box Rect to define correct centered bounds for Transformer */}
-        {/* Konva's getClientRect ignores invisible shapes, so we use opacity=0.001 instead of visible=false */}
-        <Rect
-          x={-renderedWidth / 2}
-          y={-renderedHeight / 2}
-          width={renderedWidth}
-          height={renderedHeight}
-          fill="transparent"
-          stroke="transparent"
-          strokeWidth={0}
-          opacity={0.001}
-          listening={false}
-          perfectDrawEnabled={false}
-        />
+        {/* Shape with offset to center the bounding box */}
+        {/* offsetX and offsetY shift the bounding box to be centered at origin */}
         <Shape
           sceneFunc={(context, shape) => shapeFunction(context, shape)}
           fill={product.color || config.fill}
@@ -100,6 +88,8 @@ export const ProductShape = memo(
           strokeWidth={config.strokeWidth + 1}
           width={renderedWidth}
           height={renderedHeight}
+          offsetX={renderedWidth / 2}
+          offsetY={renderedHeight / 2}
           listening={listening}
           realWorldWidth={product.realWorldWidth}
           realWorldHeight={product.realWorldHeight}

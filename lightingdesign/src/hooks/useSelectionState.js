@@ -37,72 +37,65 @@ export const useSelectionState = (products, textBoxes = []) => {
       return { centerX: 0, centerY: 0, products: [], textBoxes: [], rotation: 0 };
     }
 
-    // Calculate average rotation including both products and text boxes
-    // When multiple objects are selected, don't use average rotation (keep group at 0)
-    // This prevents objects from "shuffling" around the center when selected
+    // Calculate bounding box using visual bounds (x/y + width/height)
+    const allItems = [...productSnapshot, ...textSnapshot];
+    const bounds = allItems.map(item => {
+      // For products, use x/y and width/height if available
+      if (item.width && item.height) {
+        return {
+          minX: item.x - item.width / 2,
+          maxX: item.x + item.width / 2,
+          minY: item.y - item.height / 2,
+          maxY: item.y + item.height / 2,
+        };
+      } else {
+        // Fallback: treat x/y as center, no size
+        return {
+          minX: item.x,
+          maxX: item.x,
+          minY: item.y,
+          maxY: item.y,
+        };
+      }
+    });
+    const minX = bounds.length ? Math.min(...bounds.map(b => b.minX)) : 0;
+    const maxX = bounds.length ? Math.max(...bounds.map(b => b.maxX)) : 0;
+    const minY = bounds.length ? Math.min(...bounds.map(b => b.minY)) : 0;
+    const maxY = bounds.length ? Math.max(...bounds.map(b => b.maxY)) : 0;
+    // Use bounding box center as group origin
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    const width = maxX - minX;
+    const height = maxY - minY;
+
+    // Calculate average rotation for single selection only
     let totalRotation = 0;
     let rotationCount = 0;
-    
     productSnapshot.forEach((p) => {
-      console.log(`[selectionSnapshot] Product ${p.id} rotation:`, p.rotation);
       totalRotation += (p.rotation || 0);
       rotationCount++;
     });
-    
     textSnapshot.forEach((t) => {
-      console.log(`[selectionSnapshot] Text ${t.id} rotation:`, t.rotation);
       totalRotation += (t.rotation || 0);
       rotationCount++;
     });
-    
-    // Only use average rotation for single object selection
-    // For multiple objects, keep group rotation at 0 to avoid position shuffling
     const avgRotation = rotationCount === 1 ? (totalRotation / rotationCount) : 0;
 
-    console.log('[selectionSnapshot] Rotation calculation:', {
-      totalRotation,
-      rotationCount,
-      avgRotation,
-    });
-
-    // Calculate center including both products and text boxes
-    let sumX = 0;
-    let sumY = 0;
-    let totalCount = 0;
-
-    productSnapshot.forEach((p) => {
-      sumX += p.x;
-      sumY += p.y;
-      totalCount++;
-    });
-
-    textSnapshot.forEach((t) => {
-      sumX += t.x;
-      sumY += t.y;
-      totalCount++;
-    });
-
-    const centerX = totalCount > 0 ? sumX / totalCount : 0;
-    const centerY = totalCount > 0 ? sumY / totalCount : 0;
-
-    console.log('[selectionSnapshot] Creating new snapshot', {
-      selectedIds,
-      productCount: productSnapshot.length,
-      textCount: textSnapshot.length,
-      centerX,
-      centerY,
-      avgRotation,
-    });
+    // Debug: Log all selected item positions and bounding box calculation
+    console.log('[SelectionState] Selected product positions:', productSnapshot.map(p => ({ id: p.id, x: p.x, y: p.y })));
+    console.log('[SelectionState] Selected text positions:', textSnapshot.map(t => ({ id: t.id, x: t.x, y: t.y })));
+    console.log('[SelectionState] Bounding box:', { minX, minY, maxX, maxY, centerX, centerY });
 
     return {
       centerX,
       centerY,
+      width,
+      height,
       rotation: avgRotation,
       products: productSnapshot.map((p) => {
-        // Calculate relative position
+        // Calculate relative position from bounding box center
         const relX = p.x - centerX;
         const relY = p.y - centerY;
-
         return {
           ...p,
           relativeX: relX,
@@ -111,15 +104,13 @@ export const useSelectionState = (products, textBoxes = []) => {
         };
       }),
       textBoxes: textSnapshot.map((t) => {
-        // Calculate relative position
+        // Calculate relative position from bounding box center
         const relX = t.x - centerX;
         const relY = t.y - centerY;
-
         return {
           ...t,
           relativeX: relX,
           relativeY: relY,
-          // Subtract average rotation to match product behavior
           rotation: (t.rotation || 0) - avgRotation,
         };
       }),
@@ -156,12 +147,6 @@ export const useSelectionState = (products, textBoxes = []) => {
       // Ensure the transformer's rotation matches
       transformerRef.current.rotation(currentRotation);
 
-      // Only cache if there are multiple selected items (caching is expensive)
-      // and skip caching during dragging operations
-      if (selectedIds.length > 1 && !isDragging) {
-        selectionGroupRef.current.cache();
-      }
-
       // Force update
       transformerRef.current.getLayer()?.batchDraw();
       
@@ -171,9 +156,6 @@ export const useSelectionState = (products, textBoxes = []) => {
       });
     } else if (transformerRef.current) {
       transformerRef.current.nodes([]);
-      if (selectionGroupRef.current) {
-        selectionGroupRef.current.clearCache();
-      }
     }
   }, [selectedIds, groupKey, isDragging, selectionSnapshot.rotation]);
 

@@ -39,6 +39,7 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   // View options
   const [showGrid, setShowGrid] = useState(true);
   const [showLayers, setShowLayers] = useState(false);
+  const [showPreview, setShowPreview] = useState(true); // Show preview panel by default
   const [selectedTool, setSelectedTool] = useState("select");
   const [rotationSnaps, setRotationSnaps] = useState(8);
 
@@ -159,6 +160,7 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
     stagePosition,
     showGrid,
     showLayers,
+    showPreview,
     selectedTool,
     rotationSnaps,
     canvasContainerRef: setCanvasContainerRef, // Use callback ref instead of regular ref
@@ -168,6 +170,7 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
     setStagePosition,
     setShowGrid,
     setShowLayers,
+    setShowPreview,
     setSelectedTool,
     setRotationSnaps,
 

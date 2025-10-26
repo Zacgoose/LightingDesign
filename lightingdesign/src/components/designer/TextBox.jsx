@@ -1,5 +1,5 @@
 import { Text, Transformer, Group, Rect } from "react-konva";
-import { useEffect, useRef, memo } from "react";
+import React, { useEffect, useRef, memo } from "react";
 
 export const TextBox = memo(
   ({
@@ -39,20 +39,44 @@ export const TextBox = memo(
     const textWidth = textBox.width || 100;
     const textHeight = renderedFontSize * 1.2;
 
-    // Dynamically measure text width and update textBox.width
+    // Dynamically measure text width and height using textWidth/textHeight
     useEffect(() => {
       if (textRef.current) {
-        const measuredWidth = textRef.current.width();
-        if (measuredWidth && Math.abs(measuredWidth - (textBox.width || 0)) > 1) {
-          onChange({ ...textBox, width: measuredWidth });
-          console.log("changing text box")
+        const node = textRef.current;
+
+        const measuredWidth = node.textWidth;
+        const lineCount = node.textArr?.length || textBox.text.split(/\r?\n/).length;
+
+        // Per-line height (approx renderedFontSize * 1.2)
+        const singleLineHeight = renderedFontSize * 1.15;
+
+        // If you want to explicitly base height on lines × per-line height:
+        const computedHeight = lineCount * singleLineHeight;
+
+        // Update only if changed to avoid render loops
+        const needsUpdate =
+          Math.abs((textBox.width || 0) - measuredWidth) > 1 ||
+          Math.abs((textBox.height || 0) - computedHeight) > 1;
+
+        if (needsUpdate) {
+          onChange({
+            ...textBox,
+            width: measuredWidth,
+            height: computedHeight,
+          });
         }
+        console.log("logs")
       }
-      // Only run when text, font, or font size changes
-    }, [textBox.text, renderedFontSize, textBox.fontFamily, textBox.fontStyle, textBox.fontWeight]);
+    }, [
+      textBox.text,
+      renderedFontSize,
+      textBox.fontFamily,
+      textBox.fontStyle,
+      textBox.fontWeight,
+    ]);
 
     // Rectangle padding
-    const rectPadding = 8;
+    const rectPadding = 10;
 
     return (
       <>
@@ -119,8 +143,8 @@ export const TextBox = memo(
             <Rect
               x={-textWidth / 2 - rectPadding}
               y={-textHeight / 2 - rectPadding}
-              width={textWidth}
-              height={textHeight}
+              width={textWidth + rectPadding * 2}
+              height={textBox.height}
               stroke={textBox.borderColor || "#000000"}
               strokeWidth={8}
               fill="transparent"
@@ -138,14 +162,12 @@ export const TextBox = memo(
             fontVariant={fontWeight}
             textDecoration={textBox.textDecoration || ""}
             fill={textBox.color || "#000000"}
-            width={textWidth}
-            height={textHeight}
+            width={textBox.max}
             wrap="none"
             draggable={false}
             listening={true}
           />
         </Group>
-        {/* No separate transformer - using unified transformer from ProductsLayer for selected text */}
       </>
     );
   }

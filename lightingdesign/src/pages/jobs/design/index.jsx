@@ -689,7 +689,8 @@ const Page = () => {
     const group = selectionGroupRef.current;
     
     // Check if group has been transformed
-    const tolerance = 0.0001;
+    // Use a reasonable tolerance for floating point comparison
+    const tolerance = 0.01; // 0.01 pixels or degrees is negligible
     const hasTransform = !(
       Math.abs(group.x()) < tolerance &&
       Math.abs(group.y()) < tolerance &&

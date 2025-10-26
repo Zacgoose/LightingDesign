@@ -956,9 +956,7 @@ const Page = () => {
         const textEl = document.createElementNS(SVG_NS, 'text');
         textEl.setAttribute('x', '0');
         textEl.setAttribute('y', '0');
-        textEl.setAttribute('fill', '#FFFFFF');
-        textEl.setAttribute('stroke', '#000000');
-        textEl.setAttribute('stroke-width', '1');
+        textEl.setAttribute('fill', '#000000');
         textEl.setAttribute('font-family', 'Arial');
         textEl.setAttribute('font-size', String(fontSize));
         textEl.setAttribute('font-weight', 'bold');

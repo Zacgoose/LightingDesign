@@ -93,9 +93,7 @@ export const LayerSwitcher = ({
       >
         {layers.map((layer, index) => {
           const isActive = layer.id === activeLayerId;
-          
-          // Named render function for layer item
-          const renderLayerItem = () => (
+          return (
             <ListItem
               key={layer.id}
               disablePadding
@@ -133,8 +131,6 @@ export const LayerSwitcher = ({
               </ListItemButton>
             </ListItem>
           );
-
-          return renderLayerItem();
         })}
       </List>
 

@@ -1,194 +1,43 @@
 [ProductsLayer] Transformer render check: 
 Object { selectedTool: "select", isPlacementMode: null, hasSelection: true, productOnlyIds: (1) […], textIds: [], shouldRender: true }
+​
+hasSelection: true
+​
+isPlacementMode: null
+​
+productOnlyIds: Array [ "product-1761438815693-0.11847411287706344" ]
+​
+selectedTool: "select"
+​
+shouldRender: true
+​
+textIds: Array []
+​
+<prototype>: Object { … }
 ProductsLayer.jsx:339:19
-[ProductShape:render] 
-Object { id: "product-1761438815693-0.11847411287706344", x: -98.15981669339892, y: -881.1935964148128, rotation: 0, scaleX: 1, scaleY: 1, renderedWidth: 335.3335552445092, renderedHeight: 335.3335552445092, rectBounds: {…}, draggable: false, … }
-ProductShape.jsx:42:13
 [ProductsLayer] Attaching transformer effect: 
 Object { selectedIds: (1) […], productOnlyIds: (1) […], refsMapSize: 0, refsMapKeys: [] }
+​
+productOnlyIds: Array [ "product-1761438815693-0.11847411287706344" ]
+​
+refsMapKeys: Array []
+​
+refsMapSize: 0
+​
+selectedIds: Array [ "product-1761438815693-0.11847411287706344" ]
+​
+<prototype>: Object { … }
 ProductsLayer.jsx:94:15
 [ProductsLayer] Getting ref for product-1761438815693-0.11847411287706344: false ProductsLayer.jsx:106:21
 [ProductsLayer] Selected nodes: 
 Object { selectedIds: (1) […], nodeCount: 0, nodes: [] }
+​
+nodeCount: 0
+​
+nodes: Array []
+​
+selectedIds: Array [ "product-1761438815693-0.11847411287706344" ]
+​
+<prototype>: Object { … }
 ProductsLayer.jsx:111:17
-[ProductsLayer] No nodes found, cleared transformer ProductsLayer.jsx:130:19
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductsLayer] Transformer render check: 
-Object { selectedTool: "select", isPlacementMode: null, hasSelection: true, productOnlyIds: (1) […], textIds: [], shouldRender: true }
-ProductsLayer.jsx:339:19
-[ProductShape:render] 
-Object { id: "product-1761438815693-0.11847411287706344", x: 921.6853788429756, y: 243.33878683696463, rotation: 0, scaleX: 1, scaleY: 1, renderedWidth: 335.3335552445092, renderedHeight: 335.3335552445092, rectBounds: {…}, draggable: false, … }
-ProductShape.jsx:42:13
-[ProductsLayer] Attaching transformer effect: 
-Object { selectedIds: (1) […], productOnlyIds: (1) […], refsMapSize: 0, refsMapKeys: [] }
-ProductsLayer.jsx:94:15
-[ProductsLayer] Getting ref for product-1761438815693-0.11847411287706344: false ProductsLayer.jsx:106:21
-[ProductsLayer] Selected nodes: 
-Object { selectedIds: (1) […], nodeCount: 0, nodes: [] }
-ProductsLayer.jsx:111:17
-[ProductsLayer] No nodes found, cleared transformer ProductsLayer.jsx:130:19
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductsLayer] Transformer render check: 
-Object { selectedTool: "select", isPlacementMode: null, hasSelection: true, productOnlyIds: (1) […], textIds: [], shouldRender: true }
-ProductsLayer.jsx:339:19
-[ProductShape:render] 
-Object { id: "product-1761438815693-0.11847411287706344", x: 921.6853788429756, y: 243.33878683696463, rotation: 0, scaleX: 1, scaleY: 1, renderedWidth: 335.3335552445092, renderedHeight: 335.3335552445092, rectBounds: {…}, draggable: false, … }
-ProductShape.jsx:42:13
-[ProductsLayer] Attaching transformer effect: 
-Object { selectedIds: (1) […], productOnlyIds: (1) […], refsMapSize: 0, refsMapKeys: [] }
-ProductsLayer.jsx:94:15
-[ProductsLayer] Getting ref for product-1761438815693-0.11847411287706344: false ProductsLayer.jsx:106:21
-[ProductsLayer] Selected nodes: 
-Object { selectedIds: (1) […], nodeCount: 0, nodes: [] }
-ProductsLayer.jsx:111:17
-[ProductsLayer] No nodes found, cleared transformer ProductsLayer.jsx:130:19
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
-productShapes.js:117:13
-[ProductShapes.fan] 
-Object { width: 335.3335552445092, radius: 167.6667776222546 }
+[ProductsLayer] No nodes found, cleared transformer

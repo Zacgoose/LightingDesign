@@ -1375,6 +1375,10 @@ const Page = () => {
     [placementMode, stagePosition, stageScale, createProductFromTemplate, products, updateHistory],
   );
 
+  // Use ref to track last mouse move time for throttling
+  const lastMouseMoveTimeRef = useRef(0);
+  const mouseMoveThrottleMs = 16; // ~60fps
+
   const handleSelectionMove = useCallback(
     (e) => {
       if (!selectionStartRef.current) return;
@@ -1411,6 +1415,13 @@ const Page = () => {
 
   const handleCanvasMouseMove = useCallback(
     (e) => {
+      // Throttle mouse move events to reduce re-renders
+      const now = Date.now();
+      if (now - lastMouseMoveTimeRef.current < mouseMoveThrottleMs) {
+        return;
+      }
+      lastMouseMoveTimeRef.current = now;
+
       // Handle drag-to-select - call handleSelectionMove if we have a selection start point
       if (selectionStartRef.current) {
         handleSelectionMove(e);

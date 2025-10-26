@@ -705,7 +705,9 @@ const Page = () => {
     }
 
     const transform = group.getAbsoluteTransform();
-    const { scaleX: groupScaleX, scaleY: groupScaleY } = transform.decompose();
+    // Use group's direct scale properties instead of decompose to avoid accumulated scaling issues
+    const groupScaleX = group.scaleX();
+    const groupScaleY = group.scaleY();
     const groupRotation = group.rotation();
 
     // Extract product IDs and text IDs

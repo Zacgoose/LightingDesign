@@ -75,7 +75,10 @@ export const useSelectionState = (products, textBoxes = []) => {
     }
 
     const transform = group.getAbsoluteTransform();
-    const { scaleX: groupScaleX, scaleY: groupScaleY } = transform.decompose();
+    // Use group's direct scale properties instead of decompose to avoid accumulated scaling issues
+    const groupScaleX = group.scaleX();
+    const groupScaleY = group.scaleY();
+    const groupRotation = group.rotation();
 
     const { products: snapshotProducts } = selectionSnapshot;
 
@@ -88,8 +91,6 @@ export const useSelectionState = (products, textBoxes = []) => {
 
       // Use transform.point() to get the new position (applies rotation, scale, translation)
       const newPos = transform.point({ x: original.x, y: original.y });
-
-      const groupRotation = group.rotation();
 
       return {
         ...product,

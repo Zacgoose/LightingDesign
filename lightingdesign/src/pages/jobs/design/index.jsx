@@ -192,7 +192,6 @@ const Page = () => {
     setSelectedConnectorId,
     setGroupKey,
     setIsDragging,
-    applyGroupTransform,
     clearSelection,
     forceGroupUpdate,
   } = selectionState;

@@ -686,9 +686,26 @@ const Page = () => {
   const handleUnifiedGroupTransformEnd = useCallback(() => {
     if (!selectedIds.length || !selectionGroupRef.current) return;
 
-    const transform = selectionGroupRef.current.getAbsoluteTransform();
+    const group = selectionGroupRef.current;
+    
+    // Check if group has been transformed
+    const tolerance = 0.0001;
+    const hasTransform = !(
+      Math.abs(group.x()) < tolerance &&
+      Math.abs(group.y()) < tolerance &&
+      Math.abs(group.scaleX() - 1) < tolerance &&
+      Math.abs(group.scaleY() - 1) < tolerance &&
+      Math.abs(group.rotation()) < tolerance
+    );
+    
+    if (!hasTransform) {
+      setGroupKey((k) => k + 1);
+      return; // No transform to apply
+    }
+
+    const transform = group.getAbsoluteTransform();
     const { scaleX: groupScaleX, scaleY: groupScaleY } = transform.decompose();
-    const groupRotation = selectionGroupRef.current.rotation();
+    const groupRotation = group.rotation();
 
     // Extract product IDs and text IDs
     const productIds = selectedIds.filter(id => !id.startsWith('text-'));

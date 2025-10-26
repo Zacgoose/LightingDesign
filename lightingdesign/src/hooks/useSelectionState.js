@@ -57,7 +57,23 @@ export const useSelectionState = (products, textBoxes = []) => {
   const applyGroupTransform = useCallback(() => {
     if (!selectedIds.length || !selectionGroupRef.current) return null;
 
-    const transform = selectionGroupRef.current.getAbsoluteTransform();
+    const group = selectionGroupRef.current;
+    
+    // Check if group has been transformed (Konva example checks this)
+    const tolerance = 0.0001;
+    const hasTransform = !(
+      Math.abs(group.x()) < tolerance &&
+      Math.abs(group.y()) < tolerance &&
+      Math.abs(group.scaleX() - 1) < tolerance &&
+      Math.abs(group.scaleY() - 1) < tolerance &&
+      Math.abs(group.rotation()) < tolerance
+    );
+    
+    if (!hasTransform) {
+      return null; // No transform to apply
+    }
+
+    const transform = group.getAbsoluteTransform();
     const { scaleX: groupScaleX, scaleY: groupScaleY } = transform.decompose();
 
     const { products: snapshotProducts } = selectionSnapshot;
@@ -72,7 +88,7 @@ export const useSelectionState = (products, textBoxes = []) => {
       // Use transform.point() to get the new position (applies rotation, scale, translation)
       const newPos = transform.point({ x: original.x, y: original.y });
 
-      const groupRotation = selectionGroupRef.current.rotation();
+      const groupRotation = group.rotation();
 
       return {
         ...product,

@@ -71,12 +71,19 @@ export const ProductShape = memo(
         onContextMenu={onContextMenu}
       >
         <Shape
-          sceneFunc={(context, shape) => shapeFunction(context, shape)}
+          sceneFunc={(context, shape) => {
+            // Compensate for the offset so shapes still draw centered at (0,0)
+            // Without this, offsetX/offsetY would translate the drawing
+            context.translate(renderedWidth / 2, renderedHeight / 2);
+            shapeFunction(context, shape);
+          }}
           fill={product.color || config.fill}
           stroke={customStroke}
           strokeWidth={config.strokeWidth + 1}
           width={renderedWidth}
           height={renderedHeight}
+          offsetX={renderedWidth / 2}
+          offsetY={renderedHeight / 2}
           listening={listening}
           realWorldWidth={product.realWorldWidth}
           realWorldHeight={product.realWorldHeight}

@@ -43,6 +43,7 @@ import { useSettings } from "/src/hooks/use-settings";
 import productTypesConfig from "/src/data/productTypes.json";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
 import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
+import { applyGroupTransformToItems, applyGroupTransformToTextBoxes } from "/src/utils/transformUtils";
 
 const Page = () => {
   const router = useRouter();
@@ -195,6 +196,21 @@ const Page = () => {
     clearSelection,
     forceGroupUpdate,
   } = selectionState;
+
+  // Apply group transform (wrapper for utility function)
+  const applyGroupTransform = useCallback(() => {
+    if (!selectedIds.length || !selectionGroupRef.current) return null;
+
+    const productIds = selectedIds.filter(id => !id.startsWith('text-'));
+    if (productIds.length === 0) return null;
+
+    return applyGroupTransformToItems(
+      selectionGroupRef.current,
+      selectionSnapshot.products,
+      products,
+      productIds
+    );
+  }, [selectedIds, selectionGroupRef, selectionSnapshot, products]);
 
   // Connection sequence for connect tool
   const [connectSequence, setConnectSequence] = useState([]);
@@ -683,110 +699,47 @@ const Page = () => {
   } = productInteraction;
 
   // Unified group transform handler - following Konva example pattern
+  // Simplified group transform handler
   const handleUnifiedGroupTransformEnd = useCallback(() => {
     if (!selectedIds.length || !selectionGroupRef.current) return;
 
-    const group = selectionGroupRef.current;
-    
-    // Check if group has been transformed
-    // Use a reasonable tolerance for floating point comparison
-    const tolerance = 0.01; // 0.01 pixels or degrees is negligible
-    const hasTransform = !(
-      Math.abs(group.x()) < tolerance &&
-      Math.abs(group.y()) < tolerance &&
-      Math.abs(group.scaleX() - 1) < tolerance &&
-      Math.abs(group.scaleY() - 1) < tolerance &&
-      Math.abs(group.rotation()) < tolerance
-    );
-    
-    if (!hasTransform) {
-      setGroupKey((k) => k + 1);
-      return; // No transform to apply
-    }
-
-    const transform = group.getAbsoluteTransform();
-    // Use group's direct scale properties instead of decompose to avoid accumulated scaling issues
-    const groupScaleX = group.scaleX();
-    const groupScaleY = group.scaleY();
-    const groupRotation = group.rotation();
-
-    // Extract product IDs and text IDs
     const productIds = selectedIds.filter(id => !id.startsWith('text-'));
     const textIds = selectedIds
       .filter(id => id.startsWith('text-'))
-      .map(id => id.substring(5)); // Remove 'text-' prefix
+      .map(id => id.substring(5));
 
     // Transform products
     if (productIds.length > 0) {
-      const transformedProducts = products.map((product) => {
-        if (!productIds.includes(product.id)) return product;
-
-        const original = selectionSnapshot.products?.find((p) => p.id === product.id);
-        if (!original) return product;
-
-        // Use transform.point() to get the new position
-        const newPos = transform.point({ x: original.x, y: original.y });
-
-        return {
-          ...product,
-          x: newPos.x,
-          y: newPos.y,
-          rotation: (original.rotation || 0) + groupRotation,
-          scaleX: (original.scaleX || 1) * groupScaleX,
-          scaleY: (original.scaleY || 1) * groupScaleY,
-        };
-      });
-
-      updateHistory(transformedProducts);
+      const transformedProducts = applyGroupTransformToItems(
+        selectionGroupRef.current,
+        selectionSnapshot.products,
+        products,
+        productIds
+      );
+      if (transformedProducts !== products) {
+        updateHistory(transformedProducts);
+      }
     }
 
     // Transform text boxes
     if (textIds.length > 0) {
-      const transformedTextBoxes = textBoxes.map((textBox) => {
-        if (!textIds.includes(textBox.id)) return textBox;
-
-        const original = selectionSnapshot.textBoxes?.find((t) => t.id === textBox.id);
-        if (!original) return textBox;
-
-        // Use transform.point() to get the new position
-        const newPos = transform.point({ x: original.x, y: original.y });
-
-        // Detect if this is a corner resize (proportional) or side/top resize
-        const scaleDiff = Math.abs(groupScaleX - groupScaleY);
-        const isCornerResize = scaleDiff < 0.1;
-
-        let newFontSize = original.fontSize || 24;
-        let newWidth = original.width || 200;
-
-        if (isCornerResize) {
-          const averageScale = (groupScaleX + groupScaleY) / 2;
-          newFontSize = Math.max(8, Math.round(newFontSize * averageScale));
-          newWidth = Math.max(20, newWidth * averageScale);
-        } else {
-          newWidth = Math.max(20, newWidth * groupScaleX);
-        }
-
-        return {
-          ...textBox,
-          x: newPos.x,
-          y: newPos.y,
-          rotation: (original.rotation || 0) + groupRotation,
-          fontSize: newFontSize,
-          width: newWidth,
-          scaleX: 1,
-          scaleY: 1,
-        };
-      });
-
-      setTextBoxes(transformedTextBoxes);
+      const transformedTextBoxes = applyGroupTransformToTextBoxes(
+        selectionGroupRef.current,
+        selectionSnapshot.textBoxes,
+        textBoxes,
+        textIds
+      );
+      if (transformedTextBoxes !== textBoxes) {
+        setTextBoxes(transformedTextBoxes);
+      }
     }
 
     // Reset group for next transform
     setGroupKey((k) => k + 1);
   }, [
     selectedIds,
-    selectionSnapshot,
     selectionGroupRef,
+    selectionSnapshot,
     products,
     textBoxes,
     updateHistory,

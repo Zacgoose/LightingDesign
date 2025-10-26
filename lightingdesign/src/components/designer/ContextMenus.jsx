@@ -419,14 +419,19 @@ export const ContextMenus = ({
             minWidth: 200,
           }}
         >
-          {sublayers.map((sublayer) => (
-            <MenuItem
-              key={sublayer.id}
-              onClick={() => handleSublayerSelect(sublayer.id)}
-            >
-              <ListItemText>{sublayer.name}</ListItemText>
-            </MenuItem>
-          ))}
+          {sublayers.map((sublayer) => {
+            // Named render function for sublayer menu item
+            const renderSublayerMenuItem = () => (
+              <MenuItem
+                key={sublayer.id}
+                onClick={() => handleSublayerSelect(sublayer.id)}
+              >
+                <ListItemText>{sublayer.name}</ListItemText>
+              </MenuItem>
+            );
+            
+            return renderSublayerMenuItem();
+          })}
         </Box>
       </Popover>
 
@@ -542,11 +547,16 @@ export const ContextMenus = ({
             minWidth: 120,
           }}
         >
-          {[12, 20, 28, 36, 48, 60, 72].map((size) => (
-            <MenuItem key={size} onClick={() => handleFontSizeSelect(size)}>
-              <ListItemText>{size}px</ListItemText>
-            </MenuItem>
-          ))}
+          {[12, 20, 28, 36, 48, 60, 72].map((size) => {
+            // Named render function for font size menu item
+            const renderFontSizeMenuItem = () => (
+              <MenuItem key={size} onClick={() => handleFontSizeSelect(size)}>
+                <ListItemText>{size}px</ListItemText>
+              </MenuItem>
+            );
+            
+            return renderFontSizeMenuItem();
+          })}
         </Box>
       </Popover>
     </Box>

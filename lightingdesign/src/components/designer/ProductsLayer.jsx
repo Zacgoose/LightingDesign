@@ -1,7 +1,7 @@
 import { Group, Transformer, Text } from "react-konva";
 import { ProductShape } from "./ProductShape";
 import productTypesConfig from "/src/data/productTypes.json";
-import { useEffect, memo } from "react";
+import { useEffect, memo, useCallback } from "react";
 
 export const COLOR_PALETTE = [
   "#1976d2",
@@ -132,45 +132,179 @@ export const ProductsLayer = memo(
     
     const hasSelection = productOnlyIds.length > 0 || textIds.length > 0;
     
+    // Named render function for unselected products
+    const renderUnselectedProduct = useCallback((product) => {
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      const customStroke = getProductStrokeColor(product, products, config.stroke);
+      const letterPrefix = getProductLetterPrefix(product, products, productTypesConfig);
+
+      // Named event handlers
+      const handleDragStart = (e) => {
+        if (selectedTool === "select" && canInteract) {
+          onProductDragStart(e, product.id);
+        }
+      };
+
+      const handleMouseDown = (e) => {
+        // Allow click in connect mode or select mode
+        if (selectedTool === "connect" || selectedTool === "select") {
+          onProductClick(e, product.id);
+        }
+      };
+
+      const handleDragEnd = (e) => {
+        if (selectedTool === "select" && canInteract) {
+          onProductDragEnd(e, product.id);
+        }
+      };
+
+      const handleContextMenu = (e) => {
+        if (selectedTool === "select" && canInteract) {
+          onContextMenu(e, product.id);
+        }
+      };
+
+      return (
+        <ProductShape
+          key={product.id}
+          product={product}
+          config={config}
+          isSelected={false}
+          draggable={selectedTool === "select" && canInteract}
+          onDragStart={handleDragStart}
+          onMouseDown={handleMouseDown}
+          onDragEnd={handleDragEnd}
+          onContextMenu={handleContextMenu}
+          customStroke={customStroke}
+          theme={theme}
+          letterPrefix={letterPrefix}
+        />
+      );
+    }, [products, selectedTool, canInteract, onProductClick, onProductDragStart, onProductDragEnd, onContextMenu, theme]);
+
+    // Named render function for selected products in group
+    const renderSelectedProduct = useCallback((product) => {
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      const customStroke = getProductStrokeColor(product, products, config.stroke);
+      const letterPrefix = getProductLetterPrefix(product, products, productTypesConfig);
+
+      const relativeProduct = {
+        ...product,
+        x: product.relativeX || 0,
+        y: product.relativeY || 0,
+        rotation: product.rotation || 0,
+      };
+
+      // Named event handlers
+      const handleMouseDown = (e) => {
+        if (canInteract || isConnectMode) {
+          onProductClick(e, product.id);
+        }
+      };
+
+      const handleContextMenu = (e) => {
+        if (canInteract) {
+          onContextMenu(e, product.id);
+        }
+      };
+
+      return (
+        <ProductShape
+          key={product.id}
+          product={relativeProduct}
+          config={config}
+          isSelected={true}
+          draggable={false}
+          listening={!isDragging} // Disable listening during drag for performance
+          onMouseDown={handleMouseDown}
+          onContextMenu={handleContextMenu}
+          customStroke={customStroke}
+          theme={theme}
+          letterPrefix={letterPrefix}
+          groupRotation={selectionSnapshot.rotation || 0}
+        />
+      );
+    }, [products, canInteract, isConnectMode, isDragging, onProductClick, onContextMenu, theme, selectionSnapshot.rotation]);
+
+    // Named render function for selected text boxes in group
+    const renderSelectedTextBox = useCallback((textBox) => {
+      // Parse font style
+      const isBold = textBox.fontStyle?.includes("bold") || false;
+      const isItalic = textBox.fontStyle?.includes("italic") || false;
+      const fontStyle = isItalic ? "italic" : "normal";
+      const fontWeight = isBold ? "bold" : "normal";
+
+      // Calculate rendered font size based on scaleFactor
+      const baseFontSize = textBox.fontSize || 24;
+      const scaleFactor = textBox.scaleFactor || 100;
+      const renderedFontSize = baseFontSize * (scaleFactor / 100);
+
+      // Calculate center offset for rotation
+      // Text width is known, height is approximately fontSize * 1.2 for single line
+      const textWidth = textBox.width || 100;
+      const textHeight = renderedFontSize * 1.2;
+
+      // Named event handlers
+      const handleClick = (e) => {
+        e.cancelBubble = true;
+        // Text is already selected, clicking does nothing (prevents new text creation in text mode)
+      };
+
+      const handleTap = (e) => {
+        e.cancelBubble = true;
+      };
+
+      const handleContextMenu = (e) => {
+        e.evt.preventDefault();
+        e.cancelBubble = true;
+        if (onTextContextMenu) {
+          // Find the original text ID and call context menu
+          const originalTextId = textBox.id;
+          onTextContextMenu(e, originalTextId);
+        }
+      };
+
+      return (
+        <Group
+          key={textBox.id}
+          x={textBox.relativeX || 0}
+          y={textBox.relativeY || 0}
+          rotation={textBox.rotation || 0}
+          scaleX={textBox.scaleX || 1}
+          scaleY={textBox.scaleY || 1}
+          draggable={false}
+          listening={true}
+          onClick={handleClick}
+          onTap={handleTap}
+          onContextMenu={handleContextMenu}
+        >
+          <Text
+            x={-textWidth / 2}
+            y={-textHeight / 2}
+            text={textBox.text}
+            fontSize={renderedFontSize}
+            fontFamily={textBox.fontFamily || "Arial"}
+            fontStyle={fontStyle}
+            fontVariant={fontWeight}
+            textDecoration={textBox.textDecoration || ""}
+            fill={textBox.color || "#000000"}
+            width={textBox.max}
+            wrap="none"
+            draggable={false}
+            listening={true}
+          />
+        </Group>
+      );
+    }, [onTextContextMenu]);
+    
     return (
       <>
         {/* Unselected products - individually draggable */}
         {renderUnselected && products
           .filter((p) => !productOnlyIds.includes(p.id))
-          .map((product) => {
-            const productType = product.product_type?.toLowerCase() || "default";
-            const config = productTypesConfig[productType] || productTypesConfig.default;
-            const customStroke = getProductStrokeColor(product, products, config.stroke);
-            const letterPrefix = getProductLetterPrefix(product, products, productTypesConfig);
-
-            return (
-              <ProductShape
-                key={product.id}
-                product={product}
-                config={config}
-                isSelected={false}
-                draggable={selectedTool === "select" && canInteract}
-                onDragStart={(e) =>
-                  selectedTool === "select" && canInteract && onProductDragStart(e, product.id)
-                }
-                onMouseDown={(e) => {
-                  // Allow click in connect mode or select mode
-                  if (selectedTool === "connect" || selectedTool === "select") {
-                    onProductClick(e, product.id);
-                  }
-                }}
-                onDragEnd={(e) =>
-                  selectedTool === "select" && canInteract && onProductDragEnd(e, product.id)
-                }
-                onContextMenu={(e) =>
-                  selectedTool === "select" && canInteract && onContextMenu(e, product.id)
-                }
-                customStroke={customStroke}
-                theme={theme}
-                letterPrefix={letterPrefix}
-              />
-            );
-          })}
+          .map(renderUnselectedProduct)}
 
         {/* Selected products and text boxes in a draggable group */}
         {renderSelection && hasSelection && (
@@ -203,104 +337,11 @@ export const ProductsLayer = memo(
           >
             {/* Render selected products */}
             {/* Always use snapshot to avoid inconsistencies */}
-            {selectionSnapshot.products?.map((product) => {
-              const productType = product.product_type?.toLowerCase() || "default";
-              const config = productTypesConfig[productType] || productTypesConfig.default;
-              const customStroke = getProductStrokeColor(product, products, config.stroke);
-              const letterPrefix = getProductLetterPrefix(product, products, productTypesConfig);
-
-              const relativeProduct = {
-                ...product,
-                x: product.relativeX || 0,
-                y: product.relativeY || 0,
-                rotation: product.rotation || 0,
-              };
-
-              return (
-                <ProductShape
-                  key={product.id}
-                  product={relativeProduct}
-                  config={config}
-                  isSelected={true}
-                  draggable={false}
-                  listening={!isDragging} // Disable listening during drag for performance
-                  onMouseDown={(e) =>
-                    (canInteract || isConnectMode) && onProductClick(e, product.id)
-                  }
-                  onContextMenu={(e) => canInteract && onContextMenu(e, product.id)}
-                  customStroke={customStroke}
-                  theme={theme}
-                  letterPrefix={letterPrefix}
-                  groupRotation={selectionSnapshot.rotation || 0}
-                />
-              );
-            })}
+            {selectionSnapshot.products?.map(renderSelectedProduct)}
             
             {/* Render selected text boxes */}
             {/* Always use snapshot to avoid inconsistencies */}
-            {selectionSnapshot.textBoxes?.map((textBox) => {
-              // Parse font style
-              const isBold = textBox.fontStyle?.includes("bold") || false;
-              const isItalic = textBox.fontStyle?.includes("italic") || false;
-              const fontStyle = isItalic ? "italic" : "normal";
-              const fontWeight = isBold ? "bold" : "normal";
-
-              // Calculate rendered font size based on scaleFactor
-              const baseFontSize = textBox.fontSize || 24;
-              const scaleFactor = textBox.scaleFactor || 100;
-              const renderedFontSize = baseFontSize * (scaleFactor / 100);
-
-              // Calculate center offset for rotation
-              // Text width is known, height is approximately fontSize * 1.2 for single line
-              const textWidth = textBox.width || 100;
-              const textHeight = renderedFontSize * 1.2;
-
-              return (
-                <Group
-                  key={textBox.id}
-                  x={textBox.relativeX || 0}
-                  y={textBox.relativeY || 0}
-                  rotation={textBox.rotation || 0}
-                  scaleX={textBox.scaleX || 1}
-                  scaleY={textBox.scaleY || 1}
-                  draggable={false}
-                  listening={true}
-                  onClick={(e) => {
-                    e.cancelBubble = true;
-                    // Text is already selected, clicking does nothing (prevents new text creation in text mode)
-                  }}
-                  onTap={(e) => {
-                    e.cancelBubble = true;
-                  }}
-                  // Don't cancel mouseDown - let it propagate to parent Group for dragging
-                  onContextMenu={(e) => {
-                    e.evt.preventDefault();
-                    e.cancelBubble = true;
-                    if (onTextContextMenu) {
-                      // Find the original text ID and call context menu
-                      const originalTextId = textBox.id;
-                      onTextContextMenu(e, originalTextId);
-                    }
-                  }}
-                >
-                  <Text
-                    x={-textWidth / 2}
-                    y={-textHeight / 2}
-                    text={textBox.text}
-                    fontSize={renderedFontSize}
-                    fontFamily={textBox.fontFamily || "Arial"}
-                    fontStyle={fontStyle}
-                    fontVariant={fontWeight}
-                    textDecoration={textBox.textDecoration || ""}
-                    fill={textBox.color || "#000000"}
-                    width={textBox.max}
-                    wrap="none"
-                    draggable={false}
-                    listening={true}
-                  />
-                </Group>
-              );
-            })}
+            {selectionSnapshot.textBoxes?.map(renderSelectedTextBox)}
           </Group>
         )}
 
@@ -392,3 +433,5 @@ export const ProductsLayer = memo(
     );
   },
 );
+
+ProductsLayer.displayName = "ProductsLayer";

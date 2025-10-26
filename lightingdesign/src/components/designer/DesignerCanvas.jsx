@@ -229,3 +229,5 @@ export const DesignerCanvas = memo(
     );
   },
 );
+
+DesignerCanvas.displayName = "DesignerCanvas";

@@ -158,66 +158,71 @@ export const SubLayerControls = React.forwardRef(
           <Divider />
           <Box sx={{ p: 2, pt: 1 }}>
             <FormGroup>
-              {sublayers.map((sublayer) => (
-                <Box
-                  key={sublayer.id}
-                  sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                  onContextMenu={(e) => handleContextMenu(e, sublayer)}
-                >
-                  {editingSublayerId === sublayer.id ? (
-                    <TextField
-                      size="small"
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      onBlur={() => handleFinishRename(sublayer.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleFinishRename(sublayer.id);
-                        } else if (e.key === "Escape") {
-                          setEditingSublayerId(null);
-                          setEditingName("");
-                        }
-                      }}
-                      autoFocus
-                      fullWidth
-                      sx={{ my: 0.5 }}
-                    />
-                  ) : (
-                    <>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={sublayer.visible}
-                            onChange={() => onSublayerToggle(layerId, sublayer.id)}
-                            size="small"
-                          />
-                        }
-                        label={
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                            <Typography variant="body2">{sublayer.name}</Typography>
-                            {defaultSublayerId === sublayer.id && (
-                              <Tooltip title="Default sublayer for new objects">
-                                <StarIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />
-                              </Tooltip>
-                            )}
-                            {defaultCablingSublayerId === sublayer.id && (
-                              <Tooltip title="Default sublayer for cable connections">
-                                <CableIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />
-                              </Tooltip>
-                            )}
-                          </Box>
-                        }
-                        sx={{ flex: 1 }}
+              {sublayers.map((sublayer) => {
+                // Named render function for sublayer item
+                const renderSublayerItem = () => (
+                  <Box
+                    key={sublayer.id}
+                    sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                    onContextMenu={(e) => handleContextMenu(e, sublayer)}
+                  >
+                    {editingSublayerId === sublayer.id ? (
+                      <TextField
+                        size="small"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={() => handleFinishRename(sublayer.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleFinishRename(sublayer.id);
+                          } else if (e.key === "Escape") {
+                            setEditingSublayerId(null);
+                            setEditingName("");
+                          }
+                        }}
+                        autoFocus
+                        fullWidth
+                        sx={{ my: 0.5 }}
                       />
-                      <IconButton size="small" onClick={(e) => handleContextMenu(e, sublayer)}>
-                        <MoreVertIcon fontSize="small" />
-                      </IconButton>
-                    </>
-                  )}
-                </Box>
-              ))}
+                    ) : (
+                      <>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={sublayer.visible}
+                              onChange={() => onSublayerToggle(layerId, sublayer.id)}
+                              size="small"
+                            />
+                          }
+                          label={
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                              <Typography variant="body2">{sublayer.name}</Typography>
+                              {defaultSublayerId === sublayer.id && (
+                                <Tooltip title="Default sublayer for new objects">
+                                  <StarIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />
+                                </Tooltip>
+                              )}
+                              {defaultCablingSublayerId === sublayer.id && (
+                                <Tooltip title="Default sublayer for cable connections">
+                                  <CableIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />
+                                </Tooltip>
+                              )}
+                            </Box>
+                          }
+                          sx={{ flex: 1 }}
+                        />
+                        <IconButton size="small" onClick={(e) => handleContextMenu(e, sublayer)}>
+                          <MoreVertIcon fontSize="small" />
+                        </IconButton>
+                      </>
+                    )}
+                  </Box>
+                );
+
+                return renderSublayerItem();
+              })}
             </FormGroup>
           </Box>
         </Paper>

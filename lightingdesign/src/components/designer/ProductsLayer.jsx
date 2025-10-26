@@ -82,58 +82,37 @@ export const ProductsLayer = memo(
       };
     }, [transformerRef, onGroupTransformEnd]);
 
-    // NEW: Attach Transformer directly to selected product nodes (Konva standard pattern)
+    // Attach Transformer to the selection Group (Konva group transformation pattern)
     useEffect(() => {
       if (!transformerRef.current) {
         console.log('[ProductsLayer] No transformer ref yet');
         return;
       }
 
-      const productOnlyIds = selectedIds.filter(id => !id.startsWith('text-'));
+      const hasSelection = selectedIds.length > 0;
       
       console.log('[ProductsLayer] Attaching transformer effect:', {
         selectedIds,
-        productOnlyIds,
-        refsMapSize: productRefsMap.current.size,
-        refsMapKeys: Array.from(productRefsMap.current.keys()),
+        hasSelection,
+        hasGroupRef: selectionGroupRef.current != null,
       });
       
-      if (productOnlyIds.length > 0) {
-        // Get the refs for selected products
-        const selectedNodes = productOnlyIds
-          .map(id => {
-            const node = productRefsMap.current.get(id);
-            console.log(`[ProductsLayer] Getting ref for ${id}:`, node != null);
-            return node;
-          })
-          .filter(node => node != null);
-        
-        console.log('[ProductsLayer] Selected nodes:', {
-          selectedIds: productOnlyIds,
-          nodeCount: selectedNodes.length,
-          nodes: selectedNodes,
-        });
-        
-        if (selectedNodes.length > 0) {
-          // Attach transformer to the selected nodes directly
-          transformerRef.current.nodes(selectedNodes);
-          // Force layer redraw to make transformer visible
-          const layer = transformerRef.current.getLayer();
-          if (layer) {
-            layer.batchDraw();
-            // Also call draw() to ensure transformer appears immediately
-            transformerRef.current.forceUpdate();
-          }
-          console.log('[ProductsLayer] Transformer attached successfully');
-        } else {
-          transformerRef.current.nodes([]);
-          console.log('[ProductsLayer] No nodes found, cleared transformer');
+      if (hasSelection && selectionGroupRef.current) {
+        // Attach transformer to the selection Group
+        transformerRef.current.nodes([selectionGroupRef.current]);
+        // Force layer redraw to make transformer visible
+        const layer = transformerRef.current.getLayer();
+        if (layer) {
+          layer.batchDraw();
+          // Also call draw() to ensure transformer appears immediately
+          transformerRef.current.forceUpdate();
         }
+        console.log('[ProductsLayer] Transformer attached to Group successfully');
       } else {
         transformerRef.current.nodes([]);
-        console.log('[ProductsLayer] No product IDs selected, cleared transformer');
+        console.log('[ProductsLayer] No selection or no group ref, cleared transformer');
       }
-    }, [selectedIds, transformerRef, products]); // Added products dependency to re-attach when products change
+    }, [selectedIds, transformerRef, selectionGroupRef, groupKey]); // React to groupKey changes too
 
     const isPlacementMode = selectedTool === "placement" || placementMode;
     const isPanMode = selectedTool === "pan";

@@ -1,195 +1,155 @@
-import { useState, useRef, useEffect } from 'react';
-import { Stage, Layer, Circle, Group, Transformer, Rect } from 'react-konva';
-import Konva from 'konva';
-
-const App = () => {
-  const [shapes, setShapes] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [selectionRect, setSelectionRect] = useState({
-    visible: false,
-    x1: 0,
-    y1: 0,
-    x2: 0,
-    y2: 0,
-  });
-  const [groupKey, setGroupKey] = useState(0);
-
-  const groupRef = useRef();
-  const trRef = useRef();
-  const selectionRectRef = useRef();
-
-  // Generate 10k shapes once
-  useEffect(() => {
-    const items = [];
-    for (let i = 0; i < 10000; i++) {
-      items.push({
-        id: i,
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        radius: 10,
-        fill: Konva.Util.getRandomColor(),
-      });
-    }
-    setShapes(items);
-  }, []);
-
-  // Attach/Detach transformer & cache
-  useEffect(() => {
-    if (selectedIds.length && groupRef.current) {
-      trRef.current.nodes([groupRef.current]);
-      groupRef.current.cache();
-    } else {
-      trRef.current.nodes([]);
-      if (groupRef.current) groupRef.current.clearCache();
-    }
-  }, [selectedIds]);
-
-  // Utility to apply group transform to shapes and commit into React state
-  const applyGroupTransform = () => {
-    if (!selectedIds.length || !groupRef.current) return;
-
-    const transform = groupRef.current.getAbsoluteTransform();
-    const { scaleX } = transform.decompose();
-
-    setShapes((prev) =>
-      prev.map((shape) => {
-        if (!selectedIds.includes(shape.id)) return shape;
-        const pos = transform.point({ x: shape.x, y: shape.y });
-        return {
-          ...shape,
-          x: pos.x,
-          y: pos.y,
-          radius: shape.radius * scaleX,
-        };
-      })
-    );
-  };
-
-  const pointerPos = (e) => e.target.getStage().getPointerPosition();
-
-  const handleMouseDown = (e) => {
-    // ignore click on transformer or group
-    if (e.target.getParent() === trRef.current || e.target.parent === groupRef.current) {
-      return;
-    }
-
-    // finalise previous selection (if any)
-    applyGroupTransform();
-    if (selectedIds.length) {
-      setSelectedIds([]);
-      setGroupKey((k) => k + 1); // reset group for fresh transform
-    }
-
-    const p = pointerPos(e);
-    setSelectionRect({ visible: true, x1: p.x, y1: p.y, x2: p.x, y2: p.y });
-  };
-
-  const handleMouseMove = (e) => {
-    if (!selectionRect.visible) return;
-    const p = pointerPos(e);
-    setSelectionRect((prev) => ({ ...prev, x2: p.x, y2: p.y }));
-  };
-
-  const handleMouseUp = (e) => {
-    if (!selectionRect.visible) return;
-
-    setTimeout(() => setSelectionRect((prev) => ({ ...prev, visible: false })), 0);
-
-    const stage = e.target.getStage();
-    const nodes = stage.find('.shape');
-
-    const box = {
-      x: Math.min(selectionRect.x1, selectionRect.x2),
-      y: Math.min(selectionRect.y1, selectionRect.y2),
-      width: Math.abs(selectionRect.x2 - selectionRect.x1),
-      height: Math.abs(selectionRect.y2 - selectionRect.y1),
-    };
-
-    const ids = [];
-    nodes.forEach((node) => {
-      if (Konva.Util.haveIntersection(box, node.getClientRect())) {
-        ids.push(Number(node.id()));
-      }
-    });
-
-    setSelectedIds(ids);
-  };
-
-  const handleStageClick = (e) => {
-    // ignore clicks that are part of selection rectangle drawing
-    if (selectionRect.visible) return;
-
-    if (e.target === e.target.getStage()) {
-      // clicked on empty area: apply transform and clear selection
-      applyGroupTransform();
-      if (selectedIds.length) {
-        setSelectedIds([]);
-        setGroupKey((k) => k + 1);
-      }
-    }
-  };
-
-  const selectionRectProps = {
-    fill: 'rgba(0,0,255,0.5)',
-    visible: selectionRect.visible,
-    x: Math.min(selectionRect.x1, selectionRect.x2),
-    y: Math.min(selectionRect.y1, selectionRect.y2),
-    width: Math.abs(selectionRect.x2 - selectionRect.x1),
-    height: Math.abs(selectionRect.y2 - selectionRect.y1),
-    ref: selectionRectRef,
-  };
-
-  return (
-    <Stage
-      width={window.innerWidth}
-      height={window.innerHeight}
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onTouchMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onTouchEnd={handleMouseUp}
-      onClick={handleStageClick}
-      onTap={handleStageClick}
-    >
-      <Layer>
-        {shapes
-          .filter((s) => !selectedIds.includes(s.id))
-          .map((shape) => (
-            <Circle
-              key={shape.id}
-              id={String(shape.id)}
-              x={shape.x}
-              y={shape.y}
-              radius={shape.radius}
-              fill={shape.fill}
-              name="shape"
-            />
-          ))}
-      </Layer>
-      <Layer>
-        <Group key={groupKey} ref={groupRef} draggable>
-          {shapes
-            .filter((s) => selectedIds.includes(s.id))
-            .map((shape) => (
-              <Circle
-                key={shape.id}
-                id={String(shape.id)}
-                x={shape.x}
-                y={shape.y}
-                radius={shape.radius}
-                fill={shape.fill}
-                stroke="blue"
-                strokeWidth={2}
-                name="shape"
-              />
-            ))}
-        </Group>
-        <Transformer ref={trRef} />
-        <Rect {...selectionRectProps} />
-      </Layer>
-    </Stage>
-  );
-};
-
-export default App;
+[ProductShapes.fan] 
+Object { width: 335.3335552445092, radius: 167.6667776222546 }
+productShapes.js:117:13
+[ProductsLayer] Transformer render check: 
+Object { selectedTool: "select", isPlacementMode: null, hasSelection: true, productOnlyIds: (1) […], textIds: [], shouldRender: true }
+ProductsLayer.jsx:339:19
+[ProductShape:render] 
+Object { id: "product-1761438815693-0.11847411287706344", x: -98.15981669339892, y: -881.1935964148128, rotation: 0, scaleX: 1, scaleY: 1, renderedWidth: 335.3335552445092, renderedHeight: 335.3335552445092, rectBounds: {…}, draggable: true, … }
+ProductShape.jsx:42:13
+[ProductShape:render] 
+Object { id: "product-1761438816097-0.6875552350282091", x: 899.6853788429756, y: 479.33878683696463, rotation: 0, scaleX: 0.298641767522735, scaleY: 0.298641767522735, renderedWidth: 335.3335552445092, renderedHeight: 335.3335552445092, rectBounds: {…}, draggable: false, … }
+ProductShape.jsx:42:13
+[ProductsLayer] Attaching transformer effect: 
+Object { selectedIds: (1) […], productOnlyIds: (1) […], refsMapSize: 1, refsMapKeys: (1) […] }
+ProductsLayer.jsx:94:15
+[ProductsLayer] Getting ref for product-1761438816097-0.6875552350282091: false ProductsLayer.jsx:106:21
+[ProductsLayer] Selected nodes: 
+Object { selectedIds: (1) […], nodeCount: 0, nodes: [] }
+ProductsLayer.jsx:111:17
+[ProductsLayer] No nodes found, cleared transformer ProductsLayer.jsx:130:19
+[ProductShapes.fan] 
+Object { width: 335.3335552445092, radius: 167.6667776222546 }
+productShapes.js:117:13
+[ProductShapes.fan] 
+Object { width: 335.3335552445092, radius: 167.6667776222546 }
+productShapes.js:117:13
+[ProductShapes.fan] 
+Object { width: 335.3335552445092, radius: 167.6667776222546 }
+productShapes.js:117:13
+[ProductShapes.fan] 
+Object { width: 335.3335552445092, radius: 167.6667776222546 }
+productShapes.js:117:13
+[ProductsLayer] Transformer render check: 
+Object { selectedTool: "select", isPlacementMode: null, hasSelection: true, productOnlyIds: (1) […], textIds: [], shouldRender: true }
+​
+hasSelection: true
+​
+isPlacementMode: null
+​
+productOnlyIds: Array [ "product-1761438816097-0.6875552350282091" ]
+​
+selectedTool: "select"
+​
+shouldRender: true
+​
+textIds: Array []
+​
+<prototype>: Object { … }
+ProductsLayer.jsx:339:19
+[ProductShape:render] 
+Object { id: "product-1761438815693-0.11847411287706344", x: -98.15981669339892, y: -881.1935964148128, rotation: 0, scaleX: 1, scaleY: 1, renderedWidth: 335.3335552445092, renderedHeight: 335.3335552445092, rectBounds: {…}, draggable: true, … }
+​
+customStroke: "#1976d2"
+​
+draggable: true
+​
+fill: "#B2EBF2"
+​
+id: "product-1761438815693-0.11847411287706344"
+​
+listening: undefined
+​
+opacity: 1
+​
+rectBounds: Object { x: -167.6667776222546, y: -167.6667776222546, width: 335.3335552445092, … }
+​​
+height: 335.3335552445092
+​​
+width: 335.3335552445092
+​​
+x: -167.6667776222546
+​​
+y: -167.6667776222546
+​​
+<prototype>: Object { … }
+​
+renderedHeight: 335.3335552445092
+​
+renderedWidth: 335.3335552445092
+​
+rotation: 0
+​
+scaleX: 1
+​
+scaleY: 1
+​
+x: -98.15981669339892
+​
+y: -881.1935964148128
+​
+<prototype>: Object { … }
+ProductShape.jsx:42:13
+[ProductShape:render] 
+Object { id: "product-1761438816097-0.6875552350282091", x: 899.6853788429756, y: 479.33878683696463, rotation: 0, scaleX: 0.298641767522735, scaleY: 0.298641767522735, renderedWidth: 335.3335552445092, renderedHeight: 335.3335552445092, rectBounds: {…}, draggable: false, … }
+​
+customStroke: "#1976d2"
+​
+draggable: false
+​
+fill: "#B2EBF2"
+​
+id: "product-1761438816097-0.6875552350282091"
+​
+listening: true
+​
+opacity: 1
+​
+rectBounds: Object { x: -167.6667776222546, y: -167.6667776222546, width: 335.3335552445092, … }
+​​
+height: 335.3335552445092
+​​
+width: 335.3335552445092
+​​
+x: -167.6667776222546
+​​
+y: -167.6667776222546
+​​
+<prototype>: Object { … }
+​
+renderedHeight: 335.3335552445092
+​
+renderedWidth: 335.3335552445092
+​
+rotation: 0
+​
+scaleX: 0.298641767522735
+​
+scaleY: 0.298641767522735
+​
+x: 899.6853788429756
+​
+y: 479.33878683696463
+​
+<prototype>: Object { … }
+ProductShape.jsx:42:13
+[ProductsLayer] Attaching transformer effect: 
+Object { selectedIds: (1) […], productOnlyIds: (1) […], refsMapSize: 1, refsMapKeys: (1) […] }
+​
+productOnlyIds: Array [ "product-1761438816097-0.6875552350282091" ]
+​
+refsMapKeys: Array [ "product-1761438815693-0.11847411287706344" ]
+​
+refsMapSize: 1
+​
+selectedIds: Array [ "product-1761438816097-0.6875552350282091" ]
+​
+<prototype>: Object { … }
+ProductsLayer.jsx:94:15
+[ProductsLayer] Getting ref for product-1761438816097-0.6875552350282091: false ProductsLayer.jsx:106:21
+[ProductsLayer] Selected nodes: 
+Object { selectedIds: (1) […], nodeCount: 0, nodes: [] }
+ProductsLayer.jsx:111:17
+[ProductsLayer] No nodes found, cleared transformer ProductsLayer.jsx:130:19
+[ProductShapes.fan] 
+Object { width: 335.3335552445092, radius: 167.6667776222546 }

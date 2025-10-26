@@ -1,4 +1,4 @@
-import { Text, Transformer, Group } from "react-konva";
+import { Text, Transformer, Group, Rect } from "react-konva";
 import { useEffect, useRef, memo } from "react";
 
 export const TextBox = memo(
@@ -14,7 +14,8 @@ export const TextBox = memo(
     onDoubleClick,
     onContextMenu,
   }) => {
-    const groupRef = useRef();
+  const groupRef = useRef();
+  const textRef = useRef();
     // Removed separate transformer - using unified transformer from ProductsLayer
 
     // Parse font style
@@ -34,9 +35,24 @@ export const TextBox = memo(
     const renderedFontSize = baseFontSize * (scaleFactor / 100);
 
     // Calculate center offset for rotation
-    // Text width is known, height is approximately fontSize * 1.2 for single line
+    // Text width is measured dynamically, height is approximately fontSize * 1.2 for single line
     const textWidth = textBox.width || 100;
     const textHeight = renderedFontSize * 1.2;
+
+    // Dynamically measure text width and update textBox.width
+    useEffect(() => {
+      if (textRef.current) {
+        const measuredWidth = textRef.current.width();
+        if (measuredWidth && Math.abs(measuredWidth - (textBox.width || 0)) > 1) {
+          onChange({ ...textBox, width: measuredWidth });
+          console.log("changing text box")
+        }
+      }
+      // Only run when text, font, or font size changes
+    }, [textBox.text, renderedFontSize, textBox.fontFamily, textBox.fontStyle, textBox.fontWeight]);
+
+    // Rectangle padding
+    const rectPadding = 8;
 
     return (
       <>
@@ -98,7 +114,21 @@ export const TextBox = memo(
           }}
           onContextMenu={onContextMenu}
         >
+          {/* Render rectangle border if enabled */}
+          {textBox.showBorder && (
+            <Rect
+              x={-textWidth / 2 - rectPadding}
+              y={-textHeight / 2 - rectPadding}
+              width={textWidth}
+              height={textHeight}
+              stroke={textBox.borderColor || "#000000"}
+              strokeWidth={8}
+              fill="transparent"
+              listening={false}
+            />
+          )}
           <Text
+            ref={textRef}
             x={-textWidth / 2}
             y={-textHeight / 2}
             text={textBox.text}
@@ -108,7 +138,8 @@ export const TextBox = memo(
             fontVariant={fontWeight}
             textDecoration={textBox.textDecoration || ""}
             fill={textBox.color || "#000000"}
-            width={textBox.max}
+            width={textWidth}
+            height={textHeight}
             wrap="none"
             draggable={false}
             listening={true}

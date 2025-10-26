@@ -14,6 +14,7 @@ import {
   FormatItalic,
   FormatUnderlined,
   TextFields,
+  BorderColor,
 } from "@mui/icons-material";
 
 export const ContextMenus = ({
@@ -37,6 +38,7 @@ export const ContextMenus = ({
   onTextFormatItalic,
   onTextFormatUnderline,
   onTextFontSize,
+  onTextToggleBorder,
 }) => {
   const [sublayerMenuAnchor, setSublayerMenuAnchor] = useState(null);
   const [customObjectMenuAnchor, setCustomObjectMenuAnchor] = useState(null);
@@ -344,7 +346,7 @@ export const ContextMenus = ({
               </ListItemIcon>
               <ListItemText>Italic</ListItemText>
             </MenuItem>
-            <MenuItem 
+            <MenuItem
               onClick={handleMenuItemClick(onTextFormatUnderline)}
               onMouseEnter={handleMenuItemHover}
             >
@@ -363,7 +365,16 @@ export const ContextMenus = ({
               <ListItemText>Font Size</ListItemText>
               <ChevronRight fontSize="small" sx={{ ml: "auto" }} />
             </MenuItem>
-            <MenuItem 
+            <MenuItem
+              onClick={handleMenuItemClick(onTextToggleBorder)}
+              onMouseEnter={handleMenuItemHover}
+            >
+              <ListItemIcon>
+                <BorderColor fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Toggle Border</ListItemText>
+            </MenuItem>
+            <MenuItem
               onClick={handleMenuItemClick(onDelete)}
               onMouseEnter={handleMenuItemHover}
             >

@@ -2110,108 +2110,171 @@ const Page = () => {
                     onPan={handleCanvasPan}
                     gridOpacity={settings.gridOpacity}
                     backgroundOpacity={settings.backgroundOpacity}
-                  >
-                    <ConnectorsLayer
-                      connectors={filterConnectorsBySublayers(connectors, activeLayerId)}
-                      products={products}
-                      selectedConnectorId={selectedConnectorId}
-                      selectedTool={selectedTool}
-                      theme={theme}
-                      onConnectorSelect={(e, connectorId) => {
-                        e.cancelBubble = true;
-                        const transformed = applyGroupTransform();
-                        if (transformed) updateHistory(transformed);
-                        setSelectedConnectorId(connectorId);
-                        setSelectedIds([]);
-                        forceGroupUpdate();
-                      }}
-                      onConnectorChange={setConnectors}
-                      onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
-                    />
+                    objectsChildren={
+                      <>
+                        <ConnectorsLayer
+                          connectors={filterConnectorsBySublayers(connectors, activeLayerId)}
+                          products={products}
+                          selectedConnectorId={selectedConnectorId}
+                          selectedTool={selectedTool}
+                          theme={theme}
+                          onConnectorSelect={(e, connectorId) => {
+                            e.cancelBubble = true;
+                            const transformed = applyGroupTransform();
+                            if (transformed) updateHistory(transformed);
+                            setSelectedConnectorId(connectorId);
+                            setSelectedIds([]);
+                            forceGroupUpdate();
+                          }}
+                          onConnectorChange={setConnectors}
+                          onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
+                        />
 
-                    {/* Text boxes layer */}
-                    <TextLayer
-                      textBoxes={textBoxes}
-                      selectedTextId={selectedTextId}
-                      selectedIds={selectedIds}
-                      onTextSelect={handleTextSelect}
-                      onTextChange={handleTextChange}
-                      onTextDoubleClick={handleTextDoubleClick}
-                      onTextContextMenu={handleTextContextMenu}
-                      draggable={selectedTool === "select" || selectedTool === "text"}
-                    />
+                        {/* Unselected products only */}
+                        <ProductsLayer
+                          products={filterProductsBySublayers(products, activeLayerId)}
+                          textBoxes={textBoxes}
+                          selectedIds={selectedIds}
+                          selectedTool={selectedTool}
+                          selectionSnapshot={selectionSnapshot}
+                          selectionGroupRef={selectionGroupRef}
+                          transformerRef={transformerRef}
+                          rotationSnaps={rotationSnaps}
+                          theme={theme}
+                          groupKey={groupKey}
+                          placementMode={placementMode}
+                          isDragging={isDragging}
+                          onProductClick={handleProductClick}
+                          onProductDragStart={handleProductDragStart}
+                          onProductDragEnd={handleProductDragEnd}
+                          onContextMenu={contextMenus.handleContextMenu}
+                          onTextContextMenu={handleTextContextMenu}
+                          onGroupTransformEnd={handleUnifiedGroupTransformEnd}
+                          renderUnselected={true}
+                          renderSelection={false}
+                          renderTransformer={false}
+                        />
 
-                    <ProductsLayer
-                      products={filterProductsBySublayers(products, activeLayerId)}
-                      textBoxes={textBoxes}
-                      selectedIds={selectedIds}
-                      selectedTool={selectedTool}
-                      selectionSnapshot={selectionSnapshot}
-                      selectionGroupRef={selectionGroupRef}
-                      transformerRef={transformerRef}
-                      rotationSnaps={rotationSnaps}
-                      theme={theme}
-                      groupKey={groupKey}
-                      placementMode={placementMode}
-                      isDragging={isDragging}
-                      onProductClick={handleProductClick}
-                      onProductDragStart={handleProductDragStart}
-                      onProductDragEnd={handleProductDragEnd}
-                      onContextMenu={contextMenus.handleContextMenu}
-                      onTextContextMenu={handleTextContextMenu}
-                      onGroupTransformEnd={handleUnifiedGroupTransformEnd}
-                    />
+                        {/* Ghost product preview in placement mode */}
+                        {placementMode && (
+                          <ProductShape
+                            product={{
+                              ...createProductFromTemplate(
+                                placementMode.template,
+                                cursorPosition.x,
+                                cursorPosition.y,
+                              ),
+                              x: cursorPosition.x,
+                              y: cursorPosition.y,
+                            }}
+                            config={(() => {
+                              const productType =
+                                placementMode.template.product_type_unigram?.toLowerCase() || "default";
+                              return productTypesConfig[productType] || productTypesConfig.default;
+                            })()}
+                            isSelected={false}
+                            draggable={false}
+                            customStroke="#2196f3"
+                            theme={theme}
+                            opacity={0.6}
+                            listening={false}
+                            onMouseDown={() => {}}
+                            onContextMenu={() => {}}
+                          />
+                        )}
 
-                    {/* Ghost product preview in placement mode */}
-                    {placementMode && (
-                      <ProductShape
-                        product={{
-                          ...createProductFromTemplate(
-                            placementMode.template,
-                            cursorPosition.x,
-                            cursorPosition.y,
-                          ),
-                          x: cursorPosition.x,
-                          y: cursorPosition.y,
-                        }}
-                        config={(() => {
-                          const productType =
-                            placementMode.template.product_type_unigram?.toLowerCase() || "default";
-                          return productTypesConfig[productType] || productTypesConfig.default;
-                        })()}
-                        isSelected={false}
-                        draggable={false}
-                        customStroke="#2196f3"
-                        theme={theme}
-                        opacity={0.6}
-                        listening={false}
-                        onMouseDown={() => {}}
-                        onContextMenu={() => {}}
-                      />
-                    )}
+                        <MeasurementLayer
+                          measureMode={measureMode}
+                          measurePoints={measurePoints}
+                          cursorPosition={cursorPosition}
+                          theme={theme}
+                          stagePosition={stagePosition}
+                          stageScale={stageScale}
+                          onMeasurePointAdd={(point) => {
+                            setMeasurePoints((points) => {
+                              if (points.length >= 2) return points;
+                              const newPoints = [...points, point];
+                              if (newPoints.length === 2) {
+                                setMeasureDialogOpen(true);
+                              }
+                              return newPoints;
+                            });
+                          }}
+                        />
+                      </>
+                    }
+                    textAndSelectionChildren={
+                      <>
+                        {/* Text boxes layer */}
+                        <TextLayer
+                          textBoxes={textBoxes}
+                          selectedTextId={selectedTextId}
+                          selectedIds={selectedIds}
+                          onTextSelect={handleTextSelect}
+                          onTextChange={handleTextChange}
+                          onTextDoubleClick={handleTextDoubleClick}
+                          onTextContextMenu={handleTextContextMenu}
+                          draggable={selectedTool === "select" || selectedTool === "text"}
+                        />
 
-                    <MeasurementLayer
-                      measureMode={measureMode}
-                      measurePoints={measurePoints}
-                      cursorPosition={cursorPosition}
-                      theme={theme}
-                      stagePosition={stagePosition}
-                      stageScale={stageScale}
-                      onMeasurePointAdd={(point) => {
-                        setMeasurePoints((points) => {
-                          if (points.length >= 2) return points;
-                          const newPoints = [...points, point];
-                          if (newPoints.length === 2) {
-                            setMeasureDialogOpen(true);
-                          }
-                          return newPoints;
-                        });
-                      }}
-                    />
+                        {/* Selection group only (selected products and text) */}
+                        <ProductsLayer
+                          products={filterProductsBySublayers(products, activeLayerId)}
+                          textBoxes={textBoxes}
+                          selectedIds={selectedIds}
+                          selectedTool={selectedTool}
+                          selectionSnapshot={selectionSnapshot}
+                          selectionGroupRef={selectionGroupRef}
+                          transformerRef={transformerRef}
+                          rotationSnaps={rotationSnaps}
+                          theme={theme}
+                          groupKey={groupKey}
+                          placementMode={placementMode}
+                          isDragging={isDragging}
+                          onProductClick={handleProductClick}
+                          onProductDragStart={handleProductDragStart}
+                          onProductDragEnd={handleProductDragEnd}
+                          onContextMenu={contextMenus.handleContextMenu}
+                          onTextContextMenu={handleTextContextMenu}
+                          onGroupTransformEnd={handleUnifiedGroupTransformEnd}
+                          renderUnselected={false}
+                          renderSelection={true}
+                          renderTransformer={false}
+                        />
+                      </>
+                    }
+                    transformerChildren={
+                      <>
+                        {/* Transformer only (always on top) */}
+                        <ProductsLayer
+                          products={filterProductsBySublayers(products, activeLayerId)}
+                          textBoxes={textBoxes}
+                          selectedIds={selectedIds}
+                          selectedTool={selectedTool}
+                          selectionSnapshot={selectionSnapshot}
+                          selectionGroupRef={selectionGroupRef}
+                          transformerRef={transformerRef}
+                          rotationSnaps={rotationSnaps}
+                          theme={theme}
+                          groupKey={groupKey}
+                          placementMode={placementMode}
+                          isDragging={isDragging}
+                          onProductClick={handleProductClick}
+                          onProductDragStart={handleProductDragStart}
+                          onProductDragEnd={handleProductDragEnd}
+                          onContextMenu={contextMenus.handleContextMenu}
+                          onTextContextMenu={handleTextContextMenu}
+                          onGroupTransformEnd={handleUnifiedGroupTransformEnd}
+                          renderUnselected={false}
+                          renderSelection={false}
+                          renderTransformer={true}
+                        />
 
-                    {/* Selection rectangle for drag-to-select */}
-                    <SelectionRectangle selectionRect={selectionRect} />
-                  </DesignerCanvas>
+                        {/* Selection rectangle for drag-to-select */}
+                        <SelectionRectangle selectionRect={selectionRect} />
+                      </>
+                    }
+                  />
 
                   {/* Text entry dialog */}
                   <TextEntryDialog

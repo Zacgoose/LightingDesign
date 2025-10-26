@@ -24,7 +24,10 @@ export const DesignerCanvas = memo(
       draggable = true,
       backgroundImage = null,
       backgroundImageNaturalSize = null,
-      children,
+      children, // Kept for backward compatibility, but prefer layer-specific props
+      objectsChildren, // Layer 1: Connectors and unselected products
+      textAndSelectionChildren, // Layer 2: Text boxes and selection group
+      transformerChildren, // Layer 3: Transformer (always on top)
       onMouseMove,
       onPan,
       gridOpacity,
@@ -174,8 +177,19 @@ export const DesignerCanvas = memo(
             </Layer>
           )}
 
-          {/* Products and Connectors Layer */}
-          <Layer>{children}</Layer>
+          {/* Layer 1: Objects (Connectors and unselected products) */}
+          {objectsChildren && <Layer>{objectsChildren}</Layer>}
+
+          {/* Layer 2: Text and Selection (Text boxes and selection group) */}
+          {textAndSelectionChildren && <Layer>{textAndSelectionChildren}</Layer>}
+
+          {/* Layer 3: Transformer (Always on top) */}
+          {transformerChildren && <Layer>{transformerChildren}</Layer>}
+
+          {/* Fallback: Legacy single layer support for backward compatibility */}
+          {!objectsChildren && !textAndSelectionChildren && !transformerChildren && children && (
+            <Layer>{children}</Layer>
+          )}
         </Stage>
       </Box>
     );
@@ -199,6 +213,9 @@ export const DesignerCanvas = memo(
       prevProps.backgroundImage === nextProps.backgroundImage &&
       prevProps.backgroundImageNaturalSize === nextProps.backgroundImageNaturalSize &&
       prevProps.children === nextProps.children &&
+      prevProps.objectsChildren === nextProps.objectsChildren &&
+      prevProps.textAndSelectionChildren === nextProps.textAndSelectionChildren &&
+      prevProps.transformerChildren === nextProps.transformerChildren &&
       prevProps.onWheel === nextProps.onWheel &&
       prevProps.onDragEnd === nextProps.onDragEnd &&
       prevProps.onMouseDown === nextProps.onMouseDown &&

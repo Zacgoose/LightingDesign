@@ -228,6 +228,7 @@ export const ProductsLayer = memo(
                   customStroke={customStroke}
                   theme={theme}
                   letterPrefix={letterPrefix}
+                  groupRotation={selectionSnapshot.rotation || 0}
                 />
               );
             })}

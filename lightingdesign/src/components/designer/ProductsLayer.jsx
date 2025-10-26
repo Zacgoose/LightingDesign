@@ -44,17 +44,32 @@ const getProductLetterPrefix = (product, products, productTypesConfig) => {
   const config = productTypesConfig[productType] || productTypesConfig.default;
   const letterPrefix = config.letterPrefix || "O";
 
-  const sku = product.sku;
-  if (!sku) return letterPrefix; // No SKU, just return letter without number
+  // Normalize SKU: trim whitespace and handle empty strings as null
+  const sku = product.sku?.trim();
+  if (!sku || sku === "") {
+    return letterPrefix; // No SKU, just return letter without number
+  }
 
   // Find all unique SKUs for this product type, sorted to ensure consistent ordering
   const sameTypeProducts = products.filter(
     (p) => (p.product_type?.toLowerCase() || "default") === productType
   );
-  const uniqueSkus = [...new Set(sameTypeProducts.map((p) => p.sku).filter(Boolean))].sort();
+
+  // Get unique SKUs, filtering out null/undefined/empty, then sort
+  const uniqueSkus = [...new Set(
+    sameTypeProducts
+      .map((p) => p.sku?.trim())
+      .filter((s) => s && s !== "")
+  )].sort();
 
   // Find the index of this product's SKU among unique SKUs of this type
   const skuIndex = uniqueSkus.indexOf(sku);
+
+  // If SKU not found (shouldn't happen), return just the letter
+  if (skuIndex === -1) {
+    console.warn(`SKU "${sku}" not found in uniqueSkus for ${productType}:`, uniqueSkus);
+    return letterPrefix;
+  }
 
   return `${letterPrefix}${skuIndex + 1}`;
 };

@@ -83,7 +83,8 @@ export const ProductShape = memo(
             fontSize={fontSize}
             fontFamily="Arial"
             fontStyle="bold"
-            fill="#000000"
+            fill="#FFFFFF"
+            stroke="#000000"
             strokeWidth={1}
             align="center"
             verticalAlign="middle"
@@ -92,6 +93,7 @@ export const ProductShape = memo(
             y={-renderedHeight / 2}
             width={renderedWidth}
             height={renderedHeight}
+            rotation={-(product.rotation || 0)}
           />
         )}
       </Group>

@@ -2129,6 +2129,18 @@ const Page = () => {
                       onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
                     />
 
+                    {/* Text boxes layer */}
+                    <TextLayer
+                      textBoxes={textBoxes}
+                      selectedTextId={selectedTextId}
+                      selectedIds={selectedIds}
+                      onTextSelect={handleTextSelect}
+                      onTextChange={handleTextChange}
+                      onTextDoubleClick={handleTextDoubleClick}
+                      onTextContextMenu={handleTextContextMenu}
+                      draggable={selectedTool === "select" || selectedTool === "text"}
+                    />
+
                     <ProductsLayer
                       products={filterProductsBySublayers(products, activeLayerId)}
                       textBoxes={textBoxes}
@@ -2195,18 +2207,6 @@ const Page = () => {
                           return newPoints;
                         });
                       }}
-                    />
-
-                    {/* Text boxes layer */}
-                    <TextLayer
-                      textBoxes={textBoxes}
-                      selectedTextId={selectedTextId}
-                      selectedIds={selectedIds}
-                      onTextSelect={handleTextSelect}
-                      onTextChange={handleTextChange}
-                      onTextDoubleClick={handleTextDoubleClick}
-                      onTextContextMenu={handleTextContextMenu}
-                      draggable={selectedTool === "select" || selectedTool === "text"}
                     />
 
                     {/* Selection rectangle for drag-to-select */}

@@ -19,12 +19,13 @@ export const useSelectionState = (products, textBoxes = []) => {
   const selectionGroupRef = useRef();
   
   // Snapshot captured when selection changes (not when products change!)
-  const snapshotRef = useRef({ products: [], textBoxes: [] });
+  // Using state so components re-render when snapshot changes
+  const [selectionSnapshot, setSelectionSnapshot] = useState({ products: [], textBoxes: [] });
 
-  // Capture snapshot when selection changes
+  // Capture snapshot when selection changes or group resets (NOT when products change!)
   useEffect(() => {
     if (selectedIds.length === 0) {
-      snapshotRef.current = { products: [], textBoxes: [] };
+      setSelectionSnapshot({ products: [], textBoxes: [] });
       return;
     }
 
@@ -33,11 +34,14 @@ export const useSelectionState = (products, textBoxes = []) => {
       .filter(id => id.startsWith('text-'))
       .map(id => id.substring(5));
 
-    snapshotRef.current = {
+    // Capture current products/textBoxes at this moment
+    // This won't re-run when products change, only when selection/groupKey changes
+    setSelectionSnapshot({
       products: products.filter(p => productIds.includes(p.id)).map(p => ({ ...p })),
       textBoxes: textBoxes.filter(t => textIds.includes(t.id)).map(t => ({ ...t })),
-    };
-  }, [selectedIds, groupKey]); // Only update on selection change or group reset
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIds, groupKey]); // Intentionally NOT including products/textBoxes
 
   // Attach transformer to group
   useEffect(() => {
@@ -67,7 +71,7 @@ export const useSelectionState = (products, textBoxes = []) => {
     selectedConnectorId,
     groupKey,
     isDragging,
-    selectionSnapshot: snapshotRef.current,
+    selectionSnapshot,
 
     // Refs
     transformerRef,

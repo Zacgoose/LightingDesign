@@ -1,7 +1,7 @@
 import { Group, Transformer, Text } from "react-konva";
 import { ProductShape } from "./ProductShape";
 import productTypesConfig from "/src/data/productTypes.json";
-import { useEffect, memo, useRef } from "react";
+import { useEffect, useLayoutEffect, memo, useRef } from "react";
 
 export const COLOR_PALETTE = [
   "#1976d2",
@@ -83,34 +83,24 @@ export const ProductsLayer = memo(
     }, [transformerRef, onGroupTransformEnd]);
 
     // Attach Transformer to the selection Group (Konva group transformation pattern)
-    useEffect(() => {
-      if (!transformerRef.current) {
-        console.log('[ProductsLayer] No transformer ref yet');
-        return;
-      }
+    // Use useLayoutEffect for synchronous DOM updates before paint
+    useLayoutEffect(() => {
+      if (!transformerRef.current) return;
 
       const hasSelection = selectedIds.length > 0;
-      
-      console.log('[ProductsLayer] Attaching transformer effect:', {
-        selectedIds,
-        hasSelection,
-        hasGroupRef: selectionGroupRef.current != null,
-      });
       
       if (hasSelection && selectionGroupRef.current) {
         // Attach transformer to the selection Group
         transformerRef.current.nodes([selectionGroupRef.current]);
-        // Force layer redraw to make transformer visible
+        // Force immediate transformer update and layer redraw
+        transformerRef.current.forceUpdate();
         const layer = transformerRef.current.getLayer();
         if (layer) {
-          layer.batchDraw();
-          // Also call draw() to ensure transformer appears immediately
-          transformerRef.current.forceUpdate();
+          // Use draw() instead of batchDraw() for immediate visibility
+          layer.draw();
         }
-        console.log('[ProductsLayer] Transformer attached to Group successfully');
       } else {
         transformerRef.current.nodes([]);
-        console.log('[ProductsLayer] No selection or no group ref, cleared transformer');
       }
     }, [selectedIds, transformerRef, selectionGroupRef, groupKey]); // React to groupKey changes too
 
@@ -313,18 +303,7 @@ export const ProductsLayer = memo(
         )}
 
         {/* Transformer for selected group - visible in both select and text modes */}
-        {(() => {
-          const shouldRender = (selectedTool === "select" || selectedTool === "text") && !isPlacementMode && hasSelection;
-          console.log('[ProductsLayer] Transformer render check:', {
-            selectedTool,
-            isPlacementMode,
-            hasSelection,
-            productOnlyIds,
-            textIds,
-            shouldRender
-          });
-          return shouldRender;
-        })() && (
+        {((selectedTool === "select" || selectedTool === "text") && !isPlacementMode && hasSelection) && (
           <Transformer
             ref={transformerRef}
             rotationSnaps={
@@ -333,15 +312,6 @@ export const ProductsLayer = memo(
                 : undefined
             }
             boundBoxFunc={(oldBox, newBox) => {
-              // Log transformer bounding box
-              console.log('[Transformer:boundBoxFunc]', {
-                oldBox,
-                newBox,
-                minWidth: 20,
-                minHeight: 15,
-                textIds,
-                productOnlyIds,
-              });
               // Prevent box from getting too small
               const minWidth = 20;
               const minHeight = 15;

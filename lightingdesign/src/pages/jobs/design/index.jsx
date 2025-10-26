@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import {
   Box,
   Container,
@@ -713,12 +713,15 @@ const Page = () => {
         selectionGroupRef.current,
         selectionSnapshot.products,
         products,
-        productIds
+        productIds,
+        rotationSnaps  // Pass rotationSnaps for proper snap tracking
       );
       if (transformedProducts !== products) {
         updateHistory(transformedProducts);
-        // Reset group after state update completes
-        setTimeout(() => setGroupKey((k) => k + 1), 0);
+        // Use requestAnimationFrame for smoother visual updates
+        requestAnimationFrame(() => {
+          setGroupKey((k) => k + 1);
+        });
       }
     }
 
@@ -728,12 +731,15 @@ const Page = () => {
         selectionGroupRef.current,
         selectionSnapshot.textBoxes,
         textBoxes,
-        textIds
+        textIds,
+        rotationSnaps  // Pass rotationSnaps for proper snap tracking
       );
       if (transformedTextBoxes !== textBoxes) {
         setTextBoxes(transformedTextBoxes);
-        // Reset group after state update completes
-        setTimeout(() => setGroupKey((k) => k + 1), 0);
+        // Use requestAnimationFrame for smoother visual updates
+        requestAnimationFrame(() => {
+          setGroupKey((k) => k + 1);
+        });
       }
     }
   }, [
@@ -742,6 +748,7 @@ const Page = () => {
     selectionSnapshot,
     products,
     textBoxes,
+    rotationSnaps,  // Add rotationSnaps to dependencies
     updateHistory,
     setTextBoxes,
     setGroupKey,

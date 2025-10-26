@@ -2,7 +2,31 @@
  * Transform Utilities
  * 
  * Simple transformation logic following Konva example pattern
+ * 
+ * CRITICAL: Use getTransform() instead of getAbsoluteTransform() to get LOCAL transform only.
+ * This excludes the Stage's scale/position transform which is essential for custom coordinate systems
+ * where the Stage itself has scaleX/scaleY and x/y positioning.
  */
+
+/**
+ * Normalize rotation to stay within snap intervals
+ * Ensures rotation values remain consistent with snap steps (e.g., 0, 15, 30, 45...)
+ * 
+ * @param {number} rotation - Raw rotation value
+ * @param {number} rotationSnaps - Number of rotation snap points (0 = no snapping)
+ * @returns {number} Normalized rotation value
+ */
+function normalizeRotation(rotation, rotationSnaps = 0) {
+  if (rotationSnaps <= 0) return rotation;
+  
+  const snapAngle = 360 / rotationSnaps;
+  // Normalize to 0-360 range
+  let normalized = rotation % 360;
+  if (normalized < 0) normalized += 360;
+  
+  // Round to nearest snap point
+  return Math.round(normalized / snapAngle) * snapAngle;
+}
 
 /**
  * Apply group transform to items
@@ -13,9 +37,10 @@
  * @param {Array} originalItems - Items from snapshot (original positions)
  * @param {Array} currentItems - Current item state
  * @param {Array} selectedIds - IDs of selected items
+ * @param {number} rotationSnaps - Number of rotation snap points
  * @returns {Array} Transformed items
  */
-export function applyGroupTransformToItems(group, originalItems, currentItems, selectedIds) {
+export function applyGroupTransformToItems(group, originalItems, currentItems, selectedIds, rotationSnaps = 0) {
   if (!group || !originalItems.length) return currentItems;
 
   // Check if group has been transformed
@@ -33,7 +58,7 @@ export function applyGroupTransformToItems(group, originalItems, currentItems, s
   }
 
   // Use getTransform() instead of getAbsoluteTransform() to get LOCAL transform only
-  // This excludes the Stage's scale/position transform
+  // This excludes the Stage's scale/position transform (critical for custom coordinate systems)
   const transform = group.getTransform();
   const groupScaleX = group.scaleX();
   const groupScaleY = group.scaleY();
@@ -48,11 +73,14 @@ export function applyGroupTransformToItems(group, originalItems, currentItems, s
     // Transform position using Konva's transform.point()
     const newPos = transform.point({ x: original.x, y: original.y });
 
+    // Calculate new rotation with snap normalization
+    const newRotation = normalizeRotation((original.rotation || 0) + groupRotation, rotationSnaps);
+
     return {
       ...item,
       x: newPos.x,
       y: newPos.y,
-      rotation: (original.rotation || 0) + groupRotation,
+      rotation: newRotation,
       scaleX: (original.scaleX || 1) * groupScaleX,
       scaleY: (original.scaleY || 1) * groupScaleY,
     };
@@ -67,9 +95,10 @@ export function applyGroupTransformToItems(group, originalItems, currentItems, s
  * @param {Array} originalTextBoxes - Text boxes from snapshot
  * @param {Array} currentTextBoxes - Current text box state
  * @param {Array} selectedTextIds - IDs of selected text boxes
+ * @param {number} rotationSnaps - Number of rotation snap points
  * @returns {Array} Transformed text boxes
  */
-export function applyGroupTransformToTextBoxes(group, originalTextBoxes, currentTextBoxes, selectedTextIds) {
+export function applyGroupTransformToTextBoxes(group, originalTextBoxes, currentTextBoxes, selectedTextIds, rotationSnaps = 0) {
   if (!group || !originalTextBoxes.length) return currentTextBoxes;
 
   const tolerance = 0.01;
@@ -86,6 +115,7 @@ export function applyGroupTransformToTextBoxes(group, originalTextBoxes, current
   }
 
   // Use getTransform() instead of getAbsoluteTransform() to get LOCAL transform only
+  // This excludes the Stage's scale/position transform (critical for custom coordinate systems)
   const transform = group.getTransform();
   const groupScaleX = group.scaleX();
   const groupScaleY = group.scaleY();
@@ -116,11 +146,14 @@ export function applyGroupTransformToTextBoxes(group, originalTextBoxes, current
       newWidth = Math.max(20, newWidth * groupScaleX);
     }
 
+    // Calculate new rotation with snap normalization
+    const newRotation = normalizeRotation((original.rotation || 0) + groupRotation, rotationSnaps);
+
     return {
       ...textBox,
       x: newPos.x,
       y: newPos.y,
-      rotation: (original.rotation || 0) + groupRotation,
+      rotation: newRotation,
       fontSize: newFontSize,
       width: newWidth,
       scaleX: 1,

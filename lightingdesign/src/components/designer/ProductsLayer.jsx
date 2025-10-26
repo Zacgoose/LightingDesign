@@ -58,6 +58,9 @@ export const ProductsLayer = memo(
     onGroupTransformEnd,
     textBoxes = [], // Add textBoxes support
     onTextContextMenu, // Add text context menu handler
+    renderUnselected = true, // Control rendering of unselected products
+    renderSelection = true, // Control rendering of selection group
+    renderTransformer = true, // Control rendering of transformer
   }) => {
 
     // Manually attach transformend event listener to Transformer
@@ -96,7 +99,7 @@ export const ProductsLayer = memo(
     return (
       <>
         {/* Unselected products - individually draggable */}
-        {products
+        {renderUnselected && products
           .filter((p) => !productOnlyIds.includes(p.id))
           .map((product) => {
             const productType = product.product_type?.toLowerCase() || "default";
@@ -132,7 +135,7 @@ export const ProductsLayer = memo(
           })}
 
         {/* Selected products and text boxes in a draggable group */}
-        {hasSelection && (
+        {renderSelection && hasSelection && (
           <Group
             key={groupKey}
             ref={selectionGroupRef}
@@ -261,7 +264,7 @@ export const ProductsLayer = memo(
         )}
 
         {/* Transformer for selected group - visible in both select and text modes */}
-        {(selectedTool === "select" || selectedTool === "text") && !isPlacementMode && hasSelection && (
+        {renderTransformer && (selectedTool === "select" || selectedTool === "text") && !isPlacementMode && hasSelection && (
           <Transformer
             ref={transformerRef}
             rotationSnaps={
@@ -336,6 +339,9 @@ export const ProductsLayer = memo(
       prevProps.isDragging === nextProps.isDragging &&
       prevProps.rotationSnaps === nextProps.rotationSnaps &&
       prevProps.theme === nextProps.theme &&
+      prevProps.renderUnselected === nextProps.renderUnselected &&
+      prevProps.renderSelection === nextProps.renderSelection &&
+      prevProps.renderTransformer === nextProps.renderTransformer &&
       prevProps.onProductClick === nextProps.onProductClick &&
       prevProps.onProductDragStart === nextProps.onProductDragStart &&
       prevProps.onProductDragEnd === nextProps.onProductDragEnd &&

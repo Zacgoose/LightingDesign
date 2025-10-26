@@ -18,12 +18,14 @@ export const useSelectionState = (products, textBoxes = []) => {
   // Refs
   const transformerRef = useRef();
   const selectionGroupRef = useRef();
+  const selectionSnapshotRef = useRef({ products: [], textBoxes: [] });
 
-  // Selection snapshot for group transformations
-  // Following Konva best practices - stores absolute positions of selected items
-  const selectionSnapshot = useMemo(() => {
+  // Update snapshot when selection changes OR after transform completes (groupKey changes)
+  // This ensures we don't update snapshot mid-transform when products state updates
+  useEffect(() => {
     if (selectedIds.length === 0) {
-      return { products: [], textBoxes: [] };
+      selectionSnapshotRef.current = { products: [], textBoxes: [] };
+      return;
     }
 
     // Split IDs into products and text boxes
@@ -36,11 +38,14 @@ export const useSelectionState = (products, textBoxes = []) => {
     const productSnapshot = products.filter((p) => productIds.includes(p.id)).map((p) => ({ ...p }));
     const textSnapshot = textBoxes.filter((t) => textIds.includes(t.id)).map((t) => ({ ...t }));
 
-    return {
+    selectionSnapshotRef.current = {
       products: productSnapshot,
       textBoxes: textSnapshot,
     };
-  }, [products, textBoxes, selectedIds]);
+  }, [selectedIds, groupKey]); // Update on selection change or after transform (groupKey increment)
+
+  // Expose snapshot as a stable object for rendering
+  const selectionSnapshot = selectionSnapshotRef.current;
 
   // Attach transformer to selection group (following Konva example pattern)
   useEffect(() => {

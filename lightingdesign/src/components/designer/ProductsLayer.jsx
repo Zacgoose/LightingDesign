@@ -249,8 +249,8 @@ export const ProductsLayer = memo(
                     fontVariant={fontWeight}
                     textDecoration={textBox.textDecoration || ""}
                     fill={textBox.color || "#000000"}
-                    width={textBox.width}
-                    wrap="word"
+                    width={textBox.max}
+                    wrap="none"
                     draggable={false}
                     listening={true}
                   />

@@ -150,12 +150,13 @@ export const ProductsLayer = memo(
     
     return (
       <>
-        {/* Render all products - selected ones will be handled by Transformer */}
-        {products.map((product) => {
+        {/* Render unselected products only - selected ones are in the Group below */}
+        {products
+          .filter((p) => !productOnlyIds.includes(p.id))
+          .map((product) => {
           const productType = product.product_type?.toLowerCase() || "default";
           const config = productTypesConfig[productType] || productTypesConfig.default;
           const customStroke = getProductStrokeColor(product, products, config.stroke);
-          const isSelected = productOnlyIds.includes(product.id);
 
           return (
             <ProductShape
@@ -169,8 +170,8 @@ export const ProductsLayer = memo(
               }}
               product={product}
               config={config}
-              isSelected={isSelected}
-              draggable={selectedTool === "select" && canInteract} // Both selected and unselected are draggable (Transformer needs draggable nodes)
+              isSelected={false}
+              draggable={selectedTool === "select" && canInteract}
               onDragStart={(e) =>
                 selectedTool === "select" && canInteract && onProductDragStart(e, product.id)
               }

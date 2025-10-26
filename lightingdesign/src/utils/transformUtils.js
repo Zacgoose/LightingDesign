@@ -6,7 +6,8 @@
 
 /**
  * Apply group transform to items
- * Following Konva example: uses getAbsoluteTransform() + transform.point()
+ * Following Konva example but using LOCAL transform (not absolute)
+ * to avoid including Stage's scale/position transform
  * 
  * @param {Object} group - Konva Group node
  * @param {Array} originalItems - Items from snapshot (original positions)
@@ -31,7 +32,9 @@ export function applyGroupTransformToItems(group, originalItems, currentItems, s
     return currentItems; // No transform to apply
   }
 
-  const transform = group.getAbsoluteTransform();
+  // Use getTransform() instead of getAbsoluteTransform() to get LOCAL transform only
+  // This excludes the Stage's scale/position transform
+  const transform = group.getTransform();
   const groupScaleX = group.scaleX();
   const groupScaleY = group.scaleY();
   const groupRotation = group.rotation();
@@ -58,6 +61,7 @@ export function applyGroupTransformToItems(group, originalItems, currentItems, s
 
 /**
  * Apply transform to text boxes with special handling for font size
+ * Uses LOCAL transform to avoid including Stage's scale/position
  * 
  * @param {Object} group - Konva Group node
  * @param {Array} originalTextBoxes - Text boxes from snapshot
@@ -81,7 +85,8 @@ export function applyGroupTransformToTextBoxes(group, originalTextBoxes, current
     return currentTextBoxes;
   }
 
-  const transform = group.getAbsoluteTransform();
+  // Use getTransform() instead of getAbsoluteTransform() to get LOCAL transform only
+  const transform = group.getTransform();
   const groupScaleX = group.scaleX();
   const groupScaleY = group.scaleY();
   const groupRotation = group.rotation();

@@ -150,6 +150,17 @@
     "strokeWidth": 3,
     "letterPrefix": "B"
   },
+  "switch": {
+    "shapeType": "rect",
+    "width": 30,
+    "height": 30,
+    "realWorldWidth": 0.3,
+    "realWorldHeight": 0.3,
+    "fill": "#BDBDBD",
+    "stroke": "#424242",
+    "strokeWidth": 2,
+    "letterPrefix": "SW"
+  },
   "default": {
     "shapeType": "rect",
     "width": 30,

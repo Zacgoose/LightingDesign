@@ -489,6 +489,9 @@ export const ContextMenus = ({
           <MenuItem onClick={() => handleCustomObjectSelect("strip")}>
             <ListItemText>Strip Light</ListItemText>
           </MenuItem>
+          <MenuItem onClick={() => handleCustomObjectSelect("switch")}>
+            <ListItemText>Switch</ListItemText>
+          </MenuItem>
           <MenuItem onClick={() => handleCustomObjectSelect("fan")}>
             <ListItemText>Fan</ListItemText>
           </MenuItem>

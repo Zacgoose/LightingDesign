@@ -88,8 +88,10 @@ export const ProductShape = memo(
             align="center"
             verticalAlign="middle"
             listening={false}
-            offsetX={0}
-            offsetY={fontSize / 2}
+            x={-renderedWidth / 2}
+            y={-renderedHeight / 2}
+            width={renderedWidth}
+            height={renderedHeight}
           />
         )}
       </Group>

@@ -38,21 +38,25 @@ const getProductStrokeColor = (product, products, defaultColor) => {
   return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
 };
 
-// Calculate letter prefix for a product based on its type and index
+// Calculate letter prefix for a product based on its type and SKU
 const getProductLetterPrefix = (product, products, productTypesConfig) => {
   const productType = product.product_type?.toLowerCase() || "default";
   const config = productTypesConfig[productType] || productTypesConfig.default;
   const letterPrefix = config.letterPrefix || "O";
 
-  // Find all products of the same type, sorted by ID to ensure consistent ordering
-  const sameTypeProducts = products
-    .filter((p) => (p.product_type?.toLowerCase() || "default") === productType)
-    .sort((a, b) => a.id.localeCompare(b.id));
+  const sku = product.sku;
+  if (!sku) return letterPrefix; // No SKU, just return letter without number
 
-  // Find the index of this product among products of the same type
-  const index = sameTypeProducts.findIndex((p) => p.id === product.id);
+  // Find all unique SKUs for this product type, sorted to ensure consistent ordering
+  const sameTypeProducts = products.filter(
+    (p) => (p.product_type?.toLowerCase() || "default") === productType
+  );
+  const uniqueSkus = [...new Set(sameTypeProducts.map((p) => p.sku).filter(Boolean))].sort();
 
-  return `${letterPrefix}${index + 1}`;
+  // Find the index of this product's SKU among unique SKUs of this type
+  const skuIndex = uniqueSkus.indexOf(sku);
+
+  return `${letterPrefix}${skuIndex + 1}`;
 };
 
 export const ProductsLayer = memo(

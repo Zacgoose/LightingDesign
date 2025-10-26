@@ -855,21 +855,25 @@ const Page = () => {
     return ctx;
   }
 
-  // Helper function to calculate letter prefix for a product
+  // Helper function to calculate letter prefix for a product based on SKU
   const getProductLetterPrefix = (product, allProducts) => {
     const productType = product.product_type?.toLowerCase() || "default";
     const config = productTypesConfig[productType] || productTypesConfig.default;
     const letterPrefix = config.letterPrefix || "O";
 
-    // Find all products of the same type, sorted by ID to ensure consistent ordering
-    const sameTypeProducts = allProducts
-      .filter((p) => (p.product_type?.toLowerCase() || "default") === productType)
-      .sort((a, b) => a.id.localeCompare(b.id));
+    const sku = product.sku;
+    if (!sku) return letterPrefix; // No SKU, just return letter without number
 
-    // Find the index of this product among products of the same type
-    const index = sameTypeProducts.findIndex((p) => p.id === product.id);
+    // Find all unique SKUs for this product type, sorted to ensure consistent ordering
+    const sameTypeProducts = allProducts.filter(
+      (p) => (p.product_type?.toLowerCase() || "default") === productType
+    );
+    const uniqueSkus = [...new Set(sameTypeProducts.map((p) => p.sku).filter(Boolean))].sort();
 
-    return `${letterPrefix}${index + 1}`;
+    // Find the index of this product's SKU among unique SKUs of this type
+    const skuIndex = uniqueSkus.indexOf(sku);
+
+    return `${letterPrefix}${skuIndex + 1}`;
   };
 
   exportProducts.forEach((product) => {
@@ -931,12 +935,12 @@ const Page = () => {
           console.error('Custom shape rendering failed for', product.id, err);
         }
 
-        // Add letter prefix text label
+        // Add letter prefix text label (centered on the shape)
         const letterPrefix = getProductLetterPrefix(product, products);
         const fontSize = Math.max(12, Math.min(width, height) * 0.3);
         const textEl = document.createElementNS(SVG_NS, 'text');
         textEl.setAttribute('x', '0');
-        textEl.setAttribute('y', String(fontSize / 3)); // Slightly offset for vertical centering
+        textEl.setAttribute('y', '0');
         textEl.setAttribute('fill', '#FFFFFF');
         textEl.setAttribute('stroke', '#000000');
         textEl.setAttribute('stroke-width', '1');
@@ -944,7 +948,7 @@ const Page = () => {
         textEl.setAttribute('font-size', String(fontSize));
         textEl.setAttribute('font-weight', 'bold');
         textEl.setAttribute('text-anchor', 'middle');
-        textEl.setAttribute('dominant-baseline', 'middle');
+        textEl.setAttribute('dominant-baseline', 'central');
         textEl.textContent = letterPrefix;
         productGroupEl.appendChild(textEl);
 
@@ -1048,18 +1052,25 @@ const Page = () => {
     pdf.setFont("helvetica", "bold");
     pdf.text("Product Legend", 10, 15);
 
-    // Helper to get letter prefix for a product
+    // Helper to get letter prefix for a product based on SKU
     const getProductRef = (product) => {
       const productType = product.product_type?.toLowerCase() || "default";
       const config = productTypesConfig[productType] || productTypesConfig.default;
       const letterPrefix = config.letterPrefix || "O";
 
-      const sameTypeProducts = allProducts
-        .filter((p) => (p.product_type?.toLowerCase() || "default") === productType)
-        .sort((a, b) => a.id.localeCompare(b.id));
+      const sku = product.sku;
+      if (!sku) return letterPrefix; // No SKU, just return letter without number
 
-      const index = sameTypeProducts.findIndex((p) => p.id === product.id);
-      return `${letterPrefix}${index + 1}`;
+      // Find all unique SKUs for this product type
+      const sameTypeProducts = allProducts.filter(
+        (p) => (p.product_type?.toLowerCase() || "default") === productType
+      );
+      const uniqueSkus = [...new Set(sameTypeProducts.map((p) => p.sku).filter(Boolean))].sort();
+
+      // Find the index of this product's SKU among unique SKUs of this type
+      const skuIndex = uniqueSkus.indexOf(sku);
+
+      return `${letterPrefix}${skuIndex + 1}`;
     };
 
     // Group products by SKU

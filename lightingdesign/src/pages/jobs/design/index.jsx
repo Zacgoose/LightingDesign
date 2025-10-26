@@ -717,6 +717,8 @@ const Page = () => {
       );
       if (transformedProducts !== products) {
         updateHistory(transformedProducts);
+        // Reset group after state update completes
+        setTimeout(() => setGroupKey((k) => k + 1), 0);
       }
     }
 
@@ -730,11 +732,10 @@ const Page = () => {
       );
       if (transformedTextBoxes !== textBoxes) {
         setTextBoxes(transformedTextBoxes);
+        // Reset group after state update completes
+        setTimeout(() => setGroupKey((k) => k + 1), 0);
       }
     }
-
-    // Reset group for next transform
-    setGroupKey((k) => k + 1);
   }, [
     selectedIds,
     selectionGroupRef,

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { Menu, MenuItem, ListItemIcon, ListItemText, Box, Popover } from "@mui/material";
 import {
   Delete,
@@ -364,24 +364,6 @@ export const ContextMenus = ({
               <ChevronRight fontSize="small" sx={{ ml: "auto" }} />
             </MenuItem>
             <MenuItem 
-              onClick={handleMenuItemClick(onOpenColorPicker)}
-              onMouseEnter={handleMenuItemHover}
-            >
-              <ListItemIcon>
-                <Box
-                  sx={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: "50%",
-                    bgcolor: "primary.main",
-                    border: "1px solid",
-                    borderColor: "divider",
-                  }}
-                />
-              </ListItemIcon>
-              <ListItemText>Change Color...</ListItemText>
-            </MenuItem>
-            <MenuItem 
               onClick={handleMenuItemClick(onDelete)}
               onMouseEnter={handleMenuItemHover}
             >
@@ -546,7 +528,7 @@ export const ContextMenus = ({
             minWidth: 120,
           }}
         >
-          {[12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72].map((size) => (
+          {[12, 20, 28, 36, 48, 60, 72].map((size) => (
             <MenuItem key={size} onClick={() => handleFontSizeSelect(size)}>
               <ListItemText>{size}px</ListItemText>
             </MenuItem>

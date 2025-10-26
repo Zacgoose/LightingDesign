@@ -147,10 +147,9 @@ export const ProductsLayer = memo(
             onTransform={(e) => {
               const node = e.target;
               // Keep the group centered at its original position during rotation/scale
-              node.x(selectionSnapshot.centerX || 0);
-              node.y(selectionSnapshot.centerY || 0);
-              node.offsetX((selectionSnapshot.width || 0) / 2);
-              node.offsetY((selectionSnapshot.height || 0) / 2);
+              // Don't modify position during transform - this causes the shifting issue
+              // The transformer already handles the positioning correctly
+
               // Real-time updates during transformation for text boxes
               const scaleX = node.scaleX();
               const scaleY = node.scaleY();
@@ -211,8 +210,6 @@ export const ProductsLayer = memo(
               // Text width is known, height is approximately fontSize * 1.2 for single line
               const textWidth = textBox.width || 100;
               const textHeight = renderedFontSize * 1.2;
-              const offsetX = textWidth / 2;
-              const offsetY = textHeight / 2;
 
               return (
                 <Group
@@ -222,8 +219,6 @@ export const ProductsLayer = memo(
                   rotation={textBox.rotation || 0}
                   scaleX={textBox.scaleX || 1}
                   scaleY={textBox.scaleY || 1}
-                  offsetX={offsetX}
-                  offsetY={offsetY}
                   draggable={false}
                   listening={true}
                   onClick={(e) => {
@@ -245,8 +240,8 @@ export const ProductsLayer = memo(
                   }}
                 >
                   <Text
-                    x={0}
-                    y={0}
+                    x={-textWidth / 2}
+                    y={-textHeight / 2}
                     text={textBox.text}
                     fontSize={renderedFontSize}
                     fontFamily={textBox.fontFamily || "Arial"}
@@ -254,7 +249,7 @@ export const ProductsLayer = memo(
                     fontVariant={fontWeight}
                     textDecoration={textBox.textDecoration || ""}
                     fill={textBox.color || "#000000"}
-                    width={textBox.width}
+                    width={textBox.max}
                     wrap="none"
                     draggable={false}
                     listening={true}

@@ -37,8 +37,6 @@ export const TextBox = memo(
     // Text width is known, height is approximately fontSize * 1.2 for single line
     const textWidth = textBox.width || 100;
     const textHeight = renderedFontSize * 1.2;
-    const offsetX = textWidth / 2;
-    const offsetY = textHeight / 2;
 
     return (
       <>
@@ -49,8 +47,6 @@ export const TextBox = memo(
           rotation={textBox.rotation || 0}
           scaleX={textBox.scaleX || 1}
           scaleY={textBox.scaleY || 1}
-          offsetX={offsetX}
-          offsetY={offsetY}
           draggable={draggable}
           onClick={onSelect}
           onTap={onSelect}
@@ -69,7 +65,7 @@ export const TextBox = memo(
             // Real-time updates during transformation
             const node = groupRef.current;
             if (!node) return;
-            
+
             // Note: This won't work without transformer ref, but we keep it for when text is in group
             // The ProductsLayer handles transformations for selected text
           }}
@@ -77,7 +73,7 @@ export const TextBox = memo(
             // This only applies to unselected text boxes (selected ones use ProductsLayer transformer)
             const node = groupRef.current;
             if (!node) return;
-            
+
             const scaleX = node.scaleX();
             const scaleY = node.scaleY();
 
@@ -103,8 +99,8 @@ export const TextBox = memo(
           onContextMenu={onContextMenu}
         >
           <Text
-            x={0}
-            y={0}
+            x={-textWidth / 2}
+            y={-textHeight / 2}
             text={textBox.text}
             fontSize={renderedFontSize}
             fontFamily={textBox.fontFamily || "Arial"}
@@ -112,7 +108,7 @@ export const TextBox = memo(
             fontVariant={fontWeight}
             textDecoration={textBox.textDecoration || ""}
             fill={textBox.color || "#000000"}
-            width={textBox.width}
+            width={textBox.max}
             wrap="none"
             draggable={false}
             listening={true}

@@ -38,6 +38,23 @@ const getProductStrokeColor = (product, products, defaultColor) => {
   return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
 };
 
+// Calculate letter prefix for a product based on its type and index
+const getProductLetterPrefix = (product, products, productTypesConfig) => {
+  const productType = product.product_type?.toLowerCase() || "default";
+  const config = productTypesConfig[productType] || productTypesConfig.default;
+  const letterPrefix = config.letterPrefix || "O";
+
+  // Find all products of the same type, sorted by ID to ensure consistent ordering
+  const sameTypeProducts = products
+    .filter((p) => (p.product_type?.toLowerCase() || "default") === productType)
+    .sort((a, b) => a.id.localeCompare(b.id));
+
+  // Find the index of this product among products of the same type
+  const index = sameTypeProducts.findIndex((p) => p.id === product.id);
+
+  return `${letterPrefix}${index + 1}`;
+};
+
 export const ProductsLayer = memo(
   ({
     products,
@@ -102,6 +119,7 @@ export const ProductsLayer = memo(
             const productType = product.product_type?.toLowerCase() || "default";
             const config = productTypesConfig[productType] || productTypesConfig.default;
             const customStroke = getProductStrokeColor(product, products, config.stroke);
+            const letterPrefix = getProductLetterPrefix(product, products, productTypesConfig);
 
             return (
               <ProductShape
@@ -127,6 +145,7 @@ export const ProductsLayer = memo(
                 }
                 customStroke={customStroke}
                 theme={theme}
+                letterPrefix={letterPrefix}
               />
             );
           })}
@@ -166,6 +185,7 @@ export const ProductsLayer = memo(
               const productType = product.product_type?.toLowerCase() || "default";
               const config = productTypesConfig[productType] || productTypesConfig.default;
               const customStroke = getProductStrokeColor(product, products, config.stroke);
+              const letterPrefix = getProductLetterPrefix(product, products, productTypesConfig);
 
               const relativeProduct = {
                 ...product,
@@ -188,6 +208,7 @@ export const ProductsLayer = memo(
                   onContextMenu={(e) => canInteract && onContextMenu(e, product.id)}
                   customStroke={customStroke}
                   theme={theme}
+                  letterPrefix={letterPrefix}
                 />
               );
             })}

@@ -1,4 +1,4 @@
-import { Shape, Group } from "react-konva";
+import { Shape, Group, Text } from "react-konva";
 import { getShapeFunction } from "/src/components/designer/productShapes";
 import { memo } from "react";
 
@@ -15,6 +15,7 @@ export const ProductShape = memo(
     draggable = false,
     opacity = 1,
     listening,
+    letterPrefix, // Add letterPrefix prop
   }) => {
 
     const shapeFunction = getShapeFunction(config.shapeType);
@@ -36,6 +37,9 @@ export const ProductShape = memo(
       renderedWidth = config.width || 30;
       renderedHeight = config.height || 30;
     }
+
+    // Calculate font size based on rendered dimensions
+    const fontSize = Math.max(12, Math.min(renderedWidth, renderedHeight) * 0.3);
 
     return (
       <Group
@@ -73,6 +77,22 @@ export const ProductShape = memo(
           realWorldSize={product.realWorldSize}
           scaleFactor={product.scaleFactor}
         />
+        {letterPrefix && (
+          <Text
+            text={letterPrefix}
+            fontSize={fontSize}
+            fontFamily="Arial"
+            fontStyle="bold"
+            fill="#FFFFFF"
+            stroke="#000000"
+            strokeWidth={1}
+            align="center"
+            verticalAlign="middle"
+            listening={false}
+            offsetX={0}
+            offsetY={fontSize / 2}
+          />
+        )}
       </Group>
     );
   },

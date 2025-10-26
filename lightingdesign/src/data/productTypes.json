@@ -7,7 +7,8 @@
     "realWorldHeight": 1.25,
     "fill": "#FFF59D",
     "stroke": "#F57C00",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "P"
   },
   "downlight": {
     "shapeType": "downlight",
@@ -16,7 +17,8 @@
     "realWorldSize": 0.4,
     "fill": "#FFFFFF",
     "stroke": "#424242",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "D"
   },
   "spotlight": {
     "shapeType": "spotlight",
@@ -26,7 +28,8 @@
     "realWorldHeight": 0.96,
     "fill": "#E3F2FD",
     "stroke": "#1976D2",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "S"
   },
   "wall": {
     "shapeType": "wall",
@@ -36,7 +39,8 @@
     "realWorldHeight": 0.4,
     "fill": "#B3E5FC",
     "stroke": "#0277BD",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "W"
   },
   "ceiling": {
     "shapeType": "ceiling",
@@ -45,7 +49,8 @@
     "realWorldSize": 1.2,
     "fill": "#EEEEEE",
     "stroke": "#616161",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "CL"
   },
   "floor": {
     "shapeType": "lamp",
@@ -55,7 +60,8 @@
     "realWorldHeight": 0.5,
     "fill": "#D7CCC8",
     "stroke": "#5D4037",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "FL"
   },
   "table": {
     "shapeType": "lamp",
@@ -65,7 +71,8 @@
     "realWorldHeight": 0.45,
     "fill": "#BCAAA4",
     "stroke": "#4E342E",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "T"
   },
   "lamp": {
     "shapeType": "lamp",
@@ -75,7 +82,8 @@
     "realWorldHeight": 0.5,
     "fill": "#D7CCC8",
     "stroke": "#5D4037",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "L"
   },
   "strip": {
     "shapeType": "strip",
@@ -85,7 +93,8 @@
     "realWorldHeight": 0.1,
     "fill": "#C8E6C9",
     "stroke": "#388E3C",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "ST"
   },
   "fan": {
     "shapeType": "fan",
@@ -94,7 +103,8 @@
     "realWorldSize": 1.4,
     "fill": "#B2EBF2",
     "stroke": "#00838F",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "F"
   },
   "track": {
     "shapeType": "strip",
@@ -104,7 +114,8 @@
     "realWorldHeight": 0.12,
     "fill": "#CFD8DC",
     "stroke": "#455A64",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "TR"
   },
   "chandelier": {
     "shapeType": "pendant",
@@ -114,7 +125,8 @@
     "realWorldHeight": 1.75,
     "fill": "#FFF9C4",
     "stroke": "#F9A825",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "C"
   },
   "arrow": {
     "shapeType": "arrow",
@@ -124,7 +136,8 @@
     "realWorldHeight": 0.4,
     "fill": "#90CAF9",
     "stroke": "#1976D2",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "A"
   },
   "boxoutline": {
     "shapeType": "boxoutline",
@@ -134,7 +147,8 @@
     "realWorldHeight": 0.5,
     "fill": "transparent",
     "stroke": "#424242",
-    "strokeWidth": 3
+    "strokeWidth": 3,
+    "letterPrefix": "B"
   },
   "default": {
     "shapeType": "rect",
@@ -144,6 +158,7 @@
     "realWorldHeight": 0.3,
     "fill": "#BDBDBD",
     "stroke": "#424242",
-    "strokeWidth": 2
+    "strokeWidth": 2,
+    "letterPrefix": "O"
   }
 }

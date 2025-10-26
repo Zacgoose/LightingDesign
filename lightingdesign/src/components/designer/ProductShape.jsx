@@ -37,23 +37,6 @@ export const ProductShape = memo(
       renderedHeight = config.height || 30;
     }
 
-    // Logging for debugging transformer alignment
-    console.log('[ProductShape:render]', {
-      id: product.id,
-      x: product.x,
-      y: product.y,
-      rotation: product.rotation || 0,
-      scaleX: product.scaleX || 1,
-      scaleY: product.scaleY || 1,
-      renderedWidth,
-      renderedHeight,
-      draggable,
-      listening,
-      opacity,
-      customStroke,
-      fill: product.color || config.fill,
-    });
-
     return (
       <Group
         x={product.x}

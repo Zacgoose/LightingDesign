@@ -48,11 +48,6 @@ export const DesignerCanvas = memo(
 
       const img = new window.Image();
       img.onload = () => {
-        console.log('Background image loaded successfully', {
-          width: img.width,
-          height: img.height,
-          dataLength: backgroundImage?.length || 0
-        });
         setBgImage(img);
       };
       

@@ -146,27 +146,11 @@ export const ProductsLayer = memo(
             onTransformEnd={onGroupTransformEnd}
             onTransform={(e) => {
               const node = e.target;
-              // Log group transform
-              console.log('[Group:onTransform]', {
-                x: node.x(),
-                y: node.y(),
-                rotation: node.rotation(),
-                scaleX: node.scaleX(),
-                scaleY: node.scaleY(),
-                selectionSnapshot,
-              });
               // Keep the group centered at its original position during rotation/scale
               node.x(selectionSnapshot.centerX || 0);
               node.y(selectionSnapshot.centerY || 0);
               node.offsetX((selectionSnapshot.width || 0) / 2);
               node.offsetY((selectionSnapshot.height || 0) / 2);
-              // Debug: Log selected products relative positions
-              console.log('[ProductsLayer] Selected products relative:', selectionSnapshot.products?.map(p => ({ id: p.id, relX: p.relativeX, relY: p.relativeY, absX: selectionSnapshot.centerX + (p.relativeX || 0), absY: selectionSnapshot.centerY + (p.relativeY || 0) })));
-              // Debug: Log group and transformer positions
-              if (selectionGroupRef.current && transformerRef.current) {
-                console.log('[ProductsLayer] Group position:', { x: selectionGroupRef.current.x(), y: selectionGroupRef.current.y(), offsetX: selectionGroupRef.current.offsetX(), offsetY: selectionGroupRef.current.offsetY() });
-                console.log('[ProductsLayer] Transformer position:', { x: transformerRef.current.x(), y: transformerRef.current.y() });
-              }
               // Real-time updates during transformation for text boxes
               const scaleX = node.scaleX();
               const scaleY = node.scaleY();
@@ -190,17 +174,6 @@ export const ProductsLayer = memo(
                 y: product.relativeY || 0,
                 rotation: product.rotation || 0,
               };
-
-              // Log selected product rendering
-              console.log('[ProductShape:selected]', {
-                id: product.id,
-                x: relativeProduct.x,
-                y: relativeProduct.y,
-                rotation: relativeProduct.rotation,
-                isSelected: true,
-                groupX: selectionSnapshot.centerX,
-                groupY: selectionSnapshot.centerY,
-              });
 
               return (
                 <ProductShape
@@ -302,15 +275,6 @@ export const ProductsLayer = memo(
                 : undefined
             }
             boundBoxFunc={(oldBox, newBox) => {
-              // Log transformer bounding box
-              console.log('[Transformer:boundBoxFunc]', {
-                oldBox,
-                newBox,
-                minWidth: 20,
-                minHeight: 15,
-                textIds,
-                productOnlyIds,
-              });
               // Prevent box from getting too small
               const minWidth = 20;
               const minHeight = 15;

@@ -81,11 +81,6 @@ export const useSelectionState = (products, textBoxes = []) => {
     });
     const avgRotation = rotationCount === 1 ? (totalRotation / rotationCount) : 0;
 
-    // Debug: Log all selected item positions and bounding box calculation
-    console.log('[SelectionState] Selected product positions:', productSnapshot.map(p => ({ id: p.id, x: p.x, y: p.y })));
-    console.log('[SelectionState] Selected text positions:', textSnapshot.map(t => ({ id: t.id, x: t.x, y: t.y })));
-    console.log('[SelectionState] Bounding box:', { minX, minY, maxX, maxY, centerX, centerY });
-
     return {
       centerX,
       centerY,
@@ -126,15 +121,6 @@ export const useSelectionState = (products, textBoxes = []) => {
       // Get current or initial rotation
       const currentRotation = selectionSnapshot.rotation || 0;
 
-      console.log('[useEffect transformer] Attaching transformer', {
-        selectedCount: selectedIds.length,
-        currentRotation,
-        groupX: selectionGroupRef.current.x(),
-        groupY: selectionGroupRef.current.y(),
-        centerX: selectionSnapshot.centerX,
-        centerY: selectionSnapshot.centerY,
-      });
-
       // Set the group's rotation first
       selectionGroupRef.current.rotation(currentRotation);
 
@@ -150,10 +136,6 @@ export const useSelectionState = (products, textBoxes = []) => {
       // Force update
       transformerRef.current.getLayer()?.batchDraw();
       
-      console.log('[useEffect transformer] Transformer and Group event handlers:', {
-        hasGroupOnTransformEnd: typeof selectionGroupRef.current.attrs.onTransformEnd,
-        hasGroupOnDragEnd: typeof selectionGroupRef.current.attrs.onDragEnd,
-      });
     } else if (transformerRef.current) {
       transformerRef.current.nodes([]);
     }
@@ -183,28 +165,8 @@ export const useSelectionState = (products, textBoxes = []) => {
       Math.abs(groupScaleY - 1) < tolerance &&
       Math.abs(groupRotation - (selectionSnapshot.rotation || 0)) < tolerance
     ) {
-      console.log('[applyGroupTransform] No transform detected, skipping update', {
-        groupX,
-        groupY,
-        centerX: selectionSnapshot.centerX,
-        centerY: selectionSnapshot.centerY,
-        groupRotation,
-        snapshotRotation: selectionSnapshot.rotation || 0,
-      });
       return null;
     }
-
-    console.log('[applyGroupTransform] Transform detected, applying changes', {
-      groupX,
-      groupY,
-      centerX: selectionSnapshot.centerX,
-      centerY: selectionSnapshot.centerY,
-      groupScaleX,
-      groupScaleY,
-      groupRotation,
-      snapshotRotation: selectionSnapshot.rotation || 0,
-      selectedCount: selectedIds.length,
-    });
 
     const { products: snapshotProducts } = selectionSnapshot;
 

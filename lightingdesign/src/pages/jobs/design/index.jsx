@@ -573,22 +573,10 @@ const Page = () => {
     // wait for the design to load before initializing the canvas with empty layer data.
     // This prevents the canvas from being initialized with wrong dimensions on refresh.
     if (id && layersVersion === 0 && lastLoadedLayerId.current === null) {
-      console.log('Layer switch effect skipped - waiting for initial design data to load', {
-        id,
-        layersVersion,
-        lastLoadedLayerId: lastLoadedLayerId.current,
-        isLoading: designData.isLoading,
-        isSuccess: designData.isSuccess
-      });
       return;
     }
     
     if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
-      console.log(`Switching to layer ${activeLayerId}`, {
-        hasBackgroundImage: !!activeLayer.backgroundImage,
-        backgroundImageLength: activeLayer.backgroundImage?.length || 0,
-      });
-
       lastLoadedLayerId.current = activeLayerId;
       isLoadingLayerData.current = true;
       
@@ -684,11 +672,6 @@ const Page = () => {
 
   // Unified group transform handler that handles both products and text boxes
   const handleUnifiedGroupTransformEnd = useCallback(() => {
-    console.log('[handleUnifiedGroupTransformEnd] Called', {
-      hasSelectedIds: !!selectedIds.length,
-      hasGroupRef: !!selectionGroupRef.current,
-      hasSnapshot: !!selectionSnapshot,
-    });
 
     if (!selectedIds.length || !selectionGroupRef.current || !selectionSnapshot) return;
 
@@ -718,27 +701,10 @@ const Page = () => {
       isClose(groupRotation, selectionSnapshot.rotation || 0)
     );
 
-    console.log('[handleUnifiedGroupTransformEnd]', {
-      hasTransform,
-      groupX,
-      groupY,
-      centerX: selectionSnapshot.centerX,
-      centerY: selectionSnapshot.centerY,
-      groupScaleX,
-      groupScaleY,
-      groupRotation,
-      snapshotRotation: selectionSnapshot.rotation || 0,
-      productCount: productIds.length,
-      textCount: textIds.length,
-    });
-
     if (!hasTransform) {
-      console.log('[handleUnifiedGroupTransformEnd] No transform, skipping update');
       setGroupKey((k) => k + 1);
       return;
     }
-
-    console.log('[handleUnifiedGroupTransformEnd] Applying transform to products and text boxes');
 
     // Calculate the rotation delta (how much we've rotated from the snapshot)
     const rotationDelta = groupRotation - (selectionSnapshot.rotation || 0);
@@ -779,19 +745,6 @@ const Page = () => {
         const newX = selectionSnapshot.centerX + relX + centerDeltaX;
         const newY = selectionSnapshot.centerY + relY + centerDeltaY;
 
-        console.log(`[handleUnifiedGroupTransformEnd] Transforming product ${product.id}`, {
-          originalPos: { x: product.x, y: product.y },
-          newPos: { x: newX, y: newY },
-          delta: { x: newX - product.x, y: newY - product.y },
-          relativePos: { x: relX, y: relY },
-          snapshotRelative: { x: original.relativeX, y: original.relativeY },
-          currentRotation: product.rotation,
-          originalRelativeRotation: original.rotation,
-          rotationDelta: rotationDelta,
-          groupRotation: groupRotation,
-          snapshotRotation: selectionSnapshot.rotation || 0,
-          newRotation: (original.rotation || 0) + (selectionSnapshot.rotation || 0) + rotationDelta,
-        });
 
         return {
           ...product,
@@ -801,11 +754,6 @@ const Page = () => {
           scaleX: (original.scaleX || 1) * groupScaleX,
           scaleY: (original.scaleY || 1) * groupScaleY,
         };
-      });
-
-      console.log('[handleUnifiedGroupTransformEnd] Calling updateHistory with transformed products', {
-        productCount: transformedProducts.filter(p => productIds.includes(p.id)).length,
-        firstProductRotation: transformedProducts.find(p => productIds.includes(p.id))?.rotation,
       });
 
       updateHistory(transformedProducts);
@@ -843,14 +791,6 @@ const Page = () => {
         const newX = selectionSnapshot.centerX + relX + centerDeltaX;
         const newY = selectionSnapshot.centerY + relY + centerDeltaY;
 
-        console.log(`[handleUnifiedGroupTransformEnd] Transforming text box ${textBox.id}`, {
-          originalPos: { x: textBox.x, y: textBox.y },
-          newPos: { x: newX, y: newY },
-          delta: { x: newX - textBox.x, y: newY - textBox.y },
-          relativePos: { x: relX, y: relY },
-          snapshotRelative: { x: original.relativeX, y: original.relativeY },
-        });
-
         // Detect if this is a corner resize (proportional) or side/top resize
         const scaleDiff = Math.abs(groupScaleX - groupScaleY);
         const isCornerResize = scaleDiff < 0.1; // Small difference means corner anchor (proportional)
@@ -883,8 +823,6 @@ const Page = () => {
 
       setTextBoxes(transformedTextBoxes);
     }
-
-    console.log('[handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey');
 
     // Force update transformer
     if (transformerRef.current) {

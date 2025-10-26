@@ -682,26 +682,13 @@ const Page = () => {
     handleGroupTransformEnd,
   } = productInteraction;
 
-  // Unified group transform handler that handles both products and text boxes
-  // Unified group transform handler using Konva's getAbsoluteTransform() pattern
-  // Following best practices from: https://konvajs.org/docs/sandbox/Resizing_Stress_Test.html
+  // Unified group transform handler - following Konva example pattern
   const handleUnifiedGroupTransformEnd = useCallback(() => {
-    console.log('[handleUnifiedGroupTransformEnd] Called', {
-      hasSelectedIds: !!selectedIds.length,
-      hasGroupRef: !!selectionGroupRef.current,
-      hasSnapshot: !!selectionSnapshot,
-    });
+    if (!selectedIds.length || !selectionGroupRef.current) return;
 
-    if (!selectedIds.length || !selectionGroupRef.current || !selectionSnapshot) return;
-
-    const group = selectionGroupRef.current;
-    
-    // Get the absolute transform matrix from the group (Konva best practice)
-    const transform = group.getAbsoluteTransform();
-    
-    // Decompose to get the scale factors
+    const transform = selectionGroupRef.current.getAbsoluteTransform();
     const { scaleX: groupScaleX, scaleY: groupScaleY } = transform.decompose();
-    const groupRotation = group.rotation();
+    const groupRotation = selectionGroupRef.current.rotation();
 
     // Extract product IDs and text IDs
     const productIds = selectedIds.filter(id => !id.startsWith('text-'));
@@ -709,137 +696,54 @@ const Page = () => {
       .filter(id => id.startsWith('text-'))
       .map(id => id.substring(5)); // Remove 'text-' prefix
 
-    // Check if the group has actually been transformed by comparing against identity matrix
-    const tolerance = 0.0001;
-    const isIdentity = 
-      Math.abs(transform.m[0] - 1) < tolerance && // scaleX
-      Math.abs(transform.m[1]) < tolerance && // skewY
-      Math.abs(transform.m[2]) < tolerance && // skewX
-      Math.abs(transform.m[3] - 1) < tolerance && // scaleY
-      Math.abs(transform.m[4]) < tolerance && // translateX relative to parent
-      Math.abs(transform.m[5]) < tolerance; // translateY relative to parent
-
-    console.log('[handleUnifiedGroupTransformEnd]', {
-      hasTransform: !isIdentity,
-      matrix: transform.m,
-      decomposed: transform.decompose(),
-      groupRotation,
-      productCount: productIds.length,
-      textCount: textIds.length,
-    });
-
-    if (isIdentity) {
-      console.log('[handleUnifiedGroupTransformEnd] No transform (identity matrix), skipping update');
-      setGroupKey((k) => k + 1);
-      return;
-    }
-
-    console.log('[handleUnifiedGroupTransformEnd] Applying transform to products and text boxes');
-
-    // Transform products using Konva's transform.point() for accurate position calculation
+    // Transform products
     if (productIds.length > 0) {
       const transformedProducts = products.map((product) => {
         if (!productIds.includes(product.id)) return product;
 
-        // Get the original product from the snapshot
         const original = selectionSnapshot.products?.find((p) => p.id === product.id);
         if (!original) return product;
 
         // Use transform.point() to get the new position
-        // This applies the full transform matrix (rotation + scale + translation)
-        const newPos = transform.point({ 
-          x: original.x, 
-          y: original.y 
-        });
-
-        console.log(`[handleUnifiedGroupTransformEnd] Transforming product ${product.id}`, {
-          originalPos: { x: original.x, y: original.y },
-          newPos: { x: newPos.x, y: newPos.y },
-          delta: { x: newPos.x - original.x, y: newPos.y - original.y },
-          groupRotation,
-          groupScale: { x: groupScaleX, y: groupScaleY },
-        });
-
-        // Calculate new scale - for products with realWorldSize, scale affects the size
-        const productType = product.product_type?.toLowerCase() || "default";
-        const config = productTypesConfig[productType] || productTypesConfig.default;
-        
-        // Determine if this product uses realWorldSize or direct width/height
-        const usesRealWorldSize = original.realWorldSize || config.realWorldSize;
-        
-        let newScaleX = (original.scaleX || 1) * groupScaleX;
-        let newScaleY = (original.scaleY || 1) * groupScaleY;
-        
-        // For products with realWorldSize, we can also update the scaleFactor
-        let newScaleFactor = original.scaleFactor;
-        if (usesRealWorldSize) {
-          // Average the scale factors if they differ
-          const avgScale = (groupScaleX + groupScaleY) / 2;
-          newScaleFactor = (original.scaleFactor || 100) * avgScale;
-          // Reset the scaleX/Y to 1 since we're encoding it in scaleFactor
-          newScaleX = 1;
-          newScaleY = 1;
-        }
+        const newPos = transform.point({ x: original.x, y: original.y });
 
         return {
           ...product,
           x: newPos.x,
           y: newPos.y,
           rotation: (original.rotation || 0) + groupRotation,
-          scaleX: newScaleX,
-          scaleY: newScaleY,
-          scaleFactor: newScaleFactor,
+          scaleX: (original.scaleX || 1) * groupScaleX,
+          scaleY: (original.scaleY || 1) * groupScaleY,
         };
-      });
-
-      console.log('[handleUnifiedGroupTransformEnd] Calling updateHistory with transformed products', {
-        productCount: transformedProducts.filter(p => productIds.includes(p.id)).length,
-        firstProductRotation: transformedProducts.find(p => productIds.includes(p.id))?.rotation,
       });
 
       updateHistory(transformedProducts);
     }
 
-    // Transform text boxes using Konva's transform.point() for accurate position calculation
+    // Transform text boxes
     if (textIds.length > 0) {
       const transformedTextBoxes = textBoxes.map((textBox) => {
         if (!textIds.includes(textBox.id)) return textBox;
 
-        // Get the original text box from the snapshot
         const original = selectionSnapshot.textBoxes?.find((t) => t.id === textBox.id);
         if (!original) return textBox;
 
         // Use transform.point() to get the new position
-        // This applies the full transform matrix (rotation + scale + translation)
-        const newPos = transform.point({ 
-          x: original.x, 
-          y: original.y 
-        });
-
-        console.log(`[handleUnifiedGroupTransformEnd] Transforming text box ${textBox.id}`, {
-          originalPos: { x: original.x, y: original.y },
-          newPos: { x: newPos.x, y: newPos.y },
-          delta: { x: newPos.x - original.x, y: newPos.y - original.y },
-          groupRotation,
-          groupScale: { x: groupScaleX, y: groupScaleY },
-        });
+        const newPos = transform.point({ x: original.x, y: original.y });
 
         // Detect if this is a corner resize (proportional) or side/top resize
         const scaleDiff = Math.abs(groupScaleX - groupScaleY);
-        const isCornerResize = scaleDiff < 0.1; // Small difference means corner anchor (proportional)
-        
+        const isCornerResize = scaleDiff < 0.1;
+
         let newFontSize = original.fontSize || 24;
         let newWidth = original.width || 200;
 
         if (isCornerResize) {
-          // Corner resize: scale font size proportionally (keep ratio)
           const averageScale = (groupScaleX + groupScaleY) / 2;
           newFontSize = Math.max(8, Math.round(newFontSize * averageScale));
           newWidth = Math.max(20, newWidth * averageScale);
         } else {
-          // Side/top resize: adjust width only, keep font size constant for text wrapping
           newWidth = Math.max(20, newWidth * groupScaleX);
-          // Font size stays the same, text will wrap
         }
 
         return {
@@ -849,7 +753,7 @@ const Page = () => {
           rotation: (original.rotation || 0) + groupRotation,
           fontSize: newFontSize,
           width: newWidth,
-          scaleX: 1, // Reset scale after applying to fontSize and width
+          scaleX: 1,
           scaleY: 1,
         };
       });
@@ -857,20 +761,12 @@ const Page = () => {
       setTextBoxes(transformedTextBoxes);
     }
 
-    console.log('[handleUnifiedGroupTransformEnd] Transform complete, incrementing groupKey');
-
-    // Force update transformer
-    if (transformerRef.current) {
-      transformerRef.current.forceUpdate();
-    }
-    
-    // Force update
+    // Reset group for next transform
     setGroupKey((k) => k + 1);
   }, [
     selectedIds,
     selectionSnapshot,
     selectionGroupRef,
-    transformerRef,
     products,
     textBoxes,
     updateHistory,

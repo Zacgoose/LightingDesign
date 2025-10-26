@@ -82,12 +82,8 @@ export const ProductsLayer = memo(
       };
     }, [transformerRef, onGroupTransformEnd]);
 
-    // DEPRECATED: Attach Transformer directly to selected product nodes
-    // Now using Group-based approach for multi-selection support
+    // NEW: Attach Transformer directly to selected product nodes (Konva standard pattern)
     useEffect(() => {
-      // Disabled - using Group-based approach instead
-      return;
-      
       if (!transformerRef.current) {
         console.log('[ProductsLayer] No transformer ref yet');
         return;
@@ -154,8 +150,51 @@ export const ProductsLayer = memo(
     
     return (
       <>
-        {/* Render unselected products only - selected ones are in the Group below */}
-        {products
+        {/* Render all products - selected ones will be handled by Transformer */}
+        {products.map((product) => {
+          const productType = product.product_type?.toLowerCase() || "default";
+          const config = productTypesConfig[productType] || productTypesConfig.default;
+          const customStroke = getProductStrokeColor(product, products, config.stroke);
+          const isSelected = productOnlyIds.includes(product.id);
+
+          return (
+            <ProductShape
+              key={product.id}
+              ref={(node) => {
+                if (node) {
+                  productRefsMap.current.set(product.id, node);
+                } else {
+                  productRefsMap.current.delete(product.id);
+                }
+              }}
+              product={product}
+              config={config}
+              isSelected={isSelected}
+              draggable={selectedTool === "select" && canInteract} // Both selected and unselected are draggable (Transformer needs draggable nodes)
+              onDragStart={(e) =>
+                selectedTool === "select" && canInteract && onProductDragStart(e, product.id)
+              }
+              onMouseDown={(e) => {
+                // Allow click in connect mode or select mode
+                if (selectedTool === "connect" || selectedTool === "select") {
+                  onProductClick(e, product.id);
+                }
+              }}
+              onDragEnd={(e) =>
+                selectedTool === "select" && canInteract && onProductDragEnd(e, product.id)
+              }
+              onContextMenu={(e) =>
+                selectedTool === "select" && canInteract && onContextMenu(e, product.id)
+              }
+              customStroke={customStroke}
+              theme={theme}
+            />
+          );
+        })}
+
+        {/* OLD: Unselected products - individually draggable */}
+        {/* DEPRECATED: Now all products are rendered above with refs */}
+        {false && products
           .filter((p) => !productOnlyIds.includes(p.id))
           .map((product) => {
             const productType = product.product_type?.toLowerCase() || "default";
@@ -197,85 +236,29 @@ export const ProductsLayer = memo(
             );
           })}
 
-        {/* Selected products and text boxes in a draggable group */}
+        {/* Selected products and text boxes in a draggable group (Konva example pattern) */}
         {hasSelection && (
           <Group
             key={groupKey}
             ref={selectionGroupRef}
-            x={selectionSnapshot.centerX || 0}
-            y={selectionSnapshot.centerY || 0}
-            //offsetX={(selectionSnapshot.width || 0) / 2}
-            //offsetY={(selectionSnapshot.height || 0) / 2}
-            rotation={selectionSnapshot.rotation || 0}
             draggable={(selectedTool === "select" || selectedTool === "text") && canInteract}
             onDragEnd={onGroupTransformEnd}
             onTransformEnd={onGroupTransformEnd}
-            onTransform={(e) => {
-              const node = e.target;
-              // Log group transform
-              console.log('[Group:onTransform]', {
-                x: node.x(),
-                y: node.y(),
-                rotation: node.rotation(),
-                scaleX: node.scaleX(),
-                scaleY: node.scaleY(),
-                selectionSnapshot,
-              });
-              // Keep the group centered at its original position during rotation/scale
-              node.x(selectionSnapshot.centerX || 0);
-              node.y(selectionSnapshot.centerY || 0);
-              node.offsetX((selectionSnapshot.width || 0) / 2);
-              node.offsetY((selectionSnapshot.height || 0) / 2);
-              // Debug: Log selected products relative positions
-              console.log('[ProductsLayer] Selected products relative:', selectionSnapshot.products?.map(p => ({ id: p.id, relX: p.relativeX, relY: p.relativeY, absX: selectionSnapshot.centerX + (p.relativeX || 0), absY: selectionSnapshot.centerY + (p.relativeY || 0) })));
-              // Debug: Log group and transformer positions
-              if (selectionGroupRef.current && transformerRef.current) {
-                console.log('[ProductsLayer] Group position:', { x: selectionGroupRef.current.x(), y: selectionGroupRef.current.y(), offsetX: selectionGroupRef.current.offsetX(), offsetY: selectionGroupRef.current.offsetY() });
-                console.log('[ProductsLayer] Transformer position:', { x: transformerRef.current.x(), y: transformerRef.current.y() });
-              }
-              // Real-time updates during transformation for text boxes
-              const scaleX = node.scaleX();
-              const scaleY = node.scaleY();
-              const scaleDiff = Math.abs(scaleX - scaleY);
-              const isSideResize = scaleDiff > 0.1;
-              if (isSideResize && textIds.length > 0) {
-                node.getLayer()?.batchDraw();
-              }
-            }}
           >
-            {/* Render selected products */}
-            {/* Always use snapshot to avoid inconsistencies */}
+            {/* Render selected products with absolute positions */}
             {selectionSnapshot.products?.map((product) => {
               const productType = product.product_type?.toLowerCase() || "default";
               const config = productTypesConfig[productType] || productTypesConfig.default;
               const customStroke = getProductStrokeColor(product, products, config.stroke);
 
-              const relativeProduct = {
-                ...product,
-                x: product.relativeX || 0,
-                y: product.relativeY || 0,
-                rotation: product.rotation || 0,
-              };
-
-              // Log selected product rendering
-              console.log('[ProductShape:selected]', {
-                id: product.id,
-                x: relativeProduct.x,
-                y: relativeProduct.y,
-                rotation: relativeProduct.rotation,
-                isSelected: true,
-                groupX: selectionSnapshot.centerX,
-                groupY: selectionSnapshot.centerY,
-              });
-
               return (
                 <ProductShape
                   key={product.id}
-                  product={relativeProduct}
+                  product={product}
                   config={config}
                   isSelected={true}
                   draggable={false}
-                  listening={!isDragging} // Disable listening during drag for performance
+                  listening={!isDragging}
                   onMouseDown={(e) =>
                     (canInteract || isConnectMode) && onProductClick(e, product.id)
                   }
@@ -286,22 +269,17 @@ export const ProductsLayer = memo(
               );
             })}
             
-            {/* Render selected text boxes */}
-            {/* Always use snapshot to avoid inconsistencies */}
+            {/* Render selected text boxes with absolute positions */}
             {selectionSnapshot.textBoxes?.map((textBox) => {
-              // Parse font style
               const isBold = textBox.fontStyle?.includes("bold") || false;
               const isItalic = textBox.fontStyle?.includes("italic") || false;
               const fontStyle = isItalic ? "italic" : "normal";
               const fontWeight = isBold ? "bold" : "normal";
 
-              // Calculate rendered font size based on scaleFactor
               const baseFontSize = textBox.fontSize || 24;
               const scaleFactor = textBox.scaleFactor || 100;
               const renderedFontSize = baseFontSize * (scaleFactor / 100);
 
-              // Calculate center offset for rotation
-              // Text width is known, height is approximately fontSize * 1.2 for single line
               const textWidth = textBox.width || 100;
               const textHeight = renderedFontSize * 1.2;
               const offsetX = textWidth / 2;
@@ -310,8 +288,8 @@ export const ProductsLayer = memo(
               return (
                 <Group
                   key={textBox.id}
-                  x={textBox.relativeX || 0}
-                  y={textBox.relativeY || 0}
+                  x={textBox.x}
+                  y={textBox.y}
                   rotation={textBox.rotation || 0}
                   scaleX={textBox.scaleX || 1}
                   scaleY={textBox.scaleY || 1}
@@ -321,19 +299,15 @@ export const ProductsLayer = memo(
                   listening={true}
                   onClick={(e) => {
                     e.cancelBubble = true;
-                    // Text is already selected, clicking does nothing (prevents new text creation in text mode)
                   }}
                   onTap={(e) => {
                     e.cancelBubble = true;
                   }}
-                  // Don't cancel mouseDown - let it propagate to parent Group for dragging
                   onContextMenu={(e) => {
                     e.evt.preventDefault();
                     e.cancelBubble = true;
                     if (onTextContextMenu) {
-                      // Find the original text ID and call context menu
-                      const originalTextId = textBox.id;
-                      onTextContextMenu(e, originalTextId);
+                      onTextContextMenu(e, textBox.id);
                     }
                   }}
                 >

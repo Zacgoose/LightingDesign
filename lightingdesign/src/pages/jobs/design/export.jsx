@@ -855,6 +855,42 @@ const Page = () => {
     return ctx;
   }
 
+  // Helper function to calculate letter prefix for a product based on SKU
+  const getProductLetterPrefix = (product, allProducts) => {
+    const productType = product.product_type?.toLowerCase() || "default";
+    const config = productTypesConfig[productType] || productTypesConfig.default;
+    const letterPrefix = config.letterPrefix || "O";
+
+    // Normalize SKU: trim whitespace and handle empty strings as null
+    const sku = product.sku?.trim();
+    if (!sku || sku === "") {
+      return letterPrefix; // No SKU, just return letter without number
+    }
+
+    // Find all unique SKUs for this product type, sorted to ensure consistent ordering
+    const sameTypeProducts = allProducts.filter(
+      (p) => (p.product_type?.toLowerCase() || "default") === productType
+    );
+
+    // Get unique SKUs, filtering out null/undefined/empty, then sort
+    const uniqueSkus = [...new Set(
+      sameTypeProducts
+        .map((p) => p.sku?.trim())
+        .filter((s) => s && s !== "")
+    )].sort();
+
+    // Find the index of this product's SKU among unique SKUs of this type
+    const skuIndex = uniqueSkus.indexOf(sku);
+
+    // If SKU not found (shouldn't happen), return just the letter
+    if (skuIndex === -1) {
+      console.warn(`SKU "${sku}" not found in uniqueSkus for ${productType}:`, uniqueSkus);
+      return letterPrefix;
+    }
+
+    return `${letterPrefix}${skuIndex + 1}`;
+  };
+
   exportProducts.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || 'default';
         const config = productTypesConfig[productType] || productTypesConfig.default;
@@ -913,6 +949,28 @@ const Page = () => {
           productGroupEl.appendChild(circleEl);
           console.error('Custom shape rendering failed for', product.id, err);
         }
+
+        // Add letter prefix text label (centered on the shape, always upright)
+        const letterPrefix = getProductLetterPrefix(product, products);
+        const fontSize = Math.max(12, Math.min(width, height) * 0.3);
+        const textEl = document.createElementNS(SVG_NS, 'text');
+        textEl.setAttribute('x', '0');
+        textEl.setAttribute('y', '0');
+        textEl.setAttribute('fill', '#FFFFFF');
+        textEl.setAttribute('stroke', '#000000');
+        textEl.setAttribute('stroke-width', '1');
+        textEl.setAttribute('font-family', 'Arial');
+        textEl.setAttribute('font-size', String(fontSize));
+        textEl.setAttribute('font-weight', 'bold');
+        textEl.setAttribute('text-anchor', 'middle');
+        textEl.setAttribute('dominant-baseline', 'central');
+        // Counter-rotate to keep text upright
+        if (rotation) {
+          textEl.setAttribute('transform', `rotate(${-rotation})`);
+        }
+        textEl.textContent = letterPrefix;
+        productGroupEl.appendChild(textEl);
+
         productCount++;
       });
       console.log('Manual builder appended products:', productCount);
@@ -1012,11 +1070,49 @@ const Page = () => {
     pdf.setFontSize(16);
     pdf.setFont("helvetica", "bold");
     pdf.text("Product Legend", 10, 15);
-    
+
+    // Helper to get letter prefix for a product based on SKU
+    const getProductRef = (product) => {
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      const letterPrefix = config.letterPrefix || "O";
+
+      // Normalize SKU: trim whitespace and handle empty strings as null
+      const sku = product.sku?.trim();
+      if (!sku || sku === "") {
+        return letterPrefix; // No SKU, just return letter without number
+      }
+
+      // Find all unique SKUs for this product type
+      const sameTypeProducts = allProducts.filter(
+        (p) => (p.product_type?.toLowerCase() || "default") === productType
+      );
+
+      // Get unique SKUs, filtering out null/undefined/empty, then sort
+      const uniqueSkus = [...new Set(
+        sameTypeProducts
+          .map((p) => p.sku?.trim())
+          .filter((s) => s && s !== "")
+      )].sort();
+
+      // Find the index of this product's SKU among unique SKUs of this type
+      const skuIndex = uniqueSkus.indexOf(sku);
+
+      // If SKU not found (shouldn't happen), return just the letter
+      if (skuIndex === -1) {
+        console.warn(`SKU "${sku}" not found in uniqueSkus for ${productType}:`, uniqueSkus);
+        return letterPrefix;
+      }
+
+      return `${letterPrefix}${skuIndex + 1}`;
+    };
+
     // Group products by SKU
     const productMap = new Map();
     allProducts.forEach((product) => {
       const sku = product.sku || "N/A";
+      const ref = getProductRef(product);
+
       if (!productMap.has(sku)) {
         productMap.set(sku, {
           sku,
@@ -1026,24 +1122,28 @@ const Page = () => {
           quantity: 0,
           price: product.price || 0,
           layers: new Set(),
+          refs: new Set(),
         });
       }
       const entry = productMap.get(sku);
       entry.quantity += product.quantity || 1;
       entry.layers.add(product.layerName);
+      entry.refs.add(ref);
     });
-    
+
     // Convert to array and sort
     const legendData = Array.from(productMap.values()).map((item) => ({
       ...item,
       layers: Array.from(item.layers).join(", "),
+      refs: Array.from(item.refs).sort().join(", "),
     }));
-    
+
     // Create table
     autoTable(pdf, {
       startY: 25,
-      head: [['SKU', 'Product Name', 'Brand', 'Type', 'Qty', 'Price', 'Floors']],
+      head: [['Ref', 'SKU', 'Product Name', 'Brand', 'Type', 'Qty', 'Price', 'Floors']],
       body: legendData.map((item) => [
+        item.refs,
         item.sku,
         item.name,
         item.brand,

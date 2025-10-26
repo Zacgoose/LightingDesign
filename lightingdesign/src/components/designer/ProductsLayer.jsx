@@ -38,6 +38,42 @@ const getProductStrokeColor = (product, products, defaultColor) => {
   return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
 };
 
+// Calculate letter prefix for a product based on its type and SKU
+const getProductLetterPrefix = (product, products, productTypesConfig) => {
+  const productType = product.product_type?.toLowerCase() || "default";
+  const config = productTypesConfig[productType] || productTypesConfig.default;
+  const letterPrefix = config.letterPrefix || "O";
+
+  // Normalize SKU: trim whitespace and handle empty strings as null
+  const sku = product.sku?.trim();
+  if (!sku || sku === "") {
+    return letterPrefix; // No SKU, just return letter without number
+  }
+
+  // Find all unique SKUs for this product type, sorted to ensure consistent ordering
+  const sameTypeProducts = products.filter(
+    (p) => (p.product_type?.toLowerCase() || "default") === productType
+  );
+
+  // Get unique SKUs, filtering out null/undefined/empty, then sort
+  const uniqueSkus = [...new Set(
+    sameTypeProducts
+      .map((p) => p.sku?.trim())
+      .filter((s) => s && s !== "")
+  )].sort();
+
+  // Find the index of this product's SKU among unique SKUs of this type
+  const skuIndex = uniqueSkus.indexOf(sku);
+
+  // If SKU not found (shouldn't happen), return just the letter
+  if (skuIndex === -1) {
+    console.warn(`SKU "${sku}" not found in uniqueSkus for ${productType}:`, uniqueSkus);
+    return letterPrefix;
+  }
+
+  return `${letterPrefix}${skuIndex + 1}`;
+};
+
 export const ProductsLayer = memo(
   ({
     products,
@@ -105,6 +141,7 @@ export const ProductsLayer = memo(
             const productType = product.product_type?.toLowerCase() || "default";
             const config = productTypesConfig[productType] || productTypesConfig.default;
             const customStroke = getProductStrokeColor(product, products, config.stroke);
+            const letterPrefix = getProductLetterPrefix(product, products, productTypesConfig);
 
             return (
               <ProductShape
@@ -130,6 +167,7 @@ export const ProductsLayer = memo(
                 }
                 customStroke={customStroke}
                 theme={theme}
+                letterPrefix={letterPrefix}
               />
             );
           })}
@@ -169,6 +207,7 @@ export const ProductsLayer = memo(
               const productType = product.product_type?.toLowerCase() || "default";
               const config = productTypesConfig[productType] || productTypesConfig.default;
               const customStroke = getProductStrokeColor(product, products, config.stroke);
+              const letterPrefix = getProductLetterPrefix(product, products, productTypesConfig);
 
               const relativeProduct = {
                 ...product,
@@ -191,6 +230,8 @@ export const ProductsLayer = memo(
                   onContextMenu={(e) => canInteract && onContextMenu(e, product.id)}
                   customStroke={customStroke}
                   theme={theme}
+                  letterPrefix={letterPrefix}
+                  groupRotation={selectionSnapshot.rotation || 0}
                 />
               );
             })}

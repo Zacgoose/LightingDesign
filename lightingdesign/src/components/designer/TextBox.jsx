@@ -1,4 +1,4 @@
-import { Text, Transformer, Group } from "react-konva";
+import { Text, Transformer, Group, Rect } from "react-konva";
 import { useEffect, useRef, memo } from "react";
 
 export const TextBox = memo(
@@ -37,6 +37,9 @@ export const TextBox = memo(
     // Text width is known, height is approximately fontSize * 1.2 for single line
     const textWidth = textBox.width || 100;
     const textHeight = renderedFontSize * 1.2;
+
+    // Rectangle padding
+    const rectPadding = 8;
 
     return (
       <>
@@ -98,6 +101,19 @@ export const TextBox = memo(
           }}
           onContextMenu={onContextMenu}
         >
+          {/* Render rectangle border if enabled */}
+          {textBox.showBorder && (
+            <Rect
+              x={-textWidth / 2 - rectPadding}
+              y={-textHeight / 2 - rectPadding}
+              width={textWidth + rectPadding * 2}
+              height={textHeight + rectPadding * 2}
+              stroke={textBox.borderColor || "#000000"}
+              strokeWidth={2}
+              fill="transparent"
+              listening={false}
+            />
+          )}
           <Text
             x={-textWidth / 2}
             y={-textHeight / 2}

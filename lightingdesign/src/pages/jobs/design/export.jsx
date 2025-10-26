@@ -939,6 +939,20 @@ const Page = () => {
           const offsetX = (textWidth) / 2;
           const offsetY = (lineHeight) / 2;
 
+          // Add border rectangle if showBorder is enabled
+          if (tb.showBorder) {
+            const rectPadding = 8;
+            const rectEl = document.createElementNS(SVG_NS, 'rect');
+            rectEl.setAttribute('x', String(-offsetX - rectPadding));
+            rectEl.setAttribute('y', String(-offsetY - rectPadding));
+            rectEl.setAttribute('width', String(textWidth + rectPadding * 2));
+            rectEl.setAttribute('height', String(lineHeight + rectPadding * 2));
+            rectEl.setAttribute('stroke', tb.borderColor || '#000000');
+            rectEl.setAttribute('stroke-width', '2');
+            rectEl.setAttribute('fill', 'none');
+            groupEl.appendChild(rectEl);
+          }
+
           const textEl = document.createElementNS(SVG_NS, 'text');
           textEl.setAttribute('x', String(-offsetX));
           textEl.setAttribute('y', String(-offsetY));

@@ -1602,6 +1602,8 @@ const Page = () => {
           fontStyle: textBox.fontStyle || "normal",
           textDecoration: textBox.textDecoration || "",
           color: textBox.color || "#000000",
+          showBorder: textBox.showBorder || false,
+          borderColor: textBox.borderColor || "#000000",
         });
         setTextDialogOpen(true);
       }
@@ -1703,6 +1705,18 @@ const Page = () => {
       );
     }
   }, [selectedTextId]);
+
+  const handleTextToggleBorder = useCallback(() => {
+    if (selectedTextId) {
+      setTextBoxes((boxes) =>
+        boxes.map((box) => {
+          if (box.id !== selectedTextId) return box;
+          return { ...box, showBorder: !box.showBorder };
+        })
+      );
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedTextId, contextMenus]);
 
   // Drag-to-select handlers
   const handleSelectionStart = useCallback(
@@ -2285,6 +2299,7 @@ const Page = () => {
         onTextFormatItalic={handleTextFormatItalic}
         onTextFormatUnderline={handleTextFormatUnderline}
         onTextFontSize={handleTextFontSize}
+        onTextToggleBorder={handleTextToggleBorder}
       />
 
       <CippComponentDialog

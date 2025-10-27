@@ -1978,9 +1978,14 @@ const Page = () => {
   );
 
   const handleExport = useCallback(() => {
+    // Save if there are pending changes before navigating to export page
+    if (hasUnsavedChanges && !isSaving) {
+      console.log("Saving design before export...");
+      handleSave();
+    }
     // Navigate to export page
     router.push(`/jobs/design/export?id=${id}`);
-  }, [router, id]);
+  }, [router, id, hasUnsavedChanges, isSaving, handleSave]);
 
   return (
     <>

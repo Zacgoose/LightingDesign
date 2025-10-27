@@ -568,21 +568,12 @@ const Page = () => {
       console.log('Layer switch effect skipped - design data still loading');
       return;
     }
-    
-    // CRITICAL FIX: On page refresh/mount, if we haven't loaded layers yet and there's a design ID,
-    // wait for the design to load before initializing the canvas with empty layer data.
-    // This prevents the canvas from being initialized with wrong dimensions on refresh.
-    console.log('🔍 Checking early returns:', {
-      id,
-      layersVersion,
-      lastLoadedLayerId: lastLoadedLayerId.current,
-      condition1: !!(id && layersVersion === 0 && lastLoadedLayerId.current === null),
-    });
 
-    if (id && layersVersion === 0 && lastLoadedLayerId.current === null) {
-      console.log('⏸️  EARLY RETURN: waiting for design to load');
-      return;
-    }
+    // CRITICAL BUG FIX: Removed the layersVersion === 0 check!
+    // That check was blocking layer switches on NEW jobs that haven't saved yet.
+    // layersVersion only increments when loadLayers() is called (loading saved design),
+    // so new jobs would have layersVersion === 0 forever, blocking all layer switches.
+    // The router.isReady and designData.isLoading checks above are sufficient.
 
     // CRITICAL FIX: Always reload layer data when activeLayerId changes
     // The previous check (activeLayerId !== lastLoadedLayerId.current) prevented reloading

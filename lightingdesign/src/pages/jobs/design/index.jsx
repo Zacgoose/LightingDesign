@@ -1055,11 +1055,18 @@ const Page = () => {
         } else {
           // Handle image file (existing logic)
           setIsUploadingImage(true);
-          console.log('Starting image upload...');
+          const uploadStartTime = performance.now();
+          console.log('Starting image upload...', { fileName: file.name, fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB` });
           const reader = new FileReader();
           reader.onload = (ev) => {
+            const readTime = performance.now();
+            console.log(`📄 File read complete (${(readTime - uploadStartTime).toFixed(0)}ms)`, { dataUrlSize: `${(ev.target.result.length / 1024 / 1024).toFixed(2)}MB` });
+
             const img = new window.Image();
             img.onload = () => {
+              const imageLoadTime = performance.now();
+              console.log(`🖼️  Image decoded (${(imageLoadTime - readTime).toFixed(0)}ms)`, { resolution: `${img.width}x${img.height}` });
+
               // CRITICAL: Create object once to maintain identity for sync effect
               const naturalSize = { width: img.width, height: img.height };
 
@@ -1095,7 +1102,8 @@ const Page = () => {
               
               handleResetView();
 
-              console.log('Image upload complete!');
+              const totalTime = performance.now() - uploadStartTime;
+              console.log(`✅ Image upload complete! Total time: ${(totalTime / 1000).toFixed(2)}s`);
               setIsUploadingImage(false);
             };
             img.onerror = () => {

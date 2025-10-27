@@ -471,9 +471,9 @@ const Page = () => {
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
       
-      // set image PDF scale (scale = 1.5) - balanced quality and performance
+      // set image PDF scale (scale = 3) - balanced quality and performance
       // Lower scale reduces conversion time and memory usage significantly
-      const scale = 1.5;
+      const scale = 3;
       const viewport = page.getViewport({ scale: scale });
       
       // Create canvas
@@ -502,7 +502,7 @@ const Page = () => {
       
       // Fallback: create a placeholder
       const canvas = document.createElement("canvas");
-      const scale = 1.5;
+      const scale = 3;
       canvas.width = pdfWidth * scale;
       canvas.height = pdfHeight * scale;
       const ctx = canvas.getContext("2d");
@@ -996,8 +996,8 @@ const Page = () => {
                 // Convert to raster for storage and display
                 const rasterImageDataUrl = await convertPdfToRasterImage(pdfDataUrl, pdfWidth, pdfHeight);
 
-                // The rasterized image is scaled 1.5x for quality while maintaining performance
-                const scale = 1.5; // Must match the scale factor in convertPdfToRasterImage
+                // The rasterized image is scaled 3x for quality while maintaining performance
+                const scale = 3; // Must match the scale factor in convertPdfToRasterImage
                 const rasterWidth = pdfWidth * scale;
                 const rasterHeight = pdfHeight * scale;
                 

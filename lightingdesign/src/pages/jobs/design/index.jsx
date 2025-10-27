@@ -572,7 +572,15 @@ const Page = () => {
     // CRITICAL FIX: On page refresh/mount, if we haven't loaded layers yet and there's a design ID,
     // wait for the design to load before initializing the canvas with empty layer data.
     // This prevents the canvas from being initialized with wrong dimensions on refresh.
+    console.log('🔍 Checking early returns:', {
+      id,
+      layersVersion,
+      lastLoadedLayerId: lastLoadedLayerId.current,
+      condition1: !!(id && layersVersion === 0 && lastLoadedLayerId.current === null),
+    });
+
     if (id && layersVersion === 0 && lastLoadedLayerId.current === null) {
+      console.log('⏸️  EARLY RETURN: waiting for design to load');
       return;
     }
 
@@ -580,10 +588,11 @@ const Page = () => {
     // The previous check (activeLayerId !== lastLoadedLayerId.current) prevented reloading
     // when switching back to a previously visited layer, causing stale background images
     if (!activeLayer) {
-      console.log('⚠️  Layer switch effect: activeLayer is null/undefined, skipping...');
+      console.log('⚠️  EARLY RETURN: activeLayer is null/undefined');
       return;
     }
 
+    console.log('✅ Passed all early returns, loading layer data...');
     console.log('🔄 LAYER SWITCHING:', {
       from: lastLoadedLayerId.current,
       to: activeLayerId,

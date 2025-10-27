@@ -568,8 +568,11 @@ const Page = () => {
     if (id && layersVersion === 0 && lastLoadedLayerId.current === null) {
       return;
     }
-    
-    if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
+
+    // CRITICAL FIX: Always reload layer data when activeLayerId changes
+    // The previous check (activeLayerId !== lastLoadedLayerId.current) prevented reloading
+    // when switching back to a previously visited layer, causing stale background images
+    if (activeLayer) {
       console.log('🔄 LAYER SWITCHING:', {
         from: lastLoadedLayerId.current,
         to: activeLayerId,

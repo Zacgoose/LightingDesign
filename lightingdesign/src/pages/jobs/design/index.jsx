@@ -1014,14 +1014,7 @@ const Page = () => {
                 const rasterWidth = pdfWidth * scale;
                 const rasterHeight = pdfHeight * scale;
                 
-                // Store the rasterized image (not the PDF)
-                updateLayer(activeLayerIdRef.current, {
-                  backgroundImage: rasterImageDataUrl, // Store rasterized image
-                  backgroundImageNaturalSize: { width: rasterWidth, height: rasterHeight },
-                  backgroundFileType: "image", // It's now an image, not a PDF
-                });
-                
-                // Set for immediate display
+                // Set state for immediate display - the sync effect will update the layer
                 setBackgroundImage(rasterImageDataUrl);
                 setBackgroundImageNaturalSize({ width: rasterWidth, height: rasterHeight });
                 
@@ -1056,13 +1049,7 @@ const Page = () => {
           reader.onload = (ev) => {
             const img = new window.Image();
             img.onload = () => {
-              // Store image data URL directly
-              updateLayer(activeLayerIdRef.current, {
-                backgroundImage: ev.target.result,
-                backgroundImageNaturalSize: { width: img.width, height: img.height },
-                backgroundFileType: "image",
-              });
-              
+              // Set state for immediate display - the sync effect will update the layer
               setBackgroundImage(ev.target.result);
               setBackgroundImageNaturalSize({ width: img.width, height: img.height });
               

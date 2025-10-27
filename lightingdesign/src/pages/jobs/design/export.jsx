@@ -574,10 +574,10 @@ const Page = () => {
       });
       console.log('Connectors in export region:', exportConnectors.length, 'of', connectors.length);
 
-  // Add connectors (cables)
+      // Add connectors (cables)
       // Connectors will be drawn directly into the SVG
       
-  // Add products to Konva layer using custom shapes
+      // Add products to Konva layer using custom shapes
       // Products will be drawn directly into the SVG
       // --- Build SVG manually to avoid Konva canvas size limits and ensure primitives ---
       console.log('Building manual SVG for export...');
@@ -586,8 +586,8 @@ const Page = () => {
       const svgElement = document.createElementNS(SVG_NS, 'svg');
       svgElement.setAttribute('xmlns', SVG_NS);
       svgElement.setAttribute('xmlns:xlink', XLINK_NS);
-  // Use an absolute viewBox that maps to the canvas coordinate system
-  svgElement.setAttribute('viewBox', `${contentOffsetX} ${contentOffsetY} ${exportWidth} ${exportHeight}`);
+      // Use an absolute viewBox that maps to the canvas coordinate system
+      svgElement.setAttribute('viewBox', `${contentOffsetX} ${contentOffsetY} ${exportWidth} ${exportHeight}`);
       svgElement.setAttribute('width', String(exportWidth));
       svgElement.setAttribute('height', String(exportHeight));
 
@@ -601,9 +601,9 @@ const Page = () => {
         imgEl.setAttributeNS(XLINK_NS, 'xlink:href', backgroundImage);
         imgEl.setAttribute('href', backgroundImage);
         // Position image using its calculated background bounds
-  // Position image using absolute canvas coordinates
-  imgEl.setAttribute('x', String(bgX));
-  imgEl.setAttribute('y', String(bgY));
+        // Position image using absolute canvas coordinates
+        imgEl.setAttribute('x', String(bgX));
+        imgEl.setAttribute('y', String(bgY));
         imgEl.setAttribute('width', String(bgWidth));
         imgEl.setAttribute('height', String(bgHeight));
         imgEl.setAttribute('preserveAspectRatio', 'xMinYMin meet');
@@ -756,19 +756,19 @@ const Page = () => {
     ctx.ellipse = (cx, cy, rx, ry, rotation, startAngle, endAngle) => {
       // For simplicity create an <ellipse> element for full ellipses
       const [ecx, ecy] = applyMatrix(cx, cy);
-  const scaleX = Math.sqrt(ctx._matrix[0]*ctx._matrix[0] + ctx._matrix[1]*ctx._matrix[1]);
-  const scaleY = Math.sqrt(ctx._matrix[2]*ctx._matrix[2] + ctx._matrix[3]*ctx._matrix[3]);
-  // compute rotation angle from matrix
-  const matrixAngle = Math.atan2(ctx._matrix[2], ctx._matrix[0]);
+      const scaleX = Math.sqrt(ctx._matrix[0]*ctx._matrix[0] + ctx._matrix[1]*ctx._matrix[1]);
+      const scaleY = Math.sqrt(ctx._matrix[2]*ctx._matrix[2] + ctx._matrix[3]*ctx._matrix[3]);
+      // compute rotation angle from matrix
+      const matrixAngle = Math.atan2(ctx._matrix[2], ctx._matrix[0]);
       const ellipseEl = document.createElementNS(SVG_NS, 'ellipse');
       ellipseEl.setAttribute('cx', String(ecx));
       ellipseEl.setAttribute('cy', String(ecy));
       ellipseEl.setAttribute('rx', String(Math.abs(rx * scaleX)));
       ellipseEl.setAttribute('ry', String(Math.abs(ry * scaleY)));
-  // Apply rotation (matrix + provided rotation)
-  let rotDeg = matrixAngle * 180 / Math.PI;
-  if (rotation) rotDeg += rotation * 180 / Math.PI;
-  if (rotDeg) ellipseEl.setAttribute('transform', `rotate(${rotDeg} ${ecx} ${ecy})`);
+      // Apply rotation (matrix + provided rotation)
+      let rotDeg = matrixAngle * 180 / Math.PI;
+      if (rotation) rotDeg += rotation * 180 / Math.PI;
+      if (rotDeg) ellipseEl.setAttribute('transform', `rotate(${rotDeg} ${ecx} ${ecy})`);
       ellipseEl.setAttribute('fill', ctx.fillStyle || 'none');
       ellipseEl.setAttribute('stroke', ctx.strokeStyle || 'none');
       ellipseEl.setAttribute('stroke-width', String(ctx.lineWidth || 1));
@@ -912,12 +912,12 @@ const Page = () => {
         const fillColor = product.color || config.fill || '#FFFFFF';
         const sx = product.scaleX || 1;
         const sy = product.scaleY || 1;
-  // Use absolute canvas coordinates
-  const cx = product.x;
-  const cy = product.y;
+        // Use absolute canvas coordinates
+        const cx = product.x;
+        const cy = product.y;
 
-  console.log('Adding product', product.id, 'pos', { cx, cy }, 'size', { width, height }, 'scale', { sx, sy });
-  // Create a group for the product and transform it to its canvas position
+        console.log('Adding product', product.id, 'pos', { cx, cy }, 'size', { width, height }, 'scale', { sx, sy });
+        // Create a group for the product and transform it to its canvas position
         const productGroupEl = document.createElementNS(SVG_NS, 'g');
         const rotation = product.rotation || 0;
         productGroupEl.setAttribute('transform', `translate(${cx} ${cy}) rotate(${rotation})`);

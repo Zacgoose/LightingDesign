@@ -606,7 +606,7 @@ const Page = () => {
   imgEl.setAttribute('y', String(bgY));
         imgEl.setAttribute('width', String(bgWidth));
         imgEl.setAttribute('height', String(bgHeight));
-        imgEl.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+        imgEl.setAttribute('preserveAspectRatio', 'none');
         svgElement.appendChild(imgEl);
       }
 

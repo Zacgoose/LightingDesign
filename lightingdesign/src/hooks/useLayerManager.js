@@ -50,14 +50,7 @@ export const useLayerManager = (initialLayers = null) => {
 
   // Get active layer - memoized to prevent unnecessary re-renders
   const activeLayer = useMemo(() => {
-    const layer = layers.find((l) => l.id === activeLayerId) || layers[0];
-    console.log('🎯 Active layer computed:', {
-      activeLayerId,
-      layerName: layer?.name,
-      hasBackground: !!layer?.backgroundImage,
-      backgroundLength: layer?.backgroundImage?.length || 0,
-    });
-    return layer;
+    return layers.find((l) => l.id === activeLayerId) || layers[0];
   }, [layers, activeLayerId]);
 
   // Get active layer function (for backwards compatibility if needed)
@@ -101,37 +94,13 @@ export const useLayerManager = (initialLayers = null) => {
 
   // Update layer properties
   const updateLayer = useCallback((layerId, updates) => {
-    console.log('📝 updateLayer called:', {
-      targetLayerId: layerId,
-      updates: {
-        ...updates,
-        backgroundImage: updates.backgroundImage ? `${updates.backgroundImage.substring(0, 50)}... (${updates.backgroundImage.length} chars)` : updates.backgroundImage,
-      },
-    });
-
     setLayers((prev) => {
       const updated = prev.map((layer) => {
         if (layer.id === layerId) {
-          const newLayer = { ...layer, ...updates };
-          console.log('✏️  Layer updated:', {
-            layerId: layer.id,
-            hadBackground: !!layer.backgroundImage,
-            hasBackground: !!newLayer.backgroundImage,
-            backgroundLength: newLayer.backgroundImage?.length || 0,
-          });
-          return newLayer;
+          return { ...layer, ...updates };
         }
         return layer;
       });
-
-      // Log all layers after update
-      console.log('📚 All layers after update:', updated.map(l => ({
-        id: l.id,
-        name: l.name,
-        hasBackground: !!l.backgroundImage,
-        backgroundLength: l.backgroundImage?.length || 0,
-      })));
-
       return updated;
     });
   }, []);

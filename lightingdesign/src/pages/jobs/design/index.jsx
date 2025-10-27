@@ -163,24 +163,11 @@ const Page = () => {
   }, [activeLayerId]);
 
   // Background and Scale - now derived from active layer
-  const [backgroundImage, setBackgroundImageRaw] = useState(activeLayer?.backgroundImage || null);
+  const [backgroundImage, setBackgroundImage] = useState(activeLayer?.backgroundImage || null);
   const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(
     activeLayer?.backgroundImageNaturalSize || null,
   );
   const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100);
-
-  // Wrapper for setBackgroundImage with comprehensive logging
-  const setBackgroundImage = useCallback((value) => {
-    const stack = new Error().stack;
-    const caller = stack.split('\n')[2]?.trim() || 'unknown';
-    console.log('🎨 setBackgroundImage called:', {
-      activeLayer: activeLayerIdRef.current,
-      hasValue: !!value,
-      valueLength: value?.length || 0,
-      caller: caller,
-    });
-    setBackgroundImageRaw(value);
-  }, []);
 
   // Text boxes state
   const [textBoxes, setTextBoxes] = useState([]);
@@ -548,24 +535,15 @@ const Page = () => {
 
   // Update local state when switching layers OR when layers are loaded
   useEffect(() => {
-    console.log('⚡ Layer switch effect triggered:', {
-      activeLayerId,
-      routerReady: router.isReady,
-      designLoading: designData.isLoading,
-      activeLayerExists: !!activeLayer,
-    });
-
     // Skip if router query is not ready yet - this prevents loading empty layer data
     // when we're on a page that has an ID in the URL but router.query.id is not yet populated
     if (!router.isReady) {
-      console.log('Layer switch effect skipped - router not ready');
       return;
     }
 
     // Skip initial render if design data is still loading
     // This prevents loading the default empty layer before the actual design data arrives
     if (designData.isLoading) {
-      console.log('Layer switch effect skipped - design data still loading');
       return;
     }
 
@@ -579,17 +557,8 @@ const Page = () => {
     // The previous check (activeLayerId !== lastLoadedLayerId.current) prevented reloading
     // when switching back to a previously visited layer, causing stale background images
     if (!activeLayer) {
-      console.log('⚠️  EARLY RETURN: activeLayer is null/undefined');
       return;
     }
-
-    console.log('✅ Passed all early returns, loading layer data...');
-    console.log('🔄 LAYER SWITCHING:', {
-      from: lastLoadedLayerId.current,
-      to: activeLayerId,
-      newLayerHasBackground: !!activeLayer.backgroundImage,
-      newLayerBackgroundLength: activeLayer.backgroundImage?.length || 0,
-    });
 
     lastLoadedLayerId.current = activeLayerId;
     isLoadingLayerData.current = true;
@@ -606,7 +575,6 @@ const Page = () => {
     setConnectors(activeLayer.connectors || []);
     setTextBoxes(activeLayer.textBoxes || []);
 
-    console.log('📥 Loading layer background from layer data...');
     // Set background image directly (no conversion needed - PDFs are already rasterized)
     setBackgroundImage(activeLayer.backgroundImage || null);
     setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
@@ -998,7 +966,6 @@ const Page = () => {
         if (isPdf) {
           // Handle PDF file - store only the PDF data, convert to raster on load
           setIsUploadingImage(true);
-          console.log('Starting PDF upload and conversion...');
           try {
             const reader = new FileReader();
             reader.onload = async (ev) => {
@@ -1037,11 +1004,6 @@ const Page = () => {
                 // CRITICAL: Create object once to maintain identity for sync effect
                 const naturalSize = { width: rasterWidth, height: rasterHeight };
 
-                console.log('💾 Saving PDF background to layer:', activeLayerIdRef.current, {
-                  imageLength: rasterImageDataUrl.length,
-                  naturalSize,
-                });
-
                 // Store the rasterized image (not the PDF)
                 updateLayer(activeLayerIdRef.current, {
                   backgroundImage: rasterImageDataUrl, // Store rasterized image
@@ -1075,7 +1037,6 @@ const Page = () => {
                 
                 handleResetView();
 
-                console.log('PDF upload and conversion complete!');
                 setIsUploadingImage(false);
               } catch (error) {
                 console.error("Error processing PDF:", error);
@@ -1094,25 +1055,12 @@ const Page = () => {
         } else {
           // Handle image file (existing logic)
           setIsUploadingImage(true);
-          const uploadStartTime = performance.now();
-          console.log('Starting image upload...', { fileName: file.name, fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB` });
           const reader = new FileReader();
           reader.onload = (ev) => {
-            const readTime = performance.now();
-            console.log(`📄 File read complete (${(readTime - uploadStartTime).toFixed(0)}ms)`, { dataUrlSize: `${(ev.target.result.length / 1024 / 1024).toFixed(2)}MB` });
-
             const img = new window.Image();
             img.onload = () => {
-              const imageLoadTime = performance.now();
-              console.log(`🖼️  Image decoded (${(imageLoadTime - readTime).toFixed(0)}ms)`, { resolution: `${img.width}x${img.height}` });
-
               // CRITICAL: Create object once to maintain identity for sync effect
               const naturalSize = { width: img.width, height: img.height };
-
-              console.log('💾 Saving image background to layer:', activeLayerIdRef.current, {
-                imageLength: ev.target.result.length,
-                naturalSize,
-              });
 
               // Store image data URL directly
               updateLayer(activeLayerIdRef.current, {
@@ -1146,8 +1094,6 @@ const Page = () => {
               
               handleResetView();
 
-              const totalTime = performance.now() - uploadStartTime;
-              console.log(`✅ Image upload complete! Total time: ${(totalTime / 1000).toFixed(2)}s`);
               setIsUploadingImage(false);
             };
             img.onerror = () => {

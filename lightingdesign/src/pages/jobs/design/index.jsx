@@ -492,8 +492,9 @@ const Page = () => {
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
       
-      // set image PDF scale (scale = 3) based on desired image quality
-      const scale = 3;
+      // set image PDF scale (scale = 1.5) - balanced quality and performance
+      // Lower scale reduces conversion time and memory usage significantly
+      const scale = 1.5;
       const viewport = page.getViewport({ scale: scale });
       
       // Create canvas
@@ -603,8 +604,12 @@ const Page = () => {
       lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
       lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
 
-      // enable sync after layer data is loaded
-      isLoadingLayerData.current = false;
+      // CRITICAL FIX: Enable sync AFTER React has processed all state updates
+      // This prevents the sync effect from running during layer switching
+      // setTimeout with 0 delay ensures this runs after the current event loop
+      setTimeout(() => {
+        isLoadingLayerData.current = false;
+      }, 0);
     }
   }, [
     router.isReady,
@@ -1008,9 +1013,9 @@ const Page = () => {
                 
                 // Convert to raster for storage and display
                 const rasterImageDataUrl = await convertPdfToRasterImage(pdfDataUrl, pdfWidth, pdfHeight);
-                
-                // The rasterized image is scaled 3x for quality, so we need to use the actual image dimensions
-                const scale = 3; // Must match the scale factor in convertPdfToRasterImage
+
+                // The rasterized image is scaled 1.5x for quality while maintaining performance
+                const scale = 1.5; // Must match the scale factor in convertPdfToRasterImage
                 const rasterWidth = pdfWidth * scale;
                 const rasterHeight = pdfHeight * scale;
                 
@@ -1020,10 +1025,14 @@ const Page = () => {
                   backgroundImageNaturalSize: { width: rasterWidth, height: rasterHeight },
                   backgroundFileType: "image", // It's now an image, not a PDF
                 });
-                
+
                 // Set for immediate display
                 setBackgroundImage(rasterImageDataUrl);
                 setBackgroundImageNaturalSize({ width: rasterWidth, height: rasterHeight });
+
+                // Update sync refs to prevent redundant sync
+                lastSyncedBackgroundImage.current = rasterImageDataUrl;
+                lastSyncedBackgroundImageNaturalSize.current = { width: rasterWidth, height: rasterHeight };
                 
                 // Auto-zoom to fit the background in the viewport (use raster dimensions)
                 const imageScaleX = canvasWidth / rasterWidth;
@@ -1062,9 +1071,13 @@ const Page = () => {
                 backgroundImageNaturalSize: { width: img.width, height: img.height },
                 backgroundFileType: "image",
               });
-              
+
               setBackgroundImage(ev.target.result);
               setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+
+              // Update sync refs to prevent redundant sync
+              lastSyncedBackgroundImage.current = ev.target.result;
+              lastSyncedBackgroundImageNaturalSize.current = { width: img.width, height: img.height };
               
               // Auto-zoom to fit the background image in the viewport
               const imageScaleX = canvasWidth / img.width;

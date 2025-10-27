@@ -548,6 +548,13 @@ const Page = () => {
 
   // Update local state when switching layers OR when layers are loaded
   useEffect(() => {
+    console.log('⚡ Layer switch effect triggered:', {
+      activeLayerId,
+      routerReady: router.isReady,
+      designLoading: designData.isLoading,
+      activeLayerExists: !!activeLayer,
+    });
+
     // Skip if router query is not ready yet - this prevents loading empty layer data
     // when we're on a page that has an ID in the URL but router.query.id is not yet populated
     if (!router.isReady) {
@@ -572,48 +579,51 @@ const Page = () => {
     // CRITICAL FIX: Always reload layer data when activeLayerId changes
     // The previous check (activeLayerId !== lastLoadedLayerId.current) prevented reloading
     // when switching back to a previously visited layer, causing stale background images
-    if (activeLayer) {
-      console.log('🔄 LAYER SWITCHING:', {
-        from: lastLoadedLayerId.current,
-        to: activeLayerId,
-        newLayerHasBackground: !!activeLayer.backgroundImage,
-        newLayerBackgroundLength: activeLayer.backgroundImage?.length || 0,
-      });
-
-      lastLoadedLayerId.current = activeLayerId;
-      isLoadingLayerData.current = true;
-
-      // Update activeLayerIdRef immediately to ensure sync effects use correct layer
-      activeLayerIdRef.current = activeLayerId;
-
-      // Clear selections when switching floors to prevent ghost transformer
-      setSelectedIds([]);
-      setSelectedTextId(null);
-
-      // Load the new layer's data - use resetHistoryBaseline to prevent undo past loaded state
-      resetHistoryBaseline(activeLayer.products || []);
-      setConnectors(activeLayer.connectors || []);
-      setTextBoxes(activeLayer.textBoxes || []);
-
-      console.log('📥 Loading layer background from layer data...');
-      // Set background image directly (no conversion needed - PDFs are already rasterized)
-      setBackgroundImage(activeLayer.backgroundImage || null);
-      setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
-      
-      setScaleFactor(activeLayer.scaleFactor || 100);
-
-      // Update sync refs to match the new layer's data
-      lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
-      lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
-      lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
-
-      // CRITICAL FIX: Enable sync AFTER React has processed all state updates
-      // This prevents the sync effect from running during layer switching
-      // setTimeout with 0 delay ensures this runs after the current event loop
-      setTimeout(() => {
-        isLoadingLayerData.current = false;
-      }, 0);
+    if (!activeLayer) {
+      console.log('⚠️  Layer switch effect: activeLayer is null/undefined, skipping...');
+      return;
     }
+
+    console.log('🔄 LAYER SWITCHING:', {
+      from: lastLoadedLayerId.current,
+      to: activeLayerId,
+      newLayerHasBackground: !!activeLayer.backgroundImage,
+      newLayerBackgroundLength: activeLayer.backgroundImage?.length || 0,
+    });
+
+    lastLoadedLayerId.current = activeLayerId;
+    isLoadingLayerData.current = true;
+
+    // Update activeLayerIdRef immediately to ensure sync effects use correct layer
+    activeLayerIdRef.current = activeLayerId;
+
+    // Clear selections when switching floors to prevent ghost transformer
+    setSelectedIds([]);
+    setSelectedTextId(null);
+
+    // Load the new layer's data - use resetHistoryBaseline to prevent undo past loaded state
+    resetHistoryBaseline(activeLayer.products || []);
+    setConnectors(activeLayer.connectors || []);
+    setTextBoxes(activeLayer.textBoxes || []);
+
+    console.log('📥 Loading layer background from layer data...');
+    // Set background image directly (no conversion needed - PDFs are already rasterized)
+    setBackgroundImage(activeLayer.backgroundImage || null);
+    setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
+
+    setScaleFactor(activeLayer.scaleFactor || 100);
+
+    // Update sync refs to match the new layer's data
+    lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
+    lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
+    lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
+
+    // CRITICAL FIX: Enable sync AFTER React has processed all state updates
+    // This prevents the sync effect from running during layer switching
+    // setTimeout with 0 delay ensures this runs after the current event loop
+    setTimeout(() => {
+      isLoadingLayerData.current = false;
+    }, 0);
   }, [
     router.isReady,
     id,

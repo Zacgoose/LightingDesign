@@ -996,13 +996,15 @@ const Page = () => {
         const fontSize = Math.max(12, Math.min(width, height) * 0.3);
         const textEl = document.createElementNS(SVG_NS, 'text');
         textEl.setAttribute('x', '0');
-        textEl.setAttribute('y', '0');
+        // Use a small positive offset to better match Konva's text positioning
+        // This accounts for the difference between SVG's dominant-baseline and Konva's offsetY
+        textEl.setAttribute('y', String(fontSize * 0.05));
         textEl.setAttribute('fill', '#000000');
         textEl.setAttribute('font-family', 'Arial');
         textEl.setAttribute('font-size', String(fontSize));
         textEl.setAttribute('font-weight', 'bold');
         textEl.setAttribute('text-anchor', 'middle');
-        textEl.setAttribute('dominant-baseline', 'central');
+        textEl.setAttribute('dominant-baseline', 'middle');
         // Counter-rotate to keep text upright
         if (rotation) {
           textEl.setAttribute('transform', `rotate(${-rotation})`);

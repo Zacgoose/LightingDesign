@@ -40,6 +40,12 @@ const PAPER_SIZES = [
   { value: "A0", label: "A0 (841 × 1189 mm)", width: 841, height: 1189 },
 ];
 
+// SVG text vertical offset to match Konva's text positioning
+// This compensates for the difference between SVG's dominant-baseline='middle'
+// and Konva's offsetY centering approach. The value 0.05 (5% of font size)
+// was determined through visual comparison to align text exactly as shown on canvas.
+const SVG_TEXT_VERTICAL_OFFSET_RATIO = 0.05;
+
 const Page = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -998,7 +1004,7 @@ const Page = () => {
         textEl.setAttribute('x', '0');
         // Use a small positive offset to better match Konva's text positioning
         // This accounts for the difference between SVG's dominant-baseline and Konva's offsetY
-        textEl.setAttribute('y', String(fontSize * 0.05));
+        textEl.setAttribute('y', String(fontSize * SVG_TEXT_VERTICAL_OFFSET_RATIO));
         textEl.setAttribute('fill', '#000000');
         textEl.setAttribute('font-family', 'Arial');
         textEl.setAttribute('font-size', String(fontSize));

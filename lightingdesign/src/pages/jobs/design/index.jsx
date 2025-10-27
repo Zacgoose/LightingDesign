@@ -969,6 +969,10 @@ const Page = () => {
   });
 
   const handleUploadFloorPlan = useCallback(async () => {
+    // Capture the current layer ID at the start of upload to prevent race conditions
+    // if the user switches layers while the file is being read
+    const targetLayerId = activeLayerIdRef.current;
+    
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*,application/pdf";
@@ -1014,27 +1018,36 @@ const Page = () => {
                 const rasterWidth = pdfWidth * scale;
                 const rasterHeight = pdfHeight * scale;
                 
-                // Set state for immediate display - the sync effect will update the layer
-                setBackgroundImage(rasterImageDataUrl);
-                setBackgroundImageNaturalSize({ width: rasterWidth, height: rasterHeight });
+                // Update the target layer directly to ensure the upload applies to the correct layer
+                // even if the user switches layers during upload
+                updateLayer(targetLayerId, {
+                  backgroundImage: rasterImageDataUrl,
+                  backgroundImageNaturalSize: { width: rasterWidth, height: rasterHeight },
+                });
                 
-                // Auto-zoom to fit the background in the viewport (use raster dimensions)
-                const imageScaleX = canvasWidth / rasterWidth;
-                const imageScaleY = canvasHeight / rasterHeight;
-                const imageScale = Math.min(imageScaleX, imageScaleY);
-                
-                const scaledImageWidth = rasterWidth * imageScale;
-                const scaledImageHeight = rasterHeight * imageScale;
-                
-                const padding = 0.9;
-                const zoomX = (viewportWidth * padding) / scaledImageWidth;
-                const zoomY = (viewportHeight * padding) / scaledImageHeight;
-                
-                const autoZoom = Math.min(zoomX, zoomY);
-                const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
-                setStageScale(constrainedZoom);
-                
-                handleResetView();
+                // Only update the displayed background if we're still on the same layer
+                if (activeLayerIdRef.current === targetLayerId) {
+                  setBackgroundImage(rasterImageDataUrl);
+                  setBackgroundImageNaturalSize({ width: rasterWidth, height: rasterHeight });
+                  
+                  // Auto-zoom to fit the background in the viewport (use raster dimensions)
+                  const imageScaleX = canvasWidth / rasterWidth;
+                  const imageScaleY = canvasHeight / rasterHeight;
+                  const imageScale = Math.min(imageScaleX, imageScaleY);
+                  
+                  const scaledImageWidth = rasterWidth * imageScale;
+                  const scaledImageHeight = rasterHeight * imageScale;
+                  
+                  const padding = 0.9;
+                  const zoomX = (viewportWidth * padding) / scaledImageWidth;
+                  const zoomY = (viewportHeight * padding) / scaledImageHeight;
+                  
+                  const autoZoom = Math.min(zoomX, zoomY);
+                  const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
+                  setStageScale(constrainedZoom);
+                  
+                  handleResetView();
+                }
               } catch (error) {
                 console.error("Error processing PDF:", error);
               }
@@ -1049,27 +1062,36 @@ const Page = () => {
           reader.onload = (ev) => {
             const img = new window.Image();
             img.onload = () => {
-              // Set state for immediate display - the sync effect will update the layer
-              setBackgroundImage(ev.target.result);
-              setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+              // Update the target layer directly to ensure the upload applies to the correct layer
+              // even if the user switches layers during upload
+              updateLayer(targetLayerId, {
+                backgroundImage: ev.target.result,
+                backgroundImageNaturalSize: { width: img.width, height: img.height },
+              });
               
-              // Auto-zoom to fit the background image in the viewport
-              const imageScaleX = canvasWidth / img.width;
-              const imageScaleY = canvasHeight / img.height;
-              const imageScale = Math.min(imageScaleX, imageScaleY);
-              
-              const scaledImageWidth = img.width * imageScale;
-              const scaledImageHeight = img.height * imageScale;
-              
-              const padding = 0.9;
-              const zoomX = (viewportWidth * padding) / scaledImageWidth;
-              const zoomY = (viewportHeight * padding) / scaledImageHeight;
-              
-              const autoZoom = Math.min(zoomX, zoomY);
-              const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
-              setStageScale(constrainedZoom);
-              
-              handleResetView();
+              // Only update the displayed background if we're still on the same layer
+              if (activeLayerIdRef.current === targetLayerId) {
+                setBackgroundImage(ev.target.result);
+                setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+                
+                // Auto-zoom to fit the background image in the viewport
+                const imageScaleX = canvasWidth / img.width;
+                const imageScaleY = canvasHeight / img.height;
+                const imageScale = Math.min(imageScaleX, imageScaleY);
+                
+                const scaledImageWidth = img.width * imageScale;
+                const scaledImageHeight = img.height * imageScale;
+                
+                const padding = 0.9;
+                const zoomX = (viewportWidth * padding) / scaledImageWidth;
+                const zoomY = (viewportHeight * padding) / scaledImageHeight;
+                
+                const autoZoom = Math.min(zoomX, zoomY);
+                const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
+                setStageScale(constrainedZoom);
+                
+                handleResetView();
+              }
             };
             img.src = ev.target.result;
           };

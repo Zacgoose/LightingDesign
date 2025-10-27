@@ -228,6 +228,9 @@ const Page = () => {
   const [scaleDialogOpen, setScaleDialogOpen] = useState(false);
   const [scaleValue, setScaleValue] = useState(1);
 
+  // Upload state for better UX
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
   // Form hooks
   const scaleForm = useForm({
     mode: "onChange",
@@ -261,33 +264,9 @@ const Page = () => {
     updateLayer(activeLayerIdRef.current, { textBoxes });
   }, [textBoxes, updateLayer]);
 
-  // Keep background image in sync with active layer
-  // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
-  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
-  useEffect(() => {
-    // Check if values have changed from what we last synced
-    const hasChanged =
-      backgroundImage !== lastSyncedBackgroundImage.current ||
-      backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current;
-    
-    if (!hasChanged) {
-      return; // No changes to sync
-    }
-    
-    // Don't sync while loading layer data - this prevents writing stale state to new layer
-    if (isLoadingLayerData.current) {
-      console.log('Background sync skipped - loading layer data');
-      return;
-    }
-    
-    console.log('Syncing background to layer:', activeLayerIdRef.current, {
-      hasImage: !!backgroundImage,
-      imageLength: backgroundImage?.length || 0
-    });
-    updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
-    lastSyncedBackgroundImage.current = backgroundImage;
-    lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
-  }, [backgroundImage, backgroundImageNaturalSize, updateLayer]);
+  // Background sync removed - we now only update layers explicitly during uploads
+  // This prevents race conditions where the sync effect runs at the wrong time
+  // and applies backgrounds to the wrong layers
 
   // Keep scale factor in sync with active layer
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
@@ -492,7 +471,8 @@ const Page = () => {
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
       
-      // set image PDF scale (scale = 3) based on desired image quality
+      // set image PDF scale (scale = 3) - balanced quality and performance
+      // Lower scale reduces conversion time and memory usage significantly
       const scale = 3;
       const viewport = page.getViewport({ scale: scale });
       
@@ -522,7 +502,7 @@ const Page = () => {
       
       // Fallback: create a placeholder
       const canvas = document.createElement("canvas");
-      const scale = 1.5;
+      const scale = 3;
       canvas.width = pdfWidth * scale;
       canvas.height = pdfHeight * scale;
       const ctx = canvas.getContext("2d");
@@ -558,54 +538,60 @@ const Page = () => {
     // Skip if router query is not ready yet - this prevents loading empty layer data
     // when we're on a page that has an ID in the URL but router.query.id is not yet populated
     if (!router.isReady) {
-      console.log('Layer switch effect skipped - router not ready');
       return;
     }
 
     // Skip initial render if design data is still loading
     // This prevents loading the default empty layer before the actual design data arrives
     if (designData.isLoading) {
-      console.log('Layer switch effect skipped - design data still loading');
       return;
     }
-    
-    // CRITICAL FIX: On page refresh/mount, if we haven't loaded layers yet and there's a design ID,
-    // wait for the design to load before initializing the canvas with empty layer data.
-    // This prevents the canvas from being initialized with wrong dimensions on refresh.
-    if (id && layersVersion === 0 && lastLoadedLayerId.current === null) {
+
+    // CRITICAL BUG FIX: Removed the layersVersion === 0 check!
+    // That check was blocking layer switches on NEW jobs that haven't saved yet.
+    // layersVersion only increments when loadLayers() is called (loading saved design),
+    // so new jobs would have layersVersion === 0 forever, blocking all layer switches.
+    // The router.isReady and designData.isLoading checks above are sufficient.
+
+    // CRITICAL FIX: Always reload layer data when activeLayerId changes
+    // The previous check (activeLayerId !== lastLoadedLayerId.current) prevented reloading
+    // when switching back to a previously visited layer, causing stale background images
+    if (!activeLayer) {
       return;
     }
-    
-    if (activeLayerId !== lastLoadedLayerId.current && activeLayer) {
-      lastLoadedLayerId.current = activeLayerId;
-      isLoadingLayerData.current = true;
-      
-      // Update activeLayerIdRef immediately to ensure sync effects use correct layer
-      activeLayerIdRef.current = activeLayerId;
 
-      // Clear selections when switching floors to prevent ghost transformer
-      setSelectedIds([]);
-      setSelectedTextId(null);
+    lastLoadedLayerId.current = activeLayerId;
+    isLoadingLayerData.current = true;
 
-      // Load the new layer's data - use resetHistoryBaseline to prevent undo past loaded state
-      resetHistoryBaseline(activeLayer.products || []);
-      setConnectors(activeLayer.connectors || []);
-      setTextBoxes(activeLayer.textBoxes || []);
-      
-      // Set background image directly (no conversion needed - PDFs are already rasterized)
-      setBackgroundImage(activeLayer.backgroundImage || null);
-      setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
-      
-      setScaleFactor(activeLayer.scaleFactor || 100);
+    // Update activeLayerIdRef immediately to ensure sync effects use correct layer
+    activeLayerIdRef.current = activeLayerId;
 
-      // Update sync refs to match the new layer's data
-      lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
-      lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
-      lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
+    // Clear selections when switching floors to prevent ghost transformer
+    setSelectedIds([]);
+    setSelectedTextId(null);
 
-      // enable sync after layer data is loaded
+    // Load the new layer's data - use resetHistoryBaseline to prevent undo past loaded state
+    resetHistoryBaseline(activeLayer.products || []);
+    setConnectors(activeLayer.connectors || []);
+    setTextBoxes(activeLayer.textBoxes || []);
+
+    // Set background image directly (no conversion needed - PDFs are already rasterized)
+    setBackgroundImage(activeLayer.backgroundImage || null);
+    setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
+
+    setScaleFactor(activeLayer.scaleFactor || 100);
+
+    // Update sync refs to match the new layer's data
+    lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
+    lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
+    lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
+
+    // CRITICAL FIX: Enable sync AFTER React has processed all state updates
+    // This prevents the sync effect from running during layer switching
+    // setTimeout with 0 delay ensures this runs after the current event loop
+    setTimeout(() => {
       isLoadingLayerData.current = false;
-    }
+    }, 0);
   }, [
     router.isReady,
     id,
@@ -976,9 +962,10 @@ const Page = () => {
       const file = e.target.files[0];
       if (file) {
         const isPdf = file.type === "application/pdf";
-        
+
         if (isPdf) {
           // Handle PDF file - store only the PDF data, convert to raster on load
+          setIsUploadingImage(true);
           try {
             const reader = new FileReader();
             reader.onload = async (ev) => {
@@ -1008,22 +995,29 @@ const Page = () => {
                 
                 // Convert to raster for storage and display
                 const rasterImageDataUrl = await convertPdfToRasterImage(pdfDataUrl, pdfWidth, pdfHeight);
-                
-                // The rasterized image is scaled 3x for quality, so we need to use the actual image dimensions
+
+                // The rasterized image is scaled 3x for quality while maintaining performance
                 const scale = 3; // Must match the scale factor in convertPdfToRasterImage
                 const rasterWidth = pdfWidth * scale;
                 const rasterHeight = pdfHeight * scale;
                 
+                // CRITICAL: Create object once to maintain identity for sync effect
+                const naturalSize = { width: rasterWidth, height: rasterHeight };
+
                 // Store the rasterized image (not the PDF)
                 updateLayer(activeLayerIdRef.current, {
                   backgroundImage: rasterImageDataUrl, // Store rasterized image
-                  backgroundImageNaturalSize: { width: rasterWidth, height: rasterHeight },
+                  backgroundImageNaturalSize: naturalSize,
                   backgroundFileType: "image", // It's now an image, not a PDF
                 });
-                
-                // Set for immediate display
+
+                // Set for immediate display - use same object to prevent sync effect
                 setBackgroundImage(rasterImageDataUrl);
-                setBackgroundImageNaturalSize({ width: rasterWidth, height: rasterHeight });
+                setBackgroundImageNaturalSize(naturalSize);
+
+                // Update sync refs to prevent redundant sync - use same object instance
+                lastSyncedBackgroundImage.current = rasterImageDataUrl;
+                lastSyncedBackgroundImageNaturalSize.current = naturalSize;
                 
                 // Auto-zoom to fit the background in the viewport (use raster dimensions)
                 const imageScaleX = canvasWidth / rasterWidth;
@@ -1042,29 +1036,45 @@ const Page = () => {
                 setStageScale(constrainedZoom);
                 
                 handleResetView();
+
+                setIsUploadingImage(false);
               } catch (error) {
                 console.error("Error processing PDF:", error);
+                setIsUploadingImage(false);
               }
+            };
+            reader.onerror = () => {
+              console.error("Error reading PDF file");
+              setIsUploadingImage(false);
             };
             reader.readAsArrayBuffer(file);
           } catch (error) {
             console.error("Error loading PDF:", error);
+            setIsUploadingImage(false);
           }
         } else {
           // Handle image file (existing logic)
+          setIsUploadingImage(true);
           const reader = new FileReader();
           reader.onload = (ev) => {
             const img = new window.Image();
             img.onload = () => {
+              // CRITICAL: Create object once to maintain identity for sync effect
+              const naturalSize = { width: img.width, height: img.height };
+
               // Store image data URL directly
               updateLayer(activeLayerIdRef.current, {
                 backgroundImage: ev.target.result,
-                backgroundImageNaturalSize: { width: img.width, height: img.height },
+                backgroundImageNaturalSize: naturalSize,
                 backgroundFileType: "image",
               });
-              
+
               setBackgroundImage(ev.target.result);
-              setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+              setBackgroundImageNaturalSize(naturalSize);
+
+              // Update sync refs to prevent redundant sync - use same object instance
+              lastSyncedBackgroundImage.current = ev.target.result;
+              lastSyncedBackgroundImageNaturalSize.current = naturalSize;
               
               // Auto-zoom to fit the background image in the viewport
               const imageScaleX = canvasWidth / img.width;
@@ -1083,8 +1093,18 @@ const Page = () => {
               setStageScale(constrainedZoom);
               
               handleResetView();
+
+              setIsUploadingImage(false);
+            };
+            img.onerror = () => {
+              console.error("Error loading image file");
+              setIsUploadingImage(false);
             };
             img.src = ev.target.result;
+          };
+          reader.onerror = () => {
+            console.error("Error reading image file");
+            setIsUploadingImage(false);
           };
           reader.readAsDataURL(file);
         }

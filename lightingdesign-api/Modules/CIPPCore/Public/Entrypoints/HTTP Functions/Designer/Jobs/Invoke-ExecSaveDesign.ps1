@@ -29,47 +29,49 @@ function Invoke-ExecSaveDesign {
         $DesignDataJson = if ($DesignData) {
             [string]($DesignData | ConvertTo-Json -Depth 20 -Compress)
         } else {
-            $null
+            '{}'
         }
 
-        # Create or update design entity
-        # Note: Add-CIPPAzDataTableEntity handles large properties automatically by splitting into chunks
-        if ($ExistingDesign) {
-            # Update existing design
-            $Entity = @{
-                PartitionKey = [string]$JobId
-                RowKey       = $ExistingDesign.RowKey
-                JobId        = [string]$JobId
-                DesignData   = $DesignDataJson
-                LastModified = (Get-Date).ToString('o')
-            }
-        } else {
-            # Create new design
-            $Entity = @{
-                PartitionKey = [string]$JobId
-                RowKey       = [guid]::NewGuid().ToString()
-                JobId        = [string]$JobId
-                DesignData   = $DesignDataJson
-                LastModified = (Get-Date).ToString('o')
-            }
+        # Validate JSON before saving
+        try {
+            $null = $DesignDataJson | ConvertFrom-Json -ErrorAction Stop
+        } catch {
+            Write-Error "JSON validation failed: $_"
+            throw "Invalid design data structure"
         }
 
+        # Create entity - let Add-CIPPAzDataTableEntity handle splitting automatically
+        $Entity = @{
+            PartitionKey = [string]$JobId
+            RowKey       = if ($ExistingDesign) { $ExistingDesign.RowKey } else { [guid]::NewGuid().ToString() }
+            JobId        = [string]$JobId
+            DesignData   = $DesignDataJson  # Store as single property - function will split if needed
+            LastModified = (Get-Date).ToUniversalTime().ToString('o')
+        }
+
+        # Add-CIPPAzDataTableEntity will automatically:
+        # 1. Try to save as-is
+        # 2. If too large, split DesignData into DesignData_Part0, DesignData_Part1, etc.
+        # 3. Add SplitOverProps metadata for reassembly
         Add-CIPPAzDataTableEntity @Table -Entity $Entity -Force
+
 
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::OK
             Body       = @{
-                Results = 'Design saved successfully'
+                Results  = 'Design saved successfully'
                 DesignId = $Entity.RowKey
-                JobId = $JobId
+                JobId    = $JobId
             }
         }
+
     } catch {
         Write-Error "Error saving design: $_"
+        Write-Error "Stack trace: $($_.ScriptStackTrace)"
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::InternalServerError
             Body       = @{
-                error = 'Failed to save design'
+                error   = 'Failed to save design'
                 message = $_.Exception.Message
                 details = $_.Exception.ToString()
             }

@@ -97,8 +97,7 @@ export const useLayerManager = (initialLayers = null) => {
     setLayers((prev) => {
       const updated = prev.map((layer) => {
         if (layer.id === layerId) {
-          const newLayer = { ...layer, ...updates };
-          return newLayer;
+          return { ...layer, ...updates };
         }
         return layer;
       });

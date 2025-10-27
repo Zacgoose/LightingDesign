@@ -264,38 +264,9 @@ const Page = () => {
     updateLayer(activeLayerIdRef.current, { textBoxes });
   }, [textBoxes, updateLayer]);
 
-  // Keep background image in sync with active layer
-  // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
-  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
-  useEffect(() => {
-    // Check if values have changed from what we last synced
-    const hasChanged =
-      backgroundImage !== lastSyncedBackgroundImage.current ||
-      backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current;
-
-    if (!hasChanged) {
-      return; // No changes to sync
-    }
-
-    // Don't sync while loading layer data - this prevents writing stale state to new layer
-    if (isLoadingLayerData.current) {
-      console.log('Background sync skipped - loading layer data');
-      // CRITICAL FIX: Update refs even when skipping to prevent future incorrect syncs
-      // Without this, the effect would run again after isLoadingLayerData becomes false
-      // and incorrectly sync the background to whatever layer is now active
-      lastSyncedBackgroundImage.current = backgroundImage;
-      lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
-      return;
-    }
-
-    console.log('Syncing background to layer:', activeLayerIdRef.current, {
-      hasImage: !!backgroundImage,
-      imageLength: backgroundImage?.length || 0
-    });
-    updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
-    lastSyncedBackgroundImage.current = backgroundImage;
-    lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
-  }, [backgroundImage, backgroundImageNaturalSize, updateLayer]);
+  // Background sync removed - we now only update layers explicitly during uploads
+  // This prevents race conditions where the sync effect runs at the wrong time
+  // and applies backgrounds to the wrong layers
 
   // Keep scale factor in sync with active layer
   // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch

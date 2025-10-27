@@ -228,6 +228,9 @@ const Page = () => {
   const [scaleDialogOpen, setScaleDialogOpen] = useState(false);
   const [scaleValue, setScaleValue] = useState(1);
 
+  // Upload state for better UX
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
   // Form hooks
   const scaleForm = useForm({
     mode: "onChange",
@@ -269,17 +272,22 @@ const Page = () => {
     const hasChanged =
       backgroundImage !== lastSyncedBackgroundImage.current ||
       backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current;
-    
+
     if (!hasChanged) {
       return; // No changes to sync
     }
-    
+
     // Don't sync while loading layer data - this prevents writing stale state to new layer
     if (isLoadingLayerData.current) {
       console.log('Background sync skipped - loading layer data');
+      // CRITICAL FIX: Update refs even when skipping to prevent future incorrect syncs
+      // Without this, the effect would run again after isLoadingLayerData becomes false
+      // and incorrectly sync the background to whatever layer is now active
+      lastSyncedBackgroundImage.current = backgroundImage;
+      lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
       return;
     }
-    
+
     console.log('Syncing background to layer:', activeLayerIdRef.current, {
       hasImage: !!backgroundImage,
       imageLength: backgroundImage?.length || 0
@@ -981,9 +989,11 @@ const Page = () => {
       const file = e.target.files[0];
       if (file) {
         const isPdf = file.type === "application/pdf";
-        
+
         if (isPdf) {
           // Handle PDF file - store only the PDF data, convert to raster on load
+          setIsUploadingImage(true);
+          console.log('Starting PDF upload and conversion...');
           try {
             const reader = new FileReader();
             reader.onload = async (ev) => {
@@ -1019,20 +1029,23 @@ const Page = () => {
                 const rasterWidth = pdfWidth * scale;
                 const rasterHeight = pdfHeight * scale;
                 
+                // CRITICAL: Create object once to maintain identity for sync effect
+                const naturalSize = { width: rasterWidth, height: rasterHeight };
+
                 // Store the rasterized image (not the PDF)
                 updateLayer(activeLayerIdRef.current, {
                   backgroundImage: rasterImageDataUrl, // Store rasterized image
-                  backgroundImageNaturalSize: { width: rasterWidth, height: rasterHeight },
+                  backgroundImageNaturalSize: naturalSize,
                   backgroundFileType: "image", // It's now an image, not a PDF
                 });
 
-                // Set for immediate display
+                // Set for immediate display - use same object to prevent sync effect
                 setBackgroundImage(rasterImageDataUrl);
-                setBackgroundImageNaturalSize({ width: rasterWidth, height: rasterHeight });
+                setBackgroundImageNaturalSize(naturalSize);
 
-                // Update sync refs to prevent redundant sync
+                // Update sync refs to prevent redundant sync - use same object instance
                 lastSyncedBackgroundImage.current = rasterImageDataUrl;
-                lastSyncedBackgroundImageNaturalSize.current = { width: rasterWidth, height: rasterHeight };
+                lastSyncedBackgroundImageNaturalSize.current = naturalSize;
                 
                 // Auto-zoom to fit the background in the viewport (use raster dimensions)
                 const imageScaleX = canvasWidth / rasterWidth;
@@ -1051,33 +1064,47 @@ const Page = () => {
                 setStageScale(constrainedZoom);
                 
                 handleResetView();
+
+                console.log('PDF upload and conversion complete!');
+                setIsUploadingImage(false);
               } catch (error) {
                 console.error("Error processing PDF:", error);
+                setIsUploadingImage(false);
               }
+            };
+            reader.onerror = () => {
+              console.error("Error reading PDF file");
+              setIsUploadingImage(false);
             };
             reader.readAsArrayBuffer(file);
           } catch (error) {
             console.error("Error loading PDF:", error);
+            setIsUploadingImage(false);
           }
         } else {
           // Handle image file (existing logic)
+          setIsUploadingImage(true);
+          console.log('Starting image upload...');
           const reader = new FileReader();
           reader.onload = (ev) => {
             const img = new window.Image();
             img.onload = () => {
+              // CRITICAL: Create object once to maintain identity for sync effect
+              const naturalSize = { width: img.width, height: img.height };
+
               // Store image data URL directly
               updateLayer(activeLayerIdRef.current, {
                 backgroundImage: ev.target.result,
-                backgroundImageNaturalSize: { width: img.width, height: img.height },
+                backgroundImageNaturalSize: naturalSize,
                 backgroundFileType: "image",
               });
 
               setBackgroundImage(ev.target.result);
-              setBackgroundImageNaturalSize({ width: img.width, height: img.height });
+              setBackgroundImageNaturalSize(naturalSize);
 
-              // Update sync refs to prevent redundant sync
+              // Update sync refs to prevent redundant sync - use same object instance
               lastSyncedBackgroundImage.current = ev.target.result;
-              lastSyncedBackgroundImageNaturalSize.current = { width: img.width, height: img.height };
+              lastSyncedBackgroundImageNaturalSize.current = naturalSize;
               
               // Auto-zoom to fit the background image in the viewport
               const imageScaleX = canvasWidth / img.width;
@@ -1096,8 +1123,19 @@ const Page = () => {
               setStageScale(constrainedZoom);
               
               handleResetView();
+
+              console.log('Image upload complete!');
+              setIsUploadingImage(false);
+            };
+            img.onerror = () => {
+              console.error("Error loading image file");
+              setIsUploadingImage(false);
             };
             img.src = ev.target.result;
+          };
+          reader.onerror = () => {
+            console.error("Error reading image file");
+            setIsUploadingImage(false);
           };
           reader.readAsDataURL(file);
         }

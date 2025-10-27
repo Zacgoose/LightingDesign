@@ -196,8 +196,9 @@ export const DesignerCanvas = memo(
   }),
   (prevProps, nextProps) => {
     // Custom comparison - only re-render if these props actually change
-    // Note: stagePosition and stageScale changes are handled by Konva internally
-    // so we include them to ensure proper updates but the Stage component handles the actual rendering
+    // Note: We don't compare callbacks (onWheel, onDragEnd, etc.) because they may have
+    // new references due to useCallback dependencies, but Konva handles them correctly.
+    // We also let stagePosition and stageScale changes through since Konva handles them internally.
     return (
       prevProps.width === nextProps.width &&
       prevProps.height === nextProps.height &&
@@ -216,16 +217,10 @@ export const DesignerCanvas = memo(
       prevProps.objectsChildren === nextProps.objectsChildren &&
       prevProps.textAndSelectionChildren === nextProps.textAndSelectionChildren &&
       prevProps.transformerChildren === nextProps.transformerChildren &&
-      prevProps.onWheel === nextProps.onWheel &&
-      prevProps.onDragEnd === nextProps.onDragEnd &&
-      prevProps.onMouseDown === nextProps.onMouseDown &&
-      prevProps.onMouseUp === nextProps.onMouseUp &&
-      prevProps.onTouchStart === nextProps.onTouchStart &&
-      prevProps.onContextMenu === nextProps.onContextMenu &&
-      prevProps.onMouseMove === nextProps.onMouseMove &&
-      prevProps.onPan === nextProps.onPan &&
       prevProps.gridOpacity === nextProps.gridOpacity &&
       prevProps.backgroundOpacity === nextProps.backgroundOpacity
     );
   },
 );
+
+DesignerCanvas.displayName = "DesignerCanvas";

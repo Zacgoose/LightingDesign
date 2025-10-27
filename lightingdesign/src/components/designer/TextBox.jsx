@@ -173,4 +173,6 @@ export const TextBox = memo(
   }
 );
 
+TextBox.displayName = "TextBox";
+
 export default TextBox;

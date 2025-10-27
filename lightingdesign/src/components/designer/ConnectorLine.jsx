@@ -1,7 +1,7 @@
 import { Group, Shape, Circle, Line } from "react-konva";
-import { useState } from "react";
+import { useState, memo } from "react";
 
-export const ConnectorLine = ({
+const ConnectorLineComponent = ({
   connector,
   fromProduct,
   toProduct,
@@ -174,3 +174,20 @@ export const ConnectorLine = ({
     </Group>
   );
 };
+
+export const ConnectorLine = memo(ConnectorLineComponent, (prevProps, nextProps) => {
+  // Custom comparison for better performance
+  return (
+    prevProps.connector === nextProps.connector &&
+    prevProps.fromProduct === nextProps.fromProduct &&
+    prevProps.toProduct === nextProps.toProduct &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.selectedTool === nextProps.selectedTool &&
+    prevProps.onSelect === nextProps.onSelect &&
+    prevProps.onChange === nextProps.onChange &&
+    prevProps.onContextMenu === nextProps.onContextMenu &&
+    prevProps.theme === nextProps.theme
+  );
+});
+
+ConnectorLine.displayName = "ConnectorLine";

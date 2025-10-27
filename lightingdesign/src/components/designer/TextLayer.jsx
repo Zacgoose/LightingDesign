@@ -50,4 +50,6 @@ export const TextLayer = memo(
   }
 );
 
+TextLayer.displayName = "TextLayer";
+
 export default TextLayer;

@@ -40,12 +40,6 @@ const PAPER_SIZES = [
   { value: "A0", label: "A0 (841 × 1189 mm)", width: 841, height: 1189 },
 ];
 
-// SVG text vertical offset to match Konva's text positioning
-// This compensates for the difference between SVG's dominant-baseline='middle'
-// and Konva's offsetY centering approach. The value 0.05 (5% of font size)
-// was determined through visual comparison to align text exactly as shown on canvas.
-const SVG_TEXT_VERTICAL_OFFSET_RATIO = 0.05;
-
 const Page = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -1002,15 +996,16 @@ const Page = () => {
         const fontSize = Math.max(12, Math.min(width, height) * 0.3);
         const textEl = document.createElementNS(SVG_NS, 'text');
         textEl.setAttribute('x', '0');
-        // Use a small positive offset to better match Konva's text positioning
-        // This accounts for the difference between SVG's dominant-baseline and Konva's offsetY
-        textEl.setAttribute('y', String(fontSize * SVG_TEXT_VERTICAL_OFFSET_RATIO));
+        textEl.setAttribute('y', '0');
         textEl.setAttribute('fill', '#000000');
         textEl.setAttribute('font-family', 'Arial');
         textEl.setAttribute('font-size', String(fontSize));
         textEl.setAttribute('font-weight', 'bold');
         textEl.setAttribute('text-anchor', 'middle');
-        textEl.setAttribute('dominant-baseline', 'middle');
+        // Use dy to optically center the text - 0.35em is the standard offset for vertical centering
+        // This accounts for the fact that text baseline is not at the visual center
+        textEl.setAttribute('dy', '0.35em');
+        textEl.setAttribute('dominant-baseline', 'auto');
         // Counter-rotate to keep text upright
         if (rotation) {
           textEl.setAttribute('transform', `rotate(${-rotation})`);

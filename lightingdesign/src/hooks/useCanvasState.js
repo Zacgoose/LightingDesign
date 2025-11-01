@@ -20,6 +20,8 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   // Refs
   const canvasContainerRef = useRef();
   const isInitializedRef = useRef(false);
+  const wheelTimeoutRef = useRef(null);
+  const wheelPendingRef = useRef(false);
 
   // Fixed virtual canvas dimensions - this never changes regardless of window size
   // This creates a stable coordinate space for all objects
@@ -79,24 +81,50 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   // Canvas interaction handlers
   const handleWheel = useCallback((e) => {
     e.evt.preventDefault();
-    const scaleBy = 1.1;
-    const stage = e.target.getStage();
-    const oldScale = stage.scaleX();
-    const pointer = stage.getPointerPosition();
+    
+    // Use requestAnimationFrame to throttle wheel events for better performance
+    if (wheelPendingRef.current) {
+      return; // Skip this event if we're already processing one
+    }
+    
+    wheelPendingRef.current = true;
+    
+    requestAnimationFrame(() => {
+      const scaleBy = 1.1;
+      const stage = e.target.getStage();
+      const oldScale = stage.scaleX();
+      const pointer = stage.getPointerPosition();
 
-    const mousePointTo = {
-      x: (pointer.x - stage.x()) / oldScale,
-      y: (pointer.y - stage.y()) / oldScale,
-    };
+      const mousePointTo = {
+        x: (pointer.x - stage.x()) / oldScale,
+        y: (pointer.y - stage.y()) / oldScale,
+      };
 
-    // Ensure scale stays within reasonable bounds (0.01 to 100)
-    let newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
-    newScale = Math.min(Math.max(newScale, 0.01), 100);
+      // Ensure scale stays within reasonable bounds (0.01 to 100)
+      let newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+      newScale = Math.min(Math.max(newScale, 0.01), 100);
 
-    setStageScale(newScale);
-    setStagePosition({
-      x: pointer.x - mousePointTo.x * newScale,
-      y: pointer.y - mousePointTo.y * newScale,
+      const newPos = {
+        x: pointer.x - mousePointTo.x * newScale,
+        y: pointer.y - mousePointTo.y * newScale,
+      };
+
+      // Apply transform directly to stage for immediate visual feedback
+      stage.scale({ x: newScale, y: newScale });
+      stage.position(newPos);
+      stage.batchDraw();
+
+      // Debounce state updates to reduce re-renders
+      if (wheelTimeoutRef.current) {
+        clearTimeout(wheelTimeoutRef.current);
+      }
+      
+      wheelTimeoutRef.current = setTimeout(() => {
+        setStageScale(newScale);
+        setStagePosition(newPos);
+      }, 50); // Update state after 50ms of no wheel events
+      
+      wheelPendingRef.current = false;
     });
   }, []);
 

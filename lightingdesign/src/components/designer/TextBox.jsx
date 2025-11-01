@@ -6,6 +6,7 @@ export const TextBox = memo(
     textBox,
     isSelected,
     isInGroup = false,
+    listening = true,
     onSelect,
     onChange,
     onDragStart,
@@ -65,7 +66,6 @@ export const TextBox = memo(
             height: computedHeight,
           });
         }
-        console.log("logs")
       }
     }, [
       textBox.text,
@@ -88,6 +88,7 @@ export const TextBox = memo(
           scaleX={textBox.scaleX || 1}
           scaleY={textBox.scaleY || 1}
           draggable={draggable}
+          listening={listening}
           onClick={onSelect}
           onTap={onSelect}
           onDblClick={onDoubleClick}

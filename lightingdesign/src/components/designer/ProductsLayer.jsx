@@ -150,6 +150,7 @@ export const ProductsLayer = memo(
                 config={config}
                 isSelected={false}
                 draggable={selectedTool === "select" && canInteract}
+                listening={selectedTool === "select" || selectedTool === "connect"} // Only listen when interaction is needed
                 onDragStart={(e) =>
                   selectedTool === "select" && canInteract && onProductDragStart(e, product.id)
                 }
@@ -223,7 +224,7 @@ export const ProductsLayer = memo(
                   config={config}
                   isSelected={true}
                   draggable={false}
-                  listening={!isDragging} // Disable listening during drag for performance
+                  listening={!isDragging && !isPanMode} // Disable listening during drag and pan mode for performance
                   onMouseDown={(e) =>
                     (canInteract || isConnectMode) && onProductClick(e, product.id)
                   }
@@ -264,7 +265,7 @@ export const ProductsLayer = memo(
                   scaleX={textBox.scaleX || 1}
                   scaleY={textBox.scaleY || 1}
                   draggable={false}
-                  listening={true}
+                  listening={!isDragging && !isPanMode} // Disable listening during drag and pan mode for performance
                   onClick={(e) => {
                     e.cancelBubble = true;
                     // Text is already selected, clicking does nothing (prevents new text creation in text mode)

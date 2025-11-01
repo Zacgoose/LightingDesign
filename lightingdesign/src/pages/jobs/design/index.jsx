@@ -2246,6 +2246,7 @@ const Page = () => {
                           textBoxes={textBoxes}
                           selectedTextId={selectedTextId}
                           selectedIds={selectedIds}
+                          selectedTool={selectedTool}
                           onTextSelect={handleTextSelect}
                           onTextChange={handleTextChange}
                           onTextDoubleClick={handleTextDoubleClick}

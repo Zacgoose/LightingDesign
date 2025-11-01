@@ -67,6 +67,7 @@ const ConnectorLineComponent = ({
         strokeWidth={isSelected ? 6 : 4}
         lineCap="round"
         hitStrokeWidth={20} // Makes it easier to click
+        listening={selectedTool === "select" || selectedTool === "connect"} // Only listen when interaction is needed
         onClick={handleLineClick}
         onTap={handleLineClick}
         onContextMenu={onContextMenu}

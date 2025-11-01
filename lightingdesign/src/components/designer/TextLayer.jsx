@@ -6,6 +6,7 @@ export const TextLayer = memo(
     textBoxes,
     selectedTextId,
     selectedIds = [],
+    selectedTool,
     onTextSelect,
     onTextChange,
     onTextDragStart,
@@ -22,6 +23,9 @@ export const TextLayer = memo(
       .filter(id => id.startsWith('text-'))
       .map(id => id.substring(5)); // Remove 'text-' prefix
     
+    // Determine if text boxes should listen to events
+    const shouldListen = selectedTool === "select" || selectedTool === "text";
+    
     return (
       <>
         {/* Only render text boxes that are NOT in the selection group */}
@@ -33,6 +37,7 @@ export const TextLayer = memo(
               textBox={textBox}
               isSelected={textBox.id === selectedTextId}
               isInGroup={isInGroup}
+              listening={shouldListen}
               onSelect={(e) => {
                 e.cancelBubble = true;
                 onTextSelect(textBox.id);

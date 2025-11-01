@@ -679,7 +679,7 @@ const Page = () => {
     setGroupKey,
     setConnectors,
     setConnectSequence,
-    updateHistory,
+    updateHistory: updateCanvasHistory,
     applyGroupTransform,
     activeLayer,
   });

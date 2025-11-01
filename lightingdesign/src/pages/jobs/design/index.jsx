@@ -55,6 +55,7 @@ const Page = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [pendingExportNavigation, setPendingExportNavigation] = useState(false);
 
   // Load design data
   const designData = ApiGetCall({
@@ -314,8 +315,14 @@ const Page = () => {
       setHasUnsavedChanges(false);
       setIsSaving(false);
       queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
+
+      // If we were waiting to navigate to export, do it now after save is complete
+      if (pendingExportNavigation) {
+        setPendingExportNavigation(false);
+        router.push(`/jobs/design/export?id=${id}`);
+      }
     }
-  }, [saveDesignMutation.isSuccess, queryClient, id]);
+  }, [saveDesignMutation.isSuccess, queryClient, id, pendingExportNavigation, router]);
 
   // Handle save mutation end
   useEffect(() => {
@@ -339,7 +346,7 @@ const Page = () => {
       backgroundImage !== lastSyncedBackgroundImage.current ||
       backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current
     ) {
-      console.log('Forcing background sync before save');
+      console.log("Forcing background sync before save");
       updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
       lastSyncedBackgroundImage.current = backgroundImage;
       lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
@@ -455,71 +462,71 @@ const Page = () => {
   const convertPdfToRasterImage = useCallback(async (pdfDataUrl, pdfWidth, pdfHeight) => {
     try {
       // Extract base64 data from data URL
-      const base64Data = pdfDataUrl.split(',')[1];
-      const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-      
+      const base64Data = pdfDataUrl.split(",")[1];
+      const pdfBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+
       // Dynamically import pdfjs-dist
       const pdfjsLib = await import("pdfjs-dist");
-      
+
       // Set worker source to local file (copied during build)
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
-      
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
+
       // Load PDF document
       const loadingTask = pdfjsLib.getDocument({
         data: pdfBytes,
       });
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
-      
+
       // set image PDF scale (scale = 3) - balanced quality and performance
       // Lower scale reduces conversion time and memory usage significantly
       const scale = 3;
       const viewport = page.getViewport({ scale: scale });
-      
+
       // Create canvas
       const canvas = document.createElement("canvas");
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       const ctx = canvas.getContext("2d");
-      
+
       // Render PDF page to canvas
       await page.render({
         canvasContext: ctx,
         viewport: viewport,
       }).promise;
-      
+
       // Convert canvas to data URL and return it
       const imageDataUrl = canvas.toDataURL("image/jpeg");
-      
-      console.log('PDF converted to raster image', {
+
+      console.log("PDF converted to raster image", {
         resolution: `${canvas.width}x${canvas.height}`,
         scale,
-        estimatedSizeMB: (imageDataUrl.length / 1024 / 1024).toFixed(2)
+        estimatedSizeMB: (imageDataUrl.length / 1024 / 1024).toFixed(2),
       });
       return imageDataUrl;
     } catch (error) {
-      console.error('Error converting PDF to raster:', error);
-      
+      console.error("Error converting PDF to raster:", error);
+
       // Fallback: create a placeholder
       const canvas = document.createElement("canvas");
       const scale = 3;
       canvas.width = pdfWidth * scale;
       canvas.height = pdfHeight * scale;
       const ctx = canvas.getContext("2d");
-      
+
       // White background
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
+
       // Draw error message
-      ctx.fillStyle = '#666666';
+      ctx.fillStyle = "#666666";
       ctx.font = `${20 * scale}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('PDF Rendering Failed', canvas.width / 2, canvas.height / 2 - 20 * scale);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("PDF Rendering Failed", canvas.width / 2, canvas.height / 2 - 20 * scale);
       ctx.font = `${14 * scale}px Arial`;
-      ctx.fillText('See console for details', canvas.width / 2, canvas.height / 2 + 20 * scale);
-      
+      ctx.fillText("See console for details", canvas.width / 2, canvas.height / 2 + 20 * scale);
+
       return canvas.toDataURL("image/jpeg");
     }
   }, []);
@@ -658,7 +665,6 @@ const Page = () => {
 
   // Unified group transform handler that handles both products and text boxes
   const handleUnifiedGroupTransformEnd = useCallback(() => {
-
     if (!selectedIds.length || !selectionGroupRef.current || !selectionSnapshot) return;
 
     const group = selectionGroupRef.current;
@@ -669,10 +675,8 @@ const Page = () => {
     const groupRotation = group.rotation();
 
     // Extract product IDs and text IDs
-    const productIds = selectedIds.filter(id => !id.startsWith('text-'));
-    const textIds = selectedIds
-      .filter(id => id.startsWith('text-'))
-      .map(id => id.substring(5)); // Remove 'text-' prefix
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5)); // Remove 'text-' prefix
 
     // Helper function for floating-point comparison with tolerance
     const isClose = (a, b, tolerance = 0.0001) => Math.abs(a - b) < tolerance;
@@ -694,7 +698,7 @@ const Page = () => {
 
     // Calculate the rotation delta (how much we've rotated from the snapshot)
     const rotationDelta = groupRotation - (selectionSnapshot.rotation || 0);
-    
+
     // Calculate center movement delta
     const centerDeltaX = groupX - selectionSnapshot.centerX;
     const centerDeltaY = groupY - selectionSnapshot.centerY;
@@ -730,7 +734,6 @@ const Page = () => {
         // Add back to ORIGINAL center + any center movement (drag)
         const newX = selectionSnapshot.centerX + relX + centerDeltaX;
         const newY = selectionSnapshot.centerY + relY + centerDeltaY;
-
 
         return {
           ...product,
@@ -780,7 +783,7 @@ const Page = () => {
         // Detect if this is a corner resize (proportional) or side/top resize
         const scaleDiff = Math.abs(groupScaleX - groupScaleY);
         const isCornerResize = scaleDiff < 0.1; // Small difference means corner anchor (proportional)
-        
+
         let newFontSize = original.fontSize || 24;
         let newWidth = original.width || 200;
 
@@ -814,7 +817,7 @@ const Page = () => {
     if (transformerRef.current) {
       transformerRef.current.forceUpdate();
     }
-    
+
     // Force update
     setGroupKey((k) => k + 1);
   }, [
@@ -843,8 +846,8 @@ const Page = () => {
       );
       // Include selected text boxes in copy (extract text IDs from text- prefixed IDs)
       const textIds = selectedIds
-        .filter(id => id.startsWith('text-'))
-        .map(id => id.substring(5)); // Remove 'text-' prefix
+        .filter((id) => id.startsWith("text-"))
+        .map((id) => id.substring(5)); // Remove 'text-' prefix
       const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
       clipboard.current = {
         products: selectedProducts.map((p) => ({ ...p })),
@@ -888,14 +891,14 @@ const Page = () => {
       updateHistory([...products, ...newProducts]);
       setConnectors([...connectors, ...newConnectors]);
       setTextBoxes([...textBoxes, ...newTextBoxes]);
-      
+
       // Select pasted products and text boxes
       const allNewIds = [
         ...newProducts.map((p) => p.id),
-        ...newTextBoxes.map((t) => `text-${t.id}`)
+        ...newTextBoxes.map((t) => `text-${t.id}`),
       ];
       setSelectedIds(allNewIds);
-      
+
       // Set selectedTextId for single text box operations
       if (newTextBoxes.length === 1 && newProducts.length === 0) {
         setSelectedTextId(newTextBoxes[0].id);
@@ -907,8 +910,8 @@ const Page = () => {
     onDelete: () => {
       // Delete selected text boxes (from text- prefixed IDs in selectedIds)
       const textIds = selectedIds
-        .filter(id => id.startsWith('text-'))
-        .map(id => id.substring(5));
+        .filter((id) => id.startsWith("text-"))
+        .map((id) => id.substring(5));
       if (textIds.length > 0) {
         setTextBoxes(textBoxes.filter((t) => !textIds.includes(t.id)));
         setSelectedTextId(null);
@@ -922,10 +925,7 @@ const Page = () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
       // Select all products and text boxes
-      const allIds = [
-        ...products.map((p) => p.id),
-        ...textBoxes.map((t) => `text-${t.id}`)
-      ];
+      const allIds = [...products.map((p) => p.id), ...textBoxes.map((t) => `text-${t.id}`)];
       setSelectedIds(allIds);
       forceGroupUpdate();
     },
@@ -975,32 +975,36 @@ const Page = () => {
                 const pdfBytes = new Uint8Array(ev.target.result);
                 const pdfDoc = await PDFDocument.load(pdfBytes);
                 const pages = pdfDoc.getPages();
-                
+
                 if (pages.length === 0) {
                   console.error("PDF has no pages");
                   return;
                 }
-                
+
                 const firstPage = pages[0];
                 const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
-                
+
                 // Convert PDF to high-quality raster image immediately
                 const base64Data = btoa(
                   new Uint8Array(ev.target.result).reduce(
                     (data, byte) => data + String.fromCharCode(byte),
-                    ''
-                  )
+                    "",
+                  ),
                 );
                 const pdfDataUrl = `data:application/pdf;base64,${base64Data}`;
-                
+
                 // Convert to raster for storage and display
-                const rasterImageDataUrl = await convertPdfToRasterImage(pdfDataUrl, pdfWidth, pdfHeight);
+                const rasterImageDataUrl = await convertPdfToRasterImage(
+                  pdfDataUrl,
+                  pdfWidth,
+                  pdfHeight,
+                );
 
                 // The rasterized image is scaled 3x for quality while maintaining performance
                 const scale = 3; // Must match the scale factor in convertPdfToRasterImage
                 const rasterWidth = pdfWidth * scale;
                 const rasterHeight = pdfHeight * scale;
-                
+
                 // CRITICAL: Create object once to maintain identity for sync effect
                 const naturalSize = { width: rasterWidth, height: rasterHeight };
 
@@ -1018,23 +1022,23 @@ const Page = () => {
                 // Update sync refs to prevent redundant sync - use same object instance
                 lastSyncedBackgroundImage.current = rasterImageDataUrl;
                 lastSyncedBackgroundImageNaturalSize.current = naturalSize;
-                
+
                 // Auto-zoom to fit the background in the viewport (use raster dimensions)
                 const imageScaleX = canvasWidth / rasterWidth;
                 const imageScaleY = canvasHeight / rasterHeight;
                 const imageScale = Math.min(imageScaleX, imageScaleY);
-                
+
                 const scaledImageWidth = rasterWidth * imageScale;
                 const scaledImageHeight = rasterHeight * imageScale;
-                
+
                 const padding = 0.9;
                 const zoomX = (viewportWidth * padding) / scaledImageWidth;
                 const zoomY = (viewportHeight * padding) / scaledImageHeight;
-                
+
                 const autoZoom = Math.min(zoomX, zoomY);
                 const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
                 setStageScale(constrainedZoom);
-                
+
                 handleResetView();
 
                 setIsUploadingImage(false);
@@ -1075,23 +1079,23 @@ const Page = () => {
               // Update sync refs to prevent redundant sync - use same object instance
               lastSyncedBackgroundImage.current = ev.target.result;
               lastSyncedBackgroundImageNaturalSize.current = naturalSize;
-              
+
               // Auto-zoom to fit the background image in the viewport
               const imageScaleX = canvasWidth / img.width;
               const imageScaleY = canvasHeight / img.height;
               const imageScale = Math.min(imageScaleX, imageScaleY);
-              
+
               const scaledImageWidth = img.width * imageScale;
               const scaledImageHeight = img.height * imageScale;
-              
+
               const padding = 0.9;
               const zoomX = (viewportWidth * padding) / scaledImageWidth;
               const zoomY = (viewportHeight * padding) / scaledImageHeight;
-              
+
               const autoZoom = Math.min(zoomX, zoomY);
               const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
               setStageScale(constrainedZoom);
-              
+
               handleResetView();
 
               setIsUploadingImage(false);
@@ -1111,7 +1115,15 @@ const Page = () => {
       }
     };
     input.click();
-  }, [canvasWidth, canvasHeight, viewportWidth, viewportHeight, setStageScale, handleResetView, updateLayer]);
+  }, [
+    canvasWidth,
+    canvasHeight,
+    viewportWidth,
+    viewportHeight,
+    setStageScale,
+    handleResetView,
+    updateLayer,
+  ]);
 
   const handleMeasure = useCallback(() => {
     setMeasureMode(true);
@@ -1189,7 +1201,7 @@ const Page = () => {
         contextMenus.handleCloseContextMenu();
         return;
       }
-      
+
       // Handle product assignment
       const transformed = applyGroupTransform();
       const baseProducts = transformed || products;
@@ -1199,7 +1211,16 @@ const Page = () => {
       updateHistory(newProducts);
       contextMenus.handleCloseContextMenu();
     },
-    [products, selectedIds, selectedConnectorId, connectors, applyGroupTransform, updateHistory, contextMenus, setConnectors],
+    [
+      products,
+      selectedIds,
+      selectedConnectorId,
+      connectors,
+      applyGroupTransform,
+      updateHistory,
+      contextMenus,
+      setConnectors,
+    ],
   );
 
   const determineStrokeColorForSku = useCallback(
@@ -1238,74 +1259,86 @@ const Page = () => {
     contextMenus.handleCloseContextMenu();
   }, [contextMenus]);
 
-  const handleProductAdd = useCallback((product) => {
-    // Handle swap mode - replace selected products with new product
-    if (swapMode && selectedIds.length > 0) {
-      const transformed = applyGroupTransform();
-      const baseProducts = transformed || products;
-      
-      // Get product type configuration for real-world dimensions
-      const productType = product.product_type_unigram?.toLowerCase() || "default";
-      const config = productTypesConfig[productType] || productTypesConfig.default;
-      
-      // Replace each selected product with the new product template
-      const newProducts = baseProducts.map((p) => {
-        if (selectedIds.includes(p.id)) {
-          // Create new product from template but preserve position, rotation, scale, etc.
-          const strokeColor = determineStrokeColorForSku(product.sku);
-          return {
-            ...p,
-            name: product.name,
-            sku: product.sku,
-            brand: product.brand,
-            product_type: product.product_type_unigram,
-            product_type_unigram: product.product_type_unigram,
-            price: parseFloat(product.price) || 0,
-            msrp: parseFloat(product.msrp) || 0,
-            imageUrl: product.imageUrl,
-            thumbnailUrl: product.thumbnailImageUrl,
-            thumbnailImageUrl: product.thumbnailImageUrl,
-            url: product.url, // Website link
-            category: product.top_web_category,
-            categories: product.category_hierarchy || [],
-            description: product.short_description,
-            colors: product.item_colours || [],
-            inStock: product.ss_in_stock === "1",
-            stockQty: parseInt(product.stock_qty) || 0,
-            metadata: product,
-            strokeColor: strokeColor,
-            // Update real-world dimensions for the new product type
-            realWorldSize: config.realWorldSize,
-            realWorldWidth: config.realWorldWidth,
-            realWorldHeight: config.realWorldHeight,
-            // Preserve the scaleFactor from the original product (or use current layer scale)
-            scaleFactor: p.scaleFactor || scaleFactor,
-          };
-        }
-        return p;
+  const handleProductAdd = useCallback(
+    (product) => {
+      // Handle swap mode - replace selected products with new product
+      if (swapMode && selectedIds.length > 0) {
+        const transformed = applyGroupTransform();
+        const baseProducts = transformed || products;
+
+        // Get product type configuration for real-world dimensions
+        const productType = product.product_type_unigram?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
+
+        // Replace each selected product with the new product template
+        const newProducts = baseProducts.map((p) => {
+          if (selectedIds.includes(p.id)) {
+            // Create new product from template but preserve position, rotation, scale, etc.
+            const strokeColor = determineStrokeColorForSku(product.sku);
+            return {
+              ...p,
+              name: product.name,
+              sku: product.sku,
+              brand: product.brand,
+              product_type: product.product_type_unigram,
+              product_type_unigram: product.product_type_unigram,
+              price: parseFloat(product.price) || 0,
+              msrp: parseFloat(product.msrp) || 0,
+              imageUrl: product.imageUrl,
+              thumbnailUrl: product.thumbnailImageUrl,
+              thumbnailImageUrl: product.thumbnailImageUrl,
+              url: product.url, // Website link
+              category: product.top_web_category,
+              categories: product.category_hierarchy || [],
+              description: product.short_description,
+              colors: product.item_colours || [],
+              inStock: product.ss_in_stock === "1",
+              stockQty: parseInt(product.stock_qty) || 0,
+              metadata: product,
+              strokeColor: strokeColor,
+              // Update real-world dimensions for the new product type
+              realWorldSize: config.realWorldSize,
+              realWorldWidth: config.realWorldWidth,
+              realWorldHeight: config.realWorldHeight,
+              // Preserve the scaleFactor from the original product (or use current layer scale)
+              scaleFactor: p.scaleFactor || scaleFactor,
+            };
+          }
+          return p;
+        });
+
+        updateHistory(newProducts);
+        setSwapMode(false);
+        setProductDrawerVisible(false);
+        setGroupKey((k) => k + 1);
+        return;
+      }
+
+      // Normal add mode - enter placement mode with the selected product
+      setPlacementMode({
+        template: product,
       });
-      
-      updateHistory(newProducts);
-      setSwapMode(false);
+      setSelectedTool("placement");
       setProductDrawerVisible(false);
-      setGroupKey(k => k + 1);
-      return;
-    }
-    
-    // Normal add mode - enter placement mode with the selected product
-    setPlacementMode({
-      template: product,
-    });
-    setSelectedTool("placement");
-    setProductDrawerVisible(false);
-    pendingInsertPosition.current = null;
-    setSwapMode(false);
-  }, [swapMode, selectedIds, products, applyGroupTransform, updateHistory, determineStrokeColorForSku, setGroupKey, scaleFactor]);
+      pendingInsertPosition.current = null;
+      setSwapMode(false);
+    },
+    [
+      swapMode,
+      selectedIds,
+      products,
+      applyGroupTransform,
+      updateHistory,
+      determineStrokeColorForSku,
+      setGroupKey,
+      scaleFactor,
+    ],
+  );
 
   const createProductFromTemplate = useCallback(
     (template, x, y) => {
       const strokeColor = determineStrokeColorForSku(template.sku);
-      
+
       // Get product type configuration for real-world dimensions
       const productType = template.product_type_unigram?.toLowerCase() || "default";
       const config = productTypesConfig[productType] || productTypesConfig.default;
@@ -1410,7 +1443,7 @@ const Page = () => {
         });
       }
     },
-    [stagePosition, stageScale, DRAG_THRESHOLD]
+    [stagePosition, stageScale, DRAG_THRESHOLD],
   );
 
   const handleCanvasMouseMove = useCallback(
@@ -1473,7 +1506,7 @@ const Page = () => {
           sublayerId: activeLayer?.defaultSublayerId || null,
           scaleFactor: scaleFactor, // Store scaleFactor at creation time, similar to products
         };
-        
+
         // Add the text box and open the dialog immediately
         setTextBoxes([...textBoxes, newTextBox]);
         setPendingTextBoxId(newTextBox.id);
@@ -1491,24 +1524,35 @@ const Page = () => {
         setSelectedConnectorId(null);
       }
     },
-    [selectedTool, textBoxes, stagePosition, stageScale, theme, setSelectedIds, setSelectedConnectorId]
+    [
+      selectedTool,
+      textBoxes,
+      stagePosition,
+      stageScale,
+      theme,
+      setSelectedIds,
+      setSelectedConnectorId,
+    ],
   );
 
-  const handleTextDoubleClick = useCallback((e, textId) => {
-    const textBox = textBoxes.find((t) => t.id === textId);
-    if (textBox) {
-      setPendingTextBoxId(textId);
-      setTextDialogValue(textBox.text);
-      setTextDialogFormatting({
-        fontSize: textBox.fontSize || 24,
-        fontFamily: textBox.fontFamily || "Arial",
-        fontStyle: textBox.fontStyle || "normal",
-        textDecoration: textBox.textDecoration || "",
-        color: textBox.color || "#000000",
-      });
-      setTextDialogOpen(true);
-    }
-  }, [textBoxes]);
+  const handleTextDoubleClick = useCallback(
+    (e, textId) => {
+      const textBox = textBoxes.find((t) => t.id === textId);
+      if (textBox) {
+        setPendingTextBoxId(textId);
+        setTextDialogValue(textBox.text);
+        setTextDialogFormatting({
+          fontSize: textBox.fontSize || 24,
+          fontFamily: textBox.fontFamily || "Arial",
+          fontStyle: textBox.fontStyle || "normal",
+          textDecoration: textBox.textDecoration || "",
+          color: textBox.color || "#000000",
+        });
+        setTextDialogOpen(true);
+      }
+    },
+    [textBoxes],
+  );
 
   const handleTextDialogConfirm = useCallback(
     (formattingData) => {
@@ -1523,36 +1567,36 @@ const Page = () => {
           const isItalic = formattingData.fontStyle?.includes("italic");
           const fontStyle = isItalic ? "italic" : "normal";
           const fontWeight = isBold ? "bold" : "normal";
-          
+
           // Create an offscreen canvas for measuring
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
           // Match the Konva.Text style exactly
           ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-          
+
           // Split into lines and measure each to get the widest line
-          const lines = newText.split('\n');
+          const lines = newText.split("\n");
           const maxWidth = lines.reduce((max, line) => {
             const w = ctx.measureText(line).width;
             return w > max ? w : max;
           }, 0);
-          
+
           // Measure height using the full text metrics
           const metrics = ctx.measureText(newText);
           const lineHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-          
+
           // Add padding to prevent text cutoff
           const padding = 10;
           const width = maxWidth + padding;
-          const height = (lineHeight * lines.length) + padding;
-          
+          const height = lineHeight * lines.length + padding;
+
           // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
           setTextBoxes((boxes) =>
-            boxes.map((box) => 
-              box.id === pendingTextBoxId 
-                ? { 
-                    ...box, 
+            boxes.map((box) =>
+              box.id === pendingTextBoxId
+                ? {
+                    ...box,
                     text: newText,
                     fontSize: formattingData.fontSize,
                     fontFamily: formattingData.fontFamily,
@@ -1561,9 +1605,9 @@ const Page = () => {
                     color: formattingData.color,
                     width: width, // Use canvas measureText width
                     height: height, // Use canvas measureText height
-                  } 
-                : box
-            )
+                  }
+                : box,
+            ),
           );
         } else {
           // User confirmed with empty text - remove the text box
@@ -1574,7 +1618,7 @@ const Page = () => {
       }
       setTextDialogOpen(false);
     },
-    [pendingTextBoxId]
+    [pendingTextBoxId],
   );
 
   const handleTextDialogClose = useCallback(() => {
@@ -1592,34 +1636,40 @@ const Page = () => {
 
   const handleTextChange = useCallback((updatedTextBox) => {
     setTextBoxes((boxes) =>
-      boxes.map((box) => (box.id === updatedTextBox.id ? updatedTextBox : box))
+      boxes.map((box) => (box.id === updatedTextBox.id ? updatedTextBox : box)),
     );
   }, []);
 
-  const handleTextSelect = useCallback((textId) => {
-    // Clear product selections and set only this text
-    setSelectedTextId(textId);
-    setSelectedIds([`text-${textId}`]);
-    setSelectedConnectorId(null);
-    forceGroupUpdate();
-  }, [setSelectedIds, setSelectedConnectorId, forceGroupUpdate]);
+  const handleTextSelect = useCallback(
+    (textId) => {
+      // Clear product selections and set only this text
+      setSelectedTextId(textId);
+      setSelectedIds([`text-${textId}`]);
+      setSelectedConnectorId(null);
+      forceGroupUpdate();
+    },
+    [setSelectedIds, setSelectedConnectorId, forceGroupUpdate],
+  );
 
-  const handleTextContextMenu = useCallback((e, textId) => {
-    e.evt.preventDefault();
-    e.cancelBubble = true;
-    
-    setSelectedTextId(textId);
-    setSelectedIds([`text-${textId}`]); // Keep text in selection for visual feedback
-    setSelectedConnectorId(null);
-    
-    // Use screen coordinates (clientX/Y) like product context menu
-    contextMenus.setContextMenu({
-      type: "text",
-      x: e.evt.clientX,
-      y: e.evt.clientY,
-      textId: textId,
-    });
-  }, [setSelectedIds, setSelectedConnectorId, contextMenus]);
+  const handleTextContextMenu = useCallback(
+    (e, textId) => {
+      e.evt.preventDefault();
+      e.cancelBubble = true;
+
+      setSelectedTextId(textId);
+      setSelectedIds([`text-${textId}`]); // Keep text in selection for visual feedback
+      setSelectedConnectorId(null);
+
+      // Use screen coordinates (clientX/Y) like product context menu
+      contextMenus.setContextMenu({
+        type: "text",
+        x: e.evt.clientX,
+        y: e.evt.clientY,
+        textId: textId,
+      });
+    },
+    [setSelectedIds, setSelectedConnectorId, contextMenus],
+  );
 
   const handleTextEdit = useCallback(() => {
     if (selectedTextId) {
@@ -1650,7 +1700,7 @@ const Page = () => {
           const currentStyle = box.fontStyle || "normal";
           const isBold = currentStyle.includes("bold");
           const isItalic = currentStyle.includes("italic");
-          
+
           let newStyle;
           if (isBold && isItalic) {
             newStyle = "italic";
@@ -1661,9 +1711,9 @@ const Page = () => {
           } else {
             newStyle = "bold";
           }
-          
+
           return { ...box, fontStyle: newStyle };
-        })
+        }),
       );
     }
     contextMenus.handleCloseContextMenu();
@@ -1677,7 +1727,7 @@ const Page = () => {
           const currentStyle = box.fontStyle || "normal";
           const isBold = currentStyle.includes("bold");
           const isItalic = currentStyle.includes("italic");
-          
+
           let newStyle;
           if (isBold && isItalic) {
             newStyle = "bold";
@@ -1688,9 +1738,9 @@ const Page = () => {
           } else {
             newStyle = "italic";
           }
-          
+
           return { ...box, fontStyle: newStyle };
-        })
+        }),
       );
     }
     contextMenus.handleCloseContextMenu();
@@ -1703,7 +1753,7 @@ const Page = () => {
           if (box.id !== selectedTextId) return box;
           const currentDecoration = box.textDecoration || "";
           const hasUnderline = currentDecoration.includes("underline");
-          
+
           let newDecoration;
           if (hasUnderline) {
             // Remove underline
@@ -1712,30 +1762,36 @@ const Page = () => {
             // Add underline
             newDecoration = currentDecoration ? `${currentDecoration} underline` : "underline";
           }
-          
+
           return { ...box, textDecoration: newDecoration };
-        })
+        }),
       );
     }
     contextMenus.handleCloseContextMenu();
   }, [selectedTextId, contextMenus]);
 
-  const handleTextFontSize = useCallback((fontSize) => {
-    if (selectedTextId) {
-      setTextBoxes((boxes) =>
-        boxes.map((box) => (box.id === selectedTextId ? { ...box, fontSize } : box))
-      );
-    }
-    contextMenus.handleCloseContextMenu();
-  }, [selectedTextId, contextMenus]);
+  const handleTextFontSize = useCallback(
+    (fontSize) => {
+      if (selectedTextId) {
+        setTextBoxes((boxes) =>
+          boxes.map((box) => (box.id === selectedTextId ? { ...box, fontSize } : box)),
+        );
+      }
+      contextMenus.handleCloseContextMenu();
+    },
+    [selectedTextId, contextMenus],
+  );
 
-  const handleTextColorChange = useCallback((color) => {
-    if (selectedTextId) {
-      setTextBoxes((boxes) =>
-        boxes.map((box) => (box.id === selectedTextId ? { ...box, color } : box))
-      );
-    }
-  }, [selectedTextId]);
+  const handleTextColorChange = useCallback(
+    (color) => {
+      if (selectedTextId) {
+        setTextBoxes((boxes) =>
+          boxes.map((box) => (box.id === selectedTextId ? { ...box, color } : box)),
+        );
+      }
+    },
+    [selectedTextId],
+  );
 
   const handleTextToggleBorder = useCallback(() => {
     if (selectedTextId) {
@@ -1743,7 +1799,7 @@ const Page = () => {
         boxes.map((box) => {
           if (box.id !== selectedTextId) return box;
           return { ...box, showBorder: !box.showBorder };
-        })
+        }),
       );
     }
     contextMenus.handleCloseContextMenu();
@@ -1753,7 +1809,7 @@ const Page = () => {
   const handleSelectionStart = useCallback(
     (e) => {
       if (selectedTool !== "select" || e.evt.button !== 0) return;
-      
+
       const clickedOnEmpty = e.target === e.target.getStage();
       if (!clickedOnEmpty) return;
 
@@ -1768,7 +1824,7 @@ const Page = () => {
       hasDraggedRef.current = false;
       // Don't set isSelecting yet - wait for actual movement
     },
-    [selectedTool, stagePosition, stageScale]
+    [selectedTool, stagePosition, stageScale],
   );
 
   const handleSelectionEnd = useCallback(() => {
@@ -1791,12 +1847,16 @@ const Page = () => {
     const selectedProducts = products.filter((product) => {
       const productType = product.product_type?.toLowerCase() || "default";
       const config = productTypesConfig[productType] || productTypesConfig.default;
-      
+
       // Calculate product bounds using its real-world size
       const productScaleFactor = product.scaleFactor || scaleFactor;
-      const pixelWidth = ((config.realWorldWidth || config.realWorldSize) / productScaleFactor) * (product.scaleX || 1);
-      const pixelHeight = ((config.realWorldHeight || config.realWorldSize) / productScaleFactor) * (product.scaleY || 1);
-      
+      const pixelWidth =
+        ((config.realWorldWidth || config.realWorldSize) / productScaleFactor) *
+        (product.scaleX || 1);
+      const pixelHeight =
+        ((config.realWorldHeight || config.realWorldSize) / productScaleFactor) *
+        (product.scaleY || 1);
+
       // Calculate product bounding box (considering it's centered)
       const productX1 = product.x - pixelWidth / 2;
       const productY1 = product.y - pixelHeight / 2;
@@ -1813,11 +1873,11 @@ const Page = () => {
       const textScaleFactor = textBox.scaleFactor || scaleFactor;
       const baseFontSize = textBox.fontSize || 24;
       const renderedFontSize = baseFontSize * (textScaleFactor / 100);
-      
+
       // Account for text box scale transforms
       const textWidth = (textBox.width || 200) * (textBox.scaleX || 1);
       const textHeight = renderedFontSize * 1.2 * (textBox.scaleY || 1); // Approximate height with line height multiplier
-      
+
       const textX1 = textBox.x;
       const textY1 = textBox.y;
       const textX2 = textBox.x + textWidth;
@@ -1831,7 +1891,7 @@ const Page = () => {
       // Combine product IDs and text box IDs (with text- prefix)
       const allSelectedIds = [
         ...selectedProducts.map((p) => p.id),
-        ...selectedTexts.map((t) => `text-${t.id}`)
+        ...selectedTexts.map((t) => `text-${t.id}`),
       ];
       setSelectedIds(allSelectedIds);
       // Also set selectedTextId for single text box operations
@@ -1854,7 +1914,7 @@ const Page = () => {
       // Store drag state before handleSelectionEnd clears it
       const wasDragging = hasDraggedRef.current;
       const hadSelectionStart = selectionStartRef.current !== null;
-      
+
       // Handle selection end (this will clear the refs)
       handleSelectionEnd();
 
@@ -1873,7 +1933,7 @@ const Page = () => {
       selectionStartRef.current = null;
       hasDraggedRef.current = false;
     },
-    [selectedTool, handleSelectionEnd, applyGroupTransform, updateHistory, clearSelection]
+    [selectedTool, handleSelectionEnd, applyGroupTransform, updateHistory, clearSelection],
   );
 
   const checkDeselect = useCallback(
@@ -1974,17 +2034,27 @@ const Page = () => {
       }
       contextMenus.handleCloseContextMenu();
     },
-    [contextMenus, products, applyGroupTransform, updateHistory, setSelectedIds, setGroupKey, scaleFactor],
+    [
+      contextMenus,
+      products,
+      applyGroupTransform,
+      updateHistory,
+      setSelectedIds,
+      setGroupKey,
+      scaleFactor,
+    ],
   );
 
   const handleExport = useCallback(() => {
     // Save if there are pending changes before navigating to export page
     if (hasUnsavedChanges && !isSaving) {
       console.log("Saving design before export...");
+      setPendingExportNavigation(true);
       handleSave();
+    } else {
+      // No unsaved changes, navigate immediately
+      router.push(`/jobs/design/export?id=${id}`);
     }
-    // Navigate to export page
-    router.push(`/jobs/design/export?id=${id}`);
   }, [router, id, hasUnsavedChanges, isSaving, handleSave]);
 
   return (
@@ -2205,7 +2275,8 @@ const Page = () => {
                             }}
                             config={(() => {
                               const productType =
-                                placementMode.template.product_type_unigram?.toLowerCase() || "default";
+                                placementMode.template.product_type_unigram?.toLowerCase() ||
+                                "default";
                               return productTypesConfig[productType] || productTypesConfig.default;
                             })()}
                             isSelected={false}
@@ -2365,10 +2436,14 @@ const Page = () => {
 
                   {/* Object Preview Panel */}
                   <ObjectPreviewPanel
-                    product={selectedIds.length === 1 && !selectedIds[0].startsWith('text-') 
-                      ? products.find(p => p.id === selectedIds[0]) 
-                      : null}
-                    visible={showPreview && selectedIds.length === 1 && !selectedIds[0].startsWith('text-')}
+                    product={
+                      selectedIds.length === 1 && !selectedIds[0].startsWith("text-")
+                        ? products.find((p) => p.id === selectedIds[0])
+                        : null
+                    }
+                    visible={
+                      showPreview && selectedIds.length === 1 && !selectedIds[0].startsWith("text-")
+                    }
                   />
                 </Box>
               </CardContent>

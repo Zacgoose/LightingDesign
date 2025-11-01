@@ -961,7 +961,7 @@ const Page = () => {
         // Create a group for the product and transform it to its canvas position
         const productGroupEl = document.createElementNS(SVG_NS, 'g');
         const rotation = product.rotation || 0;
-        productGroupEl.setAttribute('transform', `translate(${cx} ${cy}) rotate(${rotation})`);
+        productGroupEl.setAttribute('transform', `translate(${cx} ${cy}) rotate(${rotation}) scale(${sx} ${sy})`);
         svgElement.appendChild(productGroupEl);
 
         // Build shape object and SVG context

@@ -7,6 +7,9 @@ import { useRef, useState } from "react";
  * When tracking composite state (e.g., { products: [...], textBoxes: [...] }),
  * undo/redo operations will restore the entire composite state atomically.
  * 
+ * This hook is used to enable undo/redo for canvas operations including both
+ * products and text boxes.
+ * 
  * @param {*} initialState - Initial state value (array, object, etc.)
  * @returns {Object} History management interface
  */

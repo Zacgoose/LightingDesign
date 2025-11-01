@@ -55,6 +55,7 @@ const Page = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [pendingExportNavigation, setPendingExportNavigation] = useState(false);
 
   // Load design data
   const designData = ApiGetCall({
@@ -340,8 +341,14 @@ const Page = () => {
       setHasUnsavedChanges(false);
       setIsSaving(false);
       queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
+
+      // If we were waiting to navigate to export, do it now after save is complete
+      if (pendingExportNavigation) {
+        setPendingExportNavigation(false);
+        router.push(`/jobs/design/export?id=${id}`);
+      }
     }
-  }, [saveDesignMutation.isSuccess, queryClient, id]);
+  }, [saveDesignMutation.isSuccess, queryClient, id, pendingExportNavigation, router]);
 
   // Handle save mutation end
   useEffect(() => {

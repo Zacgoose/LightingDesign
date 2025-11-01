@@ -841,6 +841,35 @@ const Page = () => {
     setGroupKey,
   ]);
 
+  // Shared undo/redo handlers
+  const handleUndoAll = useCallback(() => {
+    const transformed = applyGroupTransform();
+    if (transformed) updateHistory(transformed);
+    
+    // Undo both products and text boxes
+    const didUndoProduct = handleUndo();
+    const didUndoTextBox = handleTextBoxUndo();
+    
+    // Clear selection after undo
+    if (didUndoProduct || didUndoTextBox) {
+      clearSelection();
+    }
+  }, [applyGroupTransform, updateHistory, handleUndo, handleTextBoxUndo, clearSelection]);
+
+  const handleRedoAll = useCallback(() => {
+    const transformed = applyGroupTransform();
+    if (transformed) updateHistory(transformed);
+    
+    // Redo both products and text boxes
+    const didRedoProduct = handleRedo();
+    const didRedoTextBox = handleTextBoxRedo();
+    
+    // Clear selection after redo
+    if (didRedoProduct || didRedoTextBox) {
+      clearSelection();
+    }
+  }, [applyGroupTransform, updateHistory, handleRedo, handleTextBoxRedo, clearSelection]);
+
   // Keyboard shortcuts
   useKeyboardShortcuts({
     products,
@@ -949,32 +978,8 @@ const Page = () => {
       clearSelection();
       setSelectedTextId(null);
     },
-    onUndo: () => {
-      const transformed = applyGroupTransform();
-      if (transformed) updateHistory(transformed);
-      
-      // Undo both products and text boxes
-      const didUndoProduct = handleUndo();
-      const didUndoTextBox = handleTextBoxUndo();
-      
-      // Clear selection after undo
-      if (didUndoProduct || didUndoTextBox) {
-        clearSelection();
-      }
-    },
-    onRedo: () => {
-      const transformed = applyGroupTransform();
-      if (transformed) updateHistory(transformed);
-      
-      // Redo both products and text boxes
-      const didRedoProduct = handleRedo();
-      const didRedoTextBox = handleTextBoxRedo();
-      
-      // Clear selection after redo
-      if (didRedoProduct || didRedoTextBox) {
-        clearSelection();
-      }
-    },
+    onUndo: handleUndoAll,
+    onRedo: handleRedoAll,
   });
 
   const handleUploadFloorPlan = useCallback(async () => {
@@ -1632,16 +1637,9 @@ const Page = () => {
           );
           updateTextBoxHistory(updatedBoxes);
         } else {
-          // User confirmed with empty text - remove the text box (don't add to history)
+          // User confirmed with empty text - remove the text box
           const filteredBoxes = textBoxes.filter((box) => box.id !== pendingTextBoxId);
-          // Use updateTextBoxHistory only if there were other boxes, otherwise just remove it
-          if (filteredBoxes.length < textBoxes.length - 1) {
-            // There were other boxes besides the one we're removing
-            updateTextBoxHistory(filteredBoxes);
-          } else {
-            // Only this empty box existed, just remove it without history
-            updateTextBoxHistory(filteredBoxes);
-          }
+          updateTextBoxHistory(filteredBoxes);
           setSelectedTextId(null);
         }
         setPendingTextBoxId(null);
@@ -2156,20 +2154,8 @@ const Page = () => {
                 onUploadFloorPlan: handleUploadFloorPlan,
                 onSave: handleSave,
                 onExport: handleExport,
-                onUndo: () => {
-                  const transformed = applyGroupTransform();
-                  if (transformed) updateHistory(transformed);
-                  handleUndo();
-                  handleTextBoxUndo();
-                  clearSelection();
-                },
-                onRedo: () => {
-                  const transformed = applyGroupTransform();
-                  if (transformed) updateHistory(transformed);
-                  handleRedo();
-                  handleTextBoxRedo();
-                  clearSelection();
-                },
+                onUndo: handleUndoAll,
+                onRedo: handleRedoAll,
                 canUndo: canUndo || canUndoTextBox,
                 canRedo: canRedo || canRedoTextBox,
                 onMeasure: handleMeasure,

@@ -86,6 +86,7 @@ export const DesignerCanvas = memo(
     // Middle mouse panning state
     const [isMiddlePanning, setIsMiddlePanning] = useState(false);
     const [lastPanPos, setLastPanPos] = useState(null);
+    const panStartPosRef = useState({ x: 0, y: 0 })[0];
 
     // Middle mouse down handler
     const handleStageMouseDown = (e) => {
@@ -93,6 +94,10 @@ export const DesignerCanvas = memo(
         // Middle mouse
         setIsMiddlePanning(true);
         setLastPanPos({ x: e.evt.clientX, y: e.evt.clientY });
+        // Store initial stage position
+        const stage = e.target.getStage();
+        panStartPosRef.x = stage.x();
+        panStartPosRef.y = stage.y();
         e.evt.preventDefault();
       }
       if (onMouseDown) onMouseDown(e);
@@ -103,6 +108,13 @@ export const DesignerCanvas = memo(
       if (isMiddlePanning) {
         setIsMiddlePanning(false);
         setLastPanPos(null);
+        // Update state with final position when pan ends
+        const stage = e.target.getStage();
+        if (typeof onPan === "function") {
+          const finalDx = stage.x() - panStartPosRef.x;
+          const finalDy = stage.y() - panStartPosRef.y;
+          onPan(finalDx, finalDy);
+        }
         e.evt.preventDefault();
       }
       if (onMouseUp) onMouseUp(e);
@@ -113,9 +125,16 @@ export const DesignerCanvas = memo(
       if (isMiddlePanning && lastPanPos) {
         const dx = e.evt.clientX - lastPanPos.x;
         const dy = e.evt.clientY - lastPanPos.y;
-        if (typeof onPan === "function") {
-          onPan(dx, dy);
-        }
+        
+        // Apply pan directly to stage for immediate visual feedback
+        const stage = e.target.getStage();
+        const currentPos = stage.position();
+        stage.position({
+          x: currentPos.x + dx,
+          y: currentPos.y + dy
+        });
+        stage.batchDraw();
+        
         setLastPanPos({ x: e.evt.clientX, y: e.evt.clientY });
         e.evt.preventDefault();
       }

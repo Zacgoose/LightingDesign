@@ -418,35 +418,17 @@ const Page = () => {
       return new Promise((resolve, reject) => {
         const img = new window.Image();
         img.onload = () => {
-          // Use the actual loaded image dimensions (after EXIF rotation is applied by browser)
-          // NOT the stored naturalSize, which may be pre-rotation dimensions
-          const actualWidth = img.width;
-          const actualHeight = img.height;
-          
-          console.log('Normalizing image for export:', {
-            storedNaturalSize: naturalSize,
-            actualLoadedSize: { width: actualWidth, height: actualHeight },
-            dimensionsMatch: actualWidth === naturalSize.width && actualHeight === naturalSize.height
-          });
-          
-          // Create canvas with the actual display dimensions (after EXIF rotation)
+          // Create canvas with the display dimensions (after EXIF rotation)
           const canvas = document.createElement("canvas");
-          canvas.width = actualWidth;
-          canvas.height = actualHeight;
+          canvas.width = naturalSize.width;
+          canvas.height = naturalSize.height;
           const ctx = canvas.getContext("2d");
           
-          // Draw image to canvas at actual size - this bakes in the EXIF orientation
-          ctx.drawImage(img, 0, 0, actualWidth, actualHeight);
+          // Draw image to canvas - this applies EXIF orientation and produces a clean image
+          ctx.drawImage(img, 0, 0, naturalSize.width, naturalSize.height);
           
           // Convert to data URL without EXIF metadata
-          const normalizedDataUrl = canvas.toDataURL("image/jpeg", 0.95);
-          
-          console.log('Image normalized successfully:', {
-            originalDataUrlLength: imageDataUrl.length,
-            normalizedDataUrlLength: normalizedDataUrl.length
-          });
-          
-          resolve(normalizedDataUrl);
+          resolve(canvas.toDataURL("image/jpeg", 0.95));
         };
         img.onerror = () => {
           console.error('Error loading image for normalization');
@@ -513,36 +495,15 @@ const Page = () => {
     // Background bounds
     let bgX = 0, bgY = 0, bgWidth = 0, bgHeight = 0;
     if (backgroundImage && backgroundImageNaturalSize) {
-      console.log('=== BACKGROUND IMAGE ANALYSIS ===');
-      console.log('backgroundImageNaturalSize:', backgroundImageNaturalSize);
-      console.log('canvasSize:', canvasSize);
-      
       const canvasImgScaleX = canvasSize.width / backgroundImageNaturalSize.width;
       const canvasImgScaleY = canvasSize.height / backgroundImageNaturalSize.height;
       const canvasImgScale = Math.min(canvasImgScaleX, canvasImgScaleY);
-      
-      console.log('Scale calculations:', {
-        canvasImgScaleX,
-        canvasImgScaleY,
-        canvasImgScale,
-        usedScale: canvasImgScale
-      });
-      
       bgWidth = backgroundImageNaturalSize.width * canvasImgScale;
       bgHeight = backgroundImageNaturalSize.height * canvasImgScale;
       // Designer uses centered coordinates (0,0 at center of canvas). Background image
       // is drawn centered on stage: x = -bgWidth/2, y = -bgHeight/2
       bgX = -bgWidth / 2;
       bgY = -bgHeight / 2;
-      
-      console.log('Calculated background bounds:', { 
-        bgX, 
-        bgY, 
-        bgWidth, 
-        bgHeight,
-        aspectRatio: bgWidth / bgHeight
-      });
-      
       minX = Math.min(minX, bgX);
       minY = Math.min(minY, bgY);
       maxX = Math.max(maxX, bgX + bgWidth);
@@ -677,17 +638,6 @@ const Page = () => {
 
       // Background image (preserve aspect ratio and natural size)
       if (backgroundImage) {
-        console.log('=== ADDING BACKGROUND TO SVG ===');
-        console.log('Background image placement:', {
-          x: bgX,
-          y: bgY,
-          width: bgWidth,
-          height: bgHeight,
-          aspectRatio: bgWidth / bgHeight,
-          viewBox: `${contentOffsetX} ${contentOffsetY} ${exportWidth} ${exportHeight}`,
-          svgDimensions: { width: exportWidth, height: exportHeight }
-        });
-        
         const imgEl = document.createElementNS(SVG_NS, 'image');
         imgEl.setAttributeNS(XLINK_NS, 'xlink:href', backgroundImage);
         imgEl.setAttribute('href', backgroundImage);
@@ -698,9 +648,6 @@ const Page = () => {
         imgEl.setAttribute('width', String(bgWidth));
         imgEl.setAttribute('height', String(bgHeight));
         imgEl.setAttribute('preserveAspectRatio', 'none');
-        
-        console.log('Background image element created with preserveAspectRatio: none');
-        
         svgElement.appendChild(imgEl);
       }
 
@@ -1135,22 +1082,6 @@ const Page = () => {
       const imageCount = svgElement.querySelectorAll('image').length;
       console.log('SVG image count:', imageCount);
       console.log('SVG outerHTML length:', svgElement.outerHTML.length);
-
-      console.log('=== RENDERING SVG TO PDF ===');
-      console.log('SVG viewBox:', svgElement.getAttribute('viewBox'));
-      console.log('SVG width/height attributes:', {
-        width: svgElement.getAttribute('width'),
-        height: svgElement.getAttribute('height')
-      });
-      console.log('PDF target area:', {
-        x: offsetX,
-        y: offsetY,
-        width: scaledWidth,
-        height: scaledHeight,
-        aspectRatio: scaledWidth / scaledHeight
-      });
-      console.log('Export region aspect ratio:', exportWidth / exportHeight);
-      console.log('PDF scale factor:', scale);
 
       // Render SVG to PDF at the calculated position and size
       await pdf.svg(svgElement, {

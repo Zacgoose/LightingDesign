@@ -339,15 +339,26 @@ const Page = () => {
       backgroundFileType,
     });
     
-    // If background is a PDF, convert it to raster for export
+    // Normalize background image for export to ensure consistent orientation
     let exportBackgroundImage = backgroundImage;
-    if (backgroundFileType === 'pdf' && backgroundImage) {
-      console.log('Converting PDF background to raster for export');
-      try {
-        exportBackgroundImage = await convertPdfToRasterForExport(backgroundImage);
-      } catch (error) {
-        console.error('Error converting PDF to raster for export:', error);
-        exportBackgroundImage = null;
+    if (backgroundImage && backgroundImageNaturalSize) {
+      if (backgroundFileType === 'pdf') {
+        console.log('Converting PDF background to raster for export');
+        try {
+          exportBackgroundImage = await convertPdfToRasterForExport(backgroundImage);
+        } catch (error) {
+          console.error('Error converting PDF to raster for export:', error);
+          exportBackgroundImage = null;
+        }
+      } else {
+        console.log('Normalizing image background for export (stripping EXIF orientation)');
+        try {
+          exportBackgroundImage = await normalizeImageForExport(backgroundImage, backgroundImageNaturalSize);
+        } catch (error) {
+          console.error('Error normalizing image for export:', error);
+          // Fallback to original image if normalization fails
+          exportBackgroundImage = backgroundImage;
+        }
       }
     }
     
@@ -397,6 +408,36 @@ const Page = () => {
       return canvas.toDataURL("image/jpeg");
     } catch (error) {
       console.error('Error in convertPdfToRasterForExport:', error);
+      throw error;
+    }
+  };
+  
+  // Helper to normalize image (strip EXIF orientation) for consistent export
+  const normalizeImageForExport = async (imageDataUrl, naturalSize) => {
+    try {
+      return new Promise((resolve, reject) => {
+        const img = new window.Image();
+        img.onload = () => {
+          // Create canvas with the display dimensions (after EXIF rotation)
+          const canvas = document.createElement("canvas");
+          canvas.width = naturalSize.width;
+          canvas.height = naturalSize.height;
+          const ctx = canvas.getContext("2d");
+          
+          // Draw image to canvas - this applies EXIF orientation and produces a clean image
+          ctx.drawImage(img, 0, 0, naturalSize.width, naturalSize.height);
+          
+          // Convert to data URL without EXIF metadata
+          resolve(canvas.toDataURL("image/jpeg", 0.95));
+        };
+        img.onerror = () => {
+          console.error('Error loading image for normalization');
+          reject(new Error('Failed to load image'));
+        };
+        img.src = imageDataUrl;
+      });
+    } catch (error) {
+      console.error('Error in normalizeImageForExport:', error);
       throw error;
     }
   };
@@ -606,7 +647,7 @@ const Page = () => {
         imgEl.setAttribute('y', String(bgY));
         imgEl.setAttribute('width', String(bgWidth));
         imgEl.setAttribute('height', String(bgHeight));
-        imgEl.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+        imgEl.setAttribute('preserveAspectRatio', 'none');
         svgElement.appendChild(imgEl);
       }
 

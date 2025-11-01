@@ -147,6 +147,9 @@ const Page = () => {
   // Extract products and textBoxes from composite state
   const products = canvasObjects.products || [];
   const textBoxes = canvasObjects.textBoxes || [];
+  
+  // Track pending text box that hasn't been confirmed yet (not in history)
+  const [pendingTextBox, setPendingTextBox] = useState(null);
 
   // Helper function to update history with composite state
   // This ensures products and textBoxes are always updated together atomically
@@ -633,6 +636,17 @@ const Page = () => {
     // are stable setState functions and don't need to be in dependencies
   ]);
 
+  // Wrapper for setTextBoxes to support history tracking in contextMenus hook
+  const setTextBoxesWithHistory = useCallback((updater) => {
+    // updater can be either a new array or a function that takes the old array
+    if (typeof updater === 'function') {
+      const newTextBoxes = updater(textBoxes);
+      updateTextBoxesHistory(newTextBoxes);
+    } else {
+      updateTextBoxesHistory(updater);
+    }
+  }, [textBoxes, updateTextBoxesHistory]);
+
   // Context menus hook
   const contextMenus = useContextMenus({
     products,
@@ -654,16 +668,7 @@ const Page = () => {
     pendingInsertPosition,
     selectedTextId,
     textBoxes,
-    setTextBoxes: (updater) => {
-      // Wrapper to support history tracking
-      // updater can be either a new array or a function that takes the old array
-      if (typeof updater === 'function') {
-        const newTextBoxes = updater(textBoxes);
-        updateTextBoxesHistory(newTextBoxes);
-      } else {
-        updateTextBoxesHistory(updater);
-      }
-    },
+    setTextBoxes: setTextBoxesWithHistory,
   });
 
   // Product interaction hook
@@ -1512,10 +1517,9 @@ const Page = () => {
           scaleFactor: scaleFactor, // Store scaleFactor at creation time, similar to products
         };
         
-        // Add the text box and open the dialog immediately
-        // Note: We add it to history here even though it's empty, so that canceling the dialog
-        // can be undone. The dialog handler will either update it with text or remove it.
-        updateTextBoxesHistory([...textBoxes, newTextBox]);
+        // Track pending text box separately (not in history yet)
+        // It will be added to history only when dialog is confirmed with content
+        setPendingTextBox(newTextBox);
         setPendingTextBoxId(newTextBox.id);
         setSelectedTextId(newTextBox.id);
         setTextDialogValue("");
@@ -1531,7 +1535,7 @@ const Page = () => {
         setSelectedConnectorId(null);
       }
     },
-    [selectedTool, textBoxes, stagePosition, stageScale, theme, setSelectedIds, setSelectedConnectorId, updateTextBoxesHistory, scaleFactor, activeLayer]
+    [selectedTool, stagePosition, stageScale, theme, setSelectedIds, setSelectedConnectorId, scaleFactor, activeLayer]
   );
 
   const handleTextDoubleClick = useCallback((e, textId) => {
@@ -1552,11 +1556,66 @@ const Page = () => {
 
   const handleTextDialogConfirm = useCallback(
     (formattingData) => {
-      if (pendingTextBoxId) {
-        const newText = formattingData.text || "";
-        if (newText.trim()) {
-          // Use canvas measureText API to calculate exact text dimensions
-          // as recommended by Konva documentation for accurate sizing
+      const newText = formattingData.text || "";
+      
+      if (newText.trim() && pendingTextBox) {
+        // User confirmed with text - create the final text box and add to history
+        // Use canvas measureText API to calculate exact text dimensions
+        const fontSize = formattingData.fontSize;
+        const fontFamily = formattingData.fontFamily;
+        const isBold = formattingData.fontStyle?.includes("bold");
+        const isItalic = formattingData.fontStyle?.includes("italic");
+        const fontStyle = isItalic ? "italic" : "normal";
+        const fontWeight = isBold ? "bold" : "normal";
+        
+        // Create an offscreen canvas for measuring
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Match the Konva.Text style exactly
+        ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+        
+        // Split into lines and measure each to get the widest line
+        const lines = newText.split('\n');
+        const maxWidth = lines.reduce((max, line) => {
+          const w = ctx.measureText(line).width;
+          return w > max ? w : max;
+        }, 0);
+        
+        // Measure height using the full text metrics
+        const metrics = ctx.measureText(newText);
+        const lineHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+        
+        // Add padding to prevent text cutoff
+        const padding = 10;
+        const width = maxWidth + padding;
+        const height = (lineHeight * lines.length) + padding;
+        
+        const finalTextBox = {
+          ...pendingTextBox,
+          text: newText,
+          fontSize: formattingData.fontSize,
+          fontFamily: formattingData.fontFamily,
+          fontStyle: formattingData.fontStyle,
+          textDecoration: formattingData.textDecoration,
+          color: formattingData.color,
+          width: width,
+          height: height,
+        };
+        
+        // Add to history now that it has content
+        updateTextBoxesHistory([...textBoxes, finalTextBox]);
+      } else if (pendingTextBoxId && !pendingTextBox) {
+        // Editing existing text box
+        const newTextBoxes = textBoxes.map((box) => {
+          if (box.id !== pendingTextBoxId) return box;
+          
+          if (!newText.trim()) {
+            // Empty text - will be filtered out below
+            return null;
+          }
+          
+          // Calculate dimensions for updated text
           const fontSize = formattingData.fontSize;
           const fontFamily = formattingData.fontFamily;
           const isBold = formattingData.fontStyle?.includes("bold");
@@ -1564,72 +1623,57 @@ const Page = () => {
           const fontStyle = isItalic ? "italic" : "normal";
           const fontWeight = isBold ? "bold" : "normal";
           
-          // Create an offscreen canvas for measuring
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
-          
-          // Match the Konva.Text style exactly
           ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
           
-          // Split into lines and measure each to get the widest line
           const lines = newText.split('\n');
           const maxWidth = lines.reduce((max, line) => {
             const w = ctx.measureText(line).width;
             return w > max ? w : max;
           }, 0);
           
-          // Measure height using the full text metrics
           const metrics = ctx.measureText(newText);
           const lineHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-          
-          // Add padding to prevent text cutoff
           const padding = 10;
           const width = maxWidth + padding;
           const height = (lineHeight * lines.length) + padding;
           
-          // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
-          const newTextBoxes = textBoxes.map((box) => 
-            box.id === pendingTextBoxId 
-              ? { 
-                  ...box, 
-                  text: newText,
-                  fontSize: formattingData.fontSize,
-                  fontFamily: formattingData.fontFamily,
-                  fontStyle: formattingData.fontStyle,
-                  textDecoration: formattingData.textDecoration,
-                  color: formattingData.color,
-                  width: width, // Use canvas measureText width
-                  height: height, // Use canvas measureText height
-                } 
-              : box
-          );
-          updateTextBoxesHistory(newTextBoxes);
-        } else {
-          // User confirmed with empty text - remove the text box
-          const newTextBoxes = textBoxes.filter((box) => box.id !== pendingTextBoxId);
-          updateTextBoxesHistory(newTextBoxes);
+          return {
+            ...box,
+            text: newText,
+            fontSize: formattingData.fontSize,
+            fontFamily: formattingData.fontFamily,
+            fontStyle: formattingData.fontStyle,
+            textDecoration: formattingData.textDecoration,
+            color: formattingData.color,
+            width: width,
+            height: height,
+          };
+        }).filter(box => box !== null);
+        
+        updateTextBoxesHistory(newTextBoxes);
+        
+        if (!newText.trim()) {
           setSelectedTextId(null);
         }
-        setPendingTextBoxId(null);
       }
+      
+      // Clean up pending state
+      setPendingTextBox(null);
+      setPendingTextBoxId(null);
       setTextDialogOpen(false);
     },
-    [pendingTextBoxId, textBoxes, updateTextBoxesHistory]
+    [pendingTextBoxId, pendingTextBox, textBoxes, updateTextBoxesHistory]
   );
 
   const handleTextDialogClose = useCallback(() => {
     setTextDialogOpen(false);
-    // If we were creating a new text box and dialog was cancelled, remove it
-    if (pendingTextBoxId) {
-      const textBox = textBoxes.find((t) => t.id === pendingTextBoxId);
-      if (textBox && !textBox.text) {
-        const newTextBoxes = textBoxes.filter((box) => box.id !== pendingTextBoxId);
-        updateTextBoxesHistory(newTextBoxes);
-        setSelectedTextId(null);
-      }
-    }
+    // Simply discard the pending text box if dialog was cancelled
+    setPendingTextBox(null);
     setPendingTextBoxId(null);
-  }, [pendingTextBoxId, textBoxes, updateTextBoxesHistory]);
+    setSelectedTextId(null);
+  }, []);
 
   const handleTextChange = useCallback((updatedTextBox) => {
     const newTextBoxes = textBoxes.map((box) => 
@@ -2283,7 +2327,7 @@ const Page = () => {
                       <>
                         {/* Text boxes layer */}
                         <TextLayer
-                          textBoxes={textBoxes}
+                          textBoxes={pendingTextBox ? [...textBoxes, pendingTextBox] : textBoxes}
                           selectedTextId={selectedTextId}
                           selectedIds={selectedIds}
                           onTextSelect={handleTextSelect}

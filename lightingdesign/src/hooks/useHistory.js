@@ -13,6 +13,13 @@ export const useHistory = (initialState = []) => {
     setState(newState);
   };
 
+  const updateCurrentState = (newState) => {
+    // Update the current state without adding to history
+    // This is useful for non-user-action updates like dimension recalculations
+    history.current[historyStep.current] = newState;
+    setState(newState);
+  };
+
   const resetHistoryBaseline = (newState) => {
     // Reset history with a new baseline that cannot be undone past
     history.current = [newState];
@@ -43,6 +50,7 @@ export const useHistory = (initialState = []) => {
   return {
     state,
     updateHistory,
+    updateCurrentState,
     resetHistoryBaseline,
     undo,
     redo,

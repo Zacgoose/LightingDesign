@@ -17,6 +17,5 @@ try {
   console.log('PDF.js worker copied successfully');
 } catch (error) {
   console.error('Error copying PDF.js worker:', error);
-  // Don't exit with error - continue the build
-  process.exit(0);
+  process.exit(1);
 }

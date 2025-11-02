@@ -21,6 +21,8 @@ import { useSettings } from "../../../hooks/use-settings";
 import CippDevOptions from "../../../components/CippComponents/CippDevOptions";
 import { ApiGetCall, ApiPostCall } from "../../../api/ApiCall";
 import { getCippError } from "../../../utils/get-cipp-error";
+import CippBrandingSettings from "../../../components/CippSettings/CippBrandingSettings";
+import CippExportTemplateSettings from "../../../components/CippSettings/CippExportTemplateSettings";
 
 const Page = () => {
   const settings = useSettings();
@@ -273,6 +275,12 @@ const Page = () => {
                       },
                     ]}
                   />
+
+                  {/* Branding Settings */}
+                  <CippBrandingSettings />
+
+                  {/* Export Template Settings */}
+                  <CippExportTemplateSettings />
                 </Stack>
               </Grid>
 

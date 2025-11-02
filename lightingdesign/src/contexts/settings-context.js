@@ -80,6 +80,18 @@ const initialSettings = {
   autoSaveInterval: { value: "2", label: "2 minutes" },
   gridOpacity: 50,
   backgroundOpacity: 70,
+  // Export template settings
+  exportTemplate: {
+    showLogo: true,
+    logoPosition: "top-left", // top-left, top-right, top-center, bottom-left, bottom-right, bottom-center
+    logoSize: 60, // height in points
+    showJobInfo: true,
+    jobInfoFields: ["jobNumber", "customerName", "address", "floorName", "date"], // which fields to show
+    jobInfoPosition: "title-block", // title-block, top-right, bottom-left, bottom-right
+    showPageNumbers: true,
+    titleBlockHeight: 40, // in mm
+    titleBlockColor: "#F0F0F0",
+  },
 };
 
 const initialState = {

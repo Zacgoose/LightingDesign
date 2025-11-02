@@ -30,6 +30,7 @@ import { Stage, Layer } from "react-konva";
 import "svg2pdf.js";
 import productTypesConfig from "/src/data/productTypes.json";
 import { getShapeFunction } from "/src/components/designer/productShapes";
+import { useSettings } from "/src/hooks/use-settings";
 
 // Paper size definitions (dimensions in mm)
 const PAPER_SIZES = [
@@ -43,6 +44,11 @@ const PAPER_SIZES = [
 const Page = () => {
   const router = useRouter();
   const { id } = router.query;
+  const settings = useSettings();
+
+  // Get export template settings
+  const exportTemplate = settings?.exportTemplate || {};
+  const brandingSettings = settings?.customBranding || {};
 
   // Export settings state
   const [paperSize, setPaperSize] = useState("A4");
@@ -217,7 +223,7 @@ const Page = () => {
         });
         
         // Define drawing area (below title block)
-        const titleBlockHeight = 40;
+        const titleBlockHeight = exportTemplate.titleBlockHeight || 40;
         const drawingAreaY = titleBlockHeight + 5;
         const drawingAreaHeight = pageHeight - titleBlockHeight - 10;
         const drawingAreaWidth = pageWidth - 20;
@@ -251,6 +257,9 @@ const Page = () => {
             height: designData.data?.designData?.canvasSettings?.height || 2970,
           },
         });
+        
+        // Add logo outside title block (for bottom positions)
+        await addLogoOutsideTitleBlock(pdf, pageWidth, pageHeight);
       }
       
       setExportProgress(75);
@@ -287,12 +296,29 @@ const Page = () => {
     }
   }, [paperSize, orientation, selectedLayers, selectedSublayers, layers, jobData.data, designData.data]);
   
-  // Helper function to add title block
+  // Helper function to add title block with customizable layout
   const addTitleBlock = async (pdf, pageWidth, pageHeight, info) => {
-    const titleBlockHeight = 40;
+    const titleBlockHeight = exportTemplate.titleBlockHeight || 40;
+    
+    // Only draw title block if job info is enabled
+    if (!exportTemplate.showJobInfo) {
+      return;
+    }
+    
+    // Convert hex color to RGB for PDF
+    const hexToRgb = (hex) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 240, g: 240, b: 240 };
+    };
+    
+    const bgColor = hexToRgb(exportTemplate.titleBlockColor || "#F0F0F0");
     
     // Background for title block
-    pdf.setFillColor(240, 240, 240);
+    pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b);
     pdf.rect(0, 0, pageWidth, titleBlockHeight, "F");
     
     // Border
@@ -300,29 +326,142 @@ const Page = () => {
     pdf.setLineWidth(0.5);
     pdf.rect(0, 0, pageWidth, titleBlockHeight);
     
+    // Add logo if enabled
+    if (exportTemplate.showLogo && brandingSettings?.logo) {
+      try {
+        const logoSize = exportTemplate.logoSize || 60;
+        const logoHeight = logoSize * 0.264583; // Convert points to mm
+        const logoWidth = logoHeight; // Assume square for now
+        
+        let logoX, logoY;
+        const margin = 5;
+        
+        // Position logo based on settings
+        switch (exportTemplate.logoPosition) {
+          case "top-left":
+            logoX = margin;
+            logoY = margin;
+            break;
+          case "top-center":
+            logoX = (pageWidth - logoWidth) / 2;
+            logoY = margin;
+            break;
+          case "top-right":
+            logoX = pageWidth - logoWidth - margin;
+            logoY = margin;
+            break;
+          case "bottom-left":
+            logoX = margin;
+            logoY = pageHeight - logoHeight - margin;
+            break;
+          case "bottom-center":
+            logoX = (pageWidth - logoWidth) / 2;
+            logoY = pageHeight - logoHeight - margin;
+            break;
+          case "bottom-right":
+            logoX = pageWidth - logoWidth - margin;
+            logoY = pageHeight - logoHeight - margin;
+            break;
+          default:
+            logoX = margin;
+            logoY = margin;
+        }
+        
+        // Only add logo in title block area if position is top-*
+        if (exportTemplate.logoPosition.startsWith("top")) {
+          pdf.addImage(brandingSettings.logo, "PNG", logoX, logoY, logoWidth, logoHeight);
+        }
+      } catch (error) {
+        console.warn("Failed to add logo to export:", error);
+      }
+    }
+    
     // Title
     pdf.setFontSize(18);
     pdf.setFont("helvetica", "bold");
-    pdf.text("Lighting Design Export", 10, 12);
+    const titleX = exportTemplate.showLogo && exportTemplate.logoPosition === "top-left" 
+      ? (exportTemplate.logoSize || 60) * 0.264583 + 10 
+      : 10;
+    pdf.text("Lighting Design Export", titleX, 12);
     
-    // Job information
+    // Job information based on selected fields
     pdf.setFontSize(10);
     pdf.setFont("helvetica", "normal");
     
-    let yPos = 20;
-    pdf.text(`Job: ${info.jobNumber}`, 10, yPos);
-    yPos += 5;
-    pdf.text(`Customer: ${info.customerName}`, 10, yPos);
-    yPos += 5;
-    pdf.text(`Address: ${info.address}`, 10, yPos);
+    const jobInfoFields = exportTemplate.jobInfoFields || ["jobNumber", "customerName", "address", "floorName", "date"];
+    const fieldLabels = {
+      jobNumber: "Job",
+      customerName: "Customer",
+      address: "Address",
+      floorName: "Floor",
+      date: "Date",
+      pageNumber: "Page"
+    };
     
-    // Right side info
-    yPos = 20;
-    pdf.text(`Floor: ${info.floorName}`, pageWidth - 70, yPos);
-    yPos += 5;
-    pdf.text(`Page: ${info.pageNumber} of ${info.totalPages}`, pageWidth - 70, yPos);
-    yPos += 5;
-    pdf.text(`Date: ${info.date}`, pageWidth - 70, yPos);
+    let yPos = 20;
+    const leftMargin = 10;
+    const rightMargin = 70;
+    
+    // Render job info based on position
+    if (exportTemplate.jobInfoPosition === "title-block") {
+      // Render in title block - left side
+      jobInfoFields.forEach((field) => {
+        if (field === "pageNumber" && exportTemplate.showPageNumbers) {
+          pdf.text(`Page: ${info.pageNumber} of ${info.totalPages}`, leftMargin, yPos);
+          yPos += 5;
+        } else if (info[field]) {
+          pdf.text(`${fieldLabels[field]}: ${info[field]}`, leftMargin, yPos);
+          yPos += 5;
+        }
+      });
+      
+      // Right side info (always show page numbers if enabled)
+      if (exportTemplate.showPageNumbers && !jobInfoFields.includes("pageNumber")) {
+        pdf.text(`Page: ${info.pageNumber} of ${info.totalPages}`, pageWidth - rightMargin, 20);
+      }
+    }
+  };
+  
+  // Helper function to add logo outside title block (for bottom positions)
+  const addLogoOutsideTitleBlock = async (pdf, pageWidth, pageHeight) => {
+    if (!exportTemplate.showLogo || !brandingSettings?.logo) {
+      return;
+    }
+    
+    // Only add logo if position is bottom-*
+    if (!exportTemplate.logoPosition.startsWith("bottom")) {
+      return;
+    }
+    
+    try {
+      const logoSize = exportTemplate.logoSize || 60;
+      const logoHeight = logoSize * 0.264583; // Convert points to mm
+      const logoWidth = logoHeight; // Assume square for now
+      
+      let logoX, logoY;
+      const margin = 5;
+      
+      switch (exportTemplate.logoPosition) {
+        case "bottom-left":
+          logoX = margin;
+          logoY = pageHeight - logoHeight - margin;
+          break;
+        case "bottom-center":
+          logoX = (pageWidth - logoWidth) / 2;
+          logoY = pageHeight - logoHeight - margin;
+          break;
+        case "bottom-right":
+          logoX = pageWidth - logoWidth - margin;
+          logoY = pageHeight - logoHeight - margin;
+          break;
+        default:
+          return; // Not a bottom position
+      }
+      
+      pdf.addImage(brandingSettings.logo, "PNG", logoX, logoY, logoWidth, logoHeight);
+    } catch (error) {
+      console.warn("Failed to add logo to export:", error);
+    }
   };
   
   // Helper function to render canvas to PDF using SVG

@@ -1473,6 +1473,175 @@ const Page = () => {
     }
   };
 
+  // Helper to convert hex color to RGB object
+  const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 0, g: 0, b: 0 };
+  };
+
+  // Create a PDF context that mimics canvas drawing API (for legend shapes)
+  const createPdfContextForLegend = (pdf, originX, originY) => {
+    const ctx = {
+      fillStyle: "#000",
+      strokeStyle: "#000",
+      lineWidth: 1,
+      _pathData: [],
+      _transformStack: [],
+      _matrix: [1, 0, 0, 1, 0, 0], // a,b,c,d,e,f
+    };
+
+    const applyMatrix = (x, y) => {
+      const [a, b, c, d, e, f] = ctx._matrix;
+      return [a * x + c * y + e + originX, b * x + d * y + f + originY];
+    };
+
+    ctx.save = () => {
+      ctx._transformStack.push(ctx._matrix.slice());
+    };
+
+    ctx.restore = () => {
+      const m = ctx._transformStack.pop();
+      if (m) ctx._matrix = m;
+    };
+
+    ctx.rotate = (angle) => {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const [a, b, c, d, e, f] = ctx._matrix;
+      ctx._matrix = [
+        a * cos + c * sin,
+        b * cos + d * sin,
+        -a * sin + c * cos,
+        -b * sin + d * cos,
+        e,
+        f,
+      ];
+    };
+
+    ctx.translate = (tx, ty) => {
+      const [a, b, c, d, e, f] = ctx._matrix;
+      ctx._matrix = [a, b, c, d, a * tx + c * ty + e, b * tx + d * ty + f];
+    };
+
+    ctx.scale = (sx, sy) => {
+      const [a, b, c, d, e, f] = ctx._matrix;
+      ctx._matrix = [a * sx, b * sx, c * sy, d * sy, e, f];
+    };
+
+    ctx.beginPath = () => {
+      ctx._pathData = [];
+    };
+
+    ctx.moveTo = (x, y) => {
+      const [mx, my] = applyMatrix(x, y);
+      ctx._pathData.push({ type: 'M', x: mx, y: my });
+    };
+
+    ctx.lineTo = (x, y) => {
+      const [lx, ly] = applyMatrix(x, y);
+      ctx._pathData.push({ type: 'L', x: lx, y: ly });
+    };
+
+    ctx.closePath = () => {
+      ctx._pathData.push({ type: 'Z' });
+    };
+
+    ctx.rect = (x, y, w, h) => {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + w, y);
+      ctx.lineTo(x + w, y + h);
+      ctx.lineTo(x, y + h);
+      ctx.closePath();
+    };
+
+    ctx.arc = (cx, cy, r, startAngle, endAngle) => {
+      const full = Math.abs(endAngle - startAngle) >= Math.PI * 2 - 1e-6;
+      if (full) {
+        const [acx, acy] = applyMatrix(cx, cy);
+        const scaleX = Math.sqrt(ctx._matrix[0] * ctx._matrix[0] + ctx._matrix[1] * ctx._matrix[1]);
+        const scaleY = Math.sqrt(ctx._matrix[2] * ctx._matrix[2] + ctx._matrix[3] * ctx._matrix[3]);
+        const avgScale = (scaleX + scaleY) / 2;
+        ctx._pathData.push({ type: 'circle', cx: acx, cy: acy, r: r * avgScale });
+      }
+    };
+
+    ctx.ellipse = (cx, cy, rx, ry, rotation, startAngle, endAngle) => {
+      const [ecx, ecy] = applyMatrix(cx, cy);
+      const scaleX = Math.sqrt(ctx._matrix[0] * ctx._matrix[0] + ctx._matrix[1] * ctx._matrix[1]);
+      const scaleY = Math.sqrt(ctx._matrix[2] * ctx._matrix[2] + ctx._matrix[3] * ctx._matrix[3]);
+      ctx._pathData.push({ 
+        type: 'ellipse', 
+        cx: ecx, 
+        cy: ecy, 
+        rx: rx * scaleX, 
+        ry: ry * scaleY 
+      });
+    };
+
+    ctx.fill = () => {
+      const fillRgb = hexToRgb(ctx.fillStyle);
+      pdf.setFillColor(fillRgb.r, fillRgb.g, fillRgb.b);
+      
+      for (const item of ctx._pathData) {
+        if (item.type === 'circle') {
+          pdf.circle(item.cx, item.cy, item.r, 'F');
+        } else if (item.type === 'ellipse') {
+          pdf.ellipse(item.cx, item.cy, item.rx, item.ry, 'F');
+        }
+      }
+      
+      // Handle path-based fills
+      if (ctx._pathData.length > 0 && ctx._pathData[0].type === 'M') {
+        const pathStr = ctx._pathData.map(p => {
+          if (p.type === 'M') return `M${p.x},${p.y}`;
+          if (p.type === 'L') return `L${p.x},${p.y}`;
+          if (p.type === 'Z') return 'Z';
+          return '';
+        }).join(' ');
+        
+        // Use pdf.path if available, otherwise approximate with lines
+        if (pdf.path) {
+          pdf.path(pathStr, 'F');
+        }
+      }
+    };
+
+    ctx.stroke = () => {
+      const strokeRgb = hexToRgb(ctx.strokeStyle);
+      pdf.setDrawColor(strokeRgb.r, strokeRgb.g, strokeRgb.b);
+      pdf.setLineWidth(ctx.lineWidth);
+      
+      for (const item of ctx._pathData) {
+        if (item.type === 'circle') {
+          pdf.circle(item.cx, item.cy, item.r, 'S');
+        } else if (item.type === 'ellipse') {
+          pdf.ellipse(item.cx, item.cy, item.rx, item.ry, 'S');
+        }
+      }
+      
+      // Handle path-based strokes
+      if (ctx._pathData.length > 0 && ctx._pathData[0].type === 'M') {
+        const pathStr = ctx._pathData.map(p => {
+          if (p.type === 'M') return `M${p.x},${p.y}`;
+          if (p.type === 'L') return `L${p.x},${p.y}`;
+          if (p.type === 'Z') return 'Z';
+          return '';
+        }).join(' ');
+        
+        if (pdf.path) {
+          pdf.path(pathStr, 'S');
+        }
+      }
+    };
+
+    return ctx;
+  };
+
   // Helper function to add product legend using ExportDocumentLayout style
   const addProductLegend = async (pdf, pageWidth, pageHeight, allProducts) => {
     // Get job info
@@ -1640,52 +1809,49 @@ const Page = () => {
       const fillColor = config.fill || "#FFFFFF";
       const strokeWidth = config.strokeWidth || 2;
       
-      // Convert hex colors to RGB
-      const hexToRgb = (hex) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16)
-        } : { r: 255, g: 255, b: 255 };
+      // Create shape object for product (reuse same pattern as canvas export)
+      const shapeObj = {
+        width: () => shapeSize,
+        height: () => shapeSize,
+        getAttr: (name) => {
+          switch (name) {
+            case "scaleFactor":
+              return 1;
+            case "realWorldSize":
+              return 100;
+            case "realWorldWidth":
+              return 100;
+            case "realWorldHeight":
+              return 100;
+            case "stroke":
+              return strokeColor;
+            case "strokeWidth":
+              return strokeWidth;
+            default:
+              return undefined;
+          }
+        },
+        fill: fillColor,
       };
       
-      const strokeRgb = hexToRgb(strokeColor);
-      const fillRgb = hexToRgb(fillColor);
+      // Create PDF context that mimics canvas API (same approach as SVG context in canvas export)
+      const ctx = createPdfContextForLegend(pdf, shapeCenterX, shapeCenterY);
+      ctx.fillStyle = fillColor;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth * 0.1; // Scale down for PDF
       
-      pdf.setDrawColor(strokeRgb.r, strokeRgb.g, strokeRgb.b);
-      pdf.setFillColor(fillRgb.r, fillRgb.g, fillRgb.b);
-      pdf.setLineWidth(strokeWidth * 0.1); // Scale down for PDF
-      
-      // Draw different shapes based on type
-      const radius = shapeSize / 2;
-      
-      switch (shapeType) {
-        case "circle":
-          pdf.circle(shapeCenterX, shapeCenterY, radius, "FD");
-          break;
-        case "square":
-        case "rectangle":
-          pdf.rect(shapeCenterX - radius, shapeCenterY - radius, shapeSize, shapeSize, "FD");
-          break;
-        case "triangle":
-          // Draw triangle using lines
-          pdf.setDrawColor(strokeRgb.r, strokeRgb.g, strokeRgb.b);
-          pdf.setFillColor(fillRgb.r, fillRgb.g, fillRgb.b);
-          pdf.triangle(
-            shapeCenterX, shapeCenterY - radius,
-            shapeCenterX - radius, shapeCenterY + radius,
-            shapeCenterX + radius, shapeCenterY + radius,
-            "FD"
-          );
-          break;
-        case "ellipse":
-          pdf.ellipse(shapeCenterX, shapeCenterY, radius, radius * 0.7, "FD");
-          break;
-        default:
-          // Default to circle for unknown shapes
-          pdf.circle(shapeCenterX, shapeCenterY, radius, "FD");
-          break;
+      try {
+        // Use the same shape function as canvas export
+        const shapeFunction = getShapeFunction(config.shapeType || "circle");
+        shapeFunction(ctx, shapeObj);
+      } catch (err) {
+        // Fallback to simple circle if shape function fails
+        console.error("Shape rendering failed for", product.sku, err);
+        const strokeRgb = hexToRgb(strokeColor);
+        const fillRgb = hexToRgb(fillColor);
+        pdf.setDrawColor(strokeRgb.r, strokeRgb.g, strokeRgb.b);
+        pdf.setFillColor(fillRgb.r, fillRgb.g, fillRgb.b);
+        pdf.circle(shapeCenterX, shapeCenterY, shapeSize / 2, "FD");
       }
       
       // Add letter/number prefix over the shape

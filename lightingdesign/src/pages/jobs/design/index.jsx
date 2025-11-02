@@ -599,10 +599,15 @@ const Page = () => {
     // so new jobs would have layersVersion === 0 forever, blocking all layer switches.
     // The router.isReady and designData.isLoading checks above are sufficient.
 
-    // CRITICAL FIX: Always reload layer data when activeLayerId changes
-    // The previous check (activeLayerId !== lastLoadedLayerId.current) prevented reloading
-    // when switching back to a previously visited layer, causing stale background images
-    if (!activeLayer) {
+    // Get the current layer data
+    const currentLayer = layers.find(l => l.id === activeLayerId);
+    if (!currentLayer) {
+      return;
+    }
+    
+    // Only reload if we're switching to a different layer
+    // This prevents clearing selections during transform operations
+    if (activeLayerId === lastLoadedLayerId.current) {
       return;
     }
 
@@ -617,21 +622,21 @@ const Page = () => {
     setSelectedTextId(null);
 
     // Load the new layer's data - use resetHistoryBaseline to prevent undo past loaded state
-    resetHistoryBaseline(activeLayer.products || []);
-    setConnectors(activeLayer.connectors || []);
-    setTextBoxes(activeLayer.textBoxes || []);
-    resetTextBoxHistoryBaseline(activeLayer.textBoxes || []);
+    resetHistoryBaseline(currentLayer.products || []);
+    setConnectors(currentLayer.connectors || []);
+    setTextBoxes(currentLayer.textBoxes || []);
+    resetTextBoxHistoryBaseline(currentLayer.textBoxes || []);
 
     // Set background image directly (no conversion needed - PDFs are already rasterized)
-    setBackgroundImage(activeLayer.backgroundImage || null);
-    setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
+    setBackgroundImage(currentLayer.backgroundImage || null);
+    setBackgroundImageNaturalSize(currentLayer.backgroundImageNaturalSize || null);
 
-    setScaleFactor(activeLayer.scaleFactor || 100);
+    setScaleFactor(currentLayer.scaleFactor || 100);
 
     // Update sync refs to match the new layer's data
-    lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
-    lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
-    lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
+    lastSyncedBackgroundImage.current = currentLayer.backgroundImage || null;
+    lastSyncedBackgroundImageNaturalSize.current = currentLayer.backgroundImageNaturalSize || null;
+    lastSyncedScaleFactor.current = currentLayer.scaleFactor || 100;
 
     // CRITICAL FIX: Enable sync AFTER React has processed all state updates
     // This prevents the sync effect from running during layer switching
@@ -643,7 +648,7 @@ const Page = () => {
     router.isReady,
     id,
     activeLayerId,
-    activeLayer,
+    layers,
     layersVersion,
     designData.isLoading,
     designData.isSuccess,

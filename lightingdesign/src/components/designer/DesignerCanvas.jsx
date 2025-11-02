@@ -32,6 +32,7 @@ export const DesignerCanvas = memo(
       onPan,
       gridOpacity,
       backgroundOpacity,
+      onMiddlePanningChange, // Callback to notify parent of middle mouse panning state
     },
     ref
   ) => {
@@ -93,6 +94,7 @@ export const DesignerCanvas = memo(
       if (e.evt.button === 1) {
         // Middle mouse
         setIsMiddlePanning(true);
+        if (onMiddlePanningChange) onMiddlePanningChange(true);
         setLastPanPos({ x: e.evt.clientX, y: e.evt.clientY });
         // Store initial stage position
         const stage = e.target.getStage();
@@ -107,6 +109,7 @@ export const DesignerCanvas = memo(
     const handleStageMouseUp = (e) => {
       if (isMiddlePanning) {
         setIsMiddlePanning(false);
+        if (onMiddlePanningChange) onMiddlePanningChange(false);
         setLastPanPos(null);
         // Update state with final position when pan ends
         const stage = e.target.getStage();

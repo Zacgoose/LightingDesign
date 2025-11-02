@@ -7,6 +7,7 @@ export const TextLayer = memo(
     selectedTextId,
     selectedIds = [],
     selectedTool,
+    isMiddlePanning = false, // Add isMiddlePanning prop to disable dragging during middle mouse panning
     onTextSelect,
     onTextChange,
     onTextDragStart,
@@ -24,7 +25,8 @@ export const TextLayer = memo(
       .map(id => id.substring(5)); // Remove 'text-' prefix
     
     // Determine if text boxes should listen to events
-    const shouldListen = selectedTool === "select" || selectedTool === "text";
+    const shouldListen = (selectedTool === "select" || selectedTool === "text") && !isMiddlePanning;
+    const shouldBeDraggable = draggable && !isMiddlePanning;
     
     return (
       <>
@@ -47,7 +49,7 @@ export const TextLayer = memo(
               onDragEnd={(e) => onTextDragEnd && onTextDragEnd(e, textBox.id)}
               onDoubleClick={(e) => onTextDoubleClick && onTextDoubleClick(e, textBox.id)}
               onContextMenu={(e) => onTextContextMenu && onTextContextMenu(e, textBox.id)}
-              draggable={draggable}
+              draggable={shouldBeDraggable}
             />
           ))}
       </>

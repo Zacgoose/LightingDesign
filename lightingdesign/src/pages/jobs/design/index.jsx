@@ -268,6 +268,9 @@ const Page = () => {
   const [scaleDialogOpen, setScaleDialogOpen] = useState(false);
   const [scaleValue, setScaleValue] = useState(1);
 
+  // Middle mouse panning state
+  const [isMiddlePanning, setIsMiddlePanning] = useState(false);
+
   // Upload state for better UX
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
@@ -2285,6 +2288,7 @@ const Page = () => {
                     backgroundImageNaturalSize={backgroundImageNaturalSize}
                     scaleFactor={scaleFactor}
                     onPan={handleCanvasPan}
+                    onMiddlePanningChange={setIsMiddlePanning}
                     gridOpacity={settings.gridOpacity}
                     backgroundOpacity={settings.backgroundOpacity}
                     objectsChildren={
@@ -2321,6 +2325,7 @@ const Page = () => {
                           groupKey={groupKey}
                           placementMode={placementMode}
                           isDragging={isDragging}
+                          isMiddlePanning={isMiddlePanning}
                           onProductClick={handleProductClick}
                           onProductDragStart={handleProductDragStart}
                           onProductDragEnd={handleProductDragEnd}
@@ -2389,6 +2394,7 @@ const Page = () => {
                           selectedTextId={selectedTextId}
                           selectedIds={selectedIds}
                           selectedTool={selectedTool}
+                          isMiddlePanning={isMiddlePanning}
                           onTextSelect={handleTextSelect}
                           onTextChange={handleTextChange}
                           onTextDoubleClick={handleTextDoubleClick}
@@ -2410,6 +2416,7 @@ const Page = () => {
                           groupKey={groupKey}
                           placementMode={placementMode}
                           isDragging={isDragging}
+                          isMiddlePanning={isMiddlePanning}
                           onProductClick={handleProductClick}
                           onProductDragStart={handleProductDragStart}
                           onProductDragEnd={handleProductDragEnd}
@@ -2438,6 +2445,7 @@ const Page = () => {
                           groupKey={groupKey}
                           placementMode={placementMode}
                           isDragging={isDragging}
+                          isMiddlePanning={isMiddlePanning}
                           onProductClick={handleProductClick}
                           onProductDragStart={handleProductDragStart}
                           onProductDragEnd={handleProductDragEnd}

@@ -87,6 +87,7 @@ export const ProductsLayer = memo(
     groupKey,
     placementMode,
     isDragging = false, // Add isDragging prop for performance optimization
+    isMiddlePanning = false, // Add isMiddlePanning prop to disable dragging during middle mouse panning
     onProductClick,
     onProductDragStart,
     onProductDragEnd,
@@ -149,8 +150,8 @@ export const ProductsLayer = memo(
                 product={product}
                 config={config}
                 isSelected={false}
-                draggable={selectedTool === "select" && canInteract}
-                listening={selectedTool === "select" || selectedTool === "connect"} // Only listen when interaction is needed
+                draggable={selectedTool === "select" && canInteract && !isMiddlePanning}
+                listening={(selectedTool === "select" || selectedTool === "connect") && !isMiddlePanning} // Only listen when interaction is needed and not middle panning
                 onDragStart={(e) =>
                   selectedTool === "select" && canInteract && onProductDragStart(e, product.id)
                 }
@@ -183,7 +184,7 @@ export const ProductsLayer = memo(
             //offsetX={(selectionSnapshot.width || 0) / 2}
             //offsetY={(selectionSnapshot.height || 0) / 2}
             rotation={selectionSnapshot.rotation || 0}
-            draggable={(selectedTool === "select" || selectedTool === "text") && canInteract}
+            draggable={(selectedTool === "select" || selectedTool === "text") && canInteract && !isMiddlePanning}
             onDragStart={(e) => {
               // Prevent dragging on middle mouse button
               if (e.evt.button === 1) {

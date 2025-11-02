@@ -2315,7 +2315,13 @@ const Page = () => {
                             setSelectedIds([]);
                             forceGroupUpdate();
                           }}
-                          onConnectorChange={updateConnectorHistory}
+                          onConnectorChange={(updatedConnector) => {
+                            // Merge the updated connector with the full connector list
+                            const newConnectors = connectors.map((c) =>
+                              c.id === updatedConnector.id ? updatedConnector : c
+                            );
+                            updateConnectorHistory(newConnectors);
+                          }}
                           onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
                         />
 
@@ -2429,7 +2435,13 @@ const Page = () => {
                               setSelectedIds([]);
                               forceGroupUpdate();
                             }}
-                            onConnectorChange={updateConnectorHistory}
+                            onConnectorChange={(updatedConnector) => {
+                              // Merge the updated connector with the full connector list
+                              const newConnectors = connectors.map((c) =>
+                                c.id === updatedConnector.id ? updatedConnector : c
+                              );
+                              updateConnectorHistory(newConnectors);
+                            }}
                             onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
                           />
                         )}

@@ -29,10 +29,9 @@ export const ConnectorsLayer = ({
         isSelected={isSelected}
         onSelect={onConnectorSelect}
         onChange={(updatedConnector) => {
-          const newConnectors = connectors.map((c) =>
-            c.id === connector.id ? updatedConnector : c,
-          );
-          onConnectorChange(newConnectors);
+          // Pass the updated connector directly to parent
+          // Parent will handle merging it with the full connector list
+          onConnectorChange(updatedConnector);
         }}
         onContextMenu={(e) => onConnectorContextMenu(e, connector.id)}
         theme={theme}

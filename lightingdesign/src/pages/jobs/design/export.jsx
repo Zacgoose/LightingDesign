@@ -22,6 +22,7 @@ import {
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { Download, ArrowBack } from "@mui/icons-material";
 import { ApiGetCall } from "/src/api/ApiCall";
+import axios from "axios";
 import Link from "next/link";
 import jsPDF from "jspdf";
 import Konva from "konva";
@@ -1378,9 +1379,51 @@ const Page = () => {
     );
   };
 
+  // Helper function to fetch images via proxy endpoint (avoids CORS issues)
+  const fetchImagesViaProxy = async (imageUrls) => {
+    try {
+      if (!imageUrls || imageUrls.length === 0) {
+        return [];
+      }
+
+      // Join URLs with comma for the API call
+      const urlsParam = imageUrls.join(',');
+
+      // Call the proxy endpoint using axios with URLs as query parameter
+      const response = await axios.get('/api/ExecProxyBeaconImages', {
+        params: {
+          urls: urlsParam,
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = response.data;
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Proxy request failed');
+      }
+
+      return data.images || [];
+    } catch (error) {
+      console.warn('Failed to fetch images via proxy:', error);
+      return [];
+    }
+  };
+
   // Helper function to convert image URL to data URL (avoids CORS issues)
   const imageUrlToDataUrl = async (url) => {
     try {
+      // Try using the proxy endpoint first for HTTP URLs
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        const proxyResults = await fetchImagesViaProxy([url]);
+        if (proxyResults.length > 0 && proxyResults[0].success) {
+          return proxyResults[0].dataUrl;
+        }
+        // If proxy fails, fall through to direct loading attempt
+      }
+
       // Create an image element
       const img = new Image();
       
@@ -1470,12 +1513,27 @@ const Page = () => {
     
     // Pre-fetch and convert all product images to data URLs to avoid CORS issues
     setExportStatus("Loading product images...");
-    const imagePromises = productGrid.map(async (product) => {
+    
+    // Collect all HTTP image URLs to fetch via proxy in batch
+    const httpImageUrls = productGrid
+      .filter(p => p.thumbnailUrl && (p.thumbnailUrl.startsWith('http://') || p.thumbnailUrl.startsWith('https://')))
+      .map(p => p.thumbnailUrl);
+    
+    // Fetch all images via proxy in a single request
+    let proxyResults = [];
+    if (httpImageUrls.length > 0) {
+      proxyResults = await fetchImagesViaProxy(httpImageUrls);
+    }
+    
+    // Map proxy results back to products
+    productGrid.forEach(product => {
       if (product.thumbnailUrl && (product.thumbnailUrl.startsWith('http://') || product.thumbnailUrl.startsWith('https://'))) {
-        product.thumbnailDataUrl = await imageUrlToDataUrl(product.thumbnailUrl);
+        const proxyResult = proxyResults.find(r => r.url === product.thumbnailUrl);
+        if (proxyResult && proxyResult.success) {
+          product.thumbnailDataUrl = proxyResult.dataUrl;
+        }
       }
     });
-    await Promise.all(imagePromises);
     
     // Layout settings
     const maxCols = 5;

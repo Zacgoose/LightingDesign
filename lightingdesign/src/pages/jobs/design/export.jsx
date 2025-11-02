@@ -378,25 +378,40 @@ const Page = () => {
     pdf.setLineWidth(0.8);
     pdf.line(0, infoBarY, pageWidth, infoBarY);
     
-    // Logo section on the left (placeholder with instructions)
+    // Logo section on the left
     const logoWidth = 50;
     const logoX = margin;
     const logoY = infoBarY + 8;
     
-    // Draw logo placeholder boxes
+    // Draw logo images (or placeholders if files don't exist)
     pdf.setDrawColor(200, 200, 200);
     pdf.setLineWidth(0.5);
     
-    // Logo 1 (top)
-    pdf.setFillColor(250, 250, 250);
-    pdf.roundedRect(logoX, logoY, logoWidth - 4, 18, 2, 2, "FD");
-    pdf.setFontSize(6);
-    pdf.setTextColor(150, 150, 150);
-    pdf.text("Logo 1", logoX + (logoWidth - 4) / 2, logoY + 9, { align: "center" });
+    try {
+      // Logo 1 (top) - try to load from /public/logos/
+      pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, logoWidth - 4, 18);
+    } catch (error) {
+      // If logo doesn't exist, show placeholder
+      pdf.setFillColor(250, 250, 250);
+      pdf.roundedRect(logoX, logoY, logoWidth - 4, 18, 2, 2, "FD");
+      pdf.setFontSize(6);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text("Logo 1", logoX + (logoWidth - 4) / 2, logoY + 9, { align: "center" });
+    }
     
-    // Logo 2 (bottom)
-    pdf.roundedRect(logoX, logoY + 20, logoWidth - 4, 18, 2, 2, "FD");
-    pdf.text("Logo 2", logoX + (logoWidth - 4) / 2, logoY + 29, { align: "center" });
+    try {
+      // Logo 2 (bottom)
+      pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 20, logoWidth - 4, 18);
+    } catch (error) {
+      // If logo doesn't exist, show placeholder
+      pdf.setFillColor(250, 250, 250);
+      pdf.roundedRect(logoX, logoY + 20, logoWidth - 4, 18, 2, 2, "FD");
+      pdf.setFontSize(6);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text("Logo 2", logoX + (logoWidth - 4) / 2, logoY + 29, { align: "center" });
+    }
+    
+    pdf.setTextColor(0, 0, 0); // Reset color
     
     // Info rows (to the right of logos)
     let infoX = logoX + logoWidth + 10;
@@ -1390,7 +1405,7 @@ const Page = () => {
           brand: product.brand || "",
           type: product.product_type || "",
           quantity: 0,
-          thumbnail: product.thumbnail || null, // Product image
+          thumbnailUrl: product.thumbnailUrl || null, // Product image URL
         });
       }
       const entry = productMap.get(sku);
@@ -1440,32 +1455,24 @@ const Page = () => {
       const imageHeight = cellHeight * 0.3;
       let textStartY = innerY + imageHeight + 5;
       
-      // Add product image if thumbnail exists
-      if (product.thumbnail) {
+      // Add product image if thumbnailUrl exists
+      if (product.thumbnailUrl) {
         const imgSize = Math.min(innerWidth * 0.6, imageHeight - 4);
         const imgX = innerX + (innerWidth - imgSize) / 2;
         const imgY = innerY + 4;
         
         try {
-          // Try to add the image directly if it's a data URL or valid path
-          // jsPDF supports data URLs and base64 encoded images
-          if (product.thumbnail.startsWith('data:image/')) {
+          // Try to add the image directly
+          // jsPDF supports data URLs, base64 encoded images, and HTTP URLs
+          if (product.thumbnailUrl.startsWith('data:image/')) {
             // Data URL - can add directly
-            pdf.addImage(product.thumbnail, 'JPEG', imgX, imgY, imgSize, imgSize);
-          } else if (product.thumbnail.startsWith('http://') || product.thumbnail.startsWith('https://')) {
-            // For HTTP URLs, we need to fetch and convert to data URL
-            // For now, show placeholder as cross-origin requests may fail
-            pdf.setFillColor(240, 240, 240);
-            pdf.rect(imgX, imgY, imgSize, imgSize, "F");
-            pdf.setDrawColor(200, 200, 200);
-            pdf.setLineWidth(0.3);
-            pdf.rect(imgX, imgY, imgSize, imgSize, "S");
-            pdf.setFontSize(5);
-            pdf.setTextColor(150, 150, 150);
-            pdf.text("Image", imgX + imgSize / 2, imgY + imgSize / 2, { align: "center" });
+            pdf.addImage(product.thumbnailUrl, 'JPEG', imgX, imgY, imgSize, imgSize);
+          } else if (product.thumbnailUrl.startsWith('http://') || product.thumbnailUrl.startsWith('https://')) {
+            // HTTP URLs - jsPDF can load these directly (no cross-origin issues confirmed by user)
+            pdf.addImage(product.thumbnailUrl, 'JPEG', imgX, imgY, imgSize, imgSize);
           } else {
             // Assume it's a base64 string or local path
-            pdf.addImage(product.thumbnail, 'JPEG', imgX, imgY, imgSize, imgSize);
+            pdf.addImage(product.thumbnailUrl, 'JPEG', imgX, imgY, imgSize, imgSize);
           }
         } catch (error) {
           // If image loading fails, show placeholder
@@ -1475,6 +1482,9 @@ const Page = () => {
           pdf.setDrawColor(200, 200, 200);
           pdf.setLineWidth(0.3);
           pdf.rect(imgX, imgY, imgSize, imgSize, "S");
+          pdf.setFontSize(5);
+          pdf.setTextColor(150, 150, 150);
+          pdf.text("No Image", imgX + imgSize / 2, imgY + imgSize / 2, { align: "center" });
         }
       }
       
@@ -1539,28 +1549,40 @@ const Page = () => {
     pdf.setLineWidth(0.8);
     pdf.line(0, infoBarY, pageWidth, infoBarY);
     
-    // Logo section on the left (placeholder with instructions)
+    // Logo section on the left
     const logoWidth = 50;
     const logoX = margin;
     const logoY = infoBarY + 8;
     
-    // Draw logo placeholder boxes
+    // Draw logo images (or placeholders if files don't exist)
     pdf.setDrawColor(200, 200, 200);
     pdf.setLineWidth(0.5);
     
-    // Logo 1 (top)
-    pdf.setFillColor(250, 250, 250);
-    pdf.roundedRect(logoX, logoY, logoWidth - 4, 18, 2, 2, "FD");
-    pdf.setFontSize(6);
-    pdf.setTextColor(150, 150, 150);
-    pdf.text("Logo 1", logoX + (logoWidth - 4) / 2, logoY + 9, { align: "center" });
+    try {
+      // Logo 1 (top) - try to load from /public/logos/
+      pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, logoWidth - 4, 18);
+    } catch (error) {
+      // If logo doesn't exist, show placeholder
+      pdf.setFillColor(250, 250, 250);
+      pdf.roundedRect(logoX, logoY, logoWidth - 4, 18, 2, 2, "FD");
+      pdf.setFontSize(6);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text("Logo 1", logoX + (logoWidth - 4) / 2, logoY + 9, { align: "center" });
+    }
     
-    // Logo 2 (bottom)
-    pdf.roundedRect(logoX, logoY + 20, logoWidth - 4, 18, 2, 2, "FD");
-    pdf.text("Logo 2", logoX + (logoWidth - 4) / 2, logoY + 29, { align: "center" });
+    try {
+      // Logo 2 (bottom)
+      pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 20, logoWidth - 4, 18);
+    } catch (error) {
+      // If logo doesn't exist, show placeholder
+      pdf.setFillColor(250, 250, 250);
+      pdf.roundedRect(logoX, logoY + 20, logoWidth - 4, 18, 2, 2, "FD");
+      pdf.setFontSize(6);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text("Logo 2", logoX + (logoWidth - 4) / 2, logoY + 29, { align: "center" });
+    }
     
-    // Note: To add actual logos, place image files in /public/logos/ folder
-    // Then use: pdf.addImage('/logos/logo1.png', 'PNG', logoX, logoY, logoWidth - 4, 18);
+    pdf.setTextColor(0, 0, 0); // Reset color
     
     // Info rows (to the right of logos)
     let infoX = logoX + logoWidth + 10;

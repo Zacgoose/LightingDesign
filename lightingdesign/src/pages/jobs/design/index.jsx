@@ -182,6 +182,7 @@ const Page = () => {
   // Ref to track if we're loading data from a layer (vs user editing)
   const isLoadingLayerData = useRef(false);
   const lastLoadedLayerId = useRef(null); // Initialize to null so first layer loads properly
+  const lastLoadedLayersVersion = useRef(0); // Track when layer data changes
   // Initialize sync refs to match the initial active layer values
   // This prevents false positives in sync effects on initial load
   const lastSyncedBackgroundImage = useRef(activeLayer?.backgroundImage || null);
@@ -605,13 +606,18 @@ const Page = () => {
       return;
     }
     
-    // Only reload if we're switching to a different layer
-    // This prevents clearing selections during transform operations
-    if (activeLayerId === lastLoadedLayerId.current) {
+    // Only reload if we're switching to a different layer OR if layer data has been updated
+    // This prevents clearing selections during transform operations while allowing
+    // the canvas to populate when design data is loaded for the first time
+    const isSameLayer = activeLayerId === lastLoadedLayerId.current;
+    const hasNewLayerData = layersVersion !== lastLoadedLayersVersion.current;
+    
+    if (isSameLayer && !hasNewLayerData) {
       return;
     }
 
     lastLoadedLayerId.current = activeLayerId;
+    lastLoadedLayersVersion.current = layersVersion;
     isLoadingLayerData.current = true;
 
     // Update activeLayerIdRef immediately to ensure sync effects use correct layer

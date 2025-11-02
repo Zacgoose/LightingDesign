@@ -45,14 +45,14 @@ export const useProductInteraction = ({
             const prevId = newSeq[newSeq.length - 2];
             // Get the "to" product to extract its color
             const toProduct = products.find((p) => p.id === productId);
-            // Determine cable color from product's strokeColor or item_colours
+            // Determine cable color from product's strokeColor or colors
             let cableColor = null;
             if (toProduct) {
               // First try strokeColor (already set for the product)
               if (toProduct.strokeColor) {
                 cableColor = toProduct.strokeColor;
               }
-              // Fallback to first color in item_colours array if available
+              // Fallback to first color in colors array if available (enriched from item_colours)
               else if (toProduct.colors && toProduct.colors.length > 0) {
                 cableColor = toProduct.colors[0];
               }

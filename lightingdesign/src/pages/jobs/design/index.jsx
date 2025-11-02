@@ -197,7 +197,16 @@ const Page = () => {
   // the sync effects running when switching layers (which would cause race conditions)
   const activeLayerIdRef = useRef(activeLayerId);
 
-  const [connectors, setConnectors] = useState(activeLayer?.connectors || []);
+  // Connectors with history - similar to products
+  const {
+    state: connectors,
+    updateHistory: updateConnectorHistory,
+    resetHistoryBaseline: resetConnectorHistoryBaseline,
+    undo: handleUndoConnectors,
+    redo: handleRedoConnectors,
+    canUndo: canUndoConnectors,
+    canRedo: canRedoConnectors,
+  } = useHistory(activeLayer?.connectors || []);
 
   // Keep activeLayerIdRef in sync with activeLayerId
   useEffect(() => {
@@ -333,7 +342,6 @@ const Page = () => {
       lastLoadedLayerId.current = null;
     },
     updateHistory,
-    setConnectors,
     setStageScale,
     loadLayers,
     setLastSaved,
@@ -633,7 +641,7 @@ const Page = () => {
 
     // Load the new layer's data - use resetHistoryBaseline to prevent undo past loaded state
     resetHistoryBaseline(currentLayer.products || []);
-    setConnectors(currentLayer.connectors || []);
+    resetConnectorHistoryBaseline(currentLayer.connectors || []);
     setTextBoxes(currentLayer.textBoxes || []);
     resetTextBoxHistoryBaseline(currentLayer.textBoxes || []);
 
@@ -680,7 +688,7 @@ const Page = () => {
     stagePosition,
     stageScale,
     updateHistory,
-    setConnectors,
+    updateConnectorHistory,
     setSelectedIds,
     setSelectedConnectorId,
     setGroupKey,
@@ -704,11 +712,12 @@ const Page = () => {
     setSelectedConnectorId,
     setSelectedTextId,
     setGroupKey,
-    setConnectors,
+    updateConnectorHistory,
     setConnectSequence,
     updateHistory,
     applyGroupTransform,
     activeLayer,
+    connectors,
   });
 
   const {
@@ -948,7 +957,7 @@ const Page = () => {
       }));
 
       updateHistory([...products, ...newProducts]);
-      setConnectors([...connectors, ...newConnectors]);
+      updateConnectorHistory([...connectors, ...newConnectors]);
       setTextBoxes([...textBoxes, ...newTextBoxes]);
 
       // Select pasted products and text boxes
@@ -1005,8 +1014,9 @@ const Page = () => {
 
       const didUndoProduct = handleUndo();
       const didUndoTextBox = undoTextBoxHistory();
+      const didUndoConnector = handleUndoConnectors();
 
-      if (didUndoProduct || didUndoTextBox) {
+      if (didUndoProduct || didUndoTextBox || didUndoConnector) {
         clearSelection();
       }
     },
@@ -1016,8 +1026,9 @@ const Page = () => {
 
       const didRedoProduct = handleRedo();
       const didRedoTextBox = redoTextBoxHistory();
+      const didRedoConnector = handleRedoConnectors();
 
-      if (didRedoProduct || didRedoTextBox) {
+      if (didRedoProduct || didRedoTextBox || didRedoConnector) {
         clearSelection();
       }
     },
@@ -1266,7 +1277,7 @@ const Page = () => {
         const newConnectors = connectors.map((connector) =>
           connector.id === selectedConnectorId ? { ...connector, sublayerId } : connector,
         );
-        setConnectors(newConnectors);
+        updateConnectorHistory(newConnectors);
         contextMenus.handleCloseContextMenu();
         return;
       }
@@ -1288,7 +1299,7 @@ const Page = () => {
       applyGroupTransform,
       updateHistory,
       contextMenus,
-      setConnectors,
+      updateConnectorHistory,
     ],
   );
 
@@ -2173,6 +2184,7 @@ const Page = () => {
                   if (transformed) updateHistory(transformed);
                   handleUndo();
                   undoTextBoxHistory();
+                  handleUndoConnectors();
                   clearSelection();
                 },
                 onRedo: () => {
@@ -2180,10 +2192,11 @@ const Page = () => {
                   if (transformed) updateHistory(transformed);
                   handleRedo();
                   redoTextBoxHistory();
+                  handleRedoConnectors();
                   clearSelection();
                 },
-                canUndo: canUndo || canUndoTextBox,
-                canRedo: canRedo || canRedoTextBox,
+                canUndo: canUndo || canUndoTextBox || canUndoConnectors,
+                canRedo: canRedo || canRedoTextBox || canRedoConnectors,
                 onMeasure: handleMeasure,
               }}
               viewProps={{
@@ -2314,7 +2327,7 @@ const Page = () => {
                             setSelectedIds([]);
                             forceGroupUpdate();
                           }}
-                          onConnectorChange={setConnectors}
+                          onConnectorChange={updateConnectorHistory}
                           onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
                         />
 

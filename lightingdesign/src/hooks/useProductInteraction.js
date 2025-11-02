@@ -16,11 +16,12 @@ export const useProductInteraction = ({
   setSelectedConnectorId,
   setSelectedTextId,
   setGroupKey,
-  setConnectors,
+  updateConnectorHistory,
   setConnectSequence,
   updateHistory,
   applyGroupTransform,
   activeLayer,
+  connectors,
 }) => {
   const handleProductClick = useCallback(
     (e, productId) => {
@@ -46,8 +47,8 @@ export const useProductInteraction = ({
             const defaultCablingSublayerId =
               activeLayer?.defaultCablingSublayerId ||
               activeLayer?.sublayers?.find((s) => s.name === "Cabling")?.id;
-            setConnectors((conns) => [
-              ...conns,
+            updateConnectorHistory([
+              ...connectors,
               {
                 id: `connector-${Date.now()}-${Math.random()}`,
                 from: prevId,
@@ -98,9 +99,10 @@ export const useProductInteraction = ({
       setSelectedConnectorId,
       setSelectedTextId,
       setGroupKey,
-      setConnectors,
+      updateConnectorHistory,
       setConnectSequence,
       activeLayer,
+      connectors,
     ],
   );
 

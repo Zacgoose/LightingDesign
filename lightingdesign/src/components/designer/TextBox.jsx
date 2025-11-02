@@ -89,7 +89,15 @@ export const TextBox = memo(
           scaleY={textBox.scaleY || 1}
           draggable={draggable}
           listening={listening}
-          onClick={onSelect}
+          onMouseDown={(e) => {
+            // Filter out middle mouse clicks (button === 1) to prevent selection during panning
+            if (e.evt.button === 1) {
+              return;
+            }
+            if (onSelect) {
+              onSelect(e);
+            }
+          }}
           onTap={onSelect}
           onDblClick={onDoubleClick}
           onDblTap={onDoubleClick}

@@ -1,7 +1,7 @@
 import { Group, Shape, Circle, Line } from "react-konva";
-import { useState, useRef } from "react";
+import { useState, useRef, memo } from "react";
 
-export const ConnectorLine = ({
+const ConnectorLineComponent = ({
   connector,
   fromProduct,
   toProduct,
@@ -193,3 +193,30 @@ export const ConnectorLine = ({
     </Group>
   );
 };
+
+// Memoize to prevent re-renders when props haven't meaningfully changed
+// Compare connector data, products, and selection state - ignore function prop changes
+export const ConnectorLine = memo(ConnectorLineComponent, (prevProps, nextProps) => {
+  // Re-render if connector data changed
+  if (prevProps.connector.id !== nextProps.connector.id) return false;
+  if (prevProps.connector.from !== nextProps.connector.from) return false;
+  if (prevProps.connector.to !== nextProps.connector.to) return false;
+  if (prevProps.connector.color !== nextProps.connector.color) return false;
+  
+  // Re-render if control points changed
+  if (JSON.stringify(prevProps.connector.control1) !== JSON.stringify(nextProps.connector.control1)) return false;
+  if (JSON.stringify(prevProps.connector.control3) !== JSON.stringify(nextProps.connector.control3)) return false;
+  
+  // Re-render if products moved
+  if (prevProps.fromProduct.x !== nextProps.fromProduct.x) return false;
+  if (prevProps.fromProduct.y !== nextProps.fromProduct.y) return false;
+  if (prevProps.toProduct.x !== nextProps.toProduct.x) return false;
+  if (prevProps.toProduct.y !== nextProps.toProduct.y) return false;
+  
+  // Re-render if selection state changed
+  if (prevProps.isSelected !== nextProps.isSelected) return false;
+  if (prevProps.selectedTool !== nextProps.selectedTool) return false;
+  
+  // Don't re-render for theme or callback function changes (they're stable or don't affect rendering)
+  return true;
+});

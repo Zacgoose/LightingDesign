@@ -140,6 +140,45 @@ const Page = () => {
     canRedo,
   } = useHistory(activeLayer?.products || []);
 
+  // Text boxes history - using ref-based tracking to avoid re-render issues
+  const textBoxHistoryRef = useRef({ history: [[]], step: 0, baseline: 0 });
+  const saveTextBoxHistoryRef = useRef(null);
+  
+  const saveTextBoxHistory = useCallback((newTextBoxes) => {
+    const hist = textBoxHistoryRef.current;
+    // Remove any future history
+    hist.history = hist.history.slice(0, hist.step + 1);
+    // Add new state
+    hist.history.push(newTextBoxes);
+    hist.step += 1;
+  }, []);
+  
+  // Keep the ref updated
+  saveTextBoxHistoryRef.current = saveTextBoxHistory;
+
+  const undoTextBoxHistory = useCallback(() => {
+    const hist = textBoxHistoryRef.current;
+    if (hist.step <= hist.baseline) return false;
+    hist.step -= 1;
+    setTextBoxes(hist.history[hist.step]);
+    return true;
+  }, []);
+
+  const redoTextBoxHistory = useCallback(() => {
+    const hist = textBoxHistoryRef.current;
+    if (hist.step >= hist.history.length - 1) return false;
+    hist.step += 1;
+    setTextBoxes(hist.history[hist.step]);
+    return true;
+  }, []);
+
+  const canUndoTextBox = textBoxHistoryRef.current.step > textBoxHistoryRef.current.baseline;
+  const canRedoTextBox = textBoxHistoryRef.current.step < textBoxHistoryRef.current.history.length - 1;
+
+  const resetTextBoxHistoryBaseline = useCallback((newTextBoxes) => {
+    textBoxHistoryRef.current = { history: [newTextBoxes], step: 0, baseline: 0 };
+  }, []);
+
   // Ref to track if we're loading data from a layer (vs user editing)
   const isLoadingLayerData = useRef(false);
   const lastLoadedLayerId = useRef(null); // Initialize to null so first layer loads properly
@@ -560,10 +599,15 @@ const Page = () => {
     // so new jobs would have layersVersion === 0 forever, blocking all layer switches.
     // The router.isReady and designData.isLoading checks above are sufficient.
 
-    // CRITICAL FIX: Always reload layer data when activeLayerId changes
-    // The previous check (activeLayerId !== lastLoadedLayerId.current) prevented reloading
-    // when switching back to a previously visited layer, causing stale background images
-    if (!activeLayer) {
+    // Get the current layer data
+    const currentLayer = layers.find(l => l.id === activeLayerId);
+    if (!currentLayer) {
+      return;
+    }
+    
+    // Only reload if we're switching to a different layer
+    // This prevents clearing selections during transform operations
+    if (activeLayerId === lastLoadedLayerId.current) {
       return;
     }
 
@@ -578,20 +622,21 @@ const Page = () => {
     setSelectedTextId(null);
 
     // Load the new layer's data - use resetHistoryBaseline to prevent undo past loaded state
-    resetHistoryBaseline(activeLayer.products || []);
-    setConnectors(activeLayer.connectors || []);
-    setTextBoxes(activeLayer.textBoxes || []);
+    resetHistoryBaseline(currentLayer.products || []);
+    setConnectors(currentLayer.connectors || []);
+    setTextBoxes(currentLayer.textBoxes || []);
+    resetTextBoxHistoryBaseline(currentLayer.textBoxes || []);
 
     // Set background image directly (no conversion needed - PDFs are already rasterized)
-    setBackgroundImage(activeLayer.backgroundImage || null);
-    setBackgroundImageNaturalSize(activeLayer.backgroundImageNaturalSize || null);
+    setBackgroundImage(currentLayer.backgroundImage || null);
+    setBackgroundImageNaturalSize(currentLayer.backgroundImageNaturalSize || null);
 
-    setScaleFactor(activeLayer.scaleFactor || 100);
+    setScaleFactor(currentLayer.scaleFactor || 100);
 
     // Update sync refs to match the new layer's data
-    lastSyncedBackgroundImage.current = activeLayer.backgroundImage || null;
-    lastSyncedBackgroundImageNaturalSize.current = activeLayer.backgroundImageNaturalSize || null;
-    lastSyncedScaleFactor.current = activeLayer.scaleFactor || 100;
+    lastSyncedBackgroundImage.current = currentLayer.backgroundImage || null;
+    lastSyncedBackgroundImageNaturalSize.current = currentLayer.backgroundImageNaturalSize || null;
+    lastSyncedScaleFactor.current = currentLayer.scaleFactor || 100;
 
     // CRITICAL FIX: Enable sync AFTER React has processed all state updates
     // This prevents the sync effect from running during layer switching
@@ -603,7 +648,7 @@ const Page = () => {
     router.isReady,
     id,
     activeLayerId,
-    activeLayer,
+    layers,
     layersVersion,
     designData.isLoading,
     designData.isSuccess,
@@ -811,6 +856,10 @@ const Page = () => {
       });
 
       setTextBoxes(transformedTextBoxes);
+      // Save to history after transform - using ref to avoid dependency issues
+      if (saveTextBoxHistoryRef.current) {
+        saveTextBoxHistoryRef.current(transformedTextBoxes);
+      }
     }
 
     // Force update transformer
@@ -943,14 +992,24 @@ const Page = () => {
     onUndo: () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
-      handleUndo();
-      clearSelection();
+      
+      const didUndoProduct = handleUndo();
+      const didUndoTextBox = undoTextBoxHistory();
+      
+      if (didUndoProduct || didUndoTextBox) {
+        clearSelection();
+      }
     },
     onRedo: () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
-      handleRedo();
-      clearSelection();
+      
+      const didRedoProduct = handleRedo();
+      const didRedoTextBox = redoTextBoxHistory();
+      
+      if (didRedoProduct || didRedoTextBox) {
+        clearSelection();
+      }
     },
   });
 
@@ -2099,10 +2158,22 @@ const Page = () => {
                 onUploadFloorPlan: handleUploadFloorPlan,
                 onSave: handleSave,
                 onExport: handleExport,
-                onUndo: handleUndo,
-                onRedo: handleRedo,
-                canUndo: canUndo,
-                canRedo: canRedo,
+                onUndo: () => {
+                  const transformed = applyGroupTransform();
+                  if (transformed) updateHistory(transformed);
+                  handleUndo();
+                  undoTextBoxHistory();
+                  clearSelection();
+                },
+                onRedo: () => {
+                  const transformed = applyGroupTransform();
+                  if (transformed) updateHistory(transformed);
+                  handleRedo();
+                  redoTextBoxHistory();
+                  clearSelection();
+                },
+                canUndo: canUndo || canUndoTextBox,
+                canRedo: canRedo || canRedoTextBox,
                 onMeasure: handleMeasure,
               }}
               viewProps={{

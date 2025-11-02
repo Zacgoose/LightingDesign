@@ -393,5 +393,3 @@ export const ProductsLayer = memo(
     );
   },
 );
-
-ProductsLayer.displayName = "ProductsLayer";

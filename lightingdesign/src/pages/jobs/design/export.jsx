@@ -260,6 +260,17 @@ const Page = () => {
         
         // Add logo outside title block (for bottom positions)
         await addLogoOutsideTitleBlock(pdf, pageWidth, pageHeight);
+        
+        // Add job info outside title block (for bottom positions)
+        await addJobInfoOutsideTitleBlock(pdf, pageWidth, pageHeight, {
+          jobNumber,
+          customerName,
+          address: jobAddress,
+          floorName: layer.name,
+          pageNumber: i + 1,
+          totalPages: selectedLayerData.length,
+          date: new Date().toLocaleDateString(),
+        });
       }
       
       setExportProgress(75);
@@ -330,8 +341,19 @@ const Page = () => {
     if (exportTemplate.showLogo && brandingSettings?.logo) {
       try {
         const logoSize = exportTemplate.logoSize || 60;
-        const logoHeight = logoSize * 0.264583; // Convert points to mm
-        const logoWidth = logoHeight; // Assume square for now
+        const logoHeightPt = logoSize * 0.264583; // Convert points to mm
+        
+        // Calculate logo dimensions while preserving aspect ratio
+        const img = new window.Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = brandingSettings.logo;
+        });
+        
+        const aspectRatio = img.naturalWidth / img.naturalHeight;
+        const logoHeight = logoHeightPt;
+        const logoWidth = logoHeight * aspectRatio;
         
         let logoX, logoY;
         const margin = 5;
@@ -419,7 +441,21 @@ const Page = () => {
       if (exportTemplate.showPageNumbers && !jobInfoFields.includes("pageNumber")) {
         pdf.text(`Page: ${info.pageNumber} of ${info.totalPages}`, pageWidth - rightMargin, 20);
       }
+    } else if (exportTemplate.jobInfoPosition === "top-right") {
+      // Render in top-right corner
+      let topRightY = 20;
+      jobInfoFields.forEach((field) => {
+        if (field === "pageNumber" && exportTemplate.showPageNumbers) {
+          pdf.text(`Page: ${info.pageNumber} of ${info.totalPages}`, pageWidth - rightMargin, topRightY);
+          topRightY += 5;
+        } else if (info[field]) {
+          pdf.text(`${fieldLabels[field]}: ${info[field]}`, pageWidth - rightMargin, topRightY);
+          topRightY += 5;
+        }
+      });
     }
+    // Note: bottom-left and bottom-right positions are handled outside title block
+    // These will be added in addJobInfoOutsideTitleBlock function
   };
   
   // Helper function to add logo outside title block (for bottom positions)
@@ -435,8 +471,20 @@ const Page = () => {
     
     try {
       const logoSize = exportTemplate.logoSize || 60;
-      const logoHeight = logoSize * 0.264583; // Convert points to mm
-      const logoWidth = logoHeight; // Assume square for now
+      const logoHeightPt = logoSize * 0.264583; // Convert points to mm
+      
+      // Calculate logo dimensions while preserving aspect ratio
+      // Create a temporary image to get natural dimensions
+      const img = new window.Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = brandingSettings.logo;
+      });
+      
+      const aspectRatio = img.naturalWidth / img.naturalHeight;
+      const logoHeight = logoHeightPt;
+      const logoWidth = logoHeight * aspectRatio;
       
       let logoX, logoY;
       const margin = 5;
@@ -462,6 +510,55 @@ const Page = () => {
     } catch (error) {
       console.warn("Failed to add logo to export:", error);
     }
+  };
+  
+  // Helper function to add job info outside title block (for bottom positions)
+  const addJobInfoOutsideTitleBlock = async (pdf, pageWidth, pageHeight, info) => {
+    if (!exportTemplate.showJobInfo) {
+      return;
+    }
+    
+    // Only add job info if position is bottom-*
+    if (!exportTemplate.jobInfoPosition.startsWith("bottom")) {
+      return;
+    }
+    
+    const jobInfoFields = exportTemplate.jobInfoFields || ["jobNumber", "customerName", "address", "floorName", "date"];
+    const fieldLabels = {
+      jobNumber: "Job",
+      customerName: "Customer",
+      address: "Address",
+      floorName: "Floor",
+      date: "Date",
+      pageNumber: "Page"
+    };
+    
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    
+    let yPos = pageHeight - 10;
+    const margin = 10;
+    
+    // Render from bottom up
+    const fieldsToRender = [...jobInfoFields].reverse();
+    
+    fieldsToRender.forEach((field) => {
+      let text = "";
+      if (field === "pageNumber" && exportTemplate.showPageNumbers) {
+        text = `Page: ${info.pageNumber} of ${info.totalPages}`;
+      } else if (info[field]) {
+        text = `${fieldLabels[field]}: ${info[field]}`;
+      }
+      
+      if (text) {
+        if (exportTemplate.jobInfoPosition === "bottom-left") {
+          pdf.text(text, margin, yPos);
+        } else if (exportTemplate.jobInfoPosition === "bottom-right") {
+          pdf.text(text, pageWidth - 70, yPos);
+        }
+        yPos -= 5;
+      }
+    });
   };
   
   // Helper function to render canvas to PDF using SVG

@@ -334,21 +334,19 @@ const CippExportTemplateSettings = () => {
               borderRadius: 1,
               backgroundColor: formControl.watch("titleBlockColor") || "#F0F0F0",
               position: "relative",
-              minHeight: "100px",
+              minHeight: "120px",
             }}
           >
             {formControl.watch("showLogo") && settings?.customBranding?.logo && (
               <Box
                 sx={{
                   position: "absolute",
-                  ...(formControl.watch("logoPosition").includes("top") && { top: 8 }),
-                  ...(formControl.watch("logoPosition").includes("bottom") && { bottom: 8 }),
-                  ...(formControl.watch("logoPosition").includes("left") && { left: 8 }),
-                  ...(formControl.watch("logoPosition").includes("right") && { right: 8 }),
-                  ...(formControl.watch("logoPosition").includes("center") && {
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                  }),
+                  ...(formControl.watch("logoPosition") === "top-left" && { top: 8, left: 8 }),
+                  ...(formControl.watch("logoPosition") === "top-center" && { top: 8, left: "50%", transform: "translateX(-50%)" }),
+                  ...(formControl.watch("logoPosition") === "top-right" && { top: 8, right: 8 }),
+                  ...(formControl.watch("logoPosition") === "bottom-left" && { bottom: 8, left: 8 }),
+                  ...(formControl.watch("logoPosition") === "bottom-center" && { bottom: 8, left: "50%", transform: "translateX(-50%)" }),
+                  ...(formControl.watch("logoPosition") === "bottom-right" && { bottom: 8, right: 8 }),
                 }}
               >
                 <img
@@ -363,7 +361,15 @@ const CippExportTemplateSettings = () => {
             )}
 
             {formControl.watch("showJobInfo") && (
-              <Box sx={{ mt: formControl.watch("showLogo") ? 8 : 0 }}>
+              <Box 
+                sx={{ 
+                  mt: formControl.watch("showLogo") && formControl.watch("logoPosition").startsWith("top") ? 8 : 0,
+                  position: formControl.watch("jobInfoPosition") === "title-block" ? "static" : "absolute",
+                  ...(formControl.watch("jobInfoPosition") === "top-right" && { top: 8, right: 8 }),
+                  ...(formControl.watch("jobInfoPosition") === "bottom-left" && { bottom: 8, left: 8 }),
+                  ...(formControl.watch("jobInfoPosition") === "bottom-right" && { bottom: 8, right: 8 }),
+                }}
+              >
                 <Typography variant="body2" fontWeight="bold">
                   Lighting Design Export
                 </Typography>

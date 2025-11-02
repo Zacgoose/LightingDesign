@@ -169,7 +169,10 @@ const Page = () => {
       // Get job information
       const jobInfo = jobData.data || {};
       const jobNumber = jobInfo.jobNumber || "N/A";
-      const customerName = jobInfo.customerName?.label || jobInfo.customerName || "N/A";
+      // Extract string values from potential objects
+      const customerName = typeof jobInfo.customerName === 'object' && jobInfo.customerName !== null
+        ? (jobInfo.customerName.label || jobInfo.customerName.value || "N/A")
+        : (jobInfo.customerName || "N/A");
       const jobAddress =
         [jobInfo.address, jobInfo.city, jobInfo.state, jobInfo.postalCode]
           .filter(Boolean)
@@ -195,6 +198,11 @@ const Page = () => {
             const sublayerProducts = (layer.products || []).filter((product) => product.sublayerId === sublayerId);
             const sublayerConnectors = (layer.connectors || []).filter((connector) => connector.sublayerId === sublayerId);
             const sublayerTextBoxes = (layer.textBoxes || []).filter((tb) => tb.sublayerId === sublayerId);
+            
+            // Skip empty sublayers
+            if (sublayerProducts.length === 0 && sublayerConnectors.length === 0 && sublayerTextBoxes.length === 0) {
+              return;
+            }
             
             allProducts = allProducts.concat(
               sublayerProducts.map((p) => ({
@@ -228,6 +236,11 @@ const Page = () => {
             if (!tb.sublayerId) return true;
             return selectedSublayerIds.includes(tb.sublayerId);
           });
+
+          // Skip empty layers
+          if (filteredProducts.length === 0 && filteredConnectors.length === 0 && filteredTextBoxes.length === 0) {
+            return;
+          }
 
           allProducts = allProducts.concat(
             filteredProducts.map((p) => ({
@@ -1307,6 +1320,7 @@ const Page = () => {
           brand: product.brand || "",
           type: product.product_type || "",
           quantity: 0,
+          thumbnail: product.thumbnail || null, // Product image
         });
       }
       const entry = productMap.get(sku);
@@ -1318,7 +1332,7 @@ const Page = () => {
     // Layout settings
     const maxCols = 5;
     const maxRows = 4;
-    const bottomBarHeight = 40; // Height for info bar at bottom
+    const bottomBarHeight = 50; // Increased height for better spacing
     const margin = 10;
     const productAreaHeight = pageHeight - bottomBarHeight - margin * 2;
     
@@ -1329,7 +1343,7 @@ const Page = () => {
     const cellHeight = productAreaHeight / maxRows;
     const itemsToShow = productGrid.slice(0, maxCols * maxRows);
     
-    // Draw product grid
+    // Draw product grid with better styling
     for (let i = 0; i < itemsToShow.length; i++) {
       const row = Math.floor(i / maxCols);
       const col = i % maxCols;
@@ -1337,64 +1351,134 @@ const Page = () => {
       const y = gridStartY + row * cellHeight;
       const product = itemsToShow[i];
       
-      // Draw cell border
-      pdf.setDrawColor(200, 200, 200);
-      pdf.setLineWidth(0.3);
-      pdf.rect(x + 2, y + 2, cellWidth - 4, cellHeight - 4, "S");
+      const padding = 3;
+      const innerX = x + padding;
+      const innerY = y + padding;
+      const innerWidth = cellWidth - padding * 2;
+      const innerHeight = cellHeight - padding * 2;
       
-      // Draw product info
-      pdf.setFontSize(9);
+      // Draw cell background
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(innerX, innerY, innerWidth, innerHeight, "F");
+      
+      // Draw cell border with rounded corners effect
+      pdf.setDrawColor(180, 180, 180);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(innerX, innerY, innerWidth, innerHeight, 2, 2, "S");
+      
+      // Reserve space for image at top (if available)
+      const imageHeight = cellHeight * 0.3;
+      let textStartY = innerY + imageHeight + 5;
+      
+      // TODO: Add product image support
+      // For now, draw a placeholder box if thumbnail exists
+      if (product.thumbnail) {
+        const imgSize = Math.min(innerWidth * 0.6, imageHeight - 4);
+        const imgX = innerX + (innerWidth - imgSize) / 2;
+        const imgY = innerY + 4;
+        
+        // Draw placeholder for image (light gray box)
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(imgX, imgY, imgSize, imgSize, "F");
+        pdf.setDrawColor(200, 200, 200);
+        pdf.setLineWidth(0.3);
+        pdf.rect(imgX, imgY, imgSize, imgSize, "S");
+        
+        // Note: To add actual images, use:
+        // pdf.addImage(product.thumbnail, 'JPEG', imgX, imgY, imgSize, imgSize);
+      }
+      
+      // Draw product info with better spacing
+      const centerX = x + cellWidth / 2;
+      
+      // Product name (bold, larger)
+      pdf.setFontSize(8);
       pdf.setFont("helvetica", "bold");
-      pdf.text(product.name, x + cellWidth / 2, y + cellHeight * 0.4, {
+      pdf.setTextColor(0, 0, 0);
+      const nameLines = pdf.splitTextToSize(product.name, innerWidth - 6);
+      pdf.text(nameLines.slice(0, 2), centerX, textStartY, {
         align: "center",
-        maxWidth: cellWidth - 8,
+        maxWidth: innerWidth - 6,
       });
       
-      pdf.setFontSize(7);
+      textStartY += nameLines.length > 1 ? 8 : 5;
+      
+      // SKU (smaller, gray)
+      pdf.setFontSize(6);
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(100, 100, 100);
-      pdf.text(`SKU: ${product.sku}`, x + cellWidth / 2, y + cellHeight * 0.5, {
+      pdf.text(`SKU: ${product.sku}`, centerX, textStartY, {
         align: "center",
       });
       
-      pdf.setFontSize(8);
+      textStartY += 5;
+      
+      // Quantity (medium, blue, bold)
+      pdf.setFontSize(9);
       pdf.setTextColor(0, 100, 200);
       pdf.setFont("helvetica", "bold");
-      pdf.text(`Qty: ${product.quantity}`, x + cellWidth / 2, y + cellHeight * 0.6, {
+      pdf.text(`Qty: ${product.quantity}`, centerX, textStartY, {
         align: "center",
       });
       
+      textStartY += 6;
+      
+      // Brand (small, italic, gray)
       if (product.brand) {
         pdf.setFontSize(6);
-        pdf.setTextColor(100, 100, 100);
+        pdf.setTextColor(120, 120, 120);
         pdf.setFont("helvetica", "italic");
-        pdf.text(product.brand, x + cellWidth / 2, y + cellHeight * 0.7, {
+        const brandLines = pdf.splitTextToSize(product.brand, innerWidth - 6);
+        pdf.text(brandLines.slice(0, 1), centerX, textStartY, {
           align: "center",
-          maxWidth: cellWidth - 8,
         });
       }
       
       pdf.setTextColor(0, 0, 0); // Reset color
     }
     
-    // Draw bottom info bar
+    // Draw bottom info bar with better styling
     const infoBarY = pageHeight - bottomBarHeight;
     
     // Background for info bar
-    pdf.setFillColor(245, 245, 245);
+    pdf.setFillColor(248, 248, 248);
     pdf.rect(0, infoBarY, pageWidth, bottomBarHeight, "F");
     
-    // Border line
-    pdf.setDrawColor(200, 200, 200);
-    pdf.setLineWidth(0.5);
+    // Top border line (stronger)
+    pdf.setDrawColor(150, 150, 150);
+    pdf.setLineWidth(0.8);
     pdf.line(0, infoBarY, pageWidth, infoBarY);
     
-    // Info rows
-    let infoX = margin + 10;
-    const infoY = infoBarY + 10;
-    const labelSpacing = 50;
+    // Logo section on the left (placeholder with instructions)
+    const logoWidth = 50;
+    const logoX = margin;
+    const logoY = infoBarY + 8;
     
-    pdf.setFontSize(8);
+    // Draw logo placeholder boxes
+    pdf.setDrawColor(200, 200, 200);
+    pdf.setLineWidth(0.5);
+    
+    // Logo 1 (top)
+    pdf.setFillColor(250, 250, 250);
+    pdf.roundedRect(logoX, logoY, logoWidth - 4, 18, 2, 2, "FD");
+    pdf.setFontSize(6);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text("Logo 1", logoX + (logoWidth - 4) / 2, logoY + 9, { align: "center" });
+    
+    // Logo 2 (bottom)
+    pdf.roundedRect(logoX, logoY + 20, logoWidth - 4, 18, 2, 2, "FD");
+    pdf.text("Logo 2", logoX + (logoWidth - 4) / 2, logoY + 29, { align: "center" });
+    
+    // Note: To add actual logos, place image files in /public/logos/ folder
+    // Then use: pdf.addImage('/logos/logo1.png', 'PNG', logoX, logoY, logoWidth - 4, 18);
+    
+    // Info rows (to the right of logos)
+    let infoX = logoX + logoWidth + 10;
+    const infoY = infoBarY + 10;
+    const labelSpacing = 55;
+    
+    pdf.setFontSize(7);
+    pdf.setTextColor(0, 0, 0);
     
     // First row of info
     pdf.setFont("helvetica", "bold");
@@ -1415,8 +1499,8 @@ const Page = () => {
     pdf.text(customerName, infoX, infoY + 4);
     
     // Second row of info
-    infoX = margin + 10;
-    const info2Y = infoY + 12;
+    infoX = logoX + logoWidth + 10;
+    const info2Y = infoY + 13;
     
     pdf.setFont("helvetica", "bold");
     pdf.text("Builder:", infoX, info2Y);
@@ -1429,22 +1513,34 @@ const Page = () => {
     pdf.setFont("helvetica", "normal");
     pdf.text(new Date().toLocaleDateString(), infoX, info2Y + 4);
     
-    // Company details (smaller text on the right)
-    const companyX = pageWidth - margin - 60;
+    // Company details section (right side)
+    const companyX = pageWidth - margin - 65;
     pdf.setFontSize(6);
-    pdf.setFont("helvetica", "bold");
-    pdf.text("Store:", companyX, infoBarY + 8);
-    pdf.setFont("helvetica", "normal");
-    pdf.text(jobInfo.address || "N/A", companyX, infoBarY + 11, {
-      maxWidth: 55,
-    });
+    
+    // Store section with box
+    pdf.setDrawColor(220, 220, 220);
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(companyX, infoBarY + 6, 60, 18, 1, 1, "FD");
     
     pdf.setFont("helvetica", "bold");
-    pdf.text("Head Office:", companyX, infoBarY + 18);
+    pdf.setTextColor(80, 80, 80);
+    pdf.text("Store:", companyX + 2, infoBarY + 10);
     pdf.setFont("helvetica", "normal");
-    pdf.text("Head Office Address", companyX, infoBarY + 21, {
-      maxWidth: 55,
-    });
+    pdf.setTextColor(100, 100, 100);
+    const storeText = pdf.splitTextToSize(jobInfo.address || "Store Address", 56);
+    pdf.text(storeText.slice(0, 2), companyX + 2, infoBarY + 13);
+    
+    // Head Office section with box
+    pdf.setDrawColor(220, 220, 220);
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(companyX, infoBarY + 26, 60, 18, 1, 1, "FD");
+    
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(80, 80, 80);
+    pdf.text("Head Office:", companyX + 2, infoBarY + 30);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(100, 100, 100);
+    pdf.text("Head Office Address", companyX + 2, infoBarY + 33);
   };
 
   const canExport = selectedLayers.length > 0;

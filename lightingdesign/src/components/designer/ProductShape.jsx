@@ -18,9 +18,8 @@ export const ProductShape = memo(
     letterPrefix, // Add letterPrefix prop
     groupRotation = 0, // New: rotation of parent group (for selected products)
   }) => {
-
     const shapeFunction = getShapeFunction(config.shapeType);
-    
+
     // Calculate actual rendered dimensions based on scaleFactor and real-world size
     // Ensure shape is always centered at (x, y) with no offset for text
     const scaleFactor = product.scaleFactor || 100;

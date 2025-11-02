@@ -177,7 +177,6 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
       }
     },
     onSuccess: () => {
-
       if (relatedQueryKeys) {
         const clearKeys = Array.isArray(relatedQueryKeys) ? relatedQueryKeys : [relatedQueryKeys];
         setTimeout(() => {

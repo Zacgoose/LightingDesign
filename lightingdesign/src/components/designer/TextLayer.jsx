@@ -18,18 +18,18 @@ export const TextLayer = memo(
   }) => {
     // Check if text is in a multi-selection (mixed with products or multiple texts)
     const isInGroup = selectedIds.length > 1;
-    
+
     // Extract text IDs that are in the selection group
     const selectedTextIds = selectedIds
-      .filter(id => id.startsWith('text-'))
-      .map(id => id.substring(5)); // Remove 'text-' prefix
-    
+      .filter((id) => id.startsWith("text-"))
+      .map((id) => id.substring(5)); // Remove 'text-' prefix
+
     // Determine if text boxes should listen to events
     const shouldListen = (selectedTool === "select" || selectedTool === "text") && !isMiddlePanning;
     // Text boxes are only draggable when they are in the selection group (with transformer)
     // Unselected text boxes are NOT draggable - they can only be selected by clicking
     const shouldBeDraggable = false;
-    
+
     return (
       <>
         {/* Only render text boxes that are NOT in the selection group */}
@@ -56,7 +56,7 @@ export const TextLayer = memo(
           ))}
       </>
     );
-  }
+  },
 );
 
 export default TextLayer;

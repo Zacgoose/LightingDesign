@@ -1,29 +1,29 @@
-import { 
-  Card, 
-  Box, 
-  IconButton, 
-  Button, 
-  ToggleButtonGroup, 
-  ToggleButton, 
-  Typography 
+import {
+  Card,
+  Box,
+  IconButton,
+  Button,
+  ToggleButtonGroup,
+  ToggleButton,
+  Typography,
 } from "@mui/material";
 import { useState, useEffect, useRef } from "react";
-import { 
-  ExpandMore, 
+import {
+  ExpandMore,
   ExpandLess,
-  Save, 
-  Upload, 
-  Download, 
-  Undo, 
-  Redo, 
+  Save,
+  Upload,
+  Download,
+  Undo,
+  Redo,
   Straighten,
-  NearMe, 
-  PanTool, 
-  Close, 
+  NearMe,
+  PanTool,
+  Close,
   Cable,
   ZoomIn,
   ZoomOut,
-  TextFields
+  TextFields,
 } from "@mui/icons-material";
 
 export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
@@ -34,10 +34,10 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
   useEffect(() => {
     const checkIfWrapped = () => {
       if (!containerRef.current) return;
-      
+
       const container = containerRef.current;
       const children = Array.from(container.children);
-      
+
       if (children.length < 2) {
         setShowCollapseButton(false);
         return;
@@ -45,8 +45,8 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
 
       // Check if any child wraps to a new line
       const firstTop = children[0].offsetTop;
-      const hasWrapped = children.some(child => child.offsetTop > firstTop);
-      
+      const hasWrapped = children.some((child) => child.offsetTop > firstTop);
+
       setShowCollapseButton(hasWrapped);
     };
 
@@ -60,13 +60,13 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
       resizeTimer = setTimeout(checkIfWrapped, 150);
     };
 
-    window.addEventListener('resize', handleResize);
-    
+    window.addEventListener("resize", handleResize);
+
     // Delayed check for initial render
     const timer = setTimeout(checkIfWrapped, 200);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
       clearTimeout(timer);
       clearTimeout(resizeTimer);
     };
@@ -84,13 +84,8 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
     onMeasure,
   } = mainProps || {};
 
-  const {
-    selectedTool,
-    onToolChange,
-    placementMode,
-    onStopPlacement,
-    onDisconnectCable,
-  } = toolsProps || {};
+  const { selectedTool, onToolChange, placementMode, onStopPlacement, onDisconnectCable } =
+    toolsProps || {};
 
   const {
     showGrid,
@@ -121,7 +116,12 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
           }}
         >
           {/* Main Controls */}
-          <Button variant="outlined" startIcon={<Upload />} size="small" onClick={onUploadFloorPlan}>
+          <Button
+            variant="outlined"
+            startIcon={<Upload />}
+            size="small"
+            onClick={onUploadFloorPlan}
+          >
             Upload Floor Plan
           </Button>
           <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave}>
@@ -136,7 +136,13 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
           <Button variant="outlined" size="small" onClick={onRedo} disabled={!canRedo}>
             <Redo />
           </Button>
-          <Button variant="outlined" startIcon={<Straighten />} size="small" onClick={onMeasure} minWidth={100}>
+          <Button
+            variant="outlined"
+            startIcon={<Straighten />}
+            size="small"
+            onClick={onMeasure}
+            minWidth={100}
+          >
             Measure
           </Button>
 
@@ -206,10 +212,18 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
           <Button variant={showGrid ? "contained" : "outlined"} size="small" onClick={onToggleGrid}>
             Grid
           </Button>
-          <Button variant={showLayers ? "contained" : "outlined"} size="small" onClick={onToggleLayers}>
+          <Button
+            variant={showLayers ? "contained" : "outlined"}
+            size="small"
+            onClick={onToggleLayers}
+          >
             Layers
           </Button>
-          <Button variant={showPreview ? "contained" : "outlined"} size="small" onClick={onTogglePreview}>
+          <Button
+            variant={showPreview ? "contained" : "outlined"}
+            size="small"
+            onClick={onTogglePreview}
+          >
             Preview
           </Button>
           {/* Group zoom controls together so they don't separate when wrapping */}

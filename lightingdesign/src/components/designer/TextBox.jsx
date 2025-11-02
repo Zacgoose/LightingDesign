@@ -15,8 +15,8 @@ export const TextBox = memo(
     onDoubleClick,
     onContextMenu,
   }) => {
-  const groupRef = useRef();
-  const textRef = useRef();
+    const groupRef = useRef();
+    const textRef = useRef();
     // Removed separate transformer - using unified transformer from ProductsLayer
 
     // Parse font style
@@ -67,13 +67,7 @@ export const TextBox = memo(
           });
         }
       }
-    }, [
-      textBox.text,
-      renderedFontSize,
-      textBox.fontFamily,
-      textBox.fontStyle,
-      textBox.fontWeight,
-    ]);
+    }, [textBox.text, renderedFontSize, textBox.fontFamily, textBox.fontStyle, textBox.fontWeight]);
 
     // Rectangle padding
     const rectPadding = 10;
@@ -202,7 +196,7 @@ export const TextBox = memo(
         </Group>
       </>
     );
-  }
+  },
 );
 
 export default TextBox;

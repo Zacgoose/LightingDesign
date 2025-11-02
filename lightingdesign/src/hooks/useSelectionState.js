@@ -25,12 +25,12 @@ export const useSelectionState = (products, textBoxes = []) => {
     }
 
     // Split IDs into products and text boxes
-    const productIds = selectedIds.filter(id => !id.startsWith('text-'));
-    const textIds = selectedIds
-      .filter(id => id.startsWith('text-'))
-      .map(id => id.substring(5)); // Remove 'text-' prefix
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5)); // Remove 'text-' prefix
 
-    const productSnapshot = products.filter((p) => productIds.includes(p.id)).map((p) => ({ ...p }));
+    const productSnapshot = products
+      .filter((p) => productIds.includes(p.id))
+      .map((p) => ({ ...p }));
     const textSnapshot = textBoxes.filter((t) => textIds.includes(t.id)).map((t) => ({ ...t }));
 
     if (productSnapshot.length === 0 && textSnapshot.length === 0) {
@@ -39,7 +39,7 @@ export const useSelectionState = (products, textBoxes = []) => {
 
     // Calculate bounding box using visual bounds (x/y + width/height)
     const allItems = [...productSnapshot, ...textSnapshot];
-    const bounds = allItems.map(item => {
+    const bounds = allItems.map((item) => {
       // For products, use x/y and width/height if available
       if (item.width && item.height) {
         return {
@@ -58,10 +58,10 @@ export const useSelectionState = (products, textBoxes = []) => {
         };
       }
     });
-    const minX = bounds.length ? Math.min(...bounds.map(b => b.minX)) : 0;
-    const maxX = bounds.length ? Math.max(...bounds.map(b => b.maxX)) : 0;
-    const minY = bounds.length ? Math.min(...bounds.map(b => b.minY)) : 0;
-    const maxY = bounds.length ? Math.max(...bounds.map(b => b.maxY)) : 0;
+    const minX = bounds.length ? Math.min(...bounds.map((b) => b.minX)) : 0;
+    const maxX = bounds.length ? Math.max(...bounds.map((b) => b.maxX)) : 0;
+    const minY = bounds.length ? Math.min(...bounds.map((b) => b.minY)) : 0;
+    const maxY = bounds.length ? Math.max(...bounds.map((b) => b.maxY)) : 0;
     // Use bounding box center as group origin
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
@@ -72,14 +72,14 @@ export const useSelectionState = (products, textBoxes = []) => {
     let totalRotation = 0;
     let rotationCount = 0;
     productSnapshot.forEach((p) => {
-      totalRotation += (p.rotation || 0);
+      totalRotation += p.rotation || 0;
       rotationCount++;
     });
     textSnapshot.forEach((t) => {
-      totalRotation += (t.rotation || 0);
+      totalRotation += t.rotation || 0;
       rotationCount++;
     });
-    const avgRotation = rotationCount === 1 ? (totalRotation / rotationCount) : 0;
+    const avgRotation = rotationCount === 1 ? totalRotation / rotationCount : 0;
 
     return {
       centerX,
@@ -135,7 +135,6 @@ export const useSelectionState = (products, textBoxes = []) => {
 
       // Force update
       transformerRef.current.getLayer()?.batchDraw();
-      
     } else if (transformerRef.current) {
       transformerRef.current.nodes([]);
     }

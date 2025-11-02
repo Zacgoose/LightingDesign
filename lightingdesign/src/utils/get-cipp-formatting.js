@@ -90,12 +90,22 @@ const ImageWithHoverPreview = ({ src, alt, style }) => {
   );
 };
 
-export const getCippFormatting = (data, cellName, type, canReceive, flatten = true, imageColumn = null) => {
+export const getCippFormatting = (
+  data,
+  cellName,
+  type,
+  canReceive,
+  flatten = true,
+  imageColumn = null,
+) => {
   const isText = type === "text";
   const cellNameLower = cellName.toLowerCase();
-  
+
   // Check if this column should render images based on imageColumn prop
-  if (imageColumn && (cellName === imageColumn || (Array.isArray(imageColumn) && imageColumn.includes(cellName)))) {
+  if (
+    imageColumn &&
+    (cellName === imageColumn || (Array.isArray(imageColumn) && imageColumn.includes(cellName)))
+  ) {
     // Handle null or undefined data
     if (data === null || data === undefined || data === "") {
       return isText ? (
@@ -104,14 +114,14 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
         <Chip variant="outlined" label="No data" size="small" color="info" />
       );
     }
-    
+
     // Handle array of image URLs
     if (Array.isArray(data)) {
       return isText ? (
         data.join(", ")
       ) : (
         <Box component="span" sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-          {data.map((url, index) => (
+          {data.map((url, index) =>
             url ? (
               <ImageWithHoverPreview
                 key={index}
@@ -119,12 +129,12 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
                 alt={`Image ${index + 1}`}
                 style={{ width: "60px", height: "60px", objectFit: "contain" }}
               />
-            ) : null
-          ))}
+            ) : null,
+          )}
         </Box>
       );
     }
-    
+
     // Handle single image URL
     if (typeof data === "string") {
       return isText ? (
@@ -138,7 +148,7 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
       );
     }
   }
-  
+
   // if data is a data object, return a fFormatted date
   if (cellName === "addrow") {
     return isText ? (

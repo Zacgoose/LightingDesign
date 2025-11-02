@@ -43,7 +43,7 @@ export const useLayerManager = (initialLayers = null) => {
   const [activeLayerId, setActiveLayerId] = useState(() => {
     return initialLayers && initialLayers.length > 0 ? initialLayers[0].id : "layer-1";
   });
-  
+
   // Version counter that increments when layers are loaded
   // This helps trigger effects that need to respond to layer data changes
   const [layersVersion, setLayersVersion] = useState(0);
@@ -335,7 +335,7 @@ export const useLayerManager = (initialLayers = null) => {
           setActiveLayerId(newLayers[0].id);
         }
         // Increment version to signal that layers were loaded
-        setLayersVersion(v => v + 1);
+        setLayersVersion((v) => v + 1);
       }
     },
     [activeLayerId],

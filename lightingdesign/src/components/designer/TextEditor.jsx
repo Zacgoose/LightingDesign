@@ -1,14 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 
-export const TextEditor = ({
-  textBox,
-  stageScale,
-  stagePosition,
-  stageBox,
-  onSave,
-  onCancel,
-}) => {
+export const TextEditor = ({ textBox, stageScale, stagePosition, stageBox, onSave, onCancel }) => {
   const textareaRef = useRef(null);
 
   // Calculate position in screen coordinates
@@ -27,7 +20,7 @@ export const TextEditor = ({
         onCancel();
       }
     },
-    [onSave, onCancel]
+    [onSave, onCancel],
   );
 
   const handleClickOutside = useCallback(
@@ -36,7 +29,7 @@ export const TextEditor = ({
         onSave(textareaRef.current.value);
       }
     },
-    [onSave]
+    [onSave],
   );
 
   useEffect(() => {
@@ -83,7 +76,7 @@ export const TextEditor = ({
       style={textareaStyle}
       onKeyDown={handleKeyDown}
     />,
-    document.body
+    document.body,
   );
 };
 

@@ -143,7 +143,7 @@ const Page = () => {
   // Text boxes history - using ref-based tracking to avoid re-render issues
   const textBoxHistoryRef = useRef({ history: [[]], step: 0, baseline: 0 });
   const saveTextBoxHistoryRef = useRef(null);
-  
+
   const saveTextBoxHistory = useCallback((newTextBoxes) => {
     const hist = textBoxHistoryRef.current;
     // Remove any future history
@@ -152,7 +152,7 @@ const Page = () => {
     hist.history.push(newTextBoxes);
     hist.step += 1;
   }, []);
-  
+
   // Keep the ref updated
   saveTextBoxHistoryRef.current = saveTextBoxHistory;
 
@@ -173,7 +173,8 @@ const Page = () => {
   }, []);
 
   const canUndoTextBox = textBoxHistoryRef.current.step > textBoxHistoryRef.current.baseline;
-  const canRedoTextBox = textBoxHistoryRef.current.step < textBoxHistoryRef.current.history.length - 1;
+  const canRedoTextBox =
+    textBoxHistoryRef.current.step < textBoxHistoryRef.current.history.length - 1;
 
   const resetTextBoxHistoryBaseline = useCallback((newTextBoxes) => {
     textBoxHistoryRef.current = { history: [newTextBoxes], step: 0, baseline: 0 };
@@ -604,17 +605,17 @@ const Page = () => {
     // The router.isReady and designData.isLoading checks above are sufficient.
 
     // Get the current layer data
-    const currentLayer = layers.find(l => l.id === activeLayerId);
+    const currentLayer = layers.find((l) => l.id === activeLayerId);
     if (!currentLayer) {
       return;
     }
-    
+
     // Only reload if we're switching to a different layer OR if layer data has been updated
     // This prevents clearing selections during transform operations while allowing
     // the canvas to populate when design data is loaded for the first time
     const isSameLayer = activeLayerId === lastLoadedLayerId.current;
     const hasNewLayerData = layersVersion !== lastLoadedLayersVersion.current;
-    
+
     if (isSameLayer && !hasNewLayerData) {
       return;
     }
@@ -1001,10 +1002,10 @@ const Page = () => {
     onUndo: () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
-      
+
       const didUndoProduct = handleUndo();
       const didUndoTextBox = undoTextBoxHistory();
-      
+
       if (didUndoProduct || didUndoTextBox) {
         clearSelection();
       }
@@ -1012,10 +1013,10 @@ const Page = () => {
     onRedo: () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
-      
+
       const didRedoProduct = handleRedo();
       const didRedoTextBox = redoTextBoxHistory();
-      
+
       if (didRedoProduct || didRedoTextBox) {
         clearSelection();
       }

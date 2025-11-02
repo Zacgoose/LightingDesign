@@ -1378,6 +1378,38 @@ const Page = () => {
     );
   };
 
+  // Helper function to convert image URL to data URL (avoids CORS issues)
+  const imageUrlToDataUrl = async (url) => {
+    try {
+      // Create an image element
+      const img = new Image();
+      
+      // Set crossOrigin to anonymous to avoid CORS issues
+      // This works when the server doesn't send Origin header
+      img.crossOrigin = 'anonymous';
+      
+      // Load the image
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = url;
+      });
+      
+      // Create a canvas and draw the image
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      
+      // Convert to data URL
+      return canvas.toDataURL('image/jpeg', 0.9);
+    } catch (error) {
+      console.warn('Failed to convert image URL to data URL:', url, error);
+      return null;
+    }
+  };
+
   // Helper function to add product legend using ExportDocumentLayout style
   const addProductLegend = async (pdf, pageWidth, pageHeight, allProducts) => {
     // Get job info
@@ -1413,6 +1445,15 @@ const Page = () => {
     });
     
     const productGrid = Array.from(productMap.values());
+    
+    // Pre-fetch and convert all product images to data URLs to avoid CORS issues
+    setExportStatus("Loading product images...");
+    const imagePromises = productGrid.map(async (product) => {
+      if (product.thumbnailUrl && (product.thumbnailUrl.startsWith('http://') || product.thumbnailUrl.startsWith('https://'))) {
+        product.thumbnailDataUrl = await imageUrlToDataUrl(product.thumbnailUrl);
+      }
+    });
+    await Promise.all(imagePromises);
     
     // Layout settings
     const maxCols = 5;
@@ -1455,25 +1496,16 @@ const Page = () => {
       const imageHeight = cellHeight * 0.3;
       let textStartY = innerY + imageHeight + 5;
       
-      // Add product image if thumbnailUrl exists
-      if (product.thumbnailUrl) {
+      // Add product image if thumbnailUrl or thumbnailDataUrl exists
+      const imageToUse = product.thumbnailDataUrl || product.thumbnailUrl;
+      if (imageToUse) {
         const imgSize = Math.min(innerWidth * 0.6, imageHeight - 4);
         const imgX = innerX + (innerWidth - imgSize) / 2;
         const imgY = innerY + 4;
         
         try {
-          // Try to add the image directly
-          // jsPDF supports data URLs, base64 encoded images, and HTTP URLs
-          if (product.thumbnailUrl.startsWith('data:image/')) {
-            // Data URL - can add directly
-            pdf.addImage(product.thumbnailUrl, 'JPEG', imgX, imgY, imgSize, imgSize);
-          } else if (product.thumbnailUrl.startsWith('http://') || product.thumbnailUrl.startsWith('https://')) {
-            // HTTP URLs - jsPDF can load these directly (no cross-origin issues confirmed by user)
-            pdf.addImage(product.thumbnailUrl, 'JPEG', imgX, imgY, imgSize, imgSize);
-          } else {
-            // Assume it's a base64 string or local path
-            pdf.addImage(product.thumbnailUrl, 'JPEG', imgX, imgY, imgSize, imgSize);
-          }
+          // Use the pre-fetched data URL if available, otherwise use original URL
+          pdf.addImage(imageToUse, 'JPEG', imgX, imgY, imgSize, imgSize);
         } catch (error) {
           // If image loading fails, show placeholder
           console.warn('Failed to load product image:', error);

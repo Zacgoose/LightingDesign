@@ -1840,6 +1840,20 @@ const Page = () => {
           }
         };
 
+        ctx.fillStrokeShape = (shape) => {
+          if (!ctx._d.trim()) return; // nothing to draw
+          const pathEl = document.createElementNS(SVG_NS, "path");
+          pathEl.setAttribute("d", ctx._d.trim());
+          pathEl.setAttribute("fill", ctx.fillStyle || shape.fill || "none");
+          pathEl.setAttribute("stroke", ctx.strokeStyle || shape.getAttr("stroke") || "none");
+          pathEl.setAttribute(
+            "stroke-width",
+            String(ctx.lineWidth || shape.getAttr("strokeWidth") || 1),
+          );
+          svgGroup.appendChild(pathEl);
+          ctx._d = "";
+        };
+
         return ctx;
       };
       

@@ -102,7 +102,15 @@ export const TextBox = memo(
             }
           }}
           onTap={onSelect}
-          onDblClick={onDoubleClick}
+          onDblClick={(e) => {
+            // Only allow left mouse button double-click to edit
+            if (e.evt.button !== 0) {
+              return;
+            }
+            if (onDoubleClick) {
+              onDoubleClick(e);
+            }
+          }}
           onDblTap={onDoubleClick}
           onDragStart={(e) => {
             // Prevent dragging on middle mouse button

@@ -287,6 +287,10 @@ export const ProductsLayer = memo(
                   }}
                   onDblClick={(e) => {
                     e.cancelBubble = true;
+                    // Only allow left mouse button double-click to edit
+                    if (e.evt.button !== 0) {
+                      return;
+                    }
                     // Only allow double-click to edit if exactly 1 text box is selected (no products selected)
                     if (textIds.length === 1 && productOnlyIds.length === 0 && onTextDoubleClick) {
                       const originalTextId = textBox.id;

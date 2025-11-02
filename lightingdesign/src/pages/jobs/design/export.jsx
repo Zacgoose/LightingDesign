@@ -50,6 +50,7 @@ const Page = () => {
   const [orientation, setOrientation] = useState("landscape");
   const [selectedLayers, setSelectedLayers] = useState([]);
   const [selectedSublayers, setSelectedSublayers] = useState({});
+  const [sublayerSeparatePages, setSublayerSeparatePages] = useState({}); // Track which layers export sublayers to separate pages
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [exportStatus, setExportStatus] = useState("");
@@ -82,10 +83,14 @@ const Page = () => {
 
       // Select all sublayers by default
       const sublayerSelections = {};
+      const sublayerSeparatePagesDefaults = {};
       layers.forEach((layer) => {
         sublayerSelections[layer.id] = layer.sublayers?.map((s) => s.id) || [];
+        // Set separate pages to true by default for layers with sublayers
+        sublayerSeparatePagesDefaults[layer.id] = layer.sublayers && layer.sublayers.length > 0;
       });
       setSelectedSublayers(sublayerSelections);
+      setSublayerSeparatePages(sublayerSeparatePagesDefaults);
     }
   }, [layers]);
 
@@ -133,6 +138,13 @@ const Page = () => {
     });
   }, []);
 
+  const handleSublayerSeparatePagesToggle = useCallback((layerId) => {
+    setSublayerSeparatePages((prev) => ({
+      ...prev,
+      [layerId]: !prev[layerId],
+    }));
+  }, []);
+
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     setExportProgress(0);
@@ -165,17 +177,58 @@ const Page = () => {
           .filter(Boolean)
           .join(", ") || "N/A";
 
-      // Collect all products from selected layers
+      // Collect all products from selected layers and prepare pages
       let allProducts = [];
-      const selectedLayerData = selectedLayers
-        .map((layerId) => {
-          const layer = layers.find((l) => l.id === layerId);
-          if (!layer) return null;
+      const pagesToRender = [];
+      
+      selectedLayers.forEach((layerId) => {
+        const layer = layers.find((l) => l.id === layerId);
+        if (!layer) return;
 
-          const selectedSublayerIds = selectedSublayers[layerId] || [];
+        const selectedSublayerIds = selectedSublayers[layerId] || [];
+        const shouldSeparateSublayers = sublayerSeparatePages[layerId] && layer.sublayers && layer.sublayers.length > 0;
+        
+        if (shouldSeparateSublayers) {
+          // Export each sublayer to a separate page
+          selectedSublayerIds.forEach((sublayerId) => {
+            const sublayer = layer.sublayers.find((s) => s.id === sublayerId);
+            if (!sublayer) return;
+            
+            const sublayerProducts = (layer.products || []).filter((product) => product.sublayerId === sublayerId);
+            const sublayerConnectors = (layer.connectors || []).filter((connector) => connector.sublayerId === sublayerId);
+            const sublayerTextBoxes = (layer.textBoxes || []).filter((tb) => tb.sublayerId === sublayerId);
+            
+            allProducts = allProducts.concat(
+              sublayerProducts.map((p) => ({
+                ...p,
+                layerName: `${layer.name} - ${sublayer.name}`,
+              })),
+            );
+            
+            pagesToRender.push({
+              layer,
+              sublayer,
+              floorName: `${layer.name} - ${sublayer.name}`,
+              products: sublayerProducts,
+              connectors: sublayerConnectors,
+              textBoxes: sublayerTextBoxes,
+            });
+          });
+        } else {
+          // Export all selected sublayers together on one page
           const filteredProducts = (layer.products || []).filter((product) => {
             if (!product.sublayerId) return true; // Include products without sublayer assignment
             return selectedSublayerIds.includes(product.sublayerId);
+          });
+          
+          const filteredConnectors = (layer.connectors || []).filter((connector) => {
+            if (!connector.sublayerId) return true;
+            return selectedSublayerIds.includes(connector.sublayerId);
+          });
+          
+          const filteredTextBoxes = (layer.textBoxes || []).filter((tb) => {
+            if (!tb.sublayerId) return true;
+            return selectedSublayerIds.includes(tb.sublayerId);
           });
 
           allProducts = allProducts.concat(
@@ -185,43 +238,38 @@ const Page = () => {
             })),
           );
 
-          const filteredTextBoxes = (layer.textBoxes || []).filter((tb) => {
-            if (!tb.sublayerId) return true;
-            return selectedSublayerIds.includes(tb.sublayerId);
-          });
-          return {
+          pagesToRender.push({
             layer,
+            sublayer: null,
+            floorName: layer.name,
             products: filteredProducts,
-            connectors: (layer.connectors || []).filter((connector) => {
-              if (!connector.sublayerId) return true;
-              return selectedSublayerIds.includes(connector.sublayerId);
-            }),
+            connectors: filteredConnectors,
             textBoxes: filteredTextBoxes,
-          };
-        })
-        .filter(Boolean);
+          });
+        }
+      });
 
       setExportProgress(20);
 
-      // Process each layer (one per page for multi-page support)
-      for (let i = 0; i < selectedLayerData.length; i++) {
-        const { layer, products, connectors, textBoxes } = selectedLayerData[i];
+      // Process each page (one per layer or sublayer)
+      for (let i = 0; i < pagesToRender.length; i++) {
+        const { layer, sublayer, floorName, products, connectors, textBoxes } = pagesToRender[i];
 
         if (i > 0) {
           pdf.addPage();
         }
 
-        setExportStatus(`Rendering ${layer.name}...`);
-        setExportProgress(20 + (i / selectedLayerData.length) * 50);
+        setExportStatus(`Rendering ${floorName}...`);
+        setExportProgress(20 + (i / pagesToRender.length) * 50);
 
         // Add title block
         await addTitleBlock(pdf, pageWidth, pageHeight, {
           jobNumber,
           customerName,
           address: jobAddress,
-          floorName: layer.name,
+          floorName: floorName,
           pageNumber: i + 1,
-          totalPages: selectedLayerData.length,
+          totalPages: pagesToRender.length,
           date: new Date().toLocaleDateString(),
         });
 
@@ -232,7 +280,7 @@ const Page = () => {
         const drawingAreaWidth = pageWidth - 20;
 
         // Render canvas to PDF
-        console.log(`Exporting floor: ${layer.name}`, {
+        console.log(`Exporting floor: ${floorName}`, {
           productsCount: products.length,
           connectorsCount: connectors.length,
           hasBackground: !!layer.backgroundImage,
@@ -298,6 +346,7 @@ const Page = () => {
     orientation,
     selectedLayers,
     selectedSublayers,
+    sublayerSeparatePages,
     layers,
     jobData.data,
     designData.data,
@@ -1350,9 +1399,16 @@ const Page = () => {
   const prepareDocumentLayoutData = useCallback(() => {
     const jobInfo = jobData.data || {};
     const jobNumber = jobInfo.jobNumber || "N/A";
-    const customerName = jobInfo.customerName?.label || jobInfo.customerName || "N/A";
-    const designer = jobInfo.designer || "N/A";
-    const builderName = jobInfo.builder || "N/A";
+    // Extract string values from potential objects
+    const customerName = typeof jobInfo.customerName === 'object' && jobInfo.customerName !== null
+      ? (jobInfo.customerName.label || jobInfo.customerName.value || "N/A")
+      : (jobInfo.customerName || "N/A");
+    const designer = typeof jobInfo.designer === 'object' && jobInfo.designer !== null
+      ? (jobInfo.designer.label || jobInfo.designer.value || "N/A")
+      : (jobInfo.designer || "N/A");
+    const builderName = typeof jobInfo.builder === 'object' && jobInfo.builder !== null
+      ? (jobInfo.builder.label || jobInfo.builder.value || "N/A")
+      : (jobInfo.builder || "N/A");
 
     // Prepare logos (placeholder - can be customized)
     const logos = [
@@ -1534,6 +1590,22 @@ const Page = () => {
                               }
                             />
                           ))}
+                          {layer.sublayers.length > 0 && (
+                            <FormControlLabel
+                              control={
+                                <Checkbox
+                                  size="small"
+                                  checked={sublayerSeparatePages[layer.id] || false}
+                                  onChange={() => handleSublayerSeparatePagesToggle(layer.id)}
+                                />
+                              }
+                              label={
+                                <Typography variant="caption" color="primary" fontStyle="italic">
+                                  Export sublayers to separate pages
+                                </Typography>
+                              }
+                            />
+                          )}
                         </Box>
                       )}
                     </Box>

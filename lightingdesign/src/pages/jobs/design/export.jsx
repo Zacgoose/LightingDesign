@@ -370,7 +370,7 @@ const Page = () => {
   const addFooterInfoBar = async (pdf, pageWidth, pageHeight, info) => {
     const bottomBarHeight = 50;
     const infoBarY = pageHeight - bottomBarHeight;
-    const margin = 10;
+    const margin = 5; // Reduced margin for less wasted space
     
     // Background for info bar
     pdf.setFillColor(248, 248, 248);
@@ -1537,7 +1537,7 @@ const Page = () => {
     const maxCols = 5;
     const maxRows = 4;
     const bottomBarHeight = 50; // Increased height for better spacing
-    const margin = 10;
+    const margin = 5; // Reduced margin for less wasted space
     const productAreaHeight = pageHeight - bottomBarHeight - margin * 2;
     
     // Calculate product grid dimensions
@@ -1555,7 +1555,7 @@ const Page = () => {
       const y = gridStartY + row * cellHeight;
       const product = itemsToShow[i];
       
-      const padding = 3;
+      const padding = 1.5; // Reduced padding to minimize wasted space
       const innerX = x + padding;
       const innerY = y + padding;
       const innerWidth = cellWidth - padding * 2;
@@ -1570,79 +1570,101 @@ const Page = () => {
       pdf.setLineWidth(0.5);
       pdf.roundedRect(innerX, innerY, innerWidth, innerHeight, 2, 2, "S");
       
-      // Reserve space for image at top (if available)
-      const imageHeight = cellHeight * 0.3;
-      let textStartY = innerY + imageHeight + 5;
+      // New layout: Left half = image + product name, Right half = placeholder vector + qty + SKU
+      const leftHalfWidth = innerWidth / 2;
+      const rightHalfWidth = innerWidth / 2;
+      const leftX = innerX + 2;
+      const rightX = innerX + leftHalfWidth + 2;
       
-      // Add product image if thumbnailUrl or thumbnailDataUrl exists
+      // LEFT HALF: Product image and name
       const imageToUse = product.thumbnailDataUrl || product.thumbnailUrl;
+      const imageHeight = innerHeight * 0.75; // Use 75% of cell height for image
+      const imageWidth = leftHalfWidth - 4;
+      
       if (imageToUse) {
-        const imgSize = Math.min(innerWidth * 0.6, imageHeight - 4);
-        const imgX = innerX + (innerWidth - imgSize) / 2;
-        const imgY = innerY + 4;
-        
         try {
           // Use the pre-fetched data URL if available, otherwise use original URL
-          pdf.addImage(imageToUse, 'JPEG', imgX, imgY, imgSize, imgSize);
+          pdf.addImage(imageToUse, 'JPEG', leftX, innerY + 2, imageWidth, imageHeight);
         } catch (error) {
           // If image loading fails, show placeholder
           console.warn('Failed to load product image:', error);
           pdf.setFillColor(240, 240, 240);
-          pdf.rect(imgX, imgY, imgSize, imgSize, "F");
+          pdf.rect(leftX, innerY + 2, imageWidth, imageHeight, "F");
           pdf.setDrawColor(200, 200, 200);
           pdf.setLineWidth(0.3);
-          pdf.rect(imgX, imgY, imgSize, imgSize, "S");
+          pdf.rect(leftX, innerY + 2, imageWidth, imageHeight, "S");
           pdf.setFontSize(5);
           pdf.setTextColor(150, 150, 150);
-          pdf.text("No Image", imgX + imgSize / 2, imgY + imgSize / 2, { align: "center" });
+          pdf.text("No Image", leftX + imageWidth / 2, innerY + 2 + imageHeight / 2, { align: "center" });
         }
+      } else {
+        // No image - show placeholder
+        pdf.setFillColor(240, 240, 240);
+        pdf.rect(leftX, innerY + 2, imageWidth, imageHeight, "F");
+        pdf.setDrawColor(200, 200, 200);
+        pdf.setLineWidth(0.3);
+        pdf.rect(leftX, innerY + 2, imageWidth, imageHeight, "S");
+        pdf.setFontSize(5);
+        pdf.setTextColor(150, 150, 150);
+        pdf.text("No Image", leftX + imageWidth / 2, innerY + 2 + imageHeight / 2, { align: "center" });
       }
       
-      // Draw product info with better spacing
-      const centerX = x + cellWidth / 2;
-      
-      // Product name (bold, larger)
-      pdf.setFontSize(8);
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(0, 0, 0);
-      const nameLines = pdf.splitTextToSize(product.name, innerWidth - 6);
-      pdf.text(nameLines.slice(0, 2), centerX, textStartY, {
-        align: "center",
-        maxWidth: innerWidth - 6,
-      });
-      
-      textStartY += nameLines.length > 1 ? 8 : 5;
-      
-      // SKU (smaller, gray)
-      pdf.setFontSize(6);
+      // Product name in smaller font at bottom of left half
+      const nameY = innerY + 2 + imageHeight + 3;
+      pdf.setFontSize(5);
       pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(100, 100, 100);
-      pdf.text(`SKU: ${product.sku}`, centerX, textStartY, {
+      pdf.setTextColor(0, 0, 0);
+      const nameLines = pdf.splitTextToSize(product.name, imageWidth);
+      pdf.text(nameLines.slice(0, 2), leftX + imageWidth / 2, nameY, {
         align: "center",
+        maxWidth: imageWidth,
       });
       
-      textStartY += 5;
+      // RIGHT HALF: Product placeholder vector object, qty, SKU
+      const rightStartY = innerY + 4;
       
-      // Quantity (medium, blue, bold)
-      pdf.setFontSize(9);
+      // Product placeholder vector (small shape icon based on product type)
+      const shapeSize = Math.min(rightHalfWidth - 8, innerHeight * 0.35);
+      const shapeX = rightX + (rightHalfWidth - shapeSize) / 2;
+      const shapeY = rightStartY;
+      
+      // Draw a simple product type icon/shape placeholder
+      pdf.setFillColor(230, 230, 250); // Light purple/blue background
+      pdf.setDrawColor(100, 100, 150);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(shapeX, shapeY, shapeSize, shapeSize, 1, 1, "FD");
+      
+      // Add product type text in the shape
+      pdf.setFontSize(4);
+      pdf.setTextColor(80, 80, 120);
+      pdf.setFont("helvetica", "normal");
+      const typeText = product.type || "Product";
+      pdf.text(typeText, shapeX + shapeSize / 2, shapeY + shapeSize / 2, { 
+        align: "center",
+        maxWidth: shapeSize - 2
+      });
+      
+      let infoY = shapeY + shapeSize + 6;
+      
+      // Quantity (bold, blue)
+      pdf.setFontSize(7);
       pdf.setTextColor(0, 100, 200);
       pdf.setFont("helvetica", "bold");
-      pdf.text(`Qty: ${product.quantity}`, centerX, textStartY, {
+      pdf.text(`Qty: ${product.quantity}`, rightX + rightHalfWidth / 2, infoY, {
         align: "center",
       });
       
-      textStartY += 6;
+      infoY += 5;
       
-      // Brand (small, italic, gray)
-      if (product.brand) {
-        pdf.setFontSize(6);
-        pdf.setTextColor(120, 120, 120);
-        pdf.setFont("helvetica", "italic");
-        const brandLines = pdf.splitTextToSize(product.brand, innerWidth - 6);
-        pdf.text(brandLines.slice(0, 1), centerX, textStartY, {
-          align: "center",
-        });
-      }
+      // SKU (smaller, gray)
+      pdf.setFontSize(5);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(100, 100, 100);
+      const skuLines = pdf.splitTextToSize(`SKU: ${product.sku}`, rightHalfWidth - 4);
+      pdf.text(skuLines.slice(0, 2), rightX + rightHalfWidth / 2, infoY, {
+        align: "center",
+        maxWidth: rightHalfWidth - 4,
+      });
       
       pdf.setTextColor(0, 0, 0); // Reset color
     }

@@ -56,7 +56,10 @@ export const ProductShape = memo(
           // Prevent dragging on middle mouse button
           if (e.evt.button === 1) {
             e.target.stopDrag();
-            return;
+            e.cancelBubble = true;
+            e.evt.preventDefault();
+            e.evt.stopPropagation();
+            return false;
           }
           if (onDragStart) {
             onDragStart(e);

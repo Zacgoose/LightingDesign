@@ -26,7 +26,9 @@ export const TextLayer = memo(
     
     // Determine if text boxes should listen to events
     const shouldListen = (selectedTool === "select" || selectedTool === "text") && !isMiddlePanning;
-    const shouldBeDraggable = draggable && !isMiddlePanning;
+    // Text boxes are only draggable when they are in the selection group (with transformer)
+    // Unselected text boxes are NOT draggable - they can only be selected by clicking
+    const shouldBeDraggable = false;
     
     return (
       <>

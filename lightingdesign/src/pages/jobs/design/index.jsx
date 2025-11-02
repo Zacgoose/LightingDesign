@@ -336,13 +336,22 @@ const Page = () => {
       setIsSaving(false);
       queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
 
-      // If we were waiting to navigate to export, do it now after save is complete
-      if (pendingExportNavigation) {
-        setPendingExportNavigation(false);
-        router.push(`/jobs/design/export?id=${id}`);
-      }
+      // Note: If pendingExportNavigation is true, we wait for the design data
+      // to reload before navigating (see separate effect below)
     }
-  }, [saveDesignMutation.isSuccess, queryClient, id, pendingExportNavigation, router]);
+  }, [saveDesignMutation.isSuccess, queryClient, id]);
+
+  // Handle navigation to export page after save completes and data reloads
+  useEffect(() => {
+    // Only navigate when:
+    // 1. We're pending export navigation
+    // 2. Save is complete (not pending)
+    // 3. Design data has finished loading (ensuring we have the latest saved data)
+    if (pendingExportNavigation && !saveDesignMutation.isPending && designData.isSuccess) {
+      setPendingExportNavigation(false);
+      router.push(`/jobs/design/export?id=${id}`);
+    }
+  }, [pendingExportNavigation, saveDesignMutation.isPending, designData.isSuccess, router, id]);
 
   // Handle save mutation end
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { Group, Shape, Circle, Line } from "react-konva";
 import { useState } from "react";
+import { calculateCableControlPoints } from "/src/utils/cableUtils";
 
 export const ConnectorLine = ({
   connector,
@@ -14,26 +15,12 @@ export const ConnectorLine = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
-  // Initialize 3 control points for cubic Bézier curve
-  // Control points positioned to create a natural curve
-  // Calculate distance to adjust curve depth for smoother, more natural curves
-  const distance = Math.sqrt(
-    Math.pow(toProduct.x - fromProduct.x, 2) + Math.pow(toProduct.y - fromProduct.y, 2)
-  );
-  // Scale curve depth based on distance for smoother curves when products are far apart
-  // Use a logarithmic scale to prevent excessive curve depth at large distances
-  const curveDepth = Math.min(80, 30 + Math.log(distance + 1) * 15);
-  
-  const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25;
-  const defaultControl1Y = Math.min(fromProduct.y, toProduct.y) - curveDepth * 0.75;
-  const defaultControl2X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.5;
-  const defaultControl2Y = Math.min(fromProduct.y, toProduct.y) - curveDepth;
-  const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75;
-  const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - curveDepth * 0.75;
+  // Initialize 3 control points for cubic Bézier curve using shared utility
+  const defaultControlPoints = calculateCableControlPoints(fromProduct, toProduct);
 
-  const control1 = connector.control1 ?? { x: defaultControl1X, y: defaultControl1Y };
-  const control2 = connector.control2 ?? { x: defaultControl2X, y: defaultControl2Y };
-  const control3 = connector.control3 ?? { x: defaultControl3X, y: defaultControl3Y };
+  const control1 = connector.control1 ?? defaultControlPoints.control1;
+  const control2 = connector.control2 ?? defaultControlPoints.control2;
+  const control3 = connector.control3 ?? defaultControlPoints.control3;
 
   // Handle control point drag
   const handleControlDrag = (controlName, e) => {

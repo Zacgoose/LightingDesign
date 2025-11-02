@@ -29,6 +29,7 @@ import { Stage, Layer } from "react-konva";
 import "svg2pdf.js";
 import productTypesConfig from "/src/data/productTypes.json";
 import { getShapeFunction } from "/src/components/designer/productShapes";
+import { calculateCableControlPoints } from "/src/utils/cableUtils";
 
 // Paper size definitions (dimensions in mm)
 const PAPER_SIZES = [
@@ -911,25 +912,12 @@ const Page = () => {
         const fromProduct = exportProducts.find((p) => p.id === connector.from);
         const toProduct = exportProducts.find((p) => p.id === connector.to);
         if (fromProduct && toProduct) {
-          // Compute default control points (same heuristic as ConnectorLine)
-          // Calculate distance to adjust curve depth for smoother, more natural curves
-          const distance = Math.sqrt(
-            Math.pow(toProduct.x - fromProduct.x, 2) + Math.pow(toProduct.y - fromProduct.y, 2)
-          );
-          // Scale curve depth based on distance for smoother curves when products are far apart
-          // Use a logarithmic scale to prevent excessive curve depth at large distances
-          const curveDepth = Math.min(80, 30 + Math.log(distance + 1) * 15);
-          
-          const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25;
-          const defaultControl1Y = Math.min(fromProduct.y, toProduct.y) - curveDepth * 0.75;
-          const defaultControl2X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.5;
-          const defaultControl2Y = Math.min(fromProduct.y, toProduct.y) - curveDepth;
-          const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75;
-          const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - curveDepth * 0.75;
+          // Compute default control points using shared utility (same as ConnectorLine)
+          const defaultControlPoints = calculateCableControlPoints(fromProduct, toProduct);
 
-          const c1 = connector.control1 || { x: defaultControl1X, y: defaultControl1Y };
-          const c2 = connector.control2 || { x: defaultControl2X, y: defaultControl2Y };
-          const c3 = connector.control3 || { x: defaultControl3X, y: defaultControl3Y };
+          const c1 = connector.control1 || defaultControlPoints.control1;
+          const c2 = connector.control2 || defaultControlPoints.control2;
+          const c3 = connector.control3 || defaultControlPoints.control3;
 
           // Use midpoints between control points to approximate a smooth multi-point path
           const midX = (c1.x + c2.x) / 2;

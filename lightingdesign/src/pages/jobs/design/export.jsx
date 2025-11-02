@@ -1384,9 +1384,8 @@ const Page = () => {
       // Create an image element
       const img = new Image();
       
-      // Set crossOrigin to anonymous to avoid CORS issues
-      // This works when the server doesn't send Origin header
-      img.crossOrigin = 'anonymous';
+      // Try loading without crossOrigin first - this sometimes works
+      // Don't set crossOrigin unless needed as it triggers stricter CORS checks
       
       // Load the image
       await new Promise((resolve, reject) => {
@@ -1400,10 +1399,33 @@ const Page = () => {
       canvas.width = img.width;
       canvas.height = img.height;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
       
-      // Convert to data URL
-      return canvas.toDataURL('image/jpeg', 0.9);
+      try {
+        ctx.drawImage(img, 0, 0);
+        // Convert to data URL
+        return canvas.toDataURL('image/jpeg', 0.9);
+      } catch (canvasError) {
+        // If canvas drawing fails due to CORS, the image was tainted
+        // Try again with crossOrigin='anonymous'
+        console.log('Retrying with crossOrigin=anonymous for:', url);
+        
+        const img2 = new Image();
+        img2.crossOrigin = 'anonymous';
+        
+        await new Promise((resolve, reject) => {
+          img2.onload = resolve;
+          img2.onerror = reject;
+          img2.src = url;
+        });
+        
+        const canvas2 = document.createElement('canvas');
+        canvas2.width = img2.width;
+        canvas2.height = img2.height;
+        const ctx2 = canvas2.getContext('2d');
+        ctx2.drawImage(img2, 0, 0);
+        
+        return canvas2.toDataURL('image/jpeg', 0.9);
+      }
     } catch (error) {
       console.warn('Failed to convert image URL to data URL:', url, error);
       return null;

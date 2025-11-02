@@ -1489,11 +1489,45 @@ const Page = () => {
       ? (jobInfo.builder.label || jobInfo.builder.value || "N/A")
       : (jobInfo.builder || "N/A");
     
+    // Calculate letter/number prefix for each product (matching canvas export logic)
+    const getProductLetterPrefix = (product, allProducts) => {
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      const letterPrefix = config.letterPrefix || "O";
+
+      // Normalize SKU: trim whitespace and handle empty strings as null
+      const sku = product.sku?.trim();
+      if (!sku || sku === "") {
+        return letterPrefix; // No SKU, just return letter without number
+      }
+
+      // Find all unique SKUs for this product type, sorted to ensure consistent ordering
+      const sameTypeProducts = allProducts.filter(
+        (p) => (p.product_type?.toLowerCase() || "default") === productType,
+      );
+
+      // Get unique SKUs, filtering out null/undefined/empty, then sort
+      const uniqueSkus = [
+        ...new Set(sameTypeProducts.map((p) => p.sku?.trim()).filter((s) => s && s !== "")),
+      ].sort();
+
+      // Find the index of this product's SKU among unique SKUs of this type
+      const skuIndex = uniqueSkus.indexOf(sku);
+
+      // If SKU not found (shouldn't happen), return just the letter
+      if (skuIndex === -1) {
+        return letterPrefix;
+      }
+
+      return `${letterPrefix}${skuIndex + 1}`;
+    };
+    
     // Group products by SKU for the grid
     const productMap = new Map();
     allProducts.forEach((product) => {
       const sku = product.sku || "N/A";
       if (!productMap.has(sku)) {
+        const letterNumber = getProductLetterPrefix(product, allProducts);
         productMap.set(sku, {
           sku,
           name: product.name || "Unnamed Product",
@@ -1501,6 +1535,7 @@ const Page = () => {
           type: product.product_type || "",
           quantity: 0,
           thumbnailUrl: product.thumbnailUrl || null, // Product image URL
+          letterNumber, // Store the letter/number prefix
         });
       }
       const entry = productMap.get(sku);
@@ -1570,15 +1605,19 @@ const Page = () => {
       pdf.setLineWidth(0.5);
       pdf.roundedRect(innerX, innerY, innerWidth, innerHeight, 2, 2, "S");
       
-      // New layout: Left half = image + product name, Right half = placeholder vector + qty + SKU
+      // New layout: Left half = image, Right half = vector shape + qty + SKU, Product name at bottom of entire cell
       const leftHalfWidth = innerWidth / 2;
       const rightHalfWidth = innerWidth / 2;
       const leftX = innerX + 2;
       const rightX = innerX + leftHalfWidth + 2;
       
-      // LEFT HALF: Product image and name
+      // Reserve space for product name at bottom
+      const nameHeight = 8; // Reserve space for 2 lines of small text
+      const contentHeight = innerHeight - nameHeight - 2; // Content area above name
+      
+      // LEFT HALF: Product image
       const imageToUse = product.thumbnailDataUrl || product.thumbnailUrl;
-      const imageHeight = innerHeight * 0.75; // Use 75% of cell height for image
+      const imageHeight = contentHeight - 4; // Use most of content area for image
       const imageWidth = leftHalfWidth - 4;
       
       if (imageToUse) {
@@ -1609,48 +1648,89 @@ const Page = () => {
         pdf.text("No Image", leftX + imageWidth / 2, innerY + 2 + imageHeight / 2, { align: "center" });
       }
       
-      // Product name in smaller font at bottom of left half
-      const nameY = innerY + 2 + imageHeight + 3;
-      pdf.setFontSize(5);
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(0, 0, 0);
-      const nameLines = pdf.splitTextToSize(product.name, imageWidth);
-      pdf.text(nameLines.slice(0, 2), leftX + imageWidth / 2, nameY, {
-        align: "center",
-        maxWidth: imageWidth,
-      });
-      
-      // RIGHT HALF: Product placeholder vector object, qty, SKU
+      // RIGHT HALF: Product vector shape with letter/number prefix, qty, SKU
       const rightStartY = innerY + 4;
       
-      // Product placeholder vector (small shape icon based on product type)
-      const shapeSize = Math.min(rightHalfWidth - 8, innerHeight * 0.35);
-      const shapeX = rightX + (rightHalfWidth - shapeSize) / 2;
-      const shapeY = rightStartY;
+      // Draw vector shape based on product type (similar to canvas export)
+      const shapeSize = Math.min(rightHalfWidth - 8, contentHeight * 0.5);
+      const shapeCenterX = rightX + rightHalfWidth / 2;
+      const shapeCenterY = rightStartY + shapeSize / 2;
       
-      // Draw a simple product type icon/shape placeholder
-      pdf.setFillColor(230, 230, 250); // Light purple/blue background
-      pdf.setDrawColor(100, 100, 150);
-      pdf.setLineWidth(0.5);
-      pdf.roundedRect(shapeX, shapeY, shapeSize, shapeSize, 1, 1, "FD");
+      // Get the product type and shape drawing function
+      const productType = product.type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      const shapeFunction = getShapeFunction(config.shape || "circle");
       
-      // Add product type text in the shape
-      pdf.setFontSize(4);
-      pdf.setTextColor(80, 80, 120);
-      pdf.setFont("helvetica", "normal");
-      const typeText = product.type || "Product";
-      pdf.text(typeText, shapeX + shapeSize / 2, shapeY + shapeSize / 2, { 
-        align: "center",
-        maxWidth: shapeSize - 2
-      });
+      // Calculate letter/number prefix for this product (matching canvas export)
+      const letterPrefix = config.letterPrefix || "O";
+      // Find this product in allProducts to get proper numbering
+      const matchingProducts = allProducts.filter(p => 
+        (p.product_type?.toLowerCase() || "default") === productType && p.sku === product.sku
+      );
+      const firstProduct = matchingProducts[0];
+      const letterNumber = firstProduct?.letterNumber || `${letterPrefix}1`;
       
-      let infoY = shapeY + shapeSize + 6;
+      // Create a minimal canvas to render the shape using the shape function
+      const tempCanvas = document.createElement('canvas');
+      const shapeScale = shapeSize / 60; // Scale to fit in the small space
+      tempCanvas.width = shapeSize * 2; // Extra space for rendering
+      tempCanvas.height = shapeSize * 2;
+      const ctx = tempCanvas.getContext('2d');
+      
+      // Translate to center and scale
+      ctx.translate(shapeSize, shapeSize);
+      ctx.scale(shapeScale, shapeScale);
+      
+      // Create a mock Konva shape object with required methods
+      const mockShape = {
+        width: () => config.realWorldSize || config.realWorldWidth || 50,
+        height: () => config.realWorldHeight || 50,
+        getAttr: (attr) => {
+          if (attr === 'stroke') return '#000000';
+          if (attr === 'strokeWidth') return 2;
+          if (attr === 'scaleFactor') return 1;
+          if (attr === 'realWorldSize') return config.realWorldSize;
+          return undefined;
+        },
+      };
+      
+      // Implement fillStrokeShape for the mock shape
+      ctx.fillStrokeShape = (shape) => {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.fill();
+        ctx.stroke();
+      };
+      
+      // Call the shape function to draw
+      try {
+        shapeFunction(ctx, mockShape);
+        
+        // Convert canvas to data URL and add to PDF
+        const shapeDataUrl = tempCanvas.toDataURL('image/png');
+        pdf.addImage(shapeDataUrl, 'PNG', shapeCenterX - shapeSize / 2, shapeCenterY - shapeSize / 2, shapeSize, shapeSize);
+      } catch (error) {
+        console.warn('Failed to render product shape:', error);
+        // Fallback to simple circle
+        pdf.setDrawColor(0, 0, 0);
+        pdf.setLineWidth(0.5);
+        pdf.circle(shapeCenterX, shapeCenterY, shapeSize / 2, 'S');
+      }
+      
+      // Add letter/number prefix over the shape
+      pdf.setFontSize(6);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(letterNumber, shapeCenterX, shapeCenterY + 1, { align: "center" });
+      
+      let infoY = shapeCenterY + shapeSize / 2 + 6;
       
       // Quantity (bold, blue)
       pdf.setFontSize(7);
       pdf.setTextColor(0, 100, 200);
       pdf.setFont("helvetica", "bold");
-      pdf.text(`Qty: ${product.quantity}`, rightX + rightHalfWidth / 2, infoY, {
+      pdf.text(`Qty: ${product.quantity}`, shapeCenterX, infoY, {
         align: "center",
       });
       
@@ -1661,9 +1741,20 @@ const Page = () => {
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(100, 100, 100);
       const skuLines = pdf.splitTextToSize(`SKU: ${product.sku}`, rightHalfWidth - 4);
-      pdf.text(skuLines.slice(0, 2), rightX + rightHalfWidth / 2, infoY, {
+      pdf.text(skuLines.slice(0, 2), shapeCenterX, infoY, {
         align: "center",
         maxWidth: rightHalfWidth - 4,
+      });
+      
+      // Product name at the bottom of entire cell (spanning full width)
+      const nameY = innerY + contentHeight + 3;
+      pdf.setFontSize(5);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(0, 0, 0);
+      const nameLines = pdf.splitTextToSize(product.name, innerWidth - 4);
+      pdf.text(nameLines.slice(0, 2), innerX + innerWidth / 2, nameY, {
+        align: "center",
+        maxWidth: innerWidth - 4,
       });
       
       pdf.setTextColor(0, 0, 0); // Reset color

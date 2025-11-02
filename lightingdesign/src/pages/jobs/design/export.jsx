@@ -273,8 +273,8 @@ const Page = () => {
         setExportStatus(`Rendering ${floorName}...`);
         setExportProgress(20 + (i / pagesToRender.length) * 50);
 
-        // Add title block
-        await addTitleBlock(pdf, pageWidth, pageHeight, {
+        // Add footer info bar (replacing old title block)
+        await addFooterInfoBar(pdf, pageWidth, pageHeight, {
           jobNumber,
           customerName,
           address: jobAddress,
@@ -284,10 +284,10 @@ const Page = () => {
           date: new Date().toLocaleDateString(),
         });
 
-        // Define drawing area (below title block)
-        const titleBlockHeight = 40;
-        const drawingAreaY = titleBlockHeight + 5;
-        const drawingAreaHeight = pageHeight - titleBlockHeight - 10;
+        // Define drawing area (with footer at bottom instead of header at top)
+        const footerHeight = 50;
+        const drawingAreaY = 10; // Start from top
+        const drawingAreaHeight = pageHeight - footerHeight - 15;
         const drawingAreaWidth = pageWidth - 20;
 
         // Render canvas to PDF
@@ -363,42 +363,112 @@ const Page = () => {
     designData.data,
   ]);
 
-  // Helper function to add title block
-  const addTitleBlock = async (pdf, pageWidth, pageHeight, info) => {
-    const titleBlockHeight = 40;
-
-    // Background for title block
-    pdf.setFillColor(240, 240, 240);
-    pdf.rect(0, 0, pageWidth, titleBlockHeight, "F");
-
-    // Border
-    pdf.setDrawColor(100, 100, 100);
+  // Helper function to add footer info bar (replacing old title block)
+  const addFooterInfoBar = async (pdf, pageWidth, pageHeight, info) => {
+    const bottomBarHeight = 50;
+    const infoBarY = pageHeight - bottomBarHeight;
+    const margin = 10;
+    
+    // Background for info bar
+    pdf.setFillColor(248, 248, 248);
+    pdf.rect(0, infoBarY, pageWidth, bottomBarHeight, "F");
+    
+    // Top border line (stronger)
+    pdf.setDrawColor(150, 150, 150);
+    pdf.setLineWidth(0.8);
+    pdf.line(0, infoBarY, pageWidth, infoBarY);
+    
+    // Logo section on the left (placeholder with instructions)
+    const logoWidth = 50;
+    const logoX = margin;
+    const logoY = infoBarY + 8;
+    
+    // Draw logo placeholder boxes
+    pdf.setDrawColor(200, 200, 200);
     pdf.setLineWidth(0.5);
-    pdf.rect(0, 0, pageWidth, titleBlockHeight);
-
-    // Title
-    pdf.setFontSize(18);
+    
+    // Logo 1 (top)
+    pdf.setFillColor(250, 250, 250);
+    pdf.roundedRect(logoX, logoY, logoWidth - 4, 18, 2, 2, "FD");
+    pdf.setFontSize(6);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text("Logo 1", logoX + (logoWidth - 4) / 2, logoY + 9, { align: "center" });
+    
+    // Logo 2 (bottom)
+    pdf.roundedRect(logoX, logoY + 20, logoWidth - 4, 18, 2, 2, "FD");
+    pdf.text("Logo 2", logoX + (logoWidth - 4) / 2, logoY + 29, { align: "center" });
+    
+    // Info rows (to the right of logos)
+    let infoX = logoX + logoWidth + 10;
+    const infoY = infoBarY + 10;
+    const labelSpacing = 55;
+    
+    pdf.setFontSize(7);
+    pdf.setTextColor(0, 0, 0);
+    
+    // First row of info
     pdf.setFont("helvetica", "bold");
-    pdf.text("Lighting Design Export", 10, 12);
-
-    // Job information
-    pdf.setFontSize(10);
+    pdf.text("Job #:", infoX, infoY);
     pdf.setFont("helvetica", "normal");
-
-    let yPos = 20;
-    pdf.text(`Job: ${info.jobNumber}`, 10, yPos);
-    yPos += 5;
-    pdf.text(`Customer: ${info.customerName}`, 10, yPos);
-    yPos += 5;
-    pdf.text(`Address: ${info.address}`, 10, yPos);
-
-    // Right side info
-    yPos = 20;
-    pdf.text(`Floor: ${info.floorName}`, pageWidth - 70, yPos);
-    yPos += 5;
-    pdf.text(`Page: ${info.pageNumber} of ${info.totalPages}`, pageWidth - 70, yPos);
-    yPos += 5;
-    pdf.text(`Date: ${info.date}`, pageWidth - 70, yPos);
+    pdf.text(info.jobNumber, infoX, infoY + 4);
+    
+    infoX += labelSpacing;
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Client:", infoX, infoY);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(info.customerName, infoX, infoY + 4);
+    
+    infoX += labelSpacing;
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Floor:", infoX, infoY);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(info.floorName, infoX, infoY + 4);
+    
+    // Second row of info
+    infoX = logoX + logoWidth + 10;
+    const info2Y = infoY + 13;
+    
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Page:", infoX, info2Y);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(`${info.pageNumber} of ${info.totalPages}`, infoX, info2Y + 4);
+    
+    infoX += labelSpacing;
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Date:", infoX, info2Y);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(info.date, infoX, info2Y + 4);
+    
+    // Company details section (right side)
+    const companyX = pageWidth - margin - 65;
+    pdf.setFontSize(6);
+    
+    // Store section with box
+    pdf.setDrawColor(220, 220, 220);
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(companyX, infoBarY + 6, 60, 18, 1, 1, "FD");
+    
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(80, 80, 80);
+    pdf.text("Store:", companyX + 2, infoBarY + 10);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(100, 100, 100);
+    const storeText = pdf.splitTextToSize(info.address || "Store Address", 56);
+    pdf.text(storeText.slice(0, 2), companyX + 2, infoBarY + 13);
+    
+    // Head Office section with box
+    pdf.setDrawColor(220, 220, 220);
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(companyX, infoBarY + 26, 60, 18, 1, 1, "FD");
+    
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(80, 80, 80);
+    pdf.text("Head Office:", companyX + 2, infoBarY + 30);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(100, 100, 100);
+    pdf.text("Head Office Address", companyX + 2, infoBarY + 33);
+    
+    pdf.setTextColor(0, 0, 0); // Reset color
   };
 
   // Helper function to render canvas to PDF using SVG
@@ -1370,22 +1440,42 @@ const Page = () => {
       const imageHeight = cellHeight * 0.3;
       let textStartY = innerY + imageHeight + 5;
       
-      // TODO: Add product image support
-      // For now, draw a placeholder box if thumbnail exists
+      // Add product image if thumbnail exists
       if (product.thumbnail) {
         const imgSize = Math.min(innerWidth * 0.6, imageHeight - 4);
         const imgX = innerX + (innerWidth - imgSize) / 2;
         const imgY = innerY + 4;
         
-        // Draw placeholder for image (light gray box)
-        pdf.setFillColor(240, 240, 240);
-        pdf.rect(imgX, imgY, imgSize, imgSize, "F");
-        pdf.setDrawColor(200, 200, 200);
-        pdf.setLineWidth(0.3);
-        pdf.rect(imgX, imgY, imgSize, imgSize, "S");
-        
-        // Note: To add actual images, use:
-        // pdf.addImage(product.thumbnail, 'JPEG', imgX, imgY, imgSize, imgSize);
+        try {
+          // Try to add the image directly if it's a data URL or valid path
+          // jsPDF supports data URLs and base64 encoded images
+          if (product.thumbnail.startsWith('data:image/')) {
+            // Data URL - can add directly
+            pdf.addImage(product.thumbnail, 'JPEG', imgX, imgY, imgSize, imgSize);
+          } else if (product.thumbnail.startsWith('http://') || product.thumbnail.startsWith('https://')) {
+            // For HTTP URLs, we need to fetch and convert to data URL
+            // For now, show placeholder as cross-origin requests may fail
+            pdf.setFillColor(240, 240, 240);
+            pdf.rect(imgX, imgY, imgSize, imgSize, "F");
+            pdf.setDrawColor(200, 200, 200);
+            pdf.setLineWidth(0.3);
+            pdf.rect(imgX, imgY, imgSize, imgSize, "S");
+            pdf.setFontSize(5);
+            pdf.setTextColor(150, 150, 150);
+            pdf.text("Image", imgX + imgSize / 2, imgY + imgSize / 2, { align: "center" });
+          } else {
+            // Assume it's a base64 string or local path
+            pdf.addImage(product.thumbnail, 'JPEG', imgX, imgY, imgSize, imgSize);
+          }
+        } catch (error) {
+          // If image loading fails, show placeholder
+          console.warn('Failed to load product image:', error);
+          pdf.setFillColor(240, 240, 240);
+          pdf.rect(imgX, imgY, imgSize, imgSize, "F");
+          pdf.setDrawColor(200, 200, 200);
+          pdf.setLineWidth(0.3);
+          pdf.rect(imgX, imgY, imgSize, imgSize, "S");
+        }
       }
       
       // Draw product info with better spacing

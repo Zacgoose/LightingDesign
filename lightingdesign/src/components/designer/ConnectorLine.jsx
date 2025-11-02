@@ -1,5 +1,5 @@
 import { Group, Shape, Circle, Line } from "react-konva";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export const ConnectorLine = ({
   connector,
@@ -13,19 +13,26 @@ export const ConnectorLine = ({
   selectedTool,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const control1Ref = useRef(null);
+  const control3Ref = useRef(null);
+  const shapeRef = useRef(null);
 
   // Initialize 3 control points for cubic Bézier curve
   // Control points positioned to create a natural curve
   const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25;
   const defaultControl1Y = Math.min(fromProduct.y, toProduct.y) - 60;
-  const defaultControl2X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.5;
-  const defaultControl2Y = Math.min(fromProduct.y, toProduct.y) - 80;
   const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75;
   const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - 60;
 
   const control1 = connector.control1 ?? { x: defaultControl1X, y: defaultControl1Y };
-  const control2 = connector.control2 ?? { x: defaultControl2X, y: defaultControl2Y };
   const control3 = connector.control3 ?? { x: defaultControl3X, y: defaultControl3Y };
+  
+  // Control2 (center point) is always positioned in a straight line between control1 and control3
+  // Not user-adjustable - ensures smooth flow from one end to the other
+  const control2 = {
+    x: (control1.x + control3.x) / 2,
+    y: (control1.y + control3.y) / 2,
+  };
 
   // Handle control point drag
   const handleControlDrag = (controlName, e) => {
@@ -45,19 +52,31 @@ export const ConnectorLine = ({
     <Group>
       {/* The curved line using cubic Bézier with 3 control points */}
       <Shape
+        ref={shapeRef}
         id={connector.id}
         sceneFunc={(ctx, shape) => {
           ctx.beginPath();
           ctx.moveTo(fromProduct.x, fromProduct.y);
+          
+          // Get current control point positions (may be mid-drag)
+          const c1 = control1Ref.current ? { x: control1Ref.current.x(), y: control1Ref.current.y() } : control1;
+          const c3 = control3Ref.current ? { x: control3Ref.current.x(), y: control3Ref.current.y() } : control3;
+          
+          // Control2 (center point) is always positioned in a straight line between control1 and control3
+          const c2 = {
+            x: (c1.x + c3.x) / 2,
+            y: (c1.y + c3.y) / 2,
+          };
+          
           // Draw smooth curve through 3 control points
           // Use two cubic Bézier curves to pass through all 3 control points
-          const midX = (control1.x + control2.x) / 2;
-          const midY = (control1.y + control2.y) / 2;
-          const mid2X = (control2.x + control3.x) / 2;
-          const mid2Y = (control2.y + control3.y) / 2;
+          const midX = (c1.x + c2.x) / 2;
+          const midY = (c1.y + c2.y) / 2;
+          const mid2X = (c2.x + c3.x) / 2;
+          const mid2Y = (c2.y + c3.y) / 2;
 
-          ctx.bezierCurveTo(control1.x, control1.y, midX, midY, control2.x, control2.y);
-          ctx.bezierCurveTo(mid2X, mid2Y, control3.x, control3.y, toProduct.x, toProduct.y);
+          ctx.bezierCurveTo(c1.x, c1.y, midX, midY, c2.x, c2.y);
+          ctx.bezierCurveTo(mid2X, mid2Y, c3.x, c3.y, toProduct.x, toProduct.y);
           ctx.fillStrokeShape(shape);
         }}
         stroke={
@@ -66,6 +85,7 @@ export const ConnectorLine = ({
         }
         strokeWidth={isSelected ? 6 : 4}
         lineCap="round"
+        dash={[20, 10]} // Dashed line pattern: 20px dash, 10px gap (more spacing)
         hitStrokeWidth={20} // Makes it easier to click
         listening={selectedTool === "select" || selectedTool === "connect"} // Only listen when interaction is needed
         onClick={handleLineClick}
@@ -106,51 +126,49 @@ export const ConnectorLine = ({
             listening={false}
           />
 
-          {/* Draggable control points */}
+          {/* Draggable control points (only outer two) */}
           <Circle
+            ref={control1Ref}
             x={control1.x}
             y={control1.y}
-            radius={7}
+            radius={10}
             fill={theme.palette.info.main}
             stroke={theme.palette.background.paper}
             strokeWidth={2}
             draggable
             onDragStart={() => setIsDragging(true)}
+            onDragMove={() => {
+              // Redraw the curve during drag without updating state
+              if (shapeRef.current) {
+                shapeRef.current.getLayer()?.batchDraw();
+              }
+            }}
             onDragEnd={(e) => {
               setIsDragging(false);
               handleControlDrag("control1", e);
             }}
-            onDragMove={(e) => handleControlDrag("control1", e)}
           />
+          {/* Center control point (control2) is not visible or draggable - auto-positioned */}
           <Circle
-            x={control2.x}
-            y={control2.y}
-            radius={8}
-            fill={theme.palette.secondary.main}
-            stroke={theme.palette.background.paper}
-            strokeWidth={2}
-            draggable
-            onDragStart={() => setIsDragging(true)}
-            onDragEnd={(e) => {
-              setIsDragging(false);
-              handleControlDrag("control2", e);
-            }}
-            onDragMove={(e) => handleControlDrag("control2", e)}
-          />
-          <Circle
+            ref={control3Ref}
             x={control3.x}
             y={control3.y}
-            radius={7}
+            radius={10}
             fill={theme.palette.info.main}
             stroke={theme.palette.background.paper}
             strokeWidth={2}
             draggable
             onDragStart={() => setIsDragging(true)}
+            onDragMove={() => {
+              // Redraw the curve during drag without updating state
+              if (shapeRef.current) {
+                shapeRef.current.getLayer()?.batchDraw();
+              }
+            }}
             onDragEnd={(e) => {
               setIsDragging(false);
               handleControlDrag("control3", e);
             }}
-            onDragMove={(e) => handleControlDrag("control3", e)}
           />
 
           {/* Start point indicator */}

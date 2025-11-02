@@ -914,14 +914,17 @@ const Page = () => {
           // Compute default control points (same heuristic as ConnectorLine)
           const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25;
           const defaultControl1Y = Math.min(fromProduct.y, toProduct.y) - 60;
-          const defaultControl2X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.5;
-          const defaultControl2Y = Math.min(fromProduct.y, toProduct.y) - 80;
           const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75;
           const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - 60;
 
           const c1 = connector.control1 || { x: defaultControl1X, y: defaultControl1Y };
-          const c2 = connector.control2 || { x: defaultControl2X, y: defaultControl2Y };
           const c3 = connector.control3 || { x: defaultControl3X, y: defaultControl3Y };
+          
+          // Control2 (center point) is always positioned in a straight line between control1 and control3
+          const c2 = {
+            x: (c1.x + c3.x) / 2,
+            y: (c1.y + c3.y) / 2,
+          };
 
           // Use midpoints between control points to approximate a smooth multi-point path
           const midX = (c1.x + c2.x) / 2;
@@ -938,6 +941,7 @@ const Page = () => {
           pathEl.setAttribute("stroke-width", "4");
           pathEl.setAttribute("stroke-linecap", "round");
           pathEl.setAttribute("stroke-linejoin", "round");
+          pathEl.setAttribute("stroke-dasharray", "20 10"); // Dashed line pattern: 20px dash, 10px gap
           svgElement.appendChild(pathEl);
           connectorCount++;
         }

@@ -11,28 +11,20 @@ Function Invoke-ExecProxyBeaconImages {
     param($Request, $TriggerMetadata)
 
     try {
-        # Get the list of image URLs from the request query parameters
-        # URLs should be passed as comma-separated or as multiple url parameters
-        $ImageUrls = @()
+        # Get the list of image URLs from the request
+        # Check both Query and Body (Azure Functions pattern)
+        $urls = $Request.Query.urls ?? $Request.Body.urls
         
-        if ($Request.Query.urls) {
-            # If urls parameter exists, split by comma
-            $ImageUrls = $Request.Query.urls -split ','
-        } elseif ($Request.Query.url) {
-            # Support single url parameter
-            $ImageUrls = @($Request.Query.url)
-        } elseif ($Request.Body.urls) {
-            # Also support body if sent via POST
-            $ImageUrls = $Request.Body.urls
-        }
-        
-        if ($ImageUrls.Count -eq 0) {
-            throw "No image URLs provided. Please provide URLs in the query string (e.g., ?urls=url1,url2 or ?url=url1&url=url2)"
+        if (-not $urls) {
+            throw "No image URLs provided. Please provide 'urls' parameter with array of URLs."
         }
 
         # Ensure it's an array
-        if ($ImageUrls -isnot [array]) {
-            $ImageUrls = @($ImageUrls)
+        $ImageUrls = @()
+        if ($urls -is [array]) {
+            $ImageUrls = $urls
+        } else {
+            $ImageUrls = @($urls)
         }
 
         $Results = [System.Collections.Generic.List[object]]::new()

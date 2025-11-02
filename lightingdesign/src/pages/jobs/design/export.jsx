@@ -1386,13 +1386,11 @@ const Page = () => {
         return [];
       }
 
-      // Join URLs with comma for the API call
-      const urlsParam = imageUrls.join(',');
-
-      // Call the proxy endpoint using axios with URLs as query parameter
+      // Call the proxy endpoint using axios.get with data in params
+      // This matches the ApiGetCall pattern where data is passed as params
       const response = await axios.get('/api/ExecProxyBeaconImages', {
         params: {
-          urls: urlsParam,
+          urls: imageUrls, // Send as array - Azure Functions will handle it
         },
         headers: {
           'Content-Type': 'application/json',

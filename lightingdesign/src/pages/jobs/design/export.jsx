@@ -912,12 +912,20 @@ const Page = () => {
         const toProduct = exportProducts.find((p) => p.id === connector.to);
         if (fromProduct && toProduct) {
           // Compute default control points (same heuristic as ConnectorLine)
+          // Calculate distance to adjust curve depth for smoother, more natural curves
+          const distance = Math.sqrt(
+            Math.pow(toProduct.x - fromProduct.x, 2) + Math.pow(toProduct.y - fromProduct.y, 2)
+          );
+          // Scale curve depth based on distance for smoother curves when products are far apart
+          // Use a logarithmic scale to prevent excessive curve depth at large distances
+          const curveDepth = Math.min(80, 30 + Math.log(distance + 1) * 15);
+          
           const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25;
-          const defaultControl1Y = Math.min(fromProduct.y, toProduct.y) - 60;
+          const defaultControl1Y = Math.min(fromProduct.y, toProduct.y) - curveDepth * 0.75;
           const defaultControl2X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.5;
-          const defaultControl2Y = Math.min(fromProduct.y, toProduct.y) - 80;
+          const defaultControl2Y = Math.min(fromProduct.y, toProduct.y) - curveDepth;
           const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75;
-          const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - 60;
+          const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - curveDepth * 0.75;
 
           const c1 = connector.control1 || { x: defaultControl1X, y: defaultControl1Y };
           const c2 = connector.control2 || { x: defaultControl2X, y: defaultControl2Y };
@@ -938,6 +946,7 @@ const Page = () => {
           pathEl.setAttribute("stroke-width", "4");
           pathEl.setAttribute("stroke-linecap", "round");
           pathEl.setAttribute("stroke-linejoin", "round");
+          pathEl.setAttribute("stroke-dasharray", "10 5"); // Dashed line pattern: 10px dash, 5px gap
           svgElement.appendChild(pathEl);
           connectorCount++;
         }

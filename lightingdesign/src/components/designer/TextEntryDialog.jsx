@@ -28,13 +28,13 @@ import { useEffect, useState } from "react";
 /**
  * Multi-line text entry dialog for text boxes with rich text formatting
  */
-export const TextEntryDialog = ({ 
-  open, 
-  onClose, 
-  onConfirm, 
-  title = "Enter Text", 
+export const TextEntryDialog = ({
+  open,
+  onClose,
+  onConfirm,
+  title = "Enter Text",
   defaultValue = "",
-  defaultFormatting = {}
+  defaultFormatting = {},
 }) => {
   const form = useForm({
     mode: "onChange",
@@ -148,7 +148,7 @@ export const TextEntryDialog = ({
               onKeyDown={handleKeyDown}
             />
           </Box>
-          
+
           {/* Formatting Controls */}
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
             {/* Font Size */}
@@ -183,7 +183,7 @@ export const TextEntryDialog = ({
                 <MenuItem value="custom">Custom...</MenuItem>
               </Select>
             </FormControl>
-            
+
             {/* Custom Font Size Input */}
             {showCustomSize && (
               <TextField
@@ -196,7 +196,7 @@ export const TextEntryDialog = ({
                 inputProps={{ min: 1, max: 500 }}
               />
             )}
-            
+
             {/* Font Family */}
             <FormControl size="small" sx={{ minWidth: 120 }}>
               <InputLabel>Font</InputLabel>
@@ -213,7 +213,7 @@ export const TextEntryDialog = ({
                 <MenuItem value="Comic Sans MS">Comic Sans MS</MenuItem>
               </Select>
             </FormControl>
-            
+
             {/* Text Formatting */}
             <ToggleButtonGroup
               size="small"
@@ -231,7 +231,7 @@ export const TextEntryDialog = ({
                 <FormatUnderlined />
               </ToggleButton>
             </ToggleButtonGroup>
-            
+
             {/* Text Color */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <FormatColorText />
@@ -254,10 +254,7 @@ export const TextEntryDialog = ({
           <Box sx={{ display: "flex", gap: 2, mt: 2, alignItems: "center" }}>
             <FormControlLabel
               control={
-                <Checkbox
-                  checked={showBorder}
-                  onChange={(e) => setShowBorder(e.target.checked)}
-                />
+                <Checkbox checked={showBorder} onChange={(e) => setShowBorder(e.target.checked)} />
               }
               label="Show Border"
             />

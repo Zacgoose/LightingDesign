@@ -82,17 +82,19 @@ export const CippOffCanvas = (props) => {
         open={visible}
         onClose={onClose}
       >
-          {!hideTitle ? (
-            <Box sx={{ p: 1.5 }}>
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Typography variant="h5" sx={{ flexGrow: 1 }}>{title}</Typography>
-                <IconButton onClick={onClose} sx={{ ml: 2 }}>
-                  <CloseIcon />
-                </IconButton>
-              </Box>
-              <Divider />
+        {!hideTitle ? (
+          <Box sx={{ p: 1.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Typography variant="h5" sx={{ flexGrow: 1 }}>
+                {title}
+              </Typography>
+              <IconButton onClick={onClose} sx={{ ml: 2 }}>
+                <CloseIcon />
+              </IconButton>
             </Box>
-          ) : null}
+            <Divider />
+          </Box>
+        ) : null}
         <Box
           sx={{
             display: "flex",
@@ -128,7 +130,13 @@ export const CippOffCanvas = (props) => {
                 sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
               >
                 <Box
-                  sx={{ display: "flex", flexDirection: "column", flexGrow: 1, minHeight: 0, p: contentPadding }}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    flexGrow: 1,
+                    minHeight: 0,
+                    p: contentPadding,
+                  }}
                 >
                   {/* Render children if provided, otherwise render default content */}
                   {typeof children === "function" ? children(extendedData) : children}

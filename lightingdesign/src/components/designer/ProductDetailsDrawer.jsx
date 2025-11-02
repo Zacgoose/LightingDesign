@@ -108,9 +108,7 @@ export const ProductDetailsDrawer = ({ product, visible = false, onClose }) => {
                   <Typography variant="caption" color="text.secondary">
                     Brand
                   </Typography>
-                  <Typography variant="body1">
-                    {product.brand}
-                  </Typography>
+                  <Typography variant="body1">{product.brand}</Typography>
                 </Box>
               )}
 
@@ -120,9 +118,7 @@ export const ProductDetailsDrawer = ({ product, visible = false, onClose }) => {
                   <Typography variant="caption" color="text.secondary">
                     SKU
                   </Typography>
-                  <Typography variant="body1">
-                    {product.sku}
-                  </Typography>
+                  <Typography variant="body1">{product.sku}</Typography>
                 </Box>
               )}
 
@@ -132,9 +128,7 @@ export const ProductDetailsDrawer = ({ product, visible = false, onClose }) => {
                   <Typography variant="caption" color="text.secondary">
                     Description
                   </Typography>
-                  <Typography variant="body2">
-                    {product.description}
-                  </Typography>
+                  <Typography variant="body2">{product.description}</Typography>
                 </Box>
               )}
             </Stack>

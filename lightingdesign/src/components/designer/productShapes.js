@@ -75,7 +75,7 @@ export const ProductShapes = {
     // Use pre-calculated dimensions from ProductShape component
     const width = shape.width() || 30;
     const height = shape.height() || 40;
-    
+
     // Wall mount (rectangle)
     context.beginPath();
     context.rect(-width / 4, -height / 2, width / 2, height * 0.3);
@@ -117,7 +117,7 @@ export const ProductShapes = {
     // Use pre-calculated dimensions from ProductShape component
     const width = shape.width() || 25;
     const height = shape.height() || 50;
-    
+
     // Base
     context.beginPath();
     context.rect(-width / 3, height / 2 - 8, width * 0.66, 8);
@@ -142,7 +142,7 @@ export const ProductShapes = {
     // Use pre-calculated dimensions from ProductShape component
     const width = shape.width() || 60;
     const height = shape.height() || 10;
-    
+
     // Main strip
     context.beginPath();
     context.roundRect(-width / 2, -height / 2, width, height, height / 2);
@@ -217,11 +217,11 @@ export const ProductShapes = {
     // Use pre-calculated dimensions from ProductShape component
     const width = shape.width() || 80;
     const height = shape.height() || 40;
-    
+
     // Draw arrow pointing right
     const headWidth = width * 0.3;
     const shaftHeight = height * 0.4;
-    
+
     context.beginPath();
     // Start at left of shaft
     context.moveTo(-width / 2, -shaftHeight / 2);
@@ -245,7 +245,7 @@ export const ProductShapes = {
     // Use pre-calculated dimensions from ProductShape component
     const width = shape.width() || 50;
     const height = shape.height() || 50;
-    
+
     // Draw box outline (no fill)
     context.save();
     context.strokeStyle = shape.getAttr("stroke");

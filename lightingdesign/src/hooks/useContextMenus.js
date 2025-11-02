@@ -183,7 +183,7 @@ export const useContextMenus = ({
       } else if (colorPickerTarget.type === "text") {
         if (setTextBoxes) {
           setTextBoxes((boxes) =>
-            boxes.map((box) => (box.id === colorPickerTarget.id ? { ...box, color } : box))
+            boxes.map((box) => (box.id === colorPickerTarget.id ? { ...box, color } : box)),
           );
         }
       }

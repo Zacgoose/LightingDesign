@@ -1,19 +1,11 @@
 import React from "react";
-import {
-  Box,
-  Paper,
-  Typography,
-  Divider,
-} from "@mui/material";
+import { Box, Paper, Typography, Divider } from "@mui/material";
 
 /**
  * ObjectPreviewPanel - UI component for showing preview of selected object
  * Displays thumbnail, product name, and SKU when exactly 1 object is selected
  */
-export const ObjectPreviewPanel = ({
-  product,
-  visible,
-}) => {
+export const ObjectPreviewPanel = ({ product, visible }) => {
   if (!visible || !product) {
     return null;
   }
@@ -35,7 +27,6 @@ export const ObjectPreviewPanel = ({
         zIndex: 1000,
       }}
     >
-      
       <Box sx={{ p: 2 }}>
         {/* Thumbnail Image */}
         {hasThumbnail && (
@@ -67,7 +58,7 @@ export const ObjectPreviewPanel = ({
             />
           </Box>
         )}
-        
+
         {/* Product Name */}
         <Typography
           variant="body1"
@@ -79,7 +70,7 @@ export const ObjectPreviewPanel = ({
         >
           {product.customLabel || product.name}
         </Typography>
-        
+
         {/* SKU */}
         {product.sku && (
           <Typography
@@ -93,24 +84,16 @@ export const ObjectPreviewPanel = ({
             SKU: {product.sku}
           </Typography>
         )}
-        
+
         {/* Additional Info */}
         {product.brand && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 1 }}
-          >
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             Brand: {product.brand}
           </Typography>
         )}
-        
+
         {product.quantity > 1 && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 0.5 }}
-          >
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Quantity: {product.quantity}
           </Typography>
         )}

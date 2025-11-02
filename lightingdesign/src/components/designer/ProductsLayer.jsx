@@ -52,15 +52,13 @@ const getProductLetterPrefix = (product, products, productTypesConfig) => {
 
   // Find all unique SKUs for this product type, sorted to ensure consistent ordering
   const sameTypeProducts = products.filter(
-    (p) => (p.product_type?.toLowerCase() || "default") === productType
+    (p) => (p.product_type?.toLowerCase() || "default") === productType,
   );
 
   // Get unique SKUs, filtering out null/undefined/empty, then sort
-  const uniqueSkus = [...new Set(
-    sameTypeProducts
-      .map((p) => p.sku?.trim())
-      .filter((s) => s && s !== "")
-  )].sort();
+  const uniqueSkus = [
+    ...new Set(sameTypeProducts.map((p) => p.sku?.trim()).filter((s) => s && s !== "")),
+  ].sort();
 
   // Find the index of this product's SKU among unique SKUs of this type
   const skuIndex = uniqueSkus.indexOf(sku);
@@ -100,24 +98,23 @@ export const ProductsLayer = memo(
     renderSelection = true, // Control rendering of selection group
     renderTransformer = true, // Control rendering of transformer
   }) => {
-
     // Manually attach transformend event listener to Transformer
     // This is necessary because the Group's onTransformEnd prop doesn't fire reliably
     useEffect(() => {
       if (!transformerRef.current || !onGroupTransformEnd) return;
 
       const transformer = transformerRef.current;
-      
+
       const handleTransformEnd = () => {
         onGroupTransformEnd();
       };
 
       // Attach the event listener
-      transformer.on('transformend', handleTransformEnd);
+      transformer.on("transformend", handleTransformEnd);
 
       // Cleanup
       return () => {
-        transformer.off('transformend', handleTransformEnd);
+        transformer.off("transformend", handleTransformEnd);
       };
     }, [transformerRef, onGroupTransformEnd]);
 
@@ -125,55 +122,56 @@ export const ProductsLayer = memo(
     const isPanMode = selectedTool === "pan";
     const isConnectMode = selectedTool === "connect";
     const canInteract = !isPlacementMode && !isPanMode && !isConnectMode;
-    
+
     // Extract product IDs and text IDs from selectedIds
-    const productOnlyIds = selectedIds.filter(id => !id.startsWith('text-'));
-    const textIds = selectedIds
-      .filter(id => id.startsWith('text-'))
-      .map(id => id.substring(5)); // Remove 'text-' prefix
-    
+    const productOnlyIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5)); // Remove 'text-' prefix
+
     const hasSelection = productOnlyIds.length > 0 || textIds.length > 0;
-    
+
     return (
       <>
         {/* Unselected products - individually draggable */}
-        {renderUnselected && products
-          .filter((p) => !productOnlyIds.includes(p.id))
-          .map((product) => {
-            const productType = product.product_type?.toLowerCase() || "default";
-            const config = productTypesConfig[productType] || productTypesConfig.default;
-            const customStroke = getProductStrokeColor(product, products, config.stroke);
-            const letterPrefix = getProductLetterPrefix(product, products, productTypesConfig);
+        {renderUnselected &&
+          products
+            .filter((p) => !productOnlyIds.includes(p.id))
+            .map((product) => {
+              const productType = product.product_type?.toLowerCase() || "default";
+              const config = productTypesConfig[productType] || productTypesConfig.default;
+              const customStroke = getProductStrokeColor(product, products, config.stroke);
+              const letterPrefix = getProductLetterPrefix(product, products, productTypesConfig);
 
-            return (
-              <ProductShape
-                key={product.id}
-                product={product}
-                config={config}
-                isSelected={false}
-                draggable={selectedTool === "select" && canInteract && !isMiddlePanning}
-                listening={(selectedTool === "select" || selectedTool === "connect") && !isMiddlePanning} // Only listen when interaction is needed and not middle panning
-                onDragStart={(e) =>
-                  selectedTool === "select" && canInteract && onProductDragStart(e, product.id)
-                }
-                onMouseDown={(e) => {
-                  // Allow click in connect mode or select mode
-                  if (selectedTool === "connect" || selectedTool === "select") {
-                    onProductClick(e, product.id);
+              return (
+                <ProductShape
+                  key={product.id}
+                  product={product}
+                  config={config}
+                  isSelected={false}
+                  draggable={selectedTool === "select" && canInteract && !isMiddlePanning}
+                  listening={
+                    (selectedTool === "select" || selectedTool === "connect") && !isMiddlePanning
+                  } // Only listen when interaction is needed and not middle panning
+                  onDragStart={(e) =>
+                    selectedTool === "select" && canInteract && onProductDragStart(e, product.id)
                   }
-                }}
-                onDragEnd={(e) =>
-                  selectedTool === "select" && canInteract && onProductDragEnd(e, product.id)
-                }
-                onContextMenu={(e) =>
-                  selectedTool === "select" && canInteract && onContextMenu(e, product.id)
-                }
-                customStroke={customStroke}
-                theme={theme}
-                letterPrefix={letterPrefix}
-              />
-            );
-          })}
+                  onMouseDown={(e) => {
+                    // Allow click in connect mode or select mode
+                    if (selectedTool === "connect" || selectedTool === "select") {
+                      onProductClick(e, product.id);
+                    }
+                  }}
+                  onDragEnd={(e) =>
+                    selectedTool === "select" && canInteract && onProductDragEnd(e, product.id)
+                  }
+                  onContextMenu={(e) =>
+                    selectedTool === "select" && canInteract && onContextMenu(e, product.id)
+                  }
+                  customStroke={customStroke}
+                  theme={theme}
+                  letterPrefix={letterPrefix}
+                />
+              );
+            })}
 
         {/* Selected products and text boxes in a draggable group */}
         {renderSelection && hasSelection && (
@@ -185,7 +183,11 @@ export const ProductsLayer = memo(
             //offsetX={(selectionSnapshot.width || 0) / 2}
             //offsetY={(selectionSnapshot.height || 0) / 2}
             rotation={selectionSnapshot.rotation || 0}
-            draggable={(selectedTool === "select" || selectedTool === "text") && canInteract && !isMiddlePanning}
+            draggable={
+              (selectedTool === "select" || selectedTool === "text") &&
+              canInteract &&
+              !isMiddlePanning
+            }
             onDragStart={(e) => {
               // Prevent dragging on middle mouse button
               if (e.evt.button === 1) {
@@ -248,7 +250,7 @@ export const ProductsLayer = memo(
                 />
               );
             })}
-            
+
             {/* Render selected text boxes */}
             {/* Always use snapshot to avoid inconsistencies */}
             {selectionSnapshot.textBoxes?.map((textBox) => {
@@ -338,64 +340,67 @@ export const ProductsLayer = memo(
         )}
 
         {/* Transformer for selected group - visible in both select and text modes */}
-        {renderTransformer && (selectedTool === "select" || selectedTool === "text") && !isPlacementMode && hasSelection && (
-          <Transformer
-            ref={transformerRef}
-            rotationSnaps={
-              rotationSnaps > 0
-                ? Array.from({ length: rotationSnaps }, (_, i) => (360 / rotationSnaps) * i)
-                : undefined
-            }
-            boundBoxFunc={(oldBox, newBox) => {
-              // Prevent box from getting too small
-              const minWidth = 20;
-              const minHeight = 15;
-              if (newBox.width < minWidth || newBox.height < minHeight) {
-                return oldBox;
+        {renderTransformer &&
+          (selectedTool === "select" || selectedTool === "text") &&
+          !isPlacementMode &&
+          hasSelection && (
+            <Transformer
+              ref={transformerRef}
+              rotationSnaps={
+                rotationSnaps > 0
+                  ? Array.from({ length: rotationSnaps }, (_, i) => (360 / rotationSnaps) * i)
+                  : undefined
               }
-              // For text-only selections, enforce aspect ratio on corner resizes
-              if (textIds.length > 0 && productOnlyIds.length === 0) {
-                const transformer = transformerRef.current;
-                if (transformer) {
-                  const activeAnchor = transformer.getActiveAnchor();
-                  const isCornerAnchor = activeAnchor && (
-                    activeAnchor === 'top-left' ||
-                    activeAnchor === 'top-right' ||
-                    activeAnchor === 'bottom-left' ||
-                    activeAnchor === 'bottom-right'
-                  );
-                  if (isCornerAnchor) {
-                    // Strictly maintain aspect ratio for corner resize
-                    const ratio = oldBox.width / oldBox.height;
-                    const scaleX = newBox.width / oldBox.width;
-                    const scaleY = newBox.height / oldBox.height;
-                    const avgScale = (scaleX + scaleY) / 2;
-                    newBox.width = oldBox.width * avgScale;
-                    newBox.height = oldBox.height * avgScale;
+              boundBoxFunc={(oldBox, newBox) => {
+                // Prevent box from getting too small
+                const minWidth = 20;
+                const minHeight = 15;
+                if (newBox.width < minWidth || newBox.height < minHeight) {
+                  return oldBox;
+                }
+                // For text-only selections, enforce aspect ratio on corner resizes
+                if (textIds.length > 0 && productOnlyIds.length === 0) {
+                  const transformer = transformerRef.current;
+                  if (transformer) {
+                    const activeAnchor = transformer.getActiveAnchor();
+                    const isCornerAnchor =
+                      activeAnchor &&
+                      (activeAnchor === "top-left" ||
+                        activeAnchor === "top-right" ||
+                        activeAnchor === "bottom-left" ||
+                        activeAnchor === "bottom-right");
+                    if (isCornerAnchor) {
+                      // Strictly maintain aspect ratio for corner resize
+                      const ratio = oldBox.width / oldBox.height;
+                      const scaleX = newBox.width / oldBox.width;
+                      const scaleY = newBox.height / oldBox.height;
+                      const avgScale = (scaleX + scaleY) / 2;
+                      newBox.width = oldBox.width * avgScale;
+                      newBox.height = oldBox.height * avgScale;
+                    }
                   }
                 }
+                return newBox;
+              }}
+              rotateEnabled={true}
+              keepRatio={textIds.length > 0 && productOnlyIds.length === 0}
+              ignoreStroke={true}
+              anchorSize={8}
+              borderDash={[4, 4]}
+              rotationSnapTolerance={5}
+              enabledAnchors={
+                textIds.length > 0 && productOnlyIds.length === 0
+                  ? [
+                      // For text-only selections: only corners for proportional scaling
+                      "top-left",
+                      "top-right",
+                      "bottom-left",
+                      "bottom-right",
+                    ]
+                  : undefined // Default anchors for products or mixed selections
               }
-              return newBox;
-            }}
-            rotateEnabled={true}
-            keepRatio={textIds.length > 0 && productOnlyIds.length === 0}
-            ignoreStroke={true}
-            anchorSize={8}
-            borderDash={[4, 4]}
-            rotationSnapTolerance={5}
-            enabledAnchors={
-              textIds.length > 0 && productOnlyIds.length === 0
-                ? [
-                    // For text-only selections: only corners for proportional scaling
-                    "top-left",
-                    "top-right",
-                    "bottom-left",
-                    "bottom-right",
-                  ]
-                : undefined // Default anchors for products or mixed selections
-            }
-          />
-        )}
+            />
+          )}
       </>
     );
   },

@@ -28,14 +28,14 @@ import { isEqual } from "lodash"; // Import lodash for deep comparison
 
 /**
  * CippDataTable - A flexible data table component with advanced features
- * 
+ *
  * @param {Object} props - Component props
  * @param {string|Array<string>} props.imageColumn - Column name(s) that should render images from URLs
  *   - Pass a single column name as a string: imageColumn="logoUrl"
  *   - Pass multiple column names as an array: imageColumn={["logoUrl", "avatarUrl"]}
  *   - The specified column(s) will render any URL values as images (40x40px by default)
  *   - Arrays of URLs in a column will render multiple images side by side
- * 
+ *
  * Example usage:
  * ```jsx
  * <CippDataTable
@@ -78,7 +78,7 @@ export const CippDataTable = (props) => {
     defaultSorting = [],
     enableRowSelection = true,
     imageColumn = null,
-    positionActionsColumn = 'last',
+    positionActionsColumn = "last",
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);

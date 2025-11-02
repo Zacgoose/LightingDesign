@@ -49,7 +49,11 @@ export const useKeyboardShortcuts = ({
       }
 
       // Paste
-      if ((e.ctrlKey || e.metaKey) && e.key === "v" && (clipboard.current.products?.length > 0 || clipboard.current.textBoxes?.length > 0)) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === "v" &&
+        (clipboard.current.products?.length > 0 || clipboard.current.textBoxes?.length > 0)
+      ) {
         e.preventDefault();
         onPasteRef.current();
       }

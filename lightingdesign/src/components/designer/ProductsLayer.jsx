@@ -184,6 +184,13 @@ export const ProductsLayer = memo(
             //offsetY={(selectionSnapshot.height || 0) / 2}
             rotation={selectionSnapshot.rotation || 0}
             draggable={(selectedTool === "select" || selectedTool === "text") && canInteract}
+            onDragStart={(e) => {
+              // Prevent dragging on middle mouse button
+              if (e.evt.button === 1) {
+                e.target.stopDrag();
+                return;
+              }
+            }}
             onDragEnd={onGroupTransformEnd}
             onTransformEnd={onGroupTransformEnd}
             onTransform={(e) => {

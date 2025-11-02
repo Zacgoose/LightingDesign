@@ -52,7 +52,16 @@ export const ProductShape = memo(
         draggable={draggable}
         opacity={opacity}
         listening={listening}
-        onDragStart={onDragStart}
+        onDragStart={(e) => {
+          // Prevent dragging on middle mouse button
+          if (e.evt.button === 1) {
+            e.target.stopDrag();
+            return;
+          }
+          if (onDragStart) {
+            onDragStart(e);
+          }
+        }}
         onMouseDown={onMouseDown}
         onTap={onMouseDown}
         onDragEnd={onDragEnd}

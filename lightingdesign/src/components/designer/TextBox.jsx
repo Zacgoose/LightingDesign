@@ -101,7 +101,16 @@ export const TextBox = memo(
           onTap={onSelect}
           onDblClick={onDoubleClick}
           onDblTap={onDoubleClick}
-          onDragStart={onDragStart}
+          onDragStart={(e) => {
+            // Prevent dragging on middle mouse button
+            if (e.evt.button === 1) {
+              e.target.stopDrag();
+              return;
+            }
+            if (onDragStart) {
+              onDragStart(e);
+            }
+          }}
           onDragEnd={(e) => {
             onChange({
               ...textBox,

@@ -89,11 +89,42 @@ export const TextBox = memo(
           scaleY={textBox.scaleY || 1}
           draggable={draggable}
           listening={listening}
-          onClick={onSelect}
+          onMouseDown={(e) => {
+            // Filter out middle mouse clicks (button === 1) to prevent selection during panning
+            if (e.evt.button === 1) {
+              e.cancelBubble = true;
+              e.evt.stopPropagation();
+              e.evt.preventDefault();
+              return;
+            }
+            if (onSelect) {
+              onSelect(e);
+            }
+          }}
           onTap={onSelect}
-          onDblClick={onDoubleClick}
+          onDblClick={(e) => {
+            // Only allow left mouse button double-click to edit
+            if (e.evt.button !== 0) {
+              return;
+            }
+            if (onDoubleClick) {
+              onDoubleClick(e);
+            }
+          }}
           onDblTap={onDoubleClick}
-          onDragStart={onDragStart}
+          onDragStart={(e) => {
+            // Prevent dragging on middle mouse button
+            if (e.evt.button === 1) {
+              e.target.stopDrag();
+              e.cancelBubble = true;
+              e.evt.preventDefault();
+              e.evt.stopPropagation();
+              return false;
+            }
+            if (onDragStart) {
+              onDragStart(e);
+            }
+          }}
           onDragEnd={(e) => {
             onChange({
               ...textBox,

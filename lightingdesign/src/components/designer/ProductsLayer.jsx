@@ -87,6 +87,7 @@ export const ProductsLayer = memo(
     groupKey,
     placementMode,
     isDragging = false, // Add isDragging prop for performance optimization
+    isMiddlePanning = false, // Add isMiddlePanning prop to disable dragging during middle mouse panning
     onProductClick,
     onProductDragStart,
     onProductDragEnd,
@@ -94,6 +95,7 @@ export const ProductsLayer = memo(
     onGroupTransformEnd,
     textBoxes = [], // Add textBoxes support
     onTextContextMenu, // Add text context menu handler
+    onTextDoubleClick, // Add text double click handler
     renderUnselected = true, // Control rendering of unselected products
     renderSelection = true, // Control rendering of selection group
     renderTransformer = true, // Control rendering of transformer
@@ -149,8 +151,8 @@ export const ProductsLayer = memo(
                 product={product}
                 config={config}
                 isSelected={false}
-                draggable={selectedTool === "select" && canInteract}
-                listening={selectedTool === "select" || selectedTool === "connect"} // Only listen when interaction is needed
+                draggable={selectedTool === "select" && canInteract && !isMiddlePanning}
+                listening={(selectedTool === "select" || selectedTool === "connect") && !isMiddlePanning} // Only listen when interaction is needed and not middle panning
                 onDragStart={(e) =>
                   selectedTool === "select" && canInteract && onProductDragStart(e, product.id)
                 }
@@ -183,7 +185,17 @@ export const ProductsLayer = memo(
             //offsetX={(selectionSnapshot.width || 0) / 2}
             //offsetY={(selectionSnapshot.height || 0) / 2}
             rotation={selectionSnapshot.rotation || 0}
-            draggable={(selectedTool === "select" || selectedTool === "text") && canInteract}
+            draggable={(selectedTool === "select" || selectedTool === "text") && canInteract && !isMiddlePanning}
+            onDragStart={(e) => {
+              // Prevent dragging on middle mouse button
+              if (e.evt.button === 1) {
+                e.target.stopDrag();
+                e.cancelBubble = true;
+                e.evt.preventDefault();
+                e.evt.stopPropagation();
+                return false;
+              }
+            }}
             onDragEnd={onGroupTransformEnd}
             onTransformEnd={onGroupTransformEnd}
             onTransform={(e) => {
@@ -272,6 +284,26 @@ export const ProductsLayer = memo(
                   }}
                   onTap={(e) => {
                     e.cancelBubble = true;
+                  }}
+                  onDblClick={(e) => {
+                    e.cancelBubble = true;
+                    // Only allow left mouse button double-click to edit
+                    if (e.evt.button !== 0) {
+                      return;
+                    }
+                    // Only allow double-click to edit if exactly 1 text box is selected (no products selected)
+                    if (textIds.length === 1 && productOnlyIds.length === 0 && onTextDoubleClick) {
+                      const originalTextId = textBox.id;
+                      onTextDoubleClick(e, originalTextId);
+                    }
+                  }}
+                  onDblTap={(e) => {
+                    e.cancelBubble = true;
+                    // Only allow double-tap to edit if exactly 1 text box is selected (no products selected)
+                    if (textIds.length === 1 && productOnlyIds.length === 0 && onTextDoubleClick) {
+                      const originalTextId = textBox.id;
+                      onTextDoubleClick(e, originalTextId);
+                    }
                   }}
                   // Don't cancel mouseDown - let it propagate to parent Group for dragging
                   onContextMenu={(e) => {

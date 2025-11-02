@@ -13,6 +13,8 @@ export const ConnectorLine = ({
   selectedTool,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [draggedControl1, setDraggedControl1] = useState(null);
+  const [draggedControl3, setDraggedControl3] = useState(null);
 
   // Initialize 3 control points for cubic Bézier curve
   // Control points positioned to create a natural curve
@@ -21,8 +23,9 @@ export const ConnectorLine = ({
   const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75;
   const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - 60;
 
-  const control1 = connector.control1 ?? { x: defaultControl1X, y: defaultControl1Y };
-  const control3 = connector.control3 ?? { x: defaultControl3X, y: defaultControl3Y };
+  // Use dragged position if dragging, otherwise use connector data
+  const control1 = draggedControl1 || connector.control1 ?? { x: defaultControl1X, y: defaultControl1Y };
+  const control3 = draggedControl3 || connector.control3 ?? { x: defaultControl3X, y: defaultControl3Y };
   
   // Control2 (center point) is always positioned in a straight line between control1 and control3
   // Not user-adjustable - ensures smooth flow from one end to the other
@@ -121,11 +124,15 @@ export const ConnectorLine = ({
             strokeWidth={2}
             draggable
             onDragStart={() => setIsDragging(true)}
+            onDragMove={(e) => {
+              // Update local state during drag for visual feedback
+              setDraggedControl1({ x: e.target.x(), y: e.target.y() });
+            }}
             onDragEnd={(e) => {
               setIsDragging(false);
+              setDraggedControl1(null);
               handleControlDrag("control1", e);
             }}
-            onDragMove={(e) => handleControlDrag("control1", e)}
           />
           {/* Center control point (control2) is not visible or draggable - auto-positioned */}
           <Circle
@@ -137,11 +144,15 @@ export const ConnectorLine = ({
             strokeWidth={2}
             draggable
             onDragStart={() => setIsDragging(true)}
+            onDragMove={(e) => {
+              // Update local state during drag for visual feedback
+              setDraggedControl3({ x: e.target.x(), y: e.target.y() });
+            }}
             onDragEnd={(e) => {
               setIsDragging(false);
+              setDraggedControl3(null);
               handleControlDrag("control3", e);
             }}
-            onDragMove={(e) => handleControlDrag("control3", e)}
           />
 
           {/* Start point indicator */}

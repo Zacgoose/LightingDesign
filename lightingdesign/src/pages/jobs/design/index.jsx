@@ -926,6 +926,23 @@ const Page = () => {
     onPaste: () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
+      
+      // Calculate the center of the copied items
+      const allCopiedItems = [
+        ...(clipboard.current.products || []),
+        ...(clipboard.current.textBoxes || []),
+      ];
+      
+      if (allCopiedItems.length === 0) return;
+      
+      // Find the bounding box center of copied items
+      const centerX = allCopiedItems.reduce((sum, item) => sum + item.x, 0) / allCopiedItems.length;
+      const centerY = allCopiedItems.reduce((sum, item) => sum + item.y, 0) / allCopiedItems.length;
+      
+      // Calculate offset to position at cursor
+      const offsetX = cursorPosition.x - centerX;
+      const offsetY = cursorPosition.y - centerY;
+      
       const idMap = {};
       const newProducts = clipboard.current.products.map((p, index) => {
         const newId = `product-${Date.now()}-${index}`;
@@ -933,8 +950,8 @@ const Page = () => {
         return {
           ...p,
           id: newId,
-          x: p.x + 20,
-          y: p.y + 20,
+          x: p.x + offsetX,
+          y: p.y + offsetY,
           sublayerId: activeLayer?.defaultSublayerId || null,
         };
       });
@@ -947,12 +964,12 @@ const Page = () => {
         sublayerId: activeLayer?.defaultCablingSublayerId || null,
       }));
 
-      // Paste text boxes with offset
+      // Paste text boxes at cursor position
       const newTextBoxes = (clipboard.current.textBoxes || []).map((t, index) => ({
         ...t,
         id: crypto.randomUUID(),
-        x: t.x + 20,
-        y: t.y + 20,
+        x: t.x + offsetX,
+        y: t.y + offsetY,
         sublayerId: activeLayer?.defaultSublayerId || null,
       }));
 
@@ -1541,8 +1558,7 @@ const Page = () => {
         return;
       }
 
-      if (!placementMode && !measureMode) return;
-
+      // Always update cursor position for paste-at-cursor functionality
       const stage = e.target.getStage();
       const pointerPosition = stage.getPointerPosition();
       if (pointerPosition) {
@@ -1553,7 +1569,7 @@ const Page = () => {
         setCursorPosition(canvasPos);
       }
     },
-    [placementMode, measureMode, handleSelectionMove, stagePosition, stageScale],
+    [handleSelectionMove, stagePosition, stageScale],
   );
 
   const handleStopPlacement = useCallback(() => {

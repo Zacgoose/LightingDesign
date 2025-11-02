@@ -24,13 +24,11 @@ import { Download, ArrowBack } from "@mui/icons-material";
 import { ApiGetCall } from "/src/api/ApiCall";
 import Link from "next/link";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import Konva from "konva";
 import { Stage, Layer } from "react-konva";
 import "svg2pdf.js";
 import productTypesConfig from "/src/data/productTypes.json";
 import { getShapeFunction } from "/src/components/designer/productShapes";
-import ExportDocumentLayout from "/src/components/ExportDocumentLayout";
 
 // Paper size definitions (dimensions in mm)
 const PAPER_SIZES = [
@@ -1282,121 +1280,9 @@ const Page = () => {
     );
   };
 
-  // Helper function to add product legend
+  // Helper function to add product legend using ExportDocumentLayout style
   const addProductLegend = async (pdf, pageWidth, pageHeight, allProducts) => {
-    // Title
-    pdf.setFontSize(16);
-    pdf.setFont("helvetica", "bold");
-    pdf.text("Product Legend", 10, 15);
-
-    // Helper to get letter prefix for a product based on SKU
-    const getProductRef = (product) => {
-      const productType = product.product_type?.toLowerCase() || "default";
-      const config = productTypesConfig[productType] || productTypesConfig.default;
-      const letterPrefix = config.letterPrefix || "O";
-
-      // Normalize SKU: trim whitespace and handle empty strings as null
-      const sku = product.sku?.trim();
-      if (!sku || sku === "") {
-        return letterPrefix; // No SKU, just return letter without number
-      }
-
-      // Find all unique SKUs for this product type
-      const sameTypeProducts = allProducts.filter(
-        (p) => (p.product_type?.toLowerCase() || "default") === productType,
-      );
-
-      // Get unique SKUs, filtering out null/undefined/empty, then sort
-      const uniqueSkus = [
-        ...new Set(sameTypeProducts.map((p) => p.sku?.trim()).filter((s) => s && s !== "")),
-      ].sort();
-
-      // Find the index of this product's SKU among unique SKUs of this type
-      const skuIndex = uniqueSkus.indexOf(sku);
-
-      // If SKU not found (shouldn't happen), return just the letter
-      if (skuIndex === -1) {
-        console.warn(`SKU "${sku}" not found in uniqueSkus for ${productType}:`, uniqueSkus);
-        return letterPrefix;
-      }
-
-      return `${letterPrefix}${skuIndex + 1}`;
-    };
-
-    // Group products by SKU
-    const productMap = new Map();
-    allProducts.forEach((product) => {
-      const sku = product.sku || "N/A";
-      const ref = getProductRef(product);
-
-      if (!productMap.has(sku)) {
-        productMap.set(sku, {
-          sku,
-          name: product.name || "Unnamed Product",
-          brand: product.brand || "",
-          type: product.product_type || "",
-          quantity: 0,
-          price: product.price || 0,
-          layers: new Set(),
-          refs: new Set(),
-        });
-      }
-      const entry = productMap.get(sku);
-      entry.quantity += product.quantity || 1;
-      entry.layers.add(product.layerName);
-      entry.refs.add(ref);
-    });
-
-    // Convert to array and sort
-    const legendData = Array.from(productMap.values()).map((item) => ({
-      ...item,
-      layers: Array.from(item.layers).join(", "),
-      refs: Array.from(item.refs).sort().join(", "),
-    }));
-
-    // Create table
-    autoTable(pdf, {
-      startY: 25,
-      head: [["Ref", "SKU", "Product Name", "Brand", "Type", "Qty", "Price", "Floors"]],
-      body: legendData.map((item) => [
-        item.refs,
-        item.sku,
-        item.name,
-        item.brand,
-        item.type,
-        item.quantity,
-        item.price ? `$${item.price.toFixed(2)}` : "N/A",
-        item.layers,
-      ]),
-      theme: "grid",
-      headStyles: { fillColor: [66, 66, 66], textColor: 255, fontStyle: "bold" },
-      styles: { fontSize: 8, cellPadding: 2 },
-      columnStyles: {
-        0: { cellWidth: 25 },
-        1: { cellWidth: 45 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 25 },
-        4: { cellWidth: 15 },
-        5: { cellWidth: 20 },
-        6: { cellWidth: "auto" },
-      },
-    });
-
-    // Add summary
-    const totalQuantity = legendData.reduce((sum, item) => sum + item.quantity, 0);
-    const totalValue = legendData.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-    const finalY = pdf.lastAutoTable?.finalY || 25;
-    pdf.setFontSize(10);
-    pdf.setFont("helvetica", "bold");
-    pdf.text(`Total Products: ${totalQuantity}`, 10, finalY + 10);
-    pdf.text(`Total Value: $${totalValue.toFixed(2)}`, 10, finalY + 16);
-  };
-
-  const canExport = selectedLayers.length > 0;
-
-  // Prepare data for ExportDocumentLayout preview
-  const prepareDocumentLayoutData = useCallback(() => {
+    // Get job info
     const jobInfo = jobData.data || {};
     const jobNumber = jobInfo.jobNumber || "N/A";
     // Extract string values from potential objects
@@ -1409,67 +1295,159 @@ const Page = () => {
     const builderName = typeof jobInfo.builder === 'object' && jobInfo.builder !== null
       ? (jobInfo.builder.label || jobInfo.builder.value || "N/A")
       : (jobInfo.builder || "N/A");
-
-    // Prepare logos (placeholder - can be customized)
-    const logos = [
-      // Add logo URLs here if available
-    ];
-
-    // Prepare info rows
-    const infoRows = [
-      [
-        { label: "Designer", value: designer },
-        { label: "Job #", value: jobNumber },
-        { label: "Client", value: customerName },
-      ],
-      [
-        { label: "Builder", value: builderName },
-        { label: "Date", value: new Date().toLocaleDateString() },
-      ],
-    ];
-
-    // Prepare company details (placeholder - can be customized)
-    const companyDetails = {
-      store: jobInfo.address || "",
-      headOffice: "Head Office Address", // Placeholder
-    };
-
-    // Collect all products from selected layers
-    const productGrid = [];
-    selectedLayers.forEach((layerId) => {
-      const layer = layers.find((l) => l.id === layerId);
-      if (!layer) return;
-
-      const selectedSublayerIds = selectedSublayers[layerId] || [];
-      const filteredProducts = (layer.products || []).filter((product) => {
-        if (!product.sublayerId) return true;
-        return selectedSublayerIds.includes(product.sublayerId);
-      });
-
-      filteredProducts.forEach((product) => {
-        const productType = product.product_type?.toLowerCase() || "default";
-        const config = productTypesConfig[productType] || productTypesConfig.default;
-
-        productGrid.push({
-          thumbnail: product.thumbnail || "", // Product image if available
-          icon: config.icon || "", // Product type icon
+    
+    // Group products by SKU for the grid
+    const productMap = new Map();
+    allProducts.forEach((product) => {
+      const sku = product.sku || "N/A";
+      if (!productMap.has(sku)) {
+        productMap.set(sku, {
+          sku,
           name: product.name || "Unnamed Product",
-          sku: product.sku || "N/A",
-          quantity: product.quantity || 1,
-          text: product.brand || "", // Additional text
+          brand: product.brand || "",
+          type: product.product_type || "",
+          quantity: 0,
         });
-      });
+      }
+      const entry = productMap.get(sku);
+      entry.quantity += product.quantity || 1;
     });
+    
+    const productGrid = Array.from(productMap.values());
+    
+    // Layout settings
+    const maxCols = 5;
+    const maxRows = 4;
+    const bottomBarHeight = 40; // Height for info bar at bottom
+    const margin = 10;
+    const productAreaHeight = pageHeight - bottomBarHeight - margin * 2;
+    
+    // Calculate product grid dimensions
+    const gridStartY = margin;
+    const gridWidth = pageWidth - margin * 2;
+    const cellWidth = gridWidth / maxCols;
+    const cellHeight = productAreaHeight / maxRows;
+    const itemsToShow = productGrid.slice(0, maxCols * maxRows);
+    
+    // Draw product grid
+    for (let i = 0; i < itemsToShow.length; i++) {
+      const row = Math.floor(i / maxCols);
+      const col = i % maxCols;
+      const x = margin + col * cellWidth;
+      const y = gridStartY + row * cellHeight;
+      const product = itemsToShow[i];
+      
+      // Draw cell border
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.3);
+      pdf.rect(x + 2, y + 2, cellWidth - 4, cellHeight - 4, "S");
+      
+      // Draw product info
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(product.name, x + cellWidth / 2, y + cellHeight * 0.4, {
+        align: "center",
+        maxWidth: cellWidth - 8,
+      });
+      
+      pdf.setFontSize(7);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(`SKU: ${product.sku}`, x + cellWidth / 2, y + cellHeight * 0.5, {
+        align: "center",
+      });
+      
+      pdf.setFontSize(8);
+      pdf.setTextColor(0, 100, 200);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(`Qty: ${product.quantity}`, x + cellWidth / 2, y + cellHeight * 0.6, {
+        align: "center",
+      });
+      
+      if (product.brand) {
+        pdf.setFontSize(6);
+        pdf.setTextColor(100, 100, 100);
+        pdf.setFont("helvetica", "italic");
+        pdf.text(product.brand, x + cellWidth / 2, y + cellHeight * 0.7, {
+          align: "center",
+          maxWidth: cellWidth - 8,
+        });
+      }
+      
+      pdf.setTextColor(0, 0, 0); // Reset color
+    }
+    
+    // Draw bottom info bar
+    const infoBarY = pageHeight - bottomBarHeight;
+    
+    // Background for info bar
+    pdf.setFillColor(245, 245, 245);
+    pdf.rect(0, infoBarY, pageWidth, bottomBarHeight, "F");
+    
+    // Border line
+    pdf.setDrawColor(200, 200, 200);
+    pdf.setLineWidth(0.5);
+    pdf.line(0, infoBarY, pageWidth, infoBarY);
+    
+    // Info rows
+    let infoX = margin + 10;
+    const infoY = infoBarY + 10;
+    const labelSpacing = 50;
+    
+    pdf.setFontSize(8);
+    
+    // First row of info
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Designer:", infoX, infoY);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(designer, infoX, infoY + 4);
+    
+    infoX += labelSpacing;
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Job #:", infoX, infoY);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(jobNumber, infoX, infoY + 4);
+    
+    infoX += labelSpacing;
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Client:", infoX, infoY);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(customerName, infoX, infoY + 4);
+    
+    // Second row of info
+    infoX = margin + 10;
+    const info2Y = infoY + 12;
+    
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Builder:", infoX, info2Y);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(builderName, infoX, info2Y + 4);
+    
+    infoX += labelSpacing;
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Date:", infoX, info2Y);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(new Date().toLocaleDateString(), infoX, info2Y + 4);
+    
+    // Company details (smaller text on the right)
+    const companyX = pageWidth - margin - 60;
+    pdf.setFontSize(6);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Store:", companyX, infoBarY + 8);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(jobInfo.address || "N/A", companyX, infoBarY + 11, {
+      maxWidth: 55,
+    });
+    
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Head Office:", companyX, infoBarY + 18);
+    pdf.setFont("helvetica", "normal");
+    pdf.text("Head Office Address", companyX, infoBarY + 21, {
+      maxWidth: 55,
+    });
+  };
 
-    return {
-      logos,
-      infoRows,
-      companyDetails,
-      productGrid,
-    };
-  }, [jobData.data, selectedLayers, selectedSublayers, layers]);
-
-  const documentLayoutData = prepareDocumentLayoutData();
+  const canExport = selectedLayers.length > 0;
 
   return (
     <Container maxWidth="lg" sx={{ py: 3 }}>
@@ -1653,41 +1631,6 @@ const Page = () => {
               </CardContent>
             </Card>
           </Grid>
-
-          {/* Document Layout Preview */}
-          {canExport && documentLayoutData.productGrid.length > 0 && (
-            <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Document Layout Preview
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Preview of the export document layout with product information
-                  </Typography>
-                  <Box
-                    sx={{
-                      border: 1,
-                      borderColor: "divider",
-                      borderRadius: 1,
-                      p: 2,
-                      bgcolor: "background.paper",
-                      minHeight: 500,
-                    }}
-                  >
-                    <ExportDocumentLayout
-                      logos={documentLayoutData.logos}
-                      infoRows={documentLayoutData.infoRows}
-                      companyDetails={documentLayoutData.companyDetails}
-                      productGrid={documentLayoutData.productGrid}
-                      maxCols={5}
-                      maxRows={4}
-                    />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
         </Grid>
       )}
     </Container>

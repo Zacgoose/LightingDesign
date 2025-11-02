@@ -95,6 +95,40 @@ const Page = () => {
     }
   }, [layers]);
 
+  // Shared helper function to calculate letter prefix for a product based on SKU
+  const getProductLetterPrefix = useCallback((product, allProducts) => {
+    const productType = product.product_type?.toLowerCase() || "default";
+    const config = productTypesConfig[productType] || productTypesConfig.default;
+    const letterPrefix = config.letterPrefix || "O";
+
+    // Normalize SKU: trim whitespace and handle empty strings as null
+    const sku = product.sku?.trim();
+    if (!sku || sku === "") {
+      return letterPrefix; // No SKU, just return letter without number
+    }
+
+    // Find all unique SKUs for this product type, sorted to ensure consistent ordering
+    const sameTypeProducts = allProducts.filter(
+      (p) => (p.product_type?.toLowerCase() || "default") === productType,
+    );
+
+    // Get unique SKUs, filtering out null/undefined/empty, then sort
+    const uniqueSkus = [
+      ...new Set(sameTypeProducts.map((p) => p.sku?.trim()).filter((s) => s && s !== "")),
+    ].sort();
+
+    // Find the index of this product's SKU among unique SKUs of this type
+    const skuIndex = uniqueSkus.indexOf(sku);
+
+    // If SKU not found (shouldn't happen), return just the letter
+    if (skuIndex === -1) {
+      console.warn(`SKU "${sku}" not found in uniqueSkus for ${productType}:`, uniqueSkus);
+      return letterPrefix;
+    }
+
+    return `${letterPrefix}${skuIndex + 1}`;
+  }, []);
+
   const handleLayerToggle = useCallback(
     (layerId) => {
       setSelectedLayers((prev) => {
@@ -1144,40 +1178,6 @@ const Page = () => {
         return ctx;
       }
 
-      // Helper function to calculate letter prefix for a product based on SKU
-      const getProductLetterPrefix = (product, allProducts) => {
-        const productType = product.product_type?.toLowerCase() || "default";
-        const config = productTypesConfig[productType] || productTypesConfig.default;
-        const letterPrefix = config.letterPrefix || "O";
-
-        // Normalize SKU: trim whitespace and handle empty strings as null
-        const sku = product.sku?.trim();
-        if (!sku || sku === "") {
-          return letterPrefix; // No SKU, just return letter without number
-        }
-
-        // Find all unique SKUs for this product type, sorted to ensure consistent ordering
-        const sameTypeProducts = allProducts.filter(
-          (p) => (p.product_type?.toLowerCase() || "default") === productType,
-        );
-
-        // Get unique SKUs, filtering out null/undefined/empty, then sort
-        const uniqueSkus = [
-          ...new Set(sameTypeProducts.map((p) => p.sku?.trim()).filter((s) => s && s !== "")),
-        ].sort();
-
-        // Find the index of this product's SKU among unique SKUs of this type
-        const skuIndex = uniqueSkus.indexOf(sku);
-
-        // If SKU not found (shouldn't happen), return just the letter
-        if (skuIndex === -1) {
-          console.warn(`SKU "${sku}" not found in uniqueSkus for ${productType}:`, uniqueSkus);
-          return letterPrefix;
-        }
-
-        return `${letterPrefix}${skuIndex + 1}`;
-      };
-
       exportProducts.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || "default";
         const config = productTypesConfig[productType] || productTypesConfig.default;
@@ -1489,39 +1489,6 @@ const Page = () => {
       ? (jobInfo.builder.label || jobInfo.builder.value || "N/A")
       : (jobInfo.builder || "N/A");
     
-    // Calculate letter/number prefix for each product (matching canvas export logic)
-    const getProductLetterPrefix = (product, allProducts) => {
-      const productType = product.product_type?.toLowerCase() || "default";
-      const config = productTypesConfig[productType] || productTypesConfig.default;
-      const letterPrefix = config.letterPrefix || "O";
-
-      // Normalize SKU: trim whitespace and handle empty strings as null
-      const sku = product.sku?.trim();
-      if (!sku || sku === "") {
-        return letterPrefix; // No SKU, just return letter without number
-      }
-
-      // Find all unique SKUs for this product type, sorted to ensure consistent ordering
-      const sameTypeProducts = allProducts.filter(
-        (p) => (p.product_type?.toLowerCase() || "default") === productType,
-      );
-
-      // Get unique SKUs, filtering out null/undefined/empty, then sort
-      const uniqueSkus = [
-        ...new Set(sameTypeProducts.map((p) => p.sku?.trim()).filter((s) => s && s !== "")),
-      ].sort();
-
-      // Find the index of this product's SKU among unique SKUs of this type
-      const skuIndex = uniqueSkus.indexOf(sku);
-
-      // If SKU not found (shouldn't happen), return just the letter
-      if (skuIndex === -1) {
-        return letterPrefix;
-      }
-
-      return `${letterPrefix}${skuIndex + 1}`;
-    };
-    
     // Group products by SKU for the grid
     const productMap = new Map();
     allProducts.forEach((product) => {
@@ -1651,71 +1618,74 @@ const Page = () => {
       // RIGHT HALF: Product vector shape with letter/number prefix, qty, SKU
       const rightStartY = innerY + 4;
       
-      // Draw vector shape based on product type (similar to canvas export)
+      // Draw vector shape based on product type using PDF primitives (matching canvas export)
       const shapeSize = Math.min(rightHalfWidth - 8, contentHeight * 0.5);
       const shapeCenterX = rightX + rightHalfWidth / 2;
       const shapeCenterY = rightStartY + shapeSize / 2;
       
-      // Get the product type and shape drawing function
+      // Get the product type and configuration
       const productType = product.type?.toLowerCase() || "default";
       const config = productTypesConfig[productType] || productTypesConfig.default;
-      const shapeFunction = getShapeFunction(config.shape || "circle");
       
-      // Calculate letter/number prefix for this product (matching canvas export)
-      const letterPrefix = config.letterPrefix || "O";
-      // Find this product in allProducts to get proper numbering
+      // Get letter/number prefix using shared function
       const matchingProducts = allProducts.filter(p => 
         (p.product_type?.toLowerCase() || "default") === productType && p.sku === product.sku
       );
       const firstProduct = matchingProducts[0];
-      const letterNumber = firstProduct?.letterNumber || `${letterPrefix}1`;
+      const letterNumber = firstProduct ? getProductLetterPrefix(firstProduct, allProducts) : (config.letterPrefix || "O") + "1";
       
-      // Create a minimal canvas to render the shape using the shape function
-      const tempCanvas = document.createElement('canvas');
-      const shapeScale = shapeSize / 60; // Scale to fit in the small space
-      tempCanvas.width = shapeSize * 2; // Extra space for rendering
-      tempCanvas.height = shapeSize * 2;
-      const ctx = tempCanvas.getContext('2d');
+      // Draw shape using PDF primitives (simpler approach - draw circles/shapes directly)
+      const shapeType = config.shapeType || config.shape || "circle";
+      const strokeColor = config.stroke || "#000000";
+      const fillColor = config.fill || "#FFFFFF";
+      const strokeWidth = config.strokeWidth || 2;
       
-      // Translate to center and scale
-      ctx.translate(shapeSize, shapeSize);
-      ctx.scale(shapeScale, shapeScale);
-      
-      // Create a mock Konva shape object with required methods
-      const mockShape = {
-        width: () => config.realWorldSize || config.realWorldWidth || 50,
-        height: () => config.realWorldHeight || 50,
-        getAttr: (attr) => {
-          if (attr === 'stroke') return '#000000';
-          if (attr === 'strokeWidth') return 2;
-          if (attr === 'scaleFactor') return 1;
-          if (attr === 'realWorldSize') return config.realWorldSize;
-          return undefined;
-        },
+      // Convert hex colors to RGB
+      const hexToRgb = (hex) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : { r: 255, g: 255, b: 255 };
       };
       
-      // Implement fillStrokeShape for the mock shape
-      ctx.fillStrokeShape = (shape) => {
-        ctx.fillStyle = '#FFFFFF';
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 2;
-        ctx.fill();
-        ctx.stroke();
-      };
+      const strokeRgb = hexToRgb(strokeColor);
+      const fillRgb = hexToRgb(fillColor);
       
-      // Call the shape function to draw
-      try {
-        shapeFunction(ctx, mockShape);
-        
-        // Convert canvas to data URL and add to PDF
-        const shapeDataUrl = tempCanvas.toDataURL('image/png');
-        pdf.addImage(shapeDataUrl, 'PNG', shapeCenterX - shapeSize / 2, shapeCenterY - shapeSize / 2, shapeSize, shapeSize);
-      } catch (error) {
-        console.warn('Failed to render product shape:', error);
-        // Fallback to simple circle
-        pdf.setDrawColor(0, 0, 0);
-        pdf.setLineWidth(0.5);
-        pdf.circle(shapeCenterX, shapeCenterY, shapeSize / 2, 'S');
+      pdf.setDrawColor(strokeRgb.r, strokeRgb.g, strokeRgb.b);
+      pdf.setFillColor(fillRgb.r, fillRgb.g, fillRgb.b);
+      pdf.setLineWidth(strokeWidth * 0.1); // Scale down for PDF
+      
+      // Draw different shapes based on type
+      const radius = shapeSize / 2;
+      
+      switch (shapeType) {
+        case "circle":
+          pdf.circle(shapeCenterX, shapeCenterY, radius, "FD");
+          break;
+        case "square":
+        case "rectangle":
+          pdf.rect(shapeCenterX - radius, shapeCenterY - radius, shapeSize, shapeSize, "FD");
+          break;
+        case "triangle":
+          // Draw triangle using lines
+          pdf.setDrawColor(strokeRgb.r, strokeRgb.g, strokeRgb.b);
+          pdf.setFillColor(fillRgb.r, fillRgb.g, fillRgb.b);
+          pdf.triangle(
+            shapeCenterX, shapeCenterY - radius,
+            shapeCenterX - radius, shapeCenterY + radius,
+            shapeCenterX + radius, shapeCenterY + radius,
+            "FD"
+          );
+          break;
+        case "ellipse":
+          pdf.ellipse(shapeCenterX, shapeCenterY, radius, radius * 0.7, "FD");
+          break;
+        default:
+          // Default to circle for unknown shapes
+          pdf.circle(shapeCenterX, shapeCenterY, radius, "FD");
+          break;
       }
       
       // Add letter/number prefix over the shape

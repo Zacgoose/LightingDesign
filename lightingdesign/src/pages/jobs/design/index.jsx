@@ -140,47 +140,17 @@ const Page = () => {
     canRedo,
   } = useHistory(activeLayer?.products || []);
 
-  // Text boxes history - using ref-based tracking to avoid re-render issues
-  const textBoxHistoryRef = useRef({ history: [[]], step: 0, baseline: 0 });
-  const saveTextBoxHistoryRef = useRef(null);
-
-  const saveTextBoxHistory = useCallback((newTextBoxes) => {
-    const hist = textBoxHistoryRef.current;
-    // Remove any future history
-    hist.history = hist.history.slice(0, hist.step + 1);
-    // Add new state
-    hist.history.push(newTextBoxes);
-    hist.step += 1;
-  }, []);
-
-  // Keep the ref updated
-  saveTextBoxHistoryRef.current = saveTextBoxHistory;
-
-  const undoTextBoxHistory = useCallback(() => {
-    const hist = textBoxHistoryRef.current;
-    if (hist.step <= hist.baseline) return false;
-    hist.step -= 1;
-    setTextBoxes(hist.history[hist.step]);
-    return true;
-  }, []);
-
-  const redoTextBoxHistory = useCallback(() => {
-    const hist = textBoxHistoryRef.current;
-    if (hist.step >= hist.history.length - 1) return false;
-    hist.step += 1;
-    setTextBoxes(hist.history[hist.step]);
-    return true;
-  }, []);
-
-  const canUndoTextBox = textBoxHistoryRef.current.step > textBoxHistoryRef.current.baseline;
-  const canRedoTextBox =
-    textBoxHistoryRef.current.step < textBoxHistoryRef.current.history.length - 1;
-
-  const resetTextBoxHistoryBaseline = useCallback((newTextBoxes) => {
-    textBoxHistoryRef.current = { history: [newTextBoxes], step: 0, baseline: 0 };
-  }, []);
-
-  // Ref to track if we're loading data from a layer (vs user editing)
+  // Text boxes with history - similar to products and connectors
+  const {
+    state: textBoxes,
+    updateHistory: updateTextBoxHistory,
+    resetHistoryBaseline: resetTextBoxHistoryBaseline,
+    undo: handleUndoTextBoxes,
+    redo: handleRedoTextBoxes,
+    canUndo: canUndoTextBoxes,
+    canRedo: canRedoTextBoxes,
+  } = useHistory([]);
+  const [selectedTextId, setSelectedTextId] = useState(null);
   const isLoadingLayerData = useRef(false);
   const lastLoadedLayerId = useRef(null); // Initialize to null so first layer loads properly
   const lastLoadedLayersVersion = useRef(0); // Track when layer data changes
@@ -220,9 +190,7 @@ const Page = () => {
   );
   const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100);
 
-  // Text boxes state
-  const [textBoxes, setTextBoxes] = useState([]);
-  const [selectedTextId, setSelectedTextId] = useState(null);
+  // Text boxes state (managed above with useHistory hook)
   const [textDialogOpen, setTextDialogOpen] = useState(false);
   const [textDialogValue, setTextDialogValue] = useState("");
   const [textDialogFormatting, setTextDialogFormatting] = useState({});
@@ -642,7 +610,6 @@ const Page = () => {
     // Load the new layer's data - use resetHistoryBaseline to prevent undo past loaded state
     resetHistoryBaseline(currentLayer.products || []);
     resetConnectorHistoryBaseline(currentLayer.connectors || []);
-    setTextBoxes(currentLayer.textBoxes || []);
     resetTextBoxHistoryBaseline(currentLayer.textBoxes || []);
 
     // Set background image directly (no conversion needed - PDFs are already rasterized)
@@ -698,7 +665,7 @@ const Page = () => {
     pendingInsertPosition,
     selectedTextId,
     textBoxes,
-    setTextBoxes,
+    updateTextBoxHistory,
   });
 
   // Product interaction hook
@@ -874,11 +841,7 @@ const Page = () => {
         };
       });
 
-      setTextBoxes(transformedTextBoxes);
-      // Save to history after transform - using ref to avoid dependency issues
-      if (saveTextBoxHistoryRef.current) {
-        saveTextBoxHistoryRef.current(transformedTextBoxes);
-      }
+      updateTextBoxHistory(transformedTextBoxes);
     }
 
     // Force update transformer
@@ -896,7 +859,7 @@ const Page = () => {
     products,
     textBoxes,
     updateHistory,
-    setTextBoxes,
+    updateTextBoxHistory,
     setGroupKey,
   ]);
 
@@ -975,7 +938,7 @@ const Page = () => {
 
       updateHistory([...products, ...newProducts]);
       updateConnectorHistory([...connectors, ...newConnectors]);
-      setTextBoxes([...textBoxes, ...newTextBoxes]);
+      updateTextBoxHistory([...textBoxes, ...newTextBoxes]);
 
       // Select pasted products and text boxes
       const allNewIds = [
@@ -998,7 +961,7 @@ const Page = () => {
         .filter((id) => id.startsWith("text-"))
         .map((id) => id.substring(5));
       if (textIds.length > 0) {
-        setTextBoxes(textBoxes.filter((t) => !textIds.includes(t.id)));
+        updateTextBoxHistory(textBoxes.filter((t) => !textIds.includes(t.id)));
         setSelectedTextId(null);
       }
       // Also delete selected products/connectors
@@ -1030,7 +993,7 @@ const Page = () => {
       if (transformed) updateHistory(transformed);
 
       const didUndoProduct = handleUndo();
-      const didUndoTextBox = undoTextBoxHistory();
+      const didUndoTextBox = handleUndoTextBoxes();
       const didUndoConnector = handleUndoConnectors();
 
       if (didUndoProduct || didUndoTextBox || didUndoConnector) {
@@ -1042,7 +1005,7 @@ const Page = () => {
       if (transformed) updateHistory(transformed);
 
       const didRedoProduct = handleRedo();
-      const didRedoTextBox = redoTextBoxHistory();
+      const didRedoTextBox = handleRedoTextBoxes();
       const didRedoConnector = handleRedoConnectors();
 
       if (didRedoProduct || didRedoTextBox || didRedoConnector) {
@@ -1604,7 +1567,7 @@ const Page = () => {
         };
 
         // Add the text box and open the dialog immediately
-        setTextBoxes([...textBoxes, newTextBox]);
+        updateTextBoxHistory([...textBoxes, newTextBox]);
         setPendingTextBoxId(newTextBox.id);
         setSelectedTextId(newTextBox.id);
         setTextDialogValue("");
@@ -1688,33 +1651,32 @@ const Page = () => {
           const height = lineHeight * lines.length + padding;
 
           // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
-          setTextBoxes((boxes) =>
-            boxes.map((box) =>
-              box.id === pendingTextBoxId
-                ? {
-                    ...box,
-                    text: newText,
-                    fontSize: formattingData.fontSize,
-                    fontFamily: formattingData.fontFamily,
-                    fontStyle: formattingData.fontStyle,
-                    textDecoration: formattingData.textDecoration,
-                    color: formattingData.color,
-                    width: width, // Use canvas measureText width
-                    height: height, // Use canvas measureText height
-                  }
-                : box,
-            ),
+          const updatedTextBoxes = textBoxes.map((box) =>
+            box.id === pendingTextBoxId
+              ? {
+                  ...box,
+                  text: newText,
+                  fontSize: formattingData.fontSize,
+                  fontFamily: formattingData.fontFamily,
+                  fontStyle: formattingData.fontStyle,
+                  textDecoration: formattingData.textDecoration,
+                  color: formattingData.color,
+                  width: width, // Use canvas measureText width
+                  height: height, // Use canvas measureText height,
+                }
+              : box,
           );
+          updateTextBoxHistory(updatedTextBoxes);
         } else {
           // User confirmed with empty text - remove the text box
-          setTextBoxes((boxes) => boxes.filter((box) => box.id !== pendingTextBoxId));
+          updateTextBoxHistory(textBoxes.filter((box) => box.id !== pendingTextBoxId));
           setSelectedTextId(null);
         }
         setPendingTextBoxId(null);
       }
       setTextDialogOpen(false);
     },
-    [pendingTextBoxId],
+    [pendingTextBoxId, textBoxes, updateTextBoxHistory],
   );
 
   const handleTextDialogClose = useCallback(() => {
@@ -1723,18 +1685,18 @@ const Page = () => {
     if (pendingTextBoxId) {
       const textBox = textBoxes.find((t) => t.id === pendingTextBoxId);
       if (textBox && !textBox.text) {
-        setTextBoxes((boxes) => boxes.filter((box) => box.id !== pendingTextBoxId));
+        updateTextBoxHistory(textBoxes.filter((box) => box.id !== pendingTextBoxId));
         setSelectedTextId(null);
       }
     }
     setPendingTextBoxId(null);
-  }, [pendingTextBoxId, textBoxes]);
+  }, [pendingTextBoxId, textBoxes, updateTextBoxHistory]);
 
   const handleTextChange = useCallback((updatedTextBox) => {
-    setTextBoxes((boxes) =>
+    updateTextBoxHistory((boxes) =>
       boxes.map((box) => (box.id === updatedTextBox.id ? updatedTextBox : box)),
     );
-  }, []);
+  }, [updateTextBoxHistory]);
 
   const handleTextSelect = useCallback(
     (textId) => {
@@ -1790,116 +1752,114 @@ const Page = () => {
 
   const handleTextFormatBold = useCallback(() => {
     if (selectedTextId) {
-      setTextBoxes((boxes) =>
-        boxes.map((box) => {
-          if (box.id !== selectedTextId) return box;
-          const currentStyle = box.fontStyle || "normal";
-          const isBold = currentStyle.includes("bold");
-          const isItalic = currentStyle.includes("italic");
+      const updatedTextBoxes = textBoxes.map((box) => {
+        if (box.id !== selectedTextId) return box;
+        const currentStyle = box.fontStyle || "normal";
+        const isBold = currentStyle.includes("bold");
+        const isItalic = currentStyle.includes("italic");
 
-          let newStyle;
-          if (isBold && isItalic) {
-            newStyle = "italic";
-          } else if (isBold) {
-            newStyle = "normal";
-          } else if (isItalic) {
-            newStyle = "bold italic";
-          } else {
-            newStyle = "bold";
-          }
+        let newStyle;
+        if (isBold && isItalic) {
+          newStyle = "italic";
+        } else if (isBold) {
+          newStyle = "normal";
+        } else if (isItalic) {
+          newStyle = "bold italic";
+        } else {
+          newStyle = "bold";
+        }
 
-          return { ...box, fontStyle: newStyle };
-        }),
-      );
+        return { ...box, fontStyle: newStyle };
+      });
+      updateTextBoxHistory(updatedTextBoxes);
     }
     contextMenus.handleCloseContextMenu();
-  }, [selectedTextId, contextMenus]);
+  }, [selectedTextId, textBoxes, updateTextBoxHistory, contextMenus]);
 
   const handleTextFormatItalic = useCallback(() => {
     if (selectedTextId) {
-      setTextBoxes((boxes) =>
-        boxes.map((box) => {
-          if (box.id !== selectedTextId) return box;
-          const currentStyle = box.fontStyle || "normal";
-          const isBold = currentStyle.includes("bold");
-          const isItalic = currentStyle.includes("italic");
+      const updatedTextBoxes = textBoxes.map((box) => {
+        if (box.id !== selectedTextId) return box;
+        const currentStyle = box.fontStyle || "normal";
+        const isBold = currentStyle.includes("bold");
+        const isItalic = currentStyle.includes("italic");
 
-          let newStyle;
-          if (isBold && isItalic) {
-            newStyle = "bold";
-          } else if (isItalic) {
-            newStyle = "normal";
-          } else if (isBold) {
+        let newStyle;
+        if (isBold && isItalic) {
+          newStyle = "bold";
+        } else if (isItalic) {
+          newStyle = "normal";
+        } else if (isBold) {
             newStyle = "bold italic";
           } else {
             newStyle = "italic";
           }
 
           return { ...box, fontStyle: newStyle };
-        }),
-      );
+        });
+      updateTextBoxHistory(updatedTextBoxes);
     }
     contextMenus.handleCloseContextMenu();
-  }, [selectedTextId, contextMenus]);
+  }, [selectedTextId, textBoxes, updateTextBoxHistory, contextMenus]);
 
   const handleTextFormatUnderline = useCallback(() => {
     if (selectedTextId) {
-      setTextBoxes((boxes) =>
-        boxes.map((box) => {
-          if (box.id !== selectedTextId) return box;
-          const currentDecoration = box.textDecoration || "";
-          const hasUnderline = currentDecoration.includes("underline");
+      const updatedTextBoxes = textBoxes.map((box) => {
+        if (box.id !== selectedTextId) return box;
+        const currentDecoration = box.textDecoration || "";
+        const hasUnderline = currentDecoration.includes("underline");
 
-          let newDecoration;
-          if (hasUnderline) {
-            // Remove underline
-            newDecoration = currentDecoration.replace("underline", "").trim();
-          } else {
-            // Add underline
-            newDecoration = currentDecoration ? `${currentDecoration} underline` : "underline";
-          }
+        let newDecoration;
+        if (hasUnderline) {
+          // Remove underline
+          newDecoration = currentDecoration.replace("underline", "").trim();
+        } else {
+          // Add underline
+          newDecoration = currentDecoration ? `${currentDecoration} underline` : "underline";
+        }
 
-          return { ...box, textDecoration: newDecoration };
-        }),
-      );
+        return { ...box, textDecoration: newDecoration };
+      });
+      updateTextBoxHistory(updatedTextBoxes);
     }
     contextMenus.handleCloseContextMenu();
-  }, [selectedTextId, contextMenus]);
+  }, [selectedTextId, textBoxes, updateTextBoxHistory, contextMenus]);
 
   const handleTextFontSize = useCallback(
     (fontSize) => {
       if (selectedTextId) {
-        setTextBoxes((boxes) =>
-          boxes.map((box) => (box.id === selectedTextId ? { ...box, fontSize } : box)),
+        const updatedTextBoxes = textBoxes.map((box) => 
+          box.id === selectedTextId ? { ...box, fontSize } : box
         );
+        updateTextBoxHistory(updatedTextBoxes);
       }
       contextMenus.handleCloseContextMenu();
     },
-    [selectedTextId, contextMenus],
+    [selectedTextId, textBoxes, updateTextBoxHistory, contextMenus],
   );
 
   const handleTextColorChange = useCallback(
     (color) => {
       if (selectedTextId) {
-        setTextBoxes((boxes) =>
-          boxes.map((box) => (box.id === selectedTextId ? { ...box, color } : box)),
+        const updatedTextBoxes = textBoxes.map((box) => 
+          box.id === selectedTextId ? { ...box, color } : box
         );
+        updateTextBoxHistory(updatedTextBoxes);
       }
     },
-    [selectedTextId],
+    [selectedTextId, textBoxes, updateTextBoxHistory],
   );
 
   const handleTextToggleBorder = useCallback(() => {
     if (selectedTextId) {
-      setTextBoxes((boxes) =>
-        boxes.map((box) => {
-          if (box.id !== selectedTextId) return box;
-          return { ...box, showBorder: !box.showBorder };
-        }),
-      );
+      const updatedTextBoxes = textBoxes.map((box) => {
+        if (box.id !== selectedTextId) return box;
+        return { ...box, showBorder: !box.showBorder };
+      });
+      updateTextBoxHistory(updatedTextBoxes);
     }
     contextMenus.handleCloseContextMenu();
-  }, [selectedTextId, contextMenus]);
+  }, [selectedTextId, textBoxes, updateTextBoxHistory, contextMenus]);
 
   // Drag-to-select handlers
   const handleSelectionStart = useCallback(
@@ -2199,7 +2159,7 @@ const Page = () => {
                   const transformed = applyGroupTransform();
                   if (transformed) updateHistory(transformed);
                   handleUndo();
-                  undoTextBoxHistory();
+                  handleUndoTextBoxes();
                   handleUndoConnectors();
                   clearSelection();
                 },
@@ -2207,12 +2167,12 @@ const Page = () => {
                   const transformed = applyGroupTransform();
                   if (transformed) updateHistory(transformed);
                   handleRedo();
-                  redoTextBoxHistory();
+                  handleRedoTextBoxes();
                   handleRedoConnectors();
                   clearSelection();
                 },
-                canUndo: canUndo || canUndoTextBox || canUndoConnectors,
-                canRedo: canRedo || canRedoTextBox || canRedoConnectors,
+                canUndo: canUndo || canUndoTextBoxes || canUndoConnectors,
+                canRedo: canRedo || canRedoTextBoxes || canRedoConnectors,
                 onMeasure: handleMeasure,
               }}
               viewProps={{

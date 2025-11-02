@@ -2289,10 +2289,13 @@ const Page = () => {
                     backgroundOpacity={settings.backgroundOpacity}
                     objectsChildren={
                       <>
+                        {/* Unselected connectors only */}
                         <ConnectorsLayer
-                          connectors={filterConnectorsBySublayers(connectors, activeLayerId)}
+                          connectors={filterConnectorsBySublayers(connectors, activeLayerId).filter(
+                            (c) => c.id !== selectedConnectorId
+                          )}
                           products={products}
-                          selectedConnectorId={selectedConnectorId}
+                          selectedConnectorId={null}
                           selectedTool={selectedTool}
                           theme={theme}
                           onConnectorSelect={(e, connectorId) => {
@@ -2398,6 +2401,29 @@ const Page = () => {
                           onTextContextMenu={handleTextContextMenu}
                           draggable={selectedTool === "select" || selectedTool === "text"}
                         />
+
+                        {/* Selected connector (rendered on top of everything) */}
+                        {selectedConnectorId && (
+                          <ConnectorsLayer
+                            connectors={filterConnectorsBySublayers(connectors, activeLayerId).filter(
+                              (c) => c.id === selectedConnectorId
+                            )}
+                            products={products}
+                            selectedConnectorId={selectedConnectorId}
+                            selectedTool={selectedTool}
+                            theme={theme}
+                            onConnectorSelect={(e, connectorId) => {
+                              e.cancelBubble = true;
+                              const transformed = applyGroupTransform();
+                              if (transformed) updateHistory(transformed);
+                              setSelectedConnectorId(connectorId);
+                              setSelectedIds([]);
+                              forceGroupUpdate();
+                            }}
+                            onConnectorChange={updateConnectorHistory}
+                            onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
+                          />
+                        )}
 
                         {/* Selection group only (selected products and text) */}
                         <ProductsLayer

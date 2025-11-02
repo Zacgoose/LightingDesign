@@ -1483,165 +1483,6 @@ const Page = () => {
     } : { r: 0, g: 0, b: 0 };
   };
 
-  // Create a PDF context that mimics canvas drawing API (for legend shapes)
-  const createPdfContextForLegend = (pdf, originX, originY) => {
-    const ctx = {
-      fillStyle: "#000",
-      strokeStyle: "#000",
-      lineWidth: 1,
-      _pathData: [],
-      _transformStack: [],
-      _matrix: [1, 0, 0, 1, 0, 0], // a,b,c,d,e,f
-    };
-
-    const applyMatrix = (x, y) => {
-      const [a, b, c, d, e, f] = ctx._matrix;
-      return [a * x + c * y + e + originX, b * x + d * y + f + originY];
-    };
-
-    ctx.save = () => {
-      ctx._transformStack.push(ctx._matrix.slice());
-    };
-
-    ctx.restore = () => {
-      const m = ctx._transformStack.pop();
-      if (m) ctx._matrix = m;
-    };
-
-    ctx.rotate = (angle) => {
-      const cos = Math.cos(angle);
-      const sin = Math.sin(angle);
-      const [a, b, c, d, e, f] = ctx._matrix;
-      ctx._matrix = [
-        a * cos + c * sin,
-        b * cos + d * sin,
-        -a * sin + c * cos,
-        -b * sin + d * cos,
-        e,
-        f,
-      ];
-    };
-
-    ctx.translate = (tx, ty) => {
-      const [a, b, c, d, e, f] = ctx._matrix;
-      ctx._matrix = [a, b, c, d, a * tx + c * ty + e, b * tx + d * ty + f];
-    };
-
-    ctx.scale = (sx, sy) => {
-      const [a, b, c, d, e, f] = ctx._matrix;
-      ctx._matrix = [a * sx, b * sx, c * sy, d * sy, e, f];
-    };
-
-    ctx.beginPath = () => {
-      ctx._pathData = [];
-    };
-
-    ctx.moveTo = (x, y) => {
-      const [mx, my] = applyMatrix(x, y);
-      ctx._pathData.push({ type: 'M', x: mx, y: my });
-    };
-
-    ctx.lineTo = (x, y) => {
-      const [lx, ly] = applyMatrix(x, y);
-      ctx._pathData.push({ type: 'L', x: lx, y: ly });
-    };
-
-    ctx.closePath = () => {
-      ctx._pathData.push({ type: 'Z' });
-    };
-
-    ctx.rect = (x, y, w, h) => {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + w, y);
-      ctx.lineTo(x + w, y + h);
-      ctx.lineTo(x, y + h);
-      ctx.closePath();
-    };
-
-    ctx.arc = (cx, cy, r, startAngle, endAngle) => {
-      const full = Math.abs(endAngle - startAngle) >= Math.PI * 2 - 1e-6;
-      if (full) {
-        const [acx, acy] = applyMatrix(cx, cy);
-        const scaleX = Math.sqrt(ctx._matrix[0] * ctx._matrix[0] + ctx._matrix[1] * ctx._matrix[1]);
-        const scaleY = Math.sqrt(ctx._matrix[2] * ctx._matrix[2] + ctx._matrix[3] * ctx._matrix[3]);
-        const avgScale = (scaleX + scaleY) / 2;
-        ctx._pathData.push({ type: 'circle', cx: acx, cy: acy, r: r * avgScale });
-      }
-    };
-
-    ctx.ellipse = (cx, cy, rx, ry, rotation, startAngle, endAngle) => {
-      const [ecx, ecy] = applyMatrix(cx, cy);
-      const scaleX = Math.sqrt(ctx._matrix[0] * ctx._matrix[0] + ctx._matrix[1] * ctx._matrix[1]);
-      const scaleY = Math.sqrt(ctx._matrix[2] * ctx._matrix[2] + ctx._matrix[3] * ctx._matrix[3]);
-      ctx._pathData.push({ 
-        type: 'ellipse', 
-        cx: ecx, 
-        cy: ecy, 
-        rx: rx * scaleX, 
-        ry: ry * scaleY 
-      });
-    };
-
-    ctx.fill = () => {
-      const fillRgb = hexToRgb(ctx.fillStyle);
-      pdf.setFillColor(fillRgb.r, fillRgb.g, fillRgb.b);
-      
-      for (const item of ctx._pathData) {
-        if (item.type === 'circle') {
-          pdf.circle(item.cx, item.cy, item.r, 'F');
-        } else if (item.type === 'ellipse') {
-          pdf.ellipse(item.cx, item.cy, item.rx, item.ry, 'F');
-        }
-      }
-      
-      // Handle path-based fills
-      if (ctx._pathData.length > 0 && ctx._pathData[0].type === 'M') {
-        const pathStr = ctx._pathData.map(p => {
-          if (p.type === 'M') return `M${p.x},${p.y}`;
-          if (p.type === 'L') return `L${p.x},${p.y}`;
-          if (p.type === 'Z') return 'Z';
-          return '';
-        }).join(' ');
-        
-        // Use pdf.path if available, otherwise approximate with lines
-        if (pdf.path) {
-          pdf.path(pathStr, 'F');
-        }
-      }
-    };
-
-    ctx.stroke = () => {
-      const strokeRgb = hexToRgb(ctx.strokeStyle);
-      pdf.setDrawColor(strokeRgb.r, strokeRgb.g, strokeRgb.b);
-      pdf.setLineWidth(ctx.lineWidth);
-      
-      for (const item of ctx._pathData) {
-        if (item.type === 'circle') {
-          pdf.circle(item.cx, item.cy, item.r, 'S');
-        } else if (item.type === 'ellipse') {
-          pdf.ellipse(item.cx, item.cy, item.rx, item.ry, 'S');
-        }
-      }
-      
-      // Handle path-based strokes
-      if (ctx._pathData.length > 0 && ctx._pathData[0].type === 'M') {
-        const pathStr = ctx._pathData.map(p => {
-          if (p.type === 'M') return `M${p.x},${p.y}`;
-          if (p.type === 'L') return `L${p.x},${p.y}`;
-          if (p.type === 'Z') return 'Z';
-          return '';
-        }).join(' ');
-        
-        if (pdf.path) {
-          pdf.path(pathStr, 'S');
-        }
-      }
-    };
-
-    return ctx;
-  };
-
   // Helper function to add product legend using ExportDocumentLayout style
   const addProductLegend = async (pdf, pageWidth, pageHeight, allProducts) => {
     // Get job info
@@ -1809,10 +1650,23 @@ const Page = () => {
       const fillColor = config.fill || "#FFFFFF";
       const strokeWidth = config.strokeWidth || 2;
       
-      // Create shape object for product (reuse same pattern as canvas export)
+      // Create SVG element for the product shape (reuse exact approach from canvas export)
+      const SVG_NS = "http://www.w3.org/2000/svg";
+      const svgElement = document.createElementNS(SVG_NS, "svg");
+      svgElement.setAttribute("xmlns", SVG_NS);
+      svgElement.setAttribute("viewBox", `0 0 ${shapeSize} ${shapeSize}`);
+      svgElement.setAttribute("width", String(shapeSize));
+      svgElement.setAttribute("height", String(shapeSize));
+      
+      // Create a group for the product centered at origin
+      const productGroupEl = document.createElementNS(SVG_NS, "g");
+      productGroupEl.setAttribute("transform", `translate(${shapeSize/2} ${shapeSize/2})`);
+      svgElement.appendChild(productGroupEl);
+      
+      // Create shape object (same as canvas export)
       const shapeObj = {
-        width: () => shapeSize,
-        height: () => shapeSize,
+        width: () => shapeSize * 0.8, // Slightly smaller to fit nicely
+        height: () => shapeSize * 0.8,
         getAttr: (name) => {
           switch (name) {
             case "scaleFactor":
@@ -1834,11 +1688,165 @@ const Page = () => {
         fill: fillColor,
       };
       
-      // Create PDF context that mimics canvas API (same approach as SVG context in canvas export)
-      const ctx = createPdfContextForLegend(pdf, shapeCenterX, shapeCenterY);
+      // Create SVG context (same approach as canvas export)
+      const createSvgContextForLegend = (svgGroup) => {
+        const ctx = {
+          _d: "",
+          _currentX: 0,
+          _currentY: 0,
+          strokeStyle: strokeColor,
+          fillStyle: fillColor,
+          lineWidth: strokeWidth * 0.1,
+          _transformStack: [],
+          _matrix: [1, 0, 0, 1, 0, 0],
+        };
+
+        const applyMatrix = (x, y) => {
+          const [a, b, c, d, e, f] = ctx._matrix;
+          return [a * x + c * y + e, b * x + d * y + f];
+        };
+
+        ctx.save = () => {
+          ctx._transformStack.push(ctx._matrix.slice());
+        };
+
+        ctx.restore = () => {
+          const m = ctx._transformStack.pop();
+          if (m) ctx._matrix = m;
+        };
+
+        ctx.rotate = (angle) => {
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+          const [a, b, c, d, e, f] = ctx._matrix;
+          ctx._matrix = [
+            a * cos + c * sin,
+            b * cos + d * sin,
+            -a * sin + c * cos,
+            -b * sin + d * cos,
+            e,
+            f,
+          ];
+        };
+
+        ctx.translate = (tx, ty) => {
+          const [a, b, c, d, e, f] = ctx._matrix;
+          ctx._matrix = [a, b, c, d, a * tx + c * ty + e, b * tx + d * ty + f];
+        };
+
+        ctx.scale = (sx, sy) => {
+          const [a, b, c, d, e, f] = ctx._matrix;
+          ctx._matrix = [a * sx, b * sx, c * sy, d * sy, e, f];
+        };
+
+        ctx.beginPath = () => {
+          ctx._d = "";
+          ctx._currentX = 0;
+          ctx._currentY = 0;
+        };
+
+        ctx.moveTo = (x, y) => {
+          const [mx, my] = applyMatrix(x, y);
+          ctx._d += `M ${mx} ${my} `;
+          ctx._currentX = mx;
+          ctx._currentY = my;
+        };
+
+        ctx.lineTo = (x, y) => {
+          const [lx, ly] = applyMatrix(x, y);
+          ctx._d += `L ${lx} ${ly} `;
+          ctx._currentX = lx;
+          ctx._currentY = ly;
+        };
+
+        ctx.closePath = () => {
+          ctx._d += "Z ";
+        };
+
+        ctx.rect = (x, y, w, h) => {
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + w, y);
+          ctx.lineTo(x + w, y + h);
+          ctx.lineTo(x, y + h);
+          ctx.closePath();
+        };
+
+        ctx.ellipse = (cx, cy, rx, ry, rotation, startAngle, endAngle) => {
+          const [ecx, ecy] = applyMatrix(cx, cy);
+          const scaleX = Math.sqrt(
+            ctx._matrix[0] * ctx._matrix[0] + ctx._matrix[1] * ctx._matrix[1],
+          );
+          const scaleY = Math.sqrt(
+            ctx._matrix[2] * ctx._matrix[2] + ctx._matrix[3] * ctx._matrix[3],
+          );
+          const matrixAngle = Math.atan2(ctx._matrix[2], ctx._matrix[0]);
+          const ellipseEl = document.createElementNS(SVG_NS, "ellipse");
+          ellipseEl.setAttribute("cx", String(ecx));
+          ellipseEl.setAttribute("cy", String(ecy));
+          ellipseEl.setAttribute("rx", String(Math.abs(rx * scaleX)));
+          ellipseEl.setAttribute("ry", String(Math.abs(ry * scaleY)));
+          let rotDeg = (matrixAngle * 180) / Math.PI;
+          if (rotation) rotDeg += (rotation * 180) / Math.PI;
+          if (rotDeg) ellipseEl.setAttribute("transform", `rotate(${rotDeg} ${ecx} ${ecy})`);
+          ellipseEl.setAttribute("fill", ctx.fillStyle || "none");
+          ellipseEl.setAttribute("stroke", ctx.strokeStyle || "none");
+          ellipseEl.setAttribute("stroke-width", String(ctx.lineWidth || 1));
+          svgGroup.appendChild(ellipseEl);
+        };
+
+        ctx.arc = (cx, cy, r, startAngle, endAngle) => {
+          const full = Math.abs(endAngle - startAngle) >= Math.PI * 2 - 1e-6;
+          if (full) {
+            const [acx, acy] = applyMatrix(cx, cy);
+            const scaleX = Math.sqrt(
+              ctx._matrix[0] * ctx._matrix[0] + ctx._matrix[1] * ctx._matrix[1],
+            );
+            const scaleY = Math.sqrt(
+              ctx._matrix[2] * ctx._matrix[2] + ctx._matrix[3] * ctx._matrix[3],
+            );
+            const avgScale = (scaleX + scaleY) / 2;
+            const circleEl = document.createElementNS(SVG_NS, "circle");
+            circleEl.setAttribute("cx", String(acx));
+            circleEl.setAttribute("cy", String(acy));
+            circleEl.setAttribute("r", String(r * avgScale));
+            circleEl.setAttribute("fill", ctx.fillStyle || "none");
+            circleEl.setAttribute("stroke", ctx.strokeStyle || "none");
+            circleEl.setAttribute("stroke-width", String(ctx.lineWidth || 1));
+            svgGroup.appendChild(circleEl);
+          }
+        };
+
+        ctx.fill = () => {
+          if (ctx._d) {
+            const pathEl = document.createElementNS(SVG_NS, "path");
+            pathEl.setAttribute("d", ctx._d);
+            pathEl.setAttribute("fill", ctx.fillStyle || "none");
+            pathEl.setAttribute("stroke", "none");
+            svgGroup.appendChild(pathEl);
+            ctx._d = "";
+          }
+        };
+
+        ctx.stroke = () => {
+          if (ctx._d) {
+            const pathEl = document.createElementNS(SVG_NS, "path");
+            pathEl.setAttribute("d", ctx._d);
+            pathEl.setAttribute("fill", "none");
+            pathEl.setAttribute("stroke", ctx.strokeStyle || "none");
+            pathEl.setAttribute("stroke-width", String(ctx.lineWidth || 1));
+            svgGroup.appendChild(pathEl);
+            ctx._d = "";
+          }
+        };
+
+        return ctx;
+      };
+      
+      const ctx = createSvgContextForLegend(productGroupEl);
       ctx.fillStyle = fillColor;
       ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = strokeWidth * 0.1; // Scale down for PDF
+      ctx.lineWidth = strokeWidth * 0.1;
       
       try {
         // Use the same shape function as canvas export
@@ -1847,6 +1855,27 @@ const Page = () => {
       } catch (err) {
         // Fallback to simple circle if shape function fails
         console.error("Shape rendering failed for", product.sku, err);
+        const circleEl = document.createElementNS(SVG_NS, "circle");
+        circleEl.setAttribute("cx", "0");
+        circleEl.setAttribute("cy", "0");
+        circleEl.setAttribute("r", String(shapeSize * 0.4));
+        circleEl.setAttribute("fill", fillColor);
+        circleEl.setAttribute("stroke", strokeColor);
+        circleEl.setAttribute("stroke-width", String(strokeWidth * 0.1));
+        productGroupEl.appendChild(circleEl);
+      }
+      
+      // Render SVG to PDF using svg2pdf.js (same as canvas export)
+      try {
+        await pdf.svg(svgElement, {
+          x: shapeCenterX - shapeSize / 2,
+          y: shapeCenterY - shapeSize / 2,
+          width: shapeSize,
+          height: shapeSize,
+        });
+      } catch (err) {
+        console.error("Failed to render SVG shape to PDF:", err);
+        // Fallback to simple circle
         const strokeRgb = hexToRgb(strokeColor);
         const fillRgb = hexToRgb(fillColor);
         pdf.setDrawColor(strokeRgb.r, strokeRgb.g, strokeRgb.b);

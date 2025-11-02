@@ -1,6 +1,5 @@
 import { Group, Shape, Circle, Line } from "react-konva";
 import { useState } from "react";
-import { calculateCableControlPoints } from "/src/utils/cableUtils";
 
 export const ConnectorLine = ({
   connector,
@@ -15,12 +14,22 @@ export const ConnectorLine = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
-  // Initialize 3 control points for cubic Bézier curve using shared utility
-  const defaultControlPoints = calculateCableControlPoints(fromProduct, toProduct);
+  // Initialize 3 control points for cubic Bézier curve
+  // Control points positioned to create a natural curve
+  const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25;
+  const defaultControl1Y = Math.min(fromProduct.y, toProduct.y) - 60;
+  const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75;
+  const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - 60;
 
-  const control1 = connector.control1 ?? defaultControlPoints.control1;
-  const control2 = connector.control2 ?? defaultControlPoints.control2;
-  const control3 = connector.control3 ?? defaultControlPoints.control3;
+  const control1 = connector.control1 ?? { x: defaultControl1X, y: defaultControl1Y };
+  const control3 = connector.control3 ?? { x: defaultControl3X, y: defaultControl3Y };
+  
+  // Control2 (center point) is always positioned in a straight line between control1 and control3
+  // Not user-adjustable - ensures smooth flow from one end to the other
+  const control2 = {
+    x: (control1.x + control3.x) / 2,
+    y: (control1.y + control3.y) / 2,
+  };
 
   // Handle control point drag
   const handleControlDrag = (controlName, e) => {
@@ -61,8 +70,7 @@ export const ConnectorLine = ({
         }
         strokeWidth={isSelected ? 6 : 4}
         lineCap="round"
-        lineJoin="round"
-        dash={[10, 5]} // Dashed line pattern: 10px dash, 5px gap
+        dash={[20, 10]} // Dashed line pattern: 20px dash, 10px gap (more spacing)
         hitStrokeWidth={20} // Makes it easier to click
         listening={selectedTool === "select" || selectedTool === "connect"} // Only listen when interaction is needed
         onClick={handleLineClick}
@@ -103,11 +111,11 @@ export const ConnectorLine = ({
             listening={false}
           />
 
-          {/* Draggable control points */}
+          {/* Draggable control points (only outer two) */}
           <Circle
             x={control1.x}
             y={control1.y}
-            radius={7}
+            radius={10}
             fill={theme.palette.info.main}
             stroke={theme.palette.background.paper}
             strokeWidth={2}
@@ -119,25 +127,11 @@ export const ConnectorLine = ({
             }}
             onDragMove={(e) => handleControlDrag("control1", e)}
           />
-          <Circle
-            x={control2.x}
-            y={control2.y}
-            radius={8}
-            fill={theme.palette.secondary.main}
-            stroke={theme.palette.background.paper}
-            strokeWidth={2}
-            draggable
-            onDragStart={() => setIsDragging(true)}
-            onDragEnd={(e) => {
-              setIsDragging(false);
-              handleControlDrag("control2", e);
-            }}
-            onDragMove={(e) => handleControlDrag("control2", e)}
-          />
+          {/* Center control point (control2) is not visible or draggable - auto-positioned */}
           <Circle
             x={control3.x}
             y={control3.y}
-            radius={7}
+            radius={10}
             fill={theme.palette.info.main}
             stroke={theme.palette.background.paper}
             strokeWidth={2}

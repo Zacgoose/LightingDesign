@@ -29,7 +29,6 @@ import { Stage, Layer } from "react-konva";
 import "svg2pdf.js";
 import productTypesConfig from "/src/data/productTypes.json";
 import { getShapeFunction } from "/src/components/designer/productShapes";
-import { calculateCableControlPoints } from "/src/utils/cableUtils";
 
 // Paper size definitions (dimensions in mm)
 const PAPER_SIZES = [
@@ -912,12 +911,20 @@ const Page = () => {
         const fromProduct = exportProducts.find((p) => p.id === connector.from);
         const toProduct = exportProducts.find((p) => p.id === connector.to);
         if (fromProduct && toProduct) {
-          // Compute default control points using shared utility (same as ConnectorLine)
-          const defaultControlPoints = calculateCableControlPoints(fromProduct, toProduct);
+          // Compute default control points (same heuristic as ConnectorLine)
+          const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25;
+          const defaultControl1Y = Math.min(fromProduct.y, toProduct.y) - 60;
+          const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75;
+          const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - 60;
 
-          const c1 = connector.control1 || defaultControlPoints.control1;
-          const c2 = connector.control2 || defaultControlPoints.control2;
-          const c3 = connector.control3 || defaultControlPoints.control3;
+          const c1 = connector.control1 || { x: defaultControl1X, y: defaultControl1Y };
+          const c3 = connector.control3 || { x: defaultControl3X, y: defaultControl3Y };
+          
+          // Control2 (center point) is always positioned in a straight line between control1 and control3
+          const c2 = {
+            x: (c1.x + c3.x) / 2,
+            y: (c1.y + c3.y) / 2,
+          };
 
           // Use midpoints between control points to approximate a smooth multi-point path
           const midX = (c1.x + c2.x) / 2;
@@ -934,7 +941,7 @@ const Page = () => {
           pathEl.setAttribute("stroke-width", "4");
           pathEl.setAttribute("stroke-linecap", "round");
           pathEl.setAttribute("stroke-linejoin", "round");
-          pathEl.setAttribute("stroke-dasharray", "10 5"); // Dashed line pattern: 10px dash, 5px gap
+          pathEl.setAttribute("stroke-dasharray", "20 10"); // Dashed line pattern: 20px dash, 10px gap
           svgElement.appendChild(pathEl);
           connectorCount++;
         }

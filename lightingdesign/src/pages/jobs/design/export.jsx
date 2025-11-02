@@ -322,8 +322,8 @@ const Page = () => {
         });
 
         // Define drawing area (with footer at bottom instead of header at top)
-        const footerHeight = 50;
-        const drawingAreaY = 10; // Start from top
+        const footerHeight = 25;
+        const drawingAreaY = 0; // Start from top
         const drawingAreaHeight = pageHeight - footerHeight - 15;
         const drawingAreaWidth = pageWidth - 20;
 
@@ -402,7 +402,7 @@ const Page = () => {
 
   // Helper function to add footer info bar (replacing old title block)
   const addFooterInfoBar = async (pdf, pageWidth, pageHeight, info) => {
-    const bottomBarHeight = 50;
+    const bottomBarHeight = 40;
     const infoBarY = pageHeight - bottomBarHeight;
     const margin = 1; // Reduced margin for less wasted space
     
@@ -418,7 +418,7 @@ const Page = () => {
     // Logo section on the left
     const logoWidth = 50;
     const logoX = margin;
-    const logoY = infoBarY + 8;
+    const logoY = infoBarY + 1;
     
     // Draw logo images (or placeholders if files don't exist)
     pdf.setDrawColor(200, 200, 200);
@@ -426,7 +426,7 @@ const Page = () => {
     
     try {
       // Logo 1 (top) - try to load from /public/logos/
-      pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, logoWidth - 4, 18);
+      pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, 44, 20);
     } catch (error) {
       // If logo doesn't exist, show placeholder
       pdf.setFillColor(250, 250, 250);
@@ -438,7 +438,7 @@ const Page = () => {
     
     try {
       // Logo 2 (bottom)
-      pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 20, logoWidth - 4, 18);
+      pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 21, 46, 18);
     } catch (error) {
       // If logo doesn't exist, show placeholder
       pdf.setFillColor(250, 250, 250);
@@ -498,11 +498,11 @@ const Page = () => {
     // Store section with box
     pdf.setDrawColor(220, 220, 220);
     pdf.setFillColor(255, 255, 255);
-    pdf.roundedRect(companyX, infoBarY + 6, 60, 18, 1, 1, "FD");
+    pdf.roundedRect(companyX, infoBarY + 4, 60, 14, 1, 1, "FD");
     
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(80, 80, 80);
-    pdf.text("Store:", companyX + 2, infoBarY + 10);
+    pdf.text("Store:", companyX + 2, infoBarY + 7);
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(100, 100, 100);
     const storeText = pdf.splitTextToSize(info.address || "Store Address", 56);
@@ -511,14 +511,14 @@ const Page = () => {
     // Head Office section with box
     pdf.setDrawColor(220, 220, 220);
     pdf.setFillColor(255, 255, 255);
-    pdf.roundedRect(companyX, infoBarY + 26, 60, 18, 1, 1, "FD");
+    pdf.roundedRect(companyX, infoBarY + 19, 60, 14, 1, 1, "FD");
     
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(80, 80, 80);
-    pdf.text("Head Office:", companyX + 2, infoBarY + 30);
+    pdf.text("Head Office:", companyX + 2, infoBarY + 22);
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(100, 100, 100);
-    pdf.text("Head Office Address", companyX + 2, infoBarY + 33);
+    pdf.text("Head Office Address", companyX + 2, infoBarY + 25);
     
     pdf.setTextColor(0, 0, 0); // Reset color
   };
@@ -1548,7 +1548,7 @@ const Page = () => {
     // Layout settings
     const maxCols = 5;
     const maxRows = 4;
-    const bottomBarHeight = 50; // Increased height for better spacing
+    const bottomBarHeight = 40; // Increased height for better spacing
     const margin = 1; // Reduced margin for less wasted space
     const productAreaHeight = pageHeight - bottomBarHeight - margin * 2;
     
@@ -1903,7 +1903,7 @@ const Page = () => {
       pdf.setTextColor(0, 0, 0);
       pdf.text(letterNumber, shapeCenterX, shapeCenterY + 1, { align: "center" });
       
-      let infoY = shapeCenterY + shapeSize / 2 + 6;
+      let infoY = shapeCenterY + shapeSize / 2 + 2;
       
       // Quantity (bold, blue)
       pdf.setFontSize(7);
@@ -1913,7 +1913,7 @@ const Page = () => {
         align: "center",
       });
       
-      infoY += 5;
+      infoY += 4;
       
       // SKU (smaller, gray)
       pdf.setFontSize(5);
@@ -1927,7 +1927,7 @@ const Page = () => {
       
       // Product name at the bottom of entire cell (spanning full width)
       const nameY = innerY + contentHeight + 3;
-      pdf.setFontSize(5);
+      pdf.setFontSize(7);
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(0, 0, 0);
       const nameLines = pdf.splitTextToSize(product.name, innerWidth - 4);
@@ -1954,7 +1954,7 @@ const Page = () => {
     // Logo section on the left
     const logoWidth = 50;
     const logoX = margin;
-    const logoY = infoBarY + 8;
+    const logoY = infoBarY + 1;
     
     // Draw logo images (or placeholders if files don't exist)
     pdf.setDrawColor(200, 200, 200);
@@ -1962,7 +1962,7 @@ const Page = () => {
     
     try {
       // Logo 1 (top) - try to load from /public/logos/
-      pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, logoWidth - 4, 18);
+      pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, 44, 20);
     } catch (error) {
       // If logo doesn't exist, show placeholder
       pdf.setFillColor(250, 250, 250);
@@ -1974,7 +1974,7 @@ const Page = () => {
     
     try {
       // Logo 2 (bottom)
-      pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 20, logoWidth - 4, 18);
+      pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 21, 46, 18);
     } catch (error) {
       // If logo doesn't exist, show placeholder
       pdf.setFillColor(250, 250, 250);
@@ -2034,27 +2034,27 @@ const Page = () => {
     // Store section with box
     pdf.setDrawColor(220, 220, 220);
     pdf.setFillColor(255, 255, 255);
-    pdf.roundedRect(companyX, infoBarY + 6, 60, 18, 1, 1, "FD");
+    pdf.roundedRect(companyX, infoBarY + 4, 60, 14, 1, 1, "FD");
     
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(80, 80, 80);
-    pdf.text("Store:", companyX + 2, infoBarY + 10);
+    pdf.text("Store:", companyX + 2, infoBarY + 7);
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(100, 100, 100);
     const storeText = pdf.splitTextToSize(jobInfo.address || "Store Address", 56);
-    pdf.text(storeText.slice(0, 2), companyX + 2, infoBarY + 13);
+    pdf.text(storeText.slice(0, 2), companyX + 2, infoBarY + 10);
     
     // Head Office section with box
     pdf.setDrawColor(220, 220, 220);
     pdf.setFillColor(255, 255, 255);
-    pdf.roundedRect(companyX, infoBarY + 26, 60, 18, 1, 1, "FD");
+    pdf.roundedRect(companyX, infoBarY + 19, 60, 14, 1, 1, "FD");
     
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(80, 80, 80);
-    pdf.text("Head Office:", companyX + 2, infoBarY + 30);
+    pdf.text("Head Office:", companyX + 2, infoBarY + 22);
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(100, 100, 100);
-    pdf.text("Head Office Address", companyX + 2, infoBarY + 33);
+    pdf.text("Head Office Address", companyX + 2, infoBarY + 25);
   };
 
   const canExport = selectedLayers.length > 0;

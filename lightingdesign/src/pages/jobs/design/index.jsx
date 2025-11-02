@@ -2331,6 +2331,7 @@ const Page = () => {
                           onProductDragEnd={handleProductDragEnd}
                           onContextMenu={contextMenus.handleContextMenu}
                           onTextContextMenu={handleTextContextMenu}
+                          onTextDoubleClick={handleTextDoubleClick}
                           onGroupTransformEnd={handleUnifiedGroupTransformEnd}
                           renderUnselected={true}
                           renderSelection={false}
@@ -2422,6 +2423,7 @@ const Page = () => {
                           onProductDragEnd={handleProductDragEnd}
                           onContextMenu={contextMenus.handleContextMenu}
                           onTextContextMenu={handleTextContextMenu}
+                          onTextDoubleClick={handleTextDoubleClick}
                           onGroupTransformEnd={handleUnifiedGroupTransformEnd}
                           renderUnselected={false}
                           renderSelection={true}
@@ -2451,6 +2453,7 @@ const Page = () => {
                           onProductDragEnd={handleProductDragEnd}
                           onContextMenu={contextMenus.handleContextMenu}
                           onTextContextMenu={handleTextContextMenu}
+                          onTextDoubleClick={handleTextDoubleClick}
                           onGroupTransformEnd={handleUnifiedGroupTransformEnd}
                           renderUnselected={false}
                           renderSelection={false}

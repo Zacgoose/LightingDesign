@@ -95,6 +95,7 @@ export const ProductsLayer = memo(
     onGroupTransformEnd,
     textBoxes = [], // Add textBoxes support
     onTextContextMenu, // Add text context menu handler
+    onTextDoubleClick, // Add text double click handler
     renderUnselected = true, // Control rendering of unselected products
     renderSelection = true, // Control rendering of selection group
     renderTransformer = true, // Control rendering of transformer
@@ -283,6 +284,22 @@ export const ProductsLayer = memo(
                   }}
                   onTap={(e) => {
                     e.cancelBubble = true;
+                  }}
+                  onDblClick={(e) => {
+                    e.cancelBubble = true;
+                    // Only allow double-click to edit if exactly 1 text box is selected (no products selected)
+                    if (textIds.length === 1 && productOnlyIds.length === 0 && onTextDoubleClick) {
+                      const originalTextId = textBox.id;
+                      onTextDoubleClick(e, originalTextId);
+                    }
+                  }}
+                  onDblTap={(e) => {
+                    e.cancelBubble = true;
+                    // Only allow double-tap to edit if exactly 1 text box is selected (no products selected)
+                    if (textIds.length === 1 && productOnlyIds.length === 0 && onTextDoubleClick) {
+                      const originalTextId = textBox.id;
+                      onTextDoubleClick(e, originalTextId);
+                    }
                   }}
                   // Don't cancel mouseDown - let it propagate to parent Group for dragging
                   onContextMenu={(e) => {

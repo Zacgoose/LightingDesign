@@ -1,7 +1,6 @@
 import { ConnectorLine } from "/src/components/designer/ConnectorLine";
-import { memo } from "react";
 
-const ConnectorsLayerComponent = ({
+export const ConnectorsLayer = ({
   connectors,
   products,
   selectedConnectorId,
@@ -41,7 +40,3 @@ const ConnectorsLayerComponent = ({
     </>
   );
 };
-
-export const ConnectorsLayer = memo(ConnectorsLayerComponent);
-
-ConnectorsLayer.displayName = "ConnectorsLayer";

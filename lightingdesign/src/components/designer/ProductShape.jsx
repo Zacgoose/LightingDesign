@@ -102,5 +102,3 @@ export const ProductShape = memo(
     );
   },
 );
-
-ProductShape.displayName = "ProductShape";

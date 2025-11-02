@@ -23,6 +23,4 @@ export const SelectionRectangle = memo(({ selectionRect }) => {
   );
 });
 
-SelectionRectangle.displayName = "SelectionRectangle";
-
 export default SelectionRectangle;

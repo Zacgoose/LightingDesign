@@ -21,8 +21,7 @@ import {
 } from "@mui/material";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { Download, ArrowBack } from "@mui/icons-material";
-import { ApiGetCall } from "/src/api/ApiCall";
-import axios from "axios";
+import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
 import Link from "next/link";
 import jsPDF from "jspdf";
 import Konva from "konva";
@@ -69,6 +68,9 @@ const Page = () => {
     queryKey: `Job-${id}`,
     waiting: !!id,
   });
+
+  // API mutation for fetching images via proxy
+  const proxyImagesMutation = ApiPostCall({});
 
   // Initialize selected layers when design data loads
   const layers = designData.data?.designData?.layers || [];
@@ -1386,14 +1388,12 @@ const Page = () => {
         return [];
       }
 
-      // Call the proxy endpoint using axios.get with data in params
-      // This matches the ApiGetCall pattern where data is passed as params
-      const response = await axios.get('/api/ExecProxyBeaconImages', {
-        params: {
-          urls: imageUrls, // Send as array - Azure Functions will handle it
-        },
-        headers: {
-          'Content-Type': 'application/json',
+      // Use ApiPostCall mutation to fetch images via proxy
+      // Even though the endpoint is GET, we use mutateAsync to call it imperatively
+      const response = await proxyImagesMutation.mutateAsync({
+        url: '/api/ExecProxyBeaconImages',
+        data: {
+          urls: imageUrls, // Send as array in request body
         },
       });
 

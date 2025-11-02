@@ -26,7 +26,7 @@ export const useContextMenus = ({
   pendingInsertPosition,
   selectedTextId,
   textBoxes,
-  updateTextBoxHistory,
+  setTextBoxes,
 }) => {
   const [contextMenu, setContextMenu] = useState(null);
   const [colorPickerAnchor, setColorPickerAnchor] = useState(null);
@@ -181,9 +181,10 @@ export const useContextMenus = ({
         });
         setConnectors(newConnectors);
       } else if (colorPickerTarget.type === "text") {
-        if (updateTextBoxHistory) {
-          const updatedBoxes = textBoxes.map((box) => (box.id === colorPickerTarget.id ? { ...box, color } : box));
-          updateTextBoxHistory(updatedBoxes);
+        if (setTextBoxes) {
+          setTextBoxes((boxes) =>
+            boxes.map((box) => (box.id === colorPickerTarget.id ? { ...box, color } : box))
+          );
         }
       }
 
@@ -194,12 +195,11 @@ export const useContextMenus = ({
       colorPickerTarget,
       products,
       connectors,
-      textBoxes,
       applyGroupTransform,
       updateHistory,
       setConnectors,
       setGroupKey,
-      updateTextBoxHistory,
+      setTextBoxes,
     ],
   );
 
@@ -210,9 +210,8 @@ export const useContextMenus = ({
       setSelectedConnectorId(null);
     }
 
-    if (selectedTextId && updateTextBoxHistory) {
-      const filteredBoxes = textBoxes.filter((box) => box.id !== selectedTextId);
-      updateTextBoxHistory(filteredBoxes);
+    if (selectedTextId && setTextBoxes) {
+      setTextBoxes((boxes) => boxes.filter((box) => box.id !== selectedTextId));
     }
 
     if (selectedIds.length > 0) {
@@ -235,7 +234,6 @@ export const useContextMenus = ({
     selectedTextId,
     products,
     connectors,
-    textBoxes,
     applyGroupTransform,
     updateHistory,
     setConnectors,
@@ -243,7 +241,7 @@ export const useContextMenus = ({
     setSelectedConnectorId,
     setGroupKey,
     handleCloseContextMenu,
-    updateTextBoxHistory,
+    setTextBoxes,
   ]);
 
   const handleDuplicateSelected = useCallback(() => {

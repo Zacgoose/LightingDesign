@@ -140,6 +140,17 @@ const Page = () => {
     canRedo,
   } = useHistory(activeLayer?.products || []);
 
+  // Text boxes history tracking (separate from state for transform stability)
+  const {
+    state: textBoxesHistory,
+    updateHistory: updateTextBoxHistory,
+    resetHistoryBaseline: resetTextBoxHistoryBaseline,
+    undo: undoTextBoxHistory,
+    redo: redoTextBoxHistory,
+    canUndo: canUndoTextBox,
+    canRedo: canRedoTextBox,
+  } = useHistory([]);
+
   // Ref to track if we're loading data from a layer (vs user editing)
   const isLoadingLayerData = useRef(false);
   const lastLoadedLayerId = useRef(null); // Initialize to null so first layer loads properly
@@ -170,17 +181,8 @@ const Page = () => {
   );
   const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100);
 
-  // Text boxes state with history tracking
-  const {
-    state: textBoxes,
-    updateHistory: updateTextBoxHistory,
-    updateCurrentState: updateTextBoxCurrentState,
-    resetHistoryBaseline: resetTextBoxHistoryBaseline,
-    undo: handleTextBoxUndo,
-    redo: handleTextBoxRedo,
-    canUndo: canUndoTextBox,
-    canRedo: canRedoTextBox,
-  } = useHistory([]);
+  // Text boxes state
+  const [textBoxes, setTextBoxes] = useState([]);
   const [selectedTextId, setSelectedTextId] = useState(null);
   const [textDialogOpen, setTextDialogOpen] = useState(false);
   const [textDialogValue, setTextDialogValue] = useState("");
@@ -273,6 +275,13 @@ const Page = () => {
     if (isLoadingLayerData.current) return;
     updateLayer(activeLayerIdRef.current, { textBoxes });
   }, [textBoxes, updateLayer]);
+
+  // Sync textBoxes state when history changes (undo/redo)
+  useEffect(() => {
+    if (textBoxesHistory.length > 0) {
+      setTextBoxes(textBoxesHistory);
+    }
+  }, [textBoxesHistory]);
 
   // Background sync removed - we now only update layers explicitly during uploads
   // This prevents race conditions where the sync effect runs at the wrong time
@@ -589,6 +598,7 @@ const Page = () => {
     // Load the new layer's data - use resetHistoryBaseline to prevent undo past loaded state
     resetHistoryBaseline(activeLayer.products || []);
     setConnectors(activeLayer.connectors || []);
+    setTextBoxes(activeLayer.textBoxes || []);
     resetTextBoxHistoryBaseline(activeLayer.textBoxes || []);
 
     // Set background image directly (no conversion needed - PDFs are already rasterized)
@@ -644,7 +654,7 @@ const Page = () => {
     pendingInsertPosition,
     selectedTextId,
     textBoxes,
-    updateTextBoxHistory,
+    setTextBoxes,
   });
 
   // Product interaction hook
@@ -819,6 +829,8 @@ const Page = () => {
         };
       });
 
+      setTextBoxes(transformedTextBoxes);
+      // Save to history after transform completes
       updateTextBoxHistory(transformedTextBoxes);
     }
 
@@ -840,35 +852,6 @@ const Page = () => {
     updateTextBoxHistory,
     setGroupKey,
   ]);
-
-  // Shared undo/redo handlers
-  const handleUndoAll = useCallback(() => {
-    const transformed = applyGroupTransform();
-    if (transformed) updateHistory(transformed);
-    
-    // Undo both products and text boxes
-    const didUndoProduct = handleUndo();
-    const didUndoTextBox = handleTextBoxUndo();
-    
-    // Clear selection after undo
-    if (didUndoProduct || didUndoTextBox) {
-      clearSelection();
-    }
-  }, [applyGroupTransform, updateHistory, handleUndo, handleTextBoxUndo, clearSelection]);
-
-  const handleRedoAll = useCallback(() => {
-    const transformed = applyGroupTransform();
-    if (transformed) updateHistory(transformed);
-    
-    // Redo both products and text boxes
-    const didRedoProduct = handleRedo();
-    const didRedoTextBox = handleTextBoxRedo();
-    
-    // Clear selection after redo
-    if (didRedoProduct || didRedoTextBox) {
-      clearSelection();
-    }
-  }, [applyGroupTransform, updateHistory, handleRedo, handleTextBoxRedo, clearSelection]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -928,7 +911,9 @@ const Page = () => {
 
       updateHistory([...products, ...newProducts]);
       setConnectors([...connectors, ...newConnectors]);
-      updateTextBoxHistory([...textBoxes, ...newTextBoxes]);
+      const updatedTextBoxes = [...textBoxes, ...newTextBoxes];
+      setTextBoxes(updatedTextBoxes);
+      updateTextBoxHistory(updatedTextBoxes);
 
       // Select pasted products and text boxes
       const allNewIds = [
@@ -951,7 +936,9 @@ const Page = () => {
         .filter((id) => id.startsWith("text-"))
         .map((id) => id.substring(5));
       if (textIds.length > 0) {
-        updateTextBoxHistory(textBoxes.filter((t) => !textIds.includes(t.id)));
+        const updatedTextBoxes = textBoxes.filter((t) => !textIds.includes(t.id));
+        setTextBoxes(updatedTextBoxes);
+        updateTextBoxHistory(updatedTextBoxes);
         setSelectedTextId(null);
       }
       // Also delete selected products/connectors
@@ -978,8 +965,30 @@ const Page = () => {
       clearSelection();
       setSelectedTextId(null);
     },
-    onUndo: handleUndoAll,
-    onRedo: handleRedoAll,
+    onUndo: () => {
+      const transformed = applyGroupTransform();
+      if (transformed) updateHistory(transformed);
+      
+      // Undo both products and text boxes
+      const didUndoProduct = handleUndo();
+      const didUndoTextBox = undoTextBoxHistory();
+      
+      if (didUndoProduct || didUndoTextBox) {
+        clearSelection();
+      }
+    },
+    onRedo: () => {
+      const transformed = applyGroupTransform();
+      if (transformed) updateHistory(transformed);
+      
+      // Redo both products and text boxes
+      const didRedoProduct = handleRedo();
+      const didRedoTextBox = redoTextBoxHistory();
+      
+      if (didRedoProduct || didRedoTextBox) {
+        clearSelection();
+      }
+    },
   });
 
   const handleUploadFloorPlan = useCallback(async () => {
@@ -1631,15 +1640,15 @@ const Page = () => {
                   textDecoration: formattingData.textDecoration,
                   color: formattingData.color,
                   width: width, // Use canvas measureText width
-                  height: height, // Use canvas measureText height
+                  height: height, // Use canvas measureText height,
                 }
               : box,
           );
+          setTextBoxes(updatedBoxes);
           updateTextBoxHistory(updatedBoxes);
         } else {
-          // User confirmed with empty text - remove the text box
-          const filteredBoxes = textBoxes.filter((box) => box.id !== pendingTextBoxId);
-          updateTextBoxHistory(filteredBoxes);
+          // User confirmed with empty text - remove the text box (no history)
+          setTextBoxes((boxes) => boxes.filter((box) => box.id !== pendingTextBoxId));
           setSelectedTextId(null);
         }
         setPendingTextBoxId(null);
@@ -1663,43 +1672,10 @@ const Page = () => {
   }, [pendingTextBoxId, textBoxes]);
 
   const handleTextChange = useCallback((updatedTextBox) => {
-    // This is for dimension recalculations from TextBox component
-    // We update the current state without adding to history since dimension
-    // changes are automatic measurements, not user actions
-    const newTextBoxes = textBoxes.map((box) => (box.id === updatedTextBox.id ? updatedTextBox : box));
-    updateTextBoxCurrentState(newTextBoxes);
-  }, [textBoxes, updateTextBoxCurrentState]);
-
-  const handleTextDragStart = useCallback(
-    (e, textId) => {
-      setIsDragging(true);
-      // If text is not selected, select it
-      if (selectedTextId !== textId) {
-        setSelectedTextId(textId);
-        setSelectedIds([`text-${textId}`]);
-        setGroupKey((k) => k + 1);
-      }
-    },
-    [selectedTextId, setSelectedIds, setIsDragging, setGroupKey],
-  );
-
-  const handleTextDragEnd = useCallback(
-    (e, textId) => {
-      setIsDragging(false);
-      const newX = e.target.x();
-      const newY = e.target.y();
-
-      // Update text box position in history
-      const updatedBoxes = textBoxes.map((box) => {
-        if (box.id === textId) {
-          return { ...box, x: newX, y: newY };
-        }
-        return box;
-      });
-      updateTextBoxHistory(updatedBoxes);
-    },
-    [textBoxes, updateTextBoxHistory, setIsDragging],
-  );
+    setTextBoxes((boxes) =>
+      boxes.map((box) => (box.id === updatedTextBox.id ? updatedTextBox : box)),
+    );
+  }, []);
 
   const handleTextSelect = useCallback(
     (textId) => {
@@ -1774,6 +1750,7 @@ const Page = () => {
 
         return { ...box, fontStyle: newStyle };
       });
+      setTextBoxes(updatedBoxes);
       updateTextBoxHistory(updatedBoxes);
     }
     contextMenus.handleCloseContextMenu();
@@ -1800,6 +1777,7 @@ const Page = () => {
 
         return { ...box, fontStyle: newStyle };
       });
+      setTextBoxes(updatedBoxes);
       updateTextBoxHistory(updatedBoxes);
     }
     contextMenus.handleCloseContextMenu();
@@ -1823,6 +1801,7 @@ const Page = () => {
 
         return { ...box, textDecoration: newDecoration };
       });
+      setTextBoxes(updatedBoxes);
       updateTextBoxHistory(updatedBoxes);
     }
     contextMenus.handleCloseContextMenu();
@@ -1832,6 +1811,7 @@ const Page = () => {
     (fontSize) => {
       if (selectedTextId) {
         const updatedBoxes = textBoxes.map((box) => (box.id === selectedTextId ? { ...box, fontSize } : box));
+        setTextBoxes(updatedBoxes);
         updateTextBoxHistory(updatedBoxes);
       }
       contextMenus.handleCloseContextMenu();
@@ -1843,6 +1823,7 @@ const Page = () => {
     (color) => {
       if (selectedTextId) {
         const updatedBoxes = textBoxes.map((box) => (box.id === selectedTextId ? { ...box, color } : box));
+        setTextBoxes(updatedBoxes);
         updateTextBoxHistory(updatedBoxes);
       }
     },
@@ -1855,6 +1836,7 @@ const Page = () => {
         if (box.id !== selectedTextId) return box;
         return { ...box, showBorder: !box.showBorder };
       });
+      setTextBoxes(updatedBoxes);
       updateTextBoxHistory(updatedBoxes);
     }
     contextMenus.handleCloseContextMenu();
@@ -2154,8 +2136,20 @@ const Page = () => {
                 onUploadFloorPlan: handleUploadFloorPlan,
                 onSave: handleSave,
                 onExport: handleExport,
-                onUndo: handleUndoAll,
-                onRedo: handleRedoAll,
+                onUndo: () => {
+                  const transformed = applyGroupTransform();
+                  if (transformed) updateHistory(transformed);
+                  handleUndo();
+                  undoTextBoxHistory();
+                  clearSelection();
+                },
+                onRedo: () => {
+                  const transformed = applyGroupTransform();
+                  if (transformed) updateHistory(transformed);
+                  handleRedo();
+                  redoTextBoxHistory();
+                  clearSelection();
+                },
                 canUndo: canUndo || canUndoTextBox,
                 canRedo: canRedo || canRedoTextBox,
                 onMeasure: handleMeasure,
@@ -2374,8 +2368,6 @@ const Page = () => {
                           selectedIds={selectedIds}
                           onTextSelect={handleTextSelect}
                           onTextChange={handleTextChange}
-                          onTextDragStart={handleTextDragStart}
-                          onTextDragEnd={handleTextDragEnd}
                           onTextDoubleClick={handleTextDoubleClick}
                           onTextContextMenu={handleTextContextMenu}
                           draggable={selectedTool === "select" || selectedTool === "text"}

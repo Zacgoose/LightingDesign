@@ -65,6 +65,7 @@ export const TextBox = memo(
             height: computedHeight,
           });
         }
+        console.log("logs")
       }
     }, [
       textBox.text,

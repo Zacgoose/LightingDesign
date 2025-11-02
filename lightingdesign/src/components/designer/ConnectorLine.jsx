@@ -24,8 +24,8 @@ export const ConnectorLine = ({
   const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - 60;
 
   // Use dragged position if dragging, otherwise use connector data
-  const control1 = draggedControl1 || connector.control1 ?? { x: defaultControl1X, y: defaultControl1Y };
-  const control3 = draggedControl3 || connector.control3 ?? { x: defaultControl3X, y: defaultControl3Y };
+  const control1 = (draggedControl1 || connector.control1) ?? { x: defaultControl1X, y: defaultControl1Y };
+  const control3 = (draggedControl3 || connector.control3) ?? { x: defaultControl3X, y: defaultControl3Y };
   
   // Control2 (center point) is always positioned in a straight line between control1 and control3
   // Not user-adjustable - ensures smooth flow from one end to the other

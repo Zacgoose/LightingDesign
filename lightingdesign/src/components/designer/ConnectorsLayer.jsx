@@ -14,61 +14,40 @@ export const ConnectorsLayer = ({
   const unselectedConnectors = connectors.filter((c) => c.id !== selectedConnectorId);
   const selectedConnector = connectors.find((c) => c.id === selectedConnectorId);
 
+  // Helper function to render a connector with common logic
+  const renderConnector = (connector, isSelected) => {
+    const fromProduct = products.find((p) => p.id === connector.from);
+    const toProduct = products.find((p) => p.id === connector.to);
+    if (!fromProduct || !toProduct) return null;
+
+    return (
+      <ConnectorLine
+        key={connector.id}
+        connector={connector}
+        fromProduct={fromProduct}
+        toProduct={toProduct}
+        isSelected={isSelected}
+        onSelect={onConnectorSelect}
+        onChange={(updatedConnector) => {
+          const newConnectors = connectors.map((c) =>
+            c.id === connector.id ? updatedConnector : c,
+          );
+          onConnectorChange(newConnectors);
+        }}
+        onContextMenu={(e) => onConnectorContextMenu(e, connector.id)}
+        theme={theme}
+        selectedTool={selectedTool}
+      />
+    );
+  };
+
   return (
     <>
       {/* Render unselected connectors first (behind) */}
-      {unselectedConnectors.map((connector) => {
-        const fromProduct = products.find((p) => p.id === connector.from);
-        const toProduct = products.find((p) => p.id === connector.to);
-        if (!fromProduct || !toProduct) return null;
-
-        return (
-          <ConnectorLine
-            key={connector.id}
-            connector={connector}
-            fromProduct={fromProduct}
-            toProduct={toProduct}
-            isSelected={false}
-            onSelect={onConnectorSelect}
-            onChange={(updatedConnector) => {
-              const newConnectors = connectors.map((c) =>
-                c.id === connector.id ? updatedConnector : c,
-              );
-              onConnectorChange(newConnectors);
-            }}
-            onContextMenu={(e) => onConnectorContextMenu(e, connector.id)}
-            theme={theme}
-            selectedTool={selectedTool}
-          />
-        );
-      })}
+      {unselectedConnectors.map((connector) => renderConnector(connector, false))}
       
       {/* Render selected connector last (on top) */}
-      {selectedConnector && (() => {
-        const fromProduct = products.find((p) => p.id === selectedConnector.from);
-        const toProduct = products.find((p) => p.id === selectedConnector.to);
-        if (!fromProduct || !toProduct) return null;
-
-        return (
-          <ConnectorLine
-            key={selectedConnector.id}
-            connector={selectedConnector}
-            fromProduct={fromProduct}
-            toProduct={toProduct}
-            isSelected={true}
-            onSelect={onConnectorSelect}
-            onChange={(updatedConnector) => {
-              const newConnectors = connectors.map((c) =>
-                c.id === selectedConnector.id ? updatedConnector : c,
-              );
-              onConnectorChange(newConnectors);
-            }}
-            onContextMenu={(e) => onConnectorContextMenu(e, selectedConnector.id)}
-            theme={theme}
-            selectedTool={selectedTool}
-          />
-        );
-      })()}
+      {selectedConnector && renderConnector(selectedConnector, true)}
     </>
   );
 };

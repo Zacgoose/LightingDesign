@@ -404,7 +404,7 @@ const Page = () => {
   const addFooterInfoBar = async (pdf, pageWidth, pageHeight, info) => {
     const bottomBarHeight = 50;
     const infoBarY = pageHeight - bottomBarHeight;
-    const margin = 5; // Reduced margin for less wasted space
+    const margin = 1; // Reduced margin for less wasted space
     
     // Background for info bar
     pdf.setFillColor(248, 248, 248);
@@ -1539,7 +1539,7 @@ const Page = () => {
     const maxCols = 5;
     const maxRows = 4;
     const bottomBarHeight = 50; // Increased height for better spacing
-    const margin = 5; // Reduced margin for less wasted space
+    const margin = 1; // Reduced margin for less wasted space
     const productAreaHeight = pageHeight - bottomBarHeight - margin * 2;
     
     // Calculate product grid dimensions

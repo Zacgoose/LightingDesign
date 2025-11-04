@@ -204,14 +204,14 @@ const Page = () => {
   const selectionState = useSelectionState(products, textBoxes);
   const {
     selectedIds,
-    selectedConnectorId,
+    selectedConnectorIds,
     groupKey,
     isDragging,
     selectionSnapshot,
     transformerRef,
     selectionGroupRef,
     setSelectedIds,
-    setSelectedConnectorId,
+    setSelectedConnectorIds,
     setGroupKey,
     setIsDragging,
     applyGroupTransform,
@@ -671,7 +671,7 @@ const Page = () => {
     products,
     connectors,
     selectedIds,
-    selectedConnectorId,
+    selectedConnectorIds,
     selectedTool,
     placementMode,
     stagePosition,
@@ -679,7 +679,7 @@ const Page = () => {
     updateHistory,
     updateConnectorHistory,
     setSelectedIds,
-    setSelectedConnectorId,
+    setSelectedConnectorIds,
     setGroupKey,
     setProductDrawerVisible,
     setConnectSequence,
@@ -698,7 +698,7 @@ const Page = () => {
     isDragging,
     setIsDragging,
     setSelectedIds,
-    setSelectedConnectorId,
+    setSelectedConnectorIds,
     setSelectedTextId,
     setGroupKey,
     updateConnectorHistory,
@@ -889,7 +889,7 @@ const Page = () => {
   useKeyboardShortcuts({
     products,
     selectedIds,
-    selectedConnectorId,
+    selectedConnectorIds,
     connectors,
     clipboard,
     onCopy: () => {
@@ -987,7 +987,7 @@ const Page = () => {
         setSelectedTextId(null);
       }
       // Also delete selected products/connectors
-      if (selectedIds.length > 0 || selectedConnectorId) {
+      if (selectedIds.length > 0 || selectedConnectorIds.length > 0) {
         contextMenus.handleDeleteSelected();
       }
     },
@@ -1297,9 +1297,9 @@ const Page = () => {
   const handleAssignToSublayer = useCallback(
     (sublayerId) => {
       // Handle connector assignment
-      if (selectedConnectorId) {
+      if (selectedConnectorIds.length > 0) {
         const newConnectors = connectors.map((connector) =>
-          connector.id === selectedConnectorId ? { ...connector, sublayerId } : connector,
+          selectedConnectorIds.includes(connector.id) ? { ...connector, sublayerId } : connector,
         );
         updateConnectorHistory(newConnectors);
         contextMenus.handleCloseContextMenu();
@@ -1318,7 +1318,7 @@ const Page = () => {
     [
       products,
       selectedIds,
-      selectedConnectorId,
+      selectedConnectorIds,
       connectors,
       applyGroupTransform,
       updateHistory,
@@ -1624,7 +1624,7 @@ const Page = () => {
         });
         setTextDialogOpen(true);
         setSelectedIds([]);
-        setSelectedConnectorId(null);
+        setSelectedConnectorIds([]);
       }
     },
     [
@@ -1634,7 +1634,7 @@ const Page = () => {
       stageScale,
       theme,
       setSelectedIds,
-      setSelectedConnectorId,
+      setSelectedConnectorIds,
     ],
   );
 
@@ -1747,10 +1747,10 @@ const Page = () => {
       // Clear product selections and set only this text
       setSelectedTextId(textId);
       setSelectedIds([`text-${textId}`]);
-      setSelectedConnectorId(null);
+      setSelectedConnectorIds([]);
       forceGroupUpdate();
     },
-    [setSelectedIds, setSelectedConnectorId, forceGroupUpdate],
+    [setSelectedIds, setSelectedConnectorIds, forceGroupUpdate],
   );
 
   const handleTextContextMenu = useCallback(
@@ -1760,7 +1760,7 @@ const Page = () => {
 
       setSelectedTextId(textId);
       setSelectedIds([`text-${textId}`]); // Keep text in selection for visual feedback
-      setSelectedConnectorId(null);
+      setSelectedConnectorIds([]);
 
       // Use screen coordinates (clientX/Y) like product context menu
       contextMenus.setContextMenu({
@@ -1770,7 +1770,7 @@ const Page = () => {
         textId: textId,
       });
     },
-    [setSelectedIds, setSelectedConnectorId, contextMenus],
+    [setSelectedIds, setSelectedConnectorIds, contextMenus],
   );
 
   const handleTextEdit = useCallback(() => {
@@ -2273,7 +2273,7 @@ const Page = () => {
                   // Clear selections when changing tools
                   applyGroupTransform();
                   setSelectedIds([]);
-                  setSelectedConnectorId(null);
+                  setSelectedConnectorIds([]);
                   setSelectedTextId(null);
                   setGroupKey((k) => k + 1);
                   setSelectedTool(tool);
@@ -2371,17 +2371,33 @@ const Page = () => {
                         {/* Unselected connectors only */}
                         <ConnectorsLayer
                           connectors={filterConnectorsBySublayers(connectors, activeLayerId).filter(
-                            (c) => c.id !== selectedConnectorId
+                            (c) => !selectedConnectorIds.includes(c.id)
                           )}
                           products={products}
-                          selectedConnectorId={null}
+                          selectedConnectorIds={[]}
                           selectedTool={selectedTool}
                           theme={theme}
                           onConnectorSelect={(e, connectorId) => {
                             e.cancelBubble = true;
                             const transformed = applyGroupTransform();
                             if (transformed) updateHistory(transformed);
-                            setSelectedConnectorId(connectorId);
+                            
+                            // Handle multi-select with Shift/Ctrl
+                            const shiftKey = e.evt?.shiftKey;
+                            const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
+                            
+                            if (shiftKey || ctrlKey) {
+                              // Toggle selection
+                              if (selectedConnectorIds.includes(connectorId)) {
+                                setSelectedConnectorIds(selectedConnectorIds.filter((id) => id !== connectorId));
+                              } else {
+                                setSelectedConnectorIds([...selectedConnectorIds, connectorId]);
+                              }
+                            } else {
+                              // Single selection
+                              setSelectedConnectorIds([connectorId]);
+                            }
+                            
                             setSelectedIds([]);
                             forceGroupUpdate();
                           }}
@@ -2487,21 +2503,37 @@ const Page = () => {
                           draggable={selectedTool === "select" || selectedTool === "text"}
                         />
 
-                        {/* Selected connector (rendered on top of everything) */}
-                        {selectedConnectorId && (
+                        {/* Selected connectors (rendered on top of everything) */}
+                        {selectedConnectorIds.length > 0 && (
                           <ConnectorsLayer
                             connectors={filterConnectorsBySublayers(connectors, activeLayerId).filter(
-                              (c) => c.id === selectedConnectorId
+                              (c) => selectedConnectorIds.includes(c.id)
                             )}
                             products={products}
-                            selectedConnectorId={selectedConnectorId}
+                            selectedConnectorIds={selectedConnectorIds}
                             selectedTool={selectedTool}
                             theme={theme}
                             onConnectorSelect={(e, connectorId) => {
                               e.cancelBubble = true;
                               const transformed = applyGroupTransform();
                               if (transformed) updateHistory(transformed);
-                              setSelectedConnectorId(connectorId);
+                              
+                              // Handle multi-select with Shift/Ctrl
+                              const shiftKey = e.evt?.shiftKey;
+                              const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
+                              
+                              if (shiftKey || ctrlKey) {
+                                // Toggle selection
+                                if (selectedConnectorIds.includes(connectorId)) {
+                                  setSelectedConnectorIds(selectedConnectorIds.filter((id) => id !== connectorId));
+                                } else {
+                                  setSelectedConnectorIds([...selectedConnectorIds, connectorId]);
+                                }
+                              } else {
+                                // Single selection
+                                setSelectedConnectorIds([connectorId]);
+                              }
+                              
                               setSelectedIds([]);
                               forceGroupUpdate();
                             }}
@@ -2679,6 +2711,7 @@ const Page = () => {
         onInsertCustomObject={handleInsertCustomObject}
         sublayers={activeLayer?.sublayers || []}
         selectedProductsCount={selectedIds.length}
+        selectedConnectorsCount={selectedConnectorIds.length}
         onTextEdit={handleTextEdit}
         onTextFormatBold={handleTextFormatBold}
         onTextFormatItalic={handleTextFormatItalic}

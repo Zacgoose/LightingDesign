@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   Box,
   Container,
@@ -252,6 +252,15 @@ const Page = () => {
 
   // Upload state for better UX
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Calculate the product for the preview line in connect mode
+  const previewLineProduct = useMemo(() => {
+    if (selectedTool === "connect" && connectSequence.length > 0) {
+      const lastProductId = connectSequence[connectSequence.length - 1];
+      return products.find((p) => p.id === lastProductId);
+    }
+    return null;
+  }, [selectedTool, connectSequence, products]);
 
   // Form hooks
   const scaleForm = useForm({
@@ -2447,26 +2456,21 @@ const Page = () => {
                         )}
 
                         {/* Preview line in connect mode */}
-                        {selectedTool === "connect" && connectSequence.length > 0 && (() => {
-                          const lastProductId = connectSequence[connectSequence.length - 1];
-                          const lastProduct = products.find((p) => p.id === lastProductId);
-                          if (!lastProduct) return null;
-                          return (
-                            <Line
-                              points={[
-                                lastProduct.x,
-                                lastProduct.y,
-                                cursorPosition.x,
-                                cursorPosition.y,
-                              ]}
-                              stroke={theme.palette.info.main}
-                              strokeWidth={3}
-                              dash={[10, 5]}
-                              opacity={0.6}
-                              listening={false}
-                            />
-                          );
-                        })()}
+                        {previewLineProduct && (
+                          <Line
+                            points={[
+                              previewLineProduct.x,
+                              previewLineProduct.y,
+                              cursorPosition.x,
+                              cursorPosition.y,
+                            ]}
+                            stroke={theme.palette.info.main}
+                            strokeWidth={3}
+                            dash={[10, 5]}
+                            opacity={0.6}
+                            listening={false}
+                          />
+                        )}
 
                         {/* Selection group only (selected products and text) */}
                         <ProductsLayer

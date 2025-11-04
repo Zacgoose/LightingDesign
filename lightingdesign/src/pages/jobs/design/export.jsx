@@ -856,7 +856,6 @@ const Page = () => {
       });
       console.log("Connectors in export region:", exportConnectors.length, "of", connectors.length);
 
-      // Add connectors (cables)
       // Connectors will be drawn directly into the SVG
 
       // Add products to Konva layer using custom shapes

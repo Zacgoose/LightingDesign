@@ -122,7 +122,6 @@ const Page = () => {
     removeSublayer,
     renameSublayer,
     setDefaultSublayer,
-    setDefaultCablingSublayer,
   } = layerManager;
 
   // Placement mode
@@ -933,7 +932,7 @@ const Page = () => {
         id: `connector-${Date.now()}-${index}`,
         from: idMap[c.from],
         to: idMap[c.to],
-        sublayerId: activeLayer?.defaultCablingSublayerId || null,
+        sublayerId: activeLayer?.defaultSublayerId || null,
       }));
 
       // Paste text boxes at cursor position
@@ -2548,13 +2547,11 @@ const Page = () => {
                         sublayers={activeLayer?.sublayers || []}
                         layerId={activeLayerId}
                         defaultSublayerId={activeLayer?.defaultSublayerId}
-                        defaultCablingSublayerId={activeLayer?.defaultCablingSublayerId}
                         onSublayerToggle={toggleSublayerVisibility}
                         onSublayerAdd={addSublayer}
                         onSublayerRemove={removeSublayer}
                         onSublayerRename={renameSublayer}
                         onSetDefaultSublayer={setDefaultSublayer}
-                        onSetDefaultCablingSublayer={setDefaultCablingSublayer}
                         onClose={() => setShowLayers(false)}
                       />
                     </>

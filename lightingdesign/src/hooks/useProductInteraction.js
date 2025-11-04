@@ -22,6 +22,7 @@ export const useProductInteraction = ({
   applyGroupTransform,
   activeLayer,
   connectors,
+  defaultCableType,
 }) => {
   const handleProductClick = useCallback(
     (e, productId) => {
@@ -57,6 +58,7 @@ export const useProductInteraction = ({
                 controlY: null,
                 color: null,
                 sublayerId: defaultCablingSublayerId,
+                isStraight: defaultCableType === "straight",
               },
             ]);
           }
@@ -103,6 +105,7 @@ export const useProductInteraction = ({
       setConnectSequence,
       activeLayer,
       connectors,
+      defaultCableType,
     ],
   );
 

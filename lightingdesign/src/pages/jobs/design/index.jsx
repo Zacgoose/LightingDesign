@@ -217,6 +217,7 @@ const Page = () => {
 
   // Connection sequence for connect tool
   const [connectSequence, setConnectSequence] = useState([]);
+  const [defaultCableType, setDefaultCableType] = useState("curved"); // "curved" or "straight"
 
   // Drag-to-select state
   const [isSelecting, setIsSelecting] = useState(false);
@@ -694,6 +695,7 @@ const Page = () => {
     applyGroupTransform,
     activeLayer,
     connectors,
+    defaultCableType,
   });
 
   const {
@@ -2047,6 +2049,10 @@ const Page = () => {
 
   const handleDisconnectCable = useCallback(() => setConnectSequence([]), []);
 
+  const handleToggleDefaultCableType = useCallback(() => {
+    setDefaultCableType((prev) => (prev === "curved" ? "straight" : "curved"));
+  }, []);
+
   const handleShowProperties = useCallback(() => {
     if (selectedIds.length === 1) {
       const product = products.find((p) => p.id === selectedIds[0]);
@@ -2216,6 +2222,8 @@ const Page = () => {
                 placementMode: placementMode,
                 onStopPlacement: handleStopPlacement,
                 onDisconnectCable: handleDisconnectCable,
+                defaultCableType: defaultCableType,
+                onToggleDefaultCableType: handleToggleDefaultCableType,
               }}
             />
 
@@ -2600,6 +2608,7 @@ const Page = () => {
         onTextFormatUnderline={handleTextFormatUnderline}
         onTextFontSize={handleTextFontSize}
         onTextToggleBorder={handleTextToggleBorder}
+        onToggleConnectorStraight={contextMenus.handleToggleConnectorStraight}
       />
 
       <CippComponentDialog

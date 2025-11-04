@@ -19,10 +19,13 @@ export const ConnectorLine = ({
 
   // Initialize 3 control points for cubic Bézier curve
   // Control points positioned to create a natural curve
+  // Improved: Position control points evenly between start and end
+  const midY = (fromProduct.y + toProduct.y) / 2;
+  const offsetY = -60; // Offset from the middle point
   const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25;
-  const defaultControl1Y = Math.min(fromProduct.y, toProduct.y) - 60;
+  const defaultControl1Y = midY + offsetY;
   const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75;
-  const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - 60;
+  const defaultControl3Y = midY + offsetY;
 
   const control1 = connector.control1 ?? { x: defaultControl1X, y: defaultControl1Y };
   const control3 = connector.control3 ?? { x: defaultControl3X, y: defaultControl3Y };
@@ -48,9 +51,12 @@ export const ConnectorLine = ({
     onSelect(e, connector.id);
   };
 
+  // Check if this is a straight line
+  const isStraight = connector.isStraight ?? false;
+
   return (
     <Group>
-      {/* The curved line using cubic Bézier with 3 control points */}
+      {/* The line - either straight or curved */}
       <Shape
         ref={shapeRef}
         id={connector.id}
@@ -58,25 +64,30 @@ export const ConnectorLine = ({
           ctx.beginPath();
           ctx.moveTo(fromProduct.x, fromProduct.y);
           
-          // Get current control point positions (may be mid-drag)
-          const c1 = control1Ref.current ? { x: control1Ref.current.x(), y: control1Ref.current.y() } : control1;
-          const c3 = control3Ref.current ? { x: control3Ref.current.x(), y: control3Ref.current.y() } : control3;
-          
-          // Control2 (center point) is always positioned in a straight line between control1 and control3
-          const c2 = {
-            x: (c1.x + c3.x) / 2,
-            y: (c1.y + c3.y) / 2,
-          };
-          
-          // Draw smooth curve through 3 control points
-          // Use two cubic Bézier curves to pass through all 3 control points
-          const midX = (c1.x + c2.x) / 2;
-          const midY = (c1.y + c2.y) / 2;
-          const mid2X = (c2.x + c3.x) / 2;
-          const mid2Y = (c2.y + c3.y) / 2;
+          if (isStraight) {
+            // Draw straight line
+            ctx.lineTo(toProduct.x, toProduct.y);
+          } else {
+            // Get current control point positions (may be mid-drag)
+            const c1 = control1Ref.current ? { x: control1Ref.current.x(), y: control1Ref.current.y() } : control1;
+            const c3 = control3Ref.current ? { x: control3Ref.current.x(), y: control3Ref.current.y() } : control3;
+            
+            // Control2 (center point) is always positioned in a straight line between control1 and control3
+            const c2 = {
+              x: (c1.x + c3.x) / 2,
+              y: (c1.y + c3.y) / 2,
+            };
+            
+            // Draw smooth curve through 3 control points
+            // Use two cubic Bézier curves to pass through all 3 control points
+            const midX = (c1.x + c2.x) / 2;
+            const midY = (c1.y + c2.y) / 2;
+            const mid2X = (c2.x + c3.x) / 2;
+            const mid2Y = (c2.y + c3.y) / 2;
 
-          ctx.bezierCurveTo(c1.x, c1.y, midX, midY, c2.x, c2.y);
-          ctx.bezierCurveTo(mid2X, mid2Y, c3.x, c3.y, toProduct.x, toProduct.y);
+            ctx.bezierCurveTo(c1.x, c1.y, midX, midY, c2.x, c2.y);
+            ctx.bezierCurveTo(mid2X, mid2Y, c3.x, c3.y, toProduct.x, toProduct.y);
+          }
           ctx.fillStrokeShape(shape);
         }}
         stroke={
@@ -93,8 +104,8 @@ export const ConnectorLine = ({
         onContextMenu={onContextMenu}
       />
 
-      {/* Show control points and guide lines when selected */}
-      {isSelected && selectedTool === "select" && (
+      {/* Show control points and guide lines when selected (only for curved lines) */}
+      {isSelected && selectedTool === "select" && !isStraight && (
         <>
           {/* Guide lines to control points */}
           <Line

@@ -24,6 +24,8 @@ import {
   ZoomIn,
   ZoomOut,
   TextFields,
+  Timeline,
+  StraightenOutlined,
 } from "@mui/icons-material";
 
 export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
@@ -84,7 +86,7 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
     onMeasure,
   } = mainProps || {};
 
-  const { selectedTool, onToolChange, placementMode, onStopPlacement, onDisconnectCable } =
+  const { selectedTool, onToolChange, placementMode, onStopPlacement, onDisconnectCable, defaultCableType, onToggleDefaultCableType } =
     toolsProps || {};
 
   const {
@@ -195,15 +197,26 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
                 </ToggleButton>
               </ToggleButtonGroup>
               {selectedTool === "connect" && (
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<Cable />}
-                  onClick={onDisconnectCable}
-                  size="small"
-                >
-                  Disconnect Cable
-                </Button>
+                <>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<Cable />}
+                    onClick={onDisconnectCable}
+                    size="small"
+                  >
+                    Disconnect Cable
+                  </Button>
+                  <Button
+                    variant={defaultCableType === "straight" ? "contained" : "outlined"}
+                    color="primary"
+                    startIcon={defaultCableType === "straight" ? <StraightenOutlined /> : <Timeline />}
+                    onClick={onToggleDefaultCableType}
+                    size="small"
+                  >
+                    {defaultCableType === "straight" ? "Straight" : "Curved"}
+                  </Button>
+                </>
               )}
             </>
           )}

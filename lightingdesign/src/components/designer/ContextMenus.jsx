@@ -15,7 +15,6 @@ import {
   FormatUnderlined,
   TextFields,
   BorderColor,
-  Timeline,
   StraightenOutlined,
 } from "@mui/icons-material";
 
@@ -41,7 +40,7 @@ export const ContextMenus = ({
   onTextFormatUnderline,
   onTextFontSize,
   onTextToggleBorder,
-  onToggleConnectorStraight,
+  onResetConnectorToStraight,
 }) => {
   const [sublayerMenuAnchor, setSublayerMenuAnchor] = useState(null);
   const [customObjectMenuAnchor, setCustomObjectMenuAnchor] = useState(null);
@@ -229,13 +228,13 @@ export const ContextMenus = ({
         {contextMenu?.type === "connector" && (
           <>
             <MenuItem
-              onClick={handleMenuItemClick(onToggleConnectorStraight)}
+              onClick={handleMenuItemClick(onResetConnectorToStraight)}
               onMouseEnter={handleMenuItemHover}
             >
               <ListItemIcon>
-                {contextMenu?.isStraight ? <Timeline fontSize="small" /> : <StraightenOutlined fontSize="small" />}
+                <StraightenOutlined fontSize="small" />
               </ListItemIcon>
-              <ListItemText>{contextMenu?.isStraight ? "Make Curved" : "Make Straight"}</ListItemText>
+              <ListItemText>Reset to Straight</ListItemText>
             </MenuItem>
             <MenuItem
               onClick={handleMenuItemClick(onOpenColorPicker)}

@@ -911,47 +911,34 @@ const Page = () => {
         const fromProduct = exportProducts.find((p) => p.id === connector.from);
         const toProduct = exportProducts.find((p) => p.id === connector.to);
         if (fromProduct && toProduct) {
-          const isStraight = connector.isStraight ?? false;
-          let d;
+          // Compute default control points (same heuristic as ConnectorLine)
+          // Default: control points positioned exactly along the line at 1/3 and 2/3
+          const deltaX = toProduct.x - fromProduct.x;
+          const deltaY = toProduct.y - fromProduct.y;
           
-          if (isStraight) {
-            // Build simple straight line path
-            d = `M ${fromProduct.x} ${fromProduct.y} L ${toProduct.x} ${toProduct.y}`;
-          } else {
-            // Compute default control points (same heuristic as ConnectorLine)
-            // Position control points at 1/3 and 2/3 distance from endpoints
-            const deltaX = toProduct.x - fromProduct.x;
-            const deltaY = toProduct.y - fromProduct.y;
-            
-            // For vertical or near-vertical connections, add horizontal offset
-            const isNearVertical = Math.abs(deltaX) < 100;
-            const horizontalOffset = isNearVertical ? 60 : 0;
-            
-            // Position control points at 1/3 and 2/3 along the path
-            // For vertical connections, offset horizontally to create curve
-            const defaultControl1X = fromProduct.x + deltaX * 0.33 - horizontalOffset;
-            const defaultControl1Y = fromProduct.y + deltaY * 0.33;
-            const defaultControl3X = fromProduct.x + deltaX * 0.67 + horizontalOffset;
-            const defaultControl3Y = fromProduct.y + deltaY * 0.67;
+          // Default control points are positioned exactly on the straight line
+          const defaultControl1X = fromProduct.x + deltaX * 0.33;
+          const defaultControl1Y = fromProduct.y + deltaY * 0.33;
+          const defaultControl3X = fromProduct.x + deltaX * 0.67;
+          const defaultControl3Y = fromProduct.y + deltaY * 0.67;
 
-            const c1 = connector.control1 || { x: defaultControl1X, y: defaultControl1Y };
-            const c3 = connector.control3 || { x: defaultControl3X, y: defaultControl3Y };
-            
-            // Control2 (center point) is always positioned in a straight line between control1 and control3
-            const c2 = {
-              x: (c1.x + c3.x) / 2,
-              y: (c1.y + c3.y) / 2,
-            };
+          const c1 = connector.control1 || { x: defaultControl1X, y: defaultControl1Y };
+          const c3 = connector.control3 || { x: defaultControl3X, y: defaultControl3Y };
+          
+          // Control2 (center point) is always positioned in a straight line between control1 and control3
+          const c2 = {
+            x: (c1.x + c3.x) / 2,
+            y: (c1.y + c3.y) / 2,
+          };
 
-            // Use midpoints between control points to approximate a smooth multi-point path
-            const midX = (c1.x + c2.x) / 2;
-            const midY2 = (c1.y + c2.y) / 2;
-            const mid2X = (c2.x + c3.x) / 2;
-            const mid2Y = (c2.y + c3.y) / 2;
+          // Use midpoints between control points to approximate a smooth multi-point path
+          const midX = (c1.x + c2.x) / 2;
+          const midY2 = (c1.y + c2.y) / 2;
+          const mid2X = (c2.x + c3.x) / 2;
+          const mid2Y = (c2.y + c3.y) / 2;
 
-            // Build SVG path string with two cubic bezier segments (mirrors ConnectorLine)
-            d = `M ${fromProduct.x} ${fromProduct.y} C ${c1.x} ${c1.y}, ${midX} ${midY2}, ${c2.x} ${c2.y} C ${mid2X} ${mid2Y}, ${c3.x} ${c3.y}, ${toProduct.x} ${toProduct.y}`;
-          }
+          // Build SVG path string with two cubic bezier segments (mirrors ConnectorLine)
+          const d = `M ${fromProduct.x} ${fromProduct.y} C ${c1.x} ${c1.y}, ${midX} ${midY2}, ${c2.x} ${c2.y} C ${mid2X} ${mid2Y}, ${c3.x} ${c3.y}, ${toProduct.x} ${toProduct.y}`;
           
           const pathEl = document.createElementNS(SVG_NS, "path");
           pathEl.setAttribute("d", d);

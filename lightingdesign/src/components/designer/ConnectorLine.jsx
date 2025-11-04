@@ -18,20 +18,15 @@ export const ConnectorLine = ({
   const shapeRef = useRef(null);
 
   // Initialize 3 control points for cubic Bézier curve
-  // Control points positioned to create a natural curve
-  // Position control points at 1/3 and 2/3 distance from endpoints
+  // Default: control points positioned exactly along the line at 1/3 and 2/3
   const deltaX = toProduct.x - fromProduct.x;
   const deltaY = toProduct.y - fromProduct.y;
   
-  // For vertical or near-vertical connections, add horizontal offset
-  const isNearVertical = Math.abs(deltaX) < 100;
-  const horizontalOffset = isNearVertical ? 60 : 0;
-  
-  // Position control points at 1/3 and 2/3 along the path
-  // For vertical connections, offset horizontally to create curve
-  const defaultControl1X = fromProduct.x + deltaX * 0.33 - horizontalOffset;
+  // Default control points are positioned exactly on the straight line
+  // at 1/3 and 2/3 of the distance from start to end
+  const defaultControl1X = fromProduct.x + deltaX * 0.33;
   const defaultControl1Y = fromProduct.y + deltaY * 0.33;
-  const defaultControl3X = fromProduct.x + deltaX * 0.67 + horizontalOffset;
+  const defaultControl3X = fromProduct.x + deltaX * 0.67;
   const defaultControl3Y = fromProduct.y + deltaY * 0.67;
 
   const control1 = connector.control1 ?? { x: defaultControl1X, y: defaultControl1Y };
@@ -58,12 +53,9 @@ export const ConnectorLine = ({
     onSelect(e, connector.id);
   };
 
-  // Check if this is a straight line
-  const isStraight = connector.isStraight ?? false;
-
   return (
     <Group>
-      {/* The line - either straight or curved */}
+      {/* The curved line using cubic Bézier with control points */}
       <Shape
         ref={shapeRef}
         id={connector.id}
@@ -71,30 +63,25 @@ export const ConnectorLine = ({
           ctx.beginPath();
           ctx.moveTo(fromProduct.x, fromProduct.y);
           
-          if (isStraight) {
-            // Draw straight line
-            ctx.lineTo(toProduct.x, toProduct.y);
-          } else {
-            // Get current control point positions (may be mid-drag)
-            const c1 = control1Ref.current ? { x: control1Ref.current.x(), y: control1Ref.current.y() } : control1;
-            const c3 = control3Ref.current ? { x: control3Ref.current.x(), y: control3Ref.current.y() } : control3;
-            
-            // Control2 (center point) is always positioned in a straight line between control1 and control3
-            const c2 = {
-              x: (c1.x + c3.x) / 2,
-              y: (c1.y + c3.y) / 2,
-            };
-            
-            // Draw smooth curve through 3 control points
-            // Use two cubic Bézier curves to pass through all 3 control points
-            const midX = (c1.x + c2.x) / 2;
-            const midY = (c1.y + c2.y) / 2;
-            const mid2X = (c2.x + c3.x) / 2;
-            const mid2Y = (c2.y + c3.y) / 2;
+          // Get current control point positions (may be mid-drag)
+          const c1 = control1Ref.current ? { x: control1Ref.current.x(), y: control1Ref.current.y() } : control1;
+          const c3 = control3Ref.current ? { x: control3Ref.current.x(), y: control3Ref.current.y() } : control3;
+          
+          // Control2 (center point) is always positioned in a straight line between control1 and control3
+          const c2 = {
+            x: (c1.x + c3.x) / 2,
+            y: (c1.y + c3.y) / 2,
+          };
+          
+          // Draw smooth curve through 3 control points
+          // Use two cubic Bézier curves to pass through all 3 control points
+          const midX = (c1.x + c2.x) / 2;
+          const midY = (c1.y + c2.y) / 2;
+          const mid2X = (c2.x + c3.x) / 2;
+          const mid2Y = (c2.y + c3.y) / 2;
 
-            ctx.bezierCurveTo(c1.x, c1.y, midX, midY, c2.x, c2.y);
-            ctx.bezierCurveTo(mid2X, mid2Y, c3.x, c3.y, toProduct.x, toProduct.y);
-          }
+          ctx.bezierCurveTo(c1.x, c1.y, midX, midY, c2.x, c2.y);
+          ctx.bezierCurveTo(mid2X, mid2Y, c3.x, c3.y, toProduct.x, toProduct.y);
           ctx.fillStrokeShape(shape);
         }}
         stroke={
@@ -111,8 +98,8 @@ export const ConnectorLine = ({
         onContextMenu={onContextMenu}
       />
 
-      {/* Show control points and guide lines when selected (only for curved lines) */}
-      {isSelected && selectedTool === "select" && !isStraight && (
+      {/* Show control points and guide lines when selected */}
+      {isSelected && selectedTool === "select" && (
         <>
           {/* Guide lines to control points */}
           <Line
@@ -149,7 +136,7 @@ export const ConnectorLine = ({
             ref={control1Ref}
             x={control1.x}
             y={control1.y}
-            radius={10}
+            radius={15}
             fill={theme.palette.info.main}
             stroke={theme.palette.background.paper}
             strokeWidth={2}
@@ -171,7 +158,7 @@ export const ConnectorLine = ({
             ref={control3Ref}
             x={control3.x}
             y={control3.y}
-            radius={10}
+            radius={15}
             fill={theme.palette.info.main}
             stroke={theme.palette.background.paper}
             strokeWidth={2}

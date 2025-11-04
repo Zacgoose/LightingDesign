@@ -126,16 +126,13 @@ export const useContextMenus = ({
       if (transformed) updateHistory(transformed);
       setSelectedIds([]);
       setGroupKey((k) => k + 1);
-      // Include connector's isStraight property in context menu data
-      const connector = connectors.find((c) => c.id === connectorId);
       setContextMenu({ 
         x: e.evt.clientX, 
         y: e.evt.clientY, 
-        type: "connector",
-        isStraight: connector?.isStraight ?? false
+        type: "connector"
       });
     },
-    [applyGroupTransform, updateHistory, setSelectedIds, setSelectedConnectorId, setGroupKey, connectors],
+    [applyGroupTransform, updateHistory, setSelectedIds, setSelectedConnectorId, setGroupKey],
   );
 
   const handleInsertProductAtPosition = useCallback(() => {
@@ -293,11 +290,12 @@ export const useContextMenus = ({
     handleCloseContextMenu,
   ]);
 
-  const handleToggleConnectorStraight = useCallback(() => {
+  const handleResetConnectorToStraight = useCallback(() => {
     if (selectedConnectorId) {
       const newConnectors = connectors.map((c) => {
         if (c.id === selectedConnectorId) {
-          return { ...c, isStraight: !(c.isStraight ?? false) };
+          // Reset control points to null so they default to straight positioning
+          return { ...c, control1: null, control3: null };
         }
         return c;
       });
@@ -318,7 +316,7 @@ export const useContextMenus = ({
     handleColorChange,
     handleDeleteSelected,
     handleDuplicateSelected,
-    handleToggleConnectorStraight,
+    handleResetConnectorToStraight,
     handleCloseContextMenu,
     setContextMenu,
     setColorPickerAnchor,

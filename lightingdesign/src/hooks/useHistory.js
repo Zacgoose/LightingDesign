@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback } from "react";
 
-export const useHistory = (initialState = []) => {
+export const useHistory = (initialState, timelineTracker, historyKey) => {
   const [state, setState] = useState(initialState);
   const history = useRef([initialState]);
   const historyStep = useRef(0);
@@ -11,7 +11,10 @@ export const useHistory = (initialState = []) => {
     history.current = history.current.concat([newState]);
     historyStep.current += 1;
     setState(newState);
-  }, []);
+    
+    // Record action in unified timeline
+    timelineTracker.recordAction(historyKey);
+  }, [timelineTracker, historyKey]);
 
   const updateCurrentState = useCallback((newState) => {
     // Update the current state without adding to history
@@ -26,7 +29,10 @@ export const useHistory = (initialState = []) => {
     historyStep.current = 0;
     minHistoryStep.current = 0;
     setState(newState);
-  }, []);
+    
+    // Reset unified timeline
+    timelineTracker.resetTimeline();
+  }, [timelineTracker]);
 
   const undo = useCallback(() => {
     if (historyStep.current <= minHistoryStep.current) return false;

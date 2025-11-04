@@ -1251,8 +1251,12 @@ const Page = () => {
 
         try {
           const shapeFunction = getShapeFunction(config.shapeType || "circle");
-          // Draw at origin within the group
+          // Apply translate compensation like ProductShape.jsx does
+          // This ensures shapes are drawn centered at (0,0)
+          ctx.save();
+          ctx.translate(width / 2, height / 2);
           shapeFunction(ctx, shapeObj);
+          ctx.restore();
         } catch (err) {
           // Fallback to a circle if custom shape fails
           const r = (width / 2) * sx;
@@ -1890,7 +1894,12 @@ const Page = () => {
       try {
         // Use the same shape function as canvas export
         const shapeFunction = getShapeFunction(config.shapeType || "circle");
+        // Apply translate compensation like ProductShape.jsx does
+        // This ensures shapes are drawn centered at (0,0)
+        ctx.save();
+        ctx.translate(shapeSize * 0.8 / 2, shapeSize * 0.8 / 2);
         shapeFunction(ctx, shapeObj);
+        ctx.restore();
       } catch (err) {
         // Fallback to simple circle if shape function fails
         console.error("Shape rendering failed for", product.sku, err);

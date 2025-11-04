@@ -1688,6 +1688,10 @@ const Page = () => {
 
   const handleTextDoubleClick = useCallback(
     (e, textId) => {
+      // Don't open text editor when connectors are selected
+      if (selectedConnectorIds.length > 0) {
+        return;
+      }
       const textBox = textBoxes.find((t) => t.id === textId);
       if (textBox) {
         setPendingTextBoxId(textId);
@@ -1702,7 +1706,7 @@ const Page = () => {
         setTextDialogOpen(true);
       }
     },
-    [textBoxes],
+    [textBoxes, selectedConnectorIds],
   );
 
   const handleTextDialogConfirm = useCallback(

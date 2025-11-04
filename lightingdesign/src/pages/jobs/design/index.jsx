@@ -716,6 +716,42 @@ const Page = () => {
     handleGroupTransformEnd,
   } = productInteraction;
 
+  // Connector selection handler with multi-select support
+  const handleConnectorSelect = useCallback(
+    (e, connectorId) => {
+      e.cancelBubble = true;
+      const transformed = applyGroupTransform();
+      if (transformed) updateHistory(transformed);
+      
+      // Handle multi-select with Shift/Ctrl
+      const shiftKey = e.evt?.shiftKey;
+      const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
+      
+      if (shiftKey || ctrlKey) {
+        // Toggle selection
+        if (selectedConnectorIds.includes(connectorId)) {
+          setSelectedConnectorIds(selectedConnectorIds.filter((id) => id !== connectorId));
+        } else {
+          setSelectedConnectorIds([...selectedConnectorIds, connectorId]);
+        }
+      } else {
+        // Single selection
+        setSelectedConnectorIds([connectorId]);
+      }
+      
+      setSelectedIds([]);
+      forceGroupUpdate();
+    },
+    [
+      selectedConnectorIds,
+      applyGroupTransform,
+      updateHistory,
+      setSelectedIds,
+      setSelectedConnectorIds,
+      forceGroupUpdate,
+    ],
+  );
+
   // Unified group transform handler that handles both products and text boxes
   const handleUnifiedGroupTransformEnd = useCallback(() => {
     if (!selectedIds.length || !selectionGroupRef.current || !selectionSnapshot) return;
@@ -2377,30 +2413,7 @@ const Page = () => {
                           selectedConnectorIds={[]}
                           selectedTool={selectedTool}
                           theme={theme}
-                          onConnectorSelect={(e, connectorId) => {
-                            e.cancelBubble = true;
-                            const transformed = applyGroupTransform();
-                            if (transformed) updateHistory(transformed);
-                            
-                            // Handle multi-select with Shift/Ctrl
-                            const shiftKey = e.evt?.shiftKey;
-                            const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
-                            
-                            if (shiftKey || ctrlKey) {
-                              // Toggle selection
-                              if (selectedConnectorIds.includes(connectorId)) {
-                                setSelectedConnectorIds(selectedConnectorIds.filter((id) => id !== connectorId));
-                              } else {
-                                setSelectedConnectorIds([...selectedConnectorIds, connectorId]);
-                              }
-                            } else {
-                              // Single selection
-                              setSelectedConnectorIds([connectorId]);
-                            }
-                            
-                            setSelectedIds([]);
-                            forceGroupUpdate();
-                          }}
+                          onConnectorSelect={handleConnectorSelect}
                           onConnectorChange={(updatedConnector) => {
                             // Merge the updated connector with the full connector list
                             const newConnectors = connectors.map((c) =>
@@ -2513,30 +2526,7 @@ const Page = () => {
                             selectedConnectorIds={selectedConnectorIds}
                             selectedTool={selectedTool}
                             theme={theme}
-                            onConnectorSelect={(e, connectorId) => {
-                              e.cancelBubble = true;
-                              const transformed = applyGroupTransform();
-                              if (transformed) updateHistory(transformed);
-                              
-                              // Handle multi-select with Shift/Ctrl
-                              const shiftKey = e.evt?.shiftKey;
-                              const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
-                              
-                              if (shiftKey || ctrlKey) {
-                                // Toggle selection
-                                if (selectedConnectorIds.includes(connectorId)) {
-                                  setSelectedConnectorIds(selectedConnectorIds.filter((id) => id !== connectorId));
-                                } else {
-                                  setSelectedConnectorIds([...selectedConnectorIds, connectorId]);
-                                }
-                              } else {
-                                // Single selection
-                                setSelectedConnectorIds([connectorId]);
-                              }
-                              
-                              setSelectedIds([]);
-                              forceGroupUpdate();
-                            }}
+                            onConnectorSelect={handleConnectorSelect}
                             onConnectorChange={(updatedConnector) => {
                               // Merge the updated connector with the full connector list
                               const newConnectors = connectors.map((c) =>

@@ -9,6 +9,7 @@ import { useCallback } from "react";
 export const useProductInteraction = ({
   products,
   selectedIds,
+  selectedConnectorIds,
   selectedTool,
   isDragging,
   setIsDragging,
@@ -76,6 +77,10 @@ export const useProductInteraction = ({
       const shiftKey = e.evt?.shiftKey;
       const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
       if (shiftKey || ctrlKey) {
+        // Ignore product clicks when connectors are already selected
+        if (selectedConnectorIds.length > 0) {
+          return;
+        }
         if (selectedIds.includes(productId)) {
           const transformed = applyGroupTransform();
           if (transformed) updateHistory(transformed);
@@ -103,6 +108,7 @@ export const useProductInteraction = ({
       isDragging,
       selectedTool,
       selectedIds,
+      selectedConnectorIds,
       applyGroupTransform,
       updateHistory,
       setSelectedIds,

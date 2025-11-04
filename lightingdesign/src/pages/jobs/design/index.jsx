@@ -694,6 +694,7 @@ const Page = () => {
   const productInteraction = useProductInteraction({
     products,
     selectedIds,
+    selectedConnectorIds,
     selectedTool,
     isDragging,
     setIsDragging,
@@ -733,6 +734,10 @@ const Page = () => {
       const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
       
       if (shiftKey || ctrlKey) {
+        // Ignore connector clicks when products/text are already selected
+        if (selectedIds.length > 0) {
+          return;
+        }
         // Toggle selection
         if (selectedConnectorIds.includes(connectorId)) {
           setSelectedConnectorIds(selectedConnectorIds.filter((id) => id !== connectorId));
@@ -749,6 +754,7 @@ const Page = () => {
       forceGroupUpdate();
     },
     [
+      selectedIds,
       selectedConnectorIds,
       applyGroupTransform,
       updateHistory,
@@ -1792,6 +1798,10 @@ const Page = () => {
       const textIdWithPrefix = `text-${textId}`;
 
       if (shiftKey || ctrlKey) {
+        // Ignore text clicks when connectors are already selected
+        if (selectedConnectorIds.length > 0) {
+          return;
+        }
         // Multi-select mode: add or remove from selection
         if (selectedIds.includes(textIdWithPrefix)) {
           // Deselect this text box - apply group transform first
@@ -1825,7 +1835,7 @@ const Page = () => {
         }
       }
     },
-    [selectedIds, selectedTextId, setSelectedIds, setSelectedConnectorIds, setSelectedTextId, forceGroupUpdate, applyGroupTransform, updateHistory],
+    [selectedIds, selectedConnectorIds, selectedTextId, setSelectedIds, setSelectedConnectorIds, setSelectedTextId, forceGroupUpdate, applyGroupTransform, updateHistory],
   );
 
   const handleTextContextMenu = useCallback(

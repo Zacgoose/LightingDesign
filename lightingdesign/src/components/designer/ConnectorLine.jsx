@@ -84,6 +84,34 @@ export const ConnectorLine = ({
           ctx.bezierCurveTo(mid2X, mid2Y, c3.x, c3.y, toProduct.x, toProduct.y);
           ctx.fillStrokeShape(shape);
         }}
+        hitFunc={(ctx, shape) => {
+          // Custom hit detection function - only stroke the path for hit detection
+          // This ensures clicks are only detected on the stroke area, not the filled area
+          ctx.beginPath();
+          ctx.moveTo(fromProduct.x, fromProduct.y);
+          
+          // Get current control point positions (may be mid-drag)
+          const c1 = control1Ref.current ? { x: control1Ref.current.x(), y: control1Ref.current.y() } : control1;
+          const c3 = control3Ref.current ? { x: control3Ref.current.x(), y: control3Ref.current.y() } : control3;
+          
+          // Control2 (center point) is always positioned in a straight line between control1 and control3
+          const c2 = {
+            x: (c1.x + c3.x) / 2,
+            y: (c1.y + c3.y) / 2,
+          };
+          
+          // Draw smooth curve through 3 control points
+          const midX = (c1.x + c2.x) / 2;
+          const midY = (c1.y + c2.y) / 2;
+          const mid2X = (c2.x + c3.x) / 2;
+          const mid2Y = (c2.y + c3.y) / 2;
+
+          ctx.bezierCurveTo(c1.x, c1.y, midX, midY, c2.x, c2.y);
+          ctx.bezierCurveTo(mid2X, mid2Y, c3.x, c3.y, toProduct.x, toProduct.y);
+          
+          // Only stroke for hit detection - no fill
+          ctx.strokeShape(shape);
+        }}
         stroke={
           connector.color ||
           (isSelected ? theme.palette.secondary.main : theme.palette.primary.main)

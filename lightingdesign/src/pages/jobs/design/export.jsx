@@ -1319,7 +1319,14 @@ const Page = () => {
         const offsetX = textWidth / 2;
         // Use actual text box height if available (as measured by Konva), otherwise calculate
         // This matches the TextBox component which uses the measured height for positioning
-        const textBoxHeight = tb.height || lineHeight;
+        // For fallback, calculate height based on line count like TextBox component does
+        let textBoxHeight;
+        if (tb.height) {
+          textBoxHeight = tb.height;
+        } else {
+          const lineCount = (tb.text || '').split(/\r?\n/).length;
+          textBoxHeight = lineCount * lineHeight;
+        }
         const offsetY = textBoxHeight / 2;
 
         // Add border rectangle if showBorder is enabled

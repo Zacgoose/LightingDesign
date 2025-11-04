@@ -134,10 +134,13 @@ export const useContextMenus = ({
           setSelectedConnectorIds([...selectedConnectorIds, connectorId]);
         }
       } else {
-        // Single selection
+        // Right-click without modifier keys:
+        // If clicking on an already-selected connector, keep the multi-selection
+        // If clicking on an unselected connector, select only that one
         if (!selectedConnectorIds.includes(connectorId)) {
           setSelectedConnectorIds([connectorId]);
         }
+        // If already selected, don't change the selection (keep multi-selection)
       }
       
       const transformed = applyGroupTransform();

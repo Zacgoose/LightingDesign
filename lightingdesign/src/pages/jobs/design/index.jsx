@@ -1733,14 +1733,40 @@ const Page = () => {
   }, [updateTextBoxHistory]);
 
   const handleTextSelect = useCallback(
-    (textId) => {
-      // Clear product selections and set only this text
-      setSelectedTextId(textId);
-      setSelectedIds([`text-${textId}`]);
+    (e, textId) => {
       setSelectedConnectorId(null);
-      forceGroupUpdate();
+
+      // Multi-selection logic similar to handleProductClick
+      const shiftKey = e.evt?.shiftKey;
+      const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
+      const textIdWithPrefix = `text-${textId}`;
+
+      if (shiftKey || ctrlKey) {
+        // Multi-select mode: add or remove from selection
+        if (selectedIds.includes(textIdWithPrefix)) {
+          // Deselect this text box
+          const newSelectedIds = selectedIds.filter((id) => id !== textIdWithPrefix);
+          setSelectedIds(newSelectedIds);
+          // Clear selectedTextId if this text is being deselected
+          if (selectedTextId === textId) {
+            setSelectedTextId(null);
+          }
+        } else {
+          // Add this text box to selection
+          setSelectedIds([...selectedIds, textIdWithPrefix]);
+          setSelectedTextId(textId);
+        }
+        forceGroupUpdate();
+      } else {
+        // Single selection mode: replace selection with just this text
+        if (!selectedIds.includes(textIdWithPrefix)) {
+          setSelectedTextId(textId);
+          setSelectedIds([textIdWithPrefix]);
+          forceGroupUpdate();
+        }
+      }
     },
-    [setSelectedIds, setSelectedConnectorId, forceGroupUpdate],
+    [selectedIds, selectedTextId, setSelectedIds, setSelectedConnectorId, setSelectedTextId, forceGroupUpdate],
   );
 
   const handleTextContextMenu = useCallback(

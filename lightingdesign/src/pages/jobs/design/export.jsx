@@ -1279,11 +1279,10 @@ const Page = () => {
         textEl.setAttribute("font-size", String(fontSize));
         textEl.setAttribute("font-weight", "bold");
         textEl.setAttribute("text-anchor", "middle");
-        // Match Konva's verticalAlign="middle" by using a combination of dominant-baseline and dy offset
-        // Konva's middle alignment centers text visually, accounting for descenders and cap height
-        // We use 0.35em offset which moves text down to match Konva's visual centering
+        // Use dy to optically center the text - 0.1em is the standard offset for vertical centering
+        // This accounts for the fact that text baseline is not at the visual center
+        textEl.setAttribute("dy", "0.1em");
         textEl.setAttribute("dominant-baseline", "auto");
-        textEl.setAttribute("dy", "0.35em");
         // Counter-rotate to keep text upright
         if (rotation) {
           textEl.setAttribute("transform", `rotate(${-rotation})`);
@@ -1318,7 +1317,10 @@ const Page = () => {
         svgElement.appendChild(groupEl);
 
         const offsetX = textWidth / 2;
-        const offsetY = lineHeight / 2;
+        // Use actual text box height if available (as measured by Konva), otherwise calculate
+        // This matches the TextBox component which uses the measured height for positioning
+        const textBoxHeight = tb.height || lineHeight;
+        const offsetY = textBoxHeight / 2;
 
         // Add border rectangle if showBorder is enabled
         if (tb.showBorder) {
@@ -1327,7 +1329,7 @@ const Page = () => {
           rectEl.setAttribute("x", String(-offsetX - rectPadding));
           rectEl.setAttribute("y", String(-offsetY - rectPadding));
           rectEl.setAttribute("width", String(textWidth + rectPadding * 2));
-          rectEl.setAttribute("height", String(lineHeight + rectPadding * 2));
+          rectEl.setAttribute("height", String(textBoxHeight + rectPadding * 2));
           rectEl.setAttribute("stroke", tb.borderColor || "#000000");
           rectEl.setAttribute("stroke-width", "2");
           rectEl.setAttribute("fill", "none");

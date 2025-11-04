@@ -1734,6 +1734,15 @@ const Page = () => {
 
   const handleTextSelect = useCallback(
     (e, textId) => {
+      console.log('[handleTextSelect] Called with:', {
+        textId,
+        shiftKey: e.evt?.shiftKey,
+        ctrlKey: e.evt?.ctrlKey,
+        metaKey: e.evt?.metaKey,
+        currentSelectedIds: selectedIds,
+        selectedTextId,
+      });
+      
       setSelectedConnectorId(null);
 
       // Multi-selection logic similar to handleProductClick
@@ -1744,6 +1753,7 @@ const Page = () => {
       if (shiftKey || ctrlKey) {
         // Multi-select mode: add or remove from selection
         if (selectedIds.includes(textIdWithPrefix)) {
+          console.log('[handleTextSelect] Deselecting text box:', textIdWithPrefix);
           // Deselect this text box - apply group transform first
           const transformed = applyGroupTransform();
           if (transformed) updateHistory(transformed);
@@ -1755,6 +1765,7 @@ const Page = () => {
           }
           forceGroupUpdate();
         } else {
+          console.log('[handleTextSelect] Adding text box to selection:', textIdWithPrefix);
           // Add this text box to selection - apply group transform first
           const transformed = applyGroupTransform();
           if (transformed) updateHistory(transformed);
@@ -1763,6 +1774,7 @@ const Page = () => {
           forceGroupUpdate();
         }
       } else {
+        console.log('[handleTextSelect] Single selection mode:', textIdWithPrefix);
         // Single selection mode: replace selection with just this text
         if (!selectedIds.includes(textIdWithPrefix)) {
           const transformed = applyGroupTransform();
@@ -2432,6 +2444,7 @@ const Page = () => {
                           onProductDragStart={handleProductDragStart}
                           onProductDragEnd={handleProductDragEnd}
                           onContextMenu={contextMenus.handleContextMenu}
+                          onTextSelect={handleTextSelect}
                           onTextContextMenu={handleTextContextMenu}
                           onTextDoubleClick={handleTextDoubleClick}
                           onGroupTransformEnd={handleUnifiedGroupTransformEnd}
@@ -2553,6 +2566,7 @@ const Page = () => {
                           onProductDragStart={handleProductDragStart}
                           onProductDragEnd={handleProductDragEnd}
                           onContextMenu={contextMenus.handleContextMenu}
+                          onTextSelect={handleTextSelect}
                           onTextContextMenu={handleTextContextMenu}
                           onTextDoubleClick={handleTextDoubleClick}
                           onGroupTransformEnd={handleUnifiedGroupTransformEnd}
@@ -2583,6 +2597,7 @@ const Page = () => {
                           onProductDragStart={handleProductDragStart}
                           onProductDragEnd={handleProductDragEnd}
                           onContextMenu={contextMenus.handleContextMenu}
+                          onTextSelect={handleTextSelect}
                           onTextContextMenu={handleTextContextMenu}
                           onTextDoubleClick={handleTextDoubleClick}
                           onGroupTransformEnd={handleUnifiedGroupTransformEnd}

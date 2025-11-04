@@ -92,6 +92,7 @@ export const ProductsLayer = memo(
     onContextMenu,
     onGroupTransformEnd,
     textBoxes = [], // Add textBoxes support
+    onTextSelect, // Add text selection handler
     onTextContextMenu, // Add text context menu handler
     onTextDoubleClick, // Add text double click handler
     renderUnselected = true, // Control rendering of unselected products
@@ -285,10 +286,19 @@ export const ProductsLayer = memo(
                   listening={!isDragging && !isPanMode} // Disable listening during drag and pan mode for performance
                   onClick={(e) => {
                     e.cancelBubble = true;
-                    // Text is already selected, clicking does nothing (prevents new text creation in text mode)
+                    // Allow clicking on selected text for deselection with Ctrl/Shift
+                    if (onTextSelect) {
+                      const originalTextId = textBox.id;
+                      onTextSelect(e, originalTextId);
+                    }
                   }}
                   onTap={(e) => {
                     e.cancelBubble = true;
+                    // Allow tapping on selected text for deselection with Ctrl/Shift
+                    if (onTextSelect) {
+                      const originalTextId = textBox.id;
+                      onTextSelect(e, originalTextId);
+                    }
                   }}
                   onDblClick={(e) => {
                     e.cancelBubble = true;
@@ -442,6 +452,7 @@ export const ProductsLayer = memo(
       prevProps.onProductDragStart === nextProps.onProductDragStart &&
       prevProps.onProductDragEnd === nextProps.onProductDragEnd &&
       prevProps.onContextMenu === nextProps.onContextMenu &&
+      prevProps.onTextSelect === nextProps.onTextSelect &&
       prevProps.onTextContextMenu === nextProps.onTextContextMenu &&
       prevProps.onGroupTransformEnd === nextProps.onGroupTransformEnd
     );

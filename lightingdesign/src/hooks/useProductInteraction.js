@@ -44,11 +44,9 @@ export const useProductInteraction = ({
           if (newSeq.length >= 2) {
             const prevId = newSeq[newSeq.length - 2];
             
-            // Check if a connection already exists between these two objects (in either direction)
+            // Check if this exact connection already exists (same direction)
             const connectionExists = connectors.some(
-              (c) =>
-                (c.from === prevId && c.to === productId) ||
-                (c.from === productId && c.to === prevId)
+              (c) => c.from === prevId && c.to === productId
             );
             
             // Only create connector if connection doesn't already exist

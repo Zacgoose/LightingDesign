@@ -1345,7 +1345,9 @@ const Page = () => {
 
         const textEl = document.createElementNS(SVG_NS, "text");
         textEl.setAttribute("x", String(-offsetX));
-        textEl.setAttribute("y", String(-offsetY));
+        // Shift text down by one line height to match Konva's Text positioning
+        // The border is at -offsetY, but text with hanging baseline needs to start one line down
+        textEl.setAttribute("y", String(-offsetY + lineHeight));
         textEl.setAttribute("fill", tb.color || "#000000");
         textEl.setAttribute("font-family", tb.fontFamily || "Arial");
         textEl.setAttribute("font-size", String(renderedFontSize));

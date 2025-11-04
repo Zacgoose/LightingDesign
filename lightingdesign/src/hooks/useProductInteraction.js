@@ -34,11 +34,8 @@ export const useProductInteraction = ({
         // Right-click splits the sequence
         if (e.evt?.button === 2) {
           setConnectSequence([]);
-          setSelectedIds([]); // Clear selection on right-click cancel
           return;
         }
-        // Highlight the clicked product in connect mode
-        setSelectedIds([productId]);
         // Add to sequence if not already last
         setConnectSequence((seq) => {
           if (seq.length > 0 && seq[seq.length - 1] === productId) return seq;

@@ -44,9 +44,7 @@ export const useProductInteraction = ({
           if (newSeq.length >= 2) {
             const prevId = newSeq[newSeq.length - 2];
             // Get default sublayer from active layer
-            const defaultSublayerId =
-              activeLayer?.defaultSublayerId ||
-              activeLayer?.sublayers?.find((s) => s.isDefault)?.id;
+            const defaultSublayerId = activeLayer?.defaultSublayerId || null;
             updateConnectorHistory([
               ...connectors,
               {

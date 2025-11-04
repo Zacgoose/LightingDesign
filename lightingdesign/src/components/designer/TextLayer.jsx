@@ -44,7 +44,7 @@ export const TextLayer = memo(
               listening={shouldListen}
               onSelect={(e) => {
                 e.cancelBubble = true;
-                onTextSelect(textBox.id);
+                onTextSelect(e, textBox.id);
               }}
               onChange={onTextChange}
               onDragStart={(e) => onTextDragStart && onTextDragStart(e, textBox.id)}

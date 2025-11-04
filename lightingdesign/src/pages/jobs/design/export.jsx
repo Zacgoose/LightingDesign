@@ -1279,10 +1279,9 @@ const Page = () => {
         textEl.setAttribute("font-size", String(fontSize));
         textEl.setAttribute("font-weight", "bold");
         textEl.setAttribute("text-anchor", "middle");
-        // Use dy to optically center the text - 0.1em is the standard offset for vertical centering
-        // This accounts for the fact that text baseline is not at the visual center
-        textEl.setAttribute("dy", "0.1em");
-        textEl.setAttribute("dominant-baseline", "auto");
+        // Use dominant-baseline="middle" to match Konva's verticalAlign="middle"
+        // This properly centers the text vertically without needing dy offset
+        textEl.setAttribute("dominant-baseline", "middle");
         // Counter-rotate to keep text upright
         if (rotation) {
           textEl.setAttribute("transform", `rotate(${-rotation})`);

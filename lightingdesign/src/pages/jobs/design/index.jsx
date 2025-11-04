@@ -1785,7 +1785,7 @@ const Page = () => {
 
   const handleTextSelect = useCallback(
     (e, textId) => {
-      setSelectedConnectorId(null);
+      setSelectedConnectorIds([]);
 
       // Multi-selection logic similar to handleProductClick
       const shiftKey = e.evt?.shiftKey;
@@ -1824,7 +1824,7 @@ const Page = () => {
         }
       }
     },
-    [selectedIds, selectedTextId, setSelectedIds, setSelectedConnectorId, setSelectedTextId, forceGroupUpdate, applyGroupTransform, updateHistory],
+    [selectedIds, selectedTextId, setSelectedIds, setSelectedConnectorIds, setSelectedTextId, forceGroupUpdate, applyGroupTransform, updateHistory],
   );
 
   const handleTextContextMenu = useCallback(

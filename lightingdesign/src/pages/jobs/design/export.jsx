@@ -1521,6 +1521,10 @@ const Page = () => {
       ? (jobInfo.builder.label || jobInfo.builder.value || "N/A")
       : (jobInfo.builder || "N/A");
     
+    // Calculate font scale factor based on page size (using A4 as baseline)
+    const basePageWidth = 297; // A4 landscape width in mm
+    const fontScaleFactor = Math.min(pageWidth / basePageWidth, 2.5); // Cap at 2.5x for very large sizes
+    
     // Group products by SKU for the grid
     const productMap = new Map();
     allProducts.forEach((product) => {
@@ -1920,7 +1924,7 @@ const Page = () => {
       }
       
       // Add letter/number prefix over the shape
-      pdf.setFontSize(6);
+      pdf.setFontSize(6 * fontScaleFactor);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(0, 0, 0);
       pdf.text(letterNumber, shapeCenterX, shapeCenterY + 1, { align: "center" });
@@ -1928,17 +1932,17 @@ const Page = () => {
       let infoY = shapeCenterY + shapeSize / 2 + 2;
       
       // Quantity (bold, blue)
-      pdf.setFontSize(7);
+      pdf.setFontSize(7 * fontScaleFactor);
       pdf.setTextColor(0, 100, 200);
       pdf.setFont("helvetica", "bold");
       pdf.text(`Qty: ${product.quantity}`, shapeCenterX, infoY, {
         align: "center",
       });
       
-      infoY += 4;
+      infoY += 4 * fontScaleFactor;
       
       // SKU (smaller, gray)
-      pdf.setFontSize(5);
+      pdf.setFontSize(5 * fontScaleFactor);
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(100, 100, 100);
       const skuLines = pdf.splitTextToSize(`SKU: ${product.sku}`, rightHalfWidth - 4);
@@ -1949,7 +1953,7 @@ const Page = () => {
       
       // Product name at the bottom of entire cell (spanning full width)
       const nameY = innerY + contentHeight + 3;
-      pdf.setFontSize(7);
+      pdf.setFontSize(7 * fontScaleFactor);
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(0, 0, 0);
       const nameLines = pdf.splitTextToSize(product.name, innerWidth - 4);

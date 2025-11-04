@@ -322,7 +322,7 @@ export const useContextMenus = ({
     const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
     const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
     
-    // Calculate average Y position (vertical center)
+    // Calculate average Y position (aligning Y coordinates creates horizontal alignment - objects line up horizontally)
     const allYPositions = [
       ...selectedProducts.map((p) => p.y),
       ...selectedTextBoxes.map((t) => t.y),
@@ -388,7 +388,7 @@ export const useContextMenus = ({
     const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
     const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
     
-    // Calculate average X position (horizontal center)
+    // Calculate average X position (aligning X coordinates creates vertical alignment - objects line up vertically)
     const allXPositions = [
       ...selectedProducts.map((p) => p.x),
       ...selectedTextBoxes.map((t) => t.x),

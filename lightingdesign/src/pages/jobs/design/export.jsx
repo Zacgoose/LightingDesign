@@ -919,19 +919,20 @@ const Page = () => {
             d = `M ${fromProduct.x} ${fromProduct.y} L ${toProduct.x} ${toProduct.y}`;
           } else {
             // Compute default control points (same heuristic as ConnectorLine)
-            // Improved: Position control points evenly between start and end
-            const midY = (fromProduct.y + toProduct.y) / 2;
-            const offsetY = -60; // Offset from the middle point
+            // Position control points at 1/3 and 2/3 distance from endpoints
+            const deltaX = toProduct.x - fromProduct.x;
+            const deltaY = toProduct.y - fromProduct.y;
             
-            // Calculate horizontal distance between points
-            const deltaX = Math.abs(toProduct.x - fromProduct.x);
-            // For vertical connections (small deltaX), add horizontal offset to create curve
-            const horizontalOffset = deltaX < 100 ? 60 : 0;
+            // For vertical or near-vertical connections, add horizontal offset
+            const isNearVertical = Math.abs(deltaX) < 100;
+            const horizontalOffset = isNearVertical ? 60 : 0;
             
-            const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25 - horizontalOffset;
-            const defaultControl1Y = midY + offsetY;
-            const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75 + horizontalOffset;
-            const defaultControl3Y = midY + offsetY;
+            // Position control points at 1/3 and 2/3 along the path
+            // For vertical connections, offset horizontally to create curve
+            const defaultControl1X = fromProduct.x + deltaX * 0.33 - horizontalOffset;
+            const defaultControl1Y = fromProduct.y + deltaY * 0.33;
+            const defaultControl3X = fromProduct.x + deltaX * 0.67 + horizontalOffset;
+            const defaultControl3Y = fromProduct.y + deltaY * 0.67;
 
             const c1 = connector.control1 || { x: defaultControl1X, y: defaultControl1Y };
             const c3 = connector.control3 || { x: defaultControl3X, y: defaultControl3Y };

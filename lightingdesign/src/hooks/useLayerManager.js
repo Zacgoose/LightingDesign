@@ -21,10 +21,8 @@ export const createEmptyLayer = (id, name) => ({
   connectors: [],
   sublayers: [
     { id: `${id}-default`, name: "Default", visible: true, isDefault: true },
-    { id: `${id}-cabling`, name: "Cabling", visible: true, isDefault: false },
   ],
   defaultSublayerId: `${id}-default`, // Track which sublayer is default for new objects
-  defaultCablingSublayerId: `${id}-cabling`, // Track which sublayer is default for connectors
   scaleFactor: 100, // 100px per meter - each floor can have different scale
 });
 
@@ -265,21 +263,6 @@ export const useLayerManager = (initialLayers = null) => {
     );
   }, []);
 
-  // Set default sublayer for new cable connections
-  const setDefaultCablingSublayer = useCallback((layerId, sublayerId) => {
-    setLayers((prev) =>
-      prev.map((layer) => {
-        if (layer.id === layerId) {
-          return {
-            ...layer,
-            defaultCablingSublayerId: sublayerId,
-          };
-        }
-        return layer;
-      }),
-    );
-  }, []);
-
   // Assign products to a sublayer
   const assignProductsToSublayer = useCallback((layerId, productIds, sublayerId) => {
     setLayers((prev) =>
@@ -361,7 +344,6 @@ export const useLayerManager = (initialLayers = null) => {
     removeSublayer,
     renameSublayer,
     setDefaultSublayer,
-    setDefaultCablingSublayer,
     assignProductsToSublayer,
     assignConnectorsToSublayer,
   };

@@ -24,9 +24,11 @@ import {
   ZoomIn,
   ZoomOut,
   TextFields,
+  AlignHorizontalCenter,
+  AlignVerticalCenter,
 } from "@mui/icons-material";
 
-export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
+export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProps }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showCollapseButton, setShowCollapseButton] = useState(false);
   const containerRef = useRef(null);
@@ -100,6 +102,12 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
     onTogglePreview,
   } = viewProps || {};
 
+  const {
+    selectedCount = 0,
+    onAlignHorizontalCenter,
+    onAlignVerticalCenter,
+  } = alignProps || {};
+
   return (
     <Card sx={{ px: 1, py: 0, mb: 0 }}>
       <Box sx={{ display: "flex", alignItems: "flex-start" }}>
@@ -145,6 +153,26 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps }) => {
           >
             Measure
           </Button>
+          
+          {/* Alignment Controls - only show when multiple objects selected */}
+          {selectedCount > 1 && (
+            <>
+              <IconButton
+                size="small"
+                onClick={onAlignHorizontalCenter}
+                title="Align Horizontal Centers"
+              >
+                <AlignHorizontalCenter />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={onAlignVerticalCenter}
+                title="Align Vertical Centers"
+              >
+                <AlignVerticalCenter />
+              </IconButton>
+            </>
+          )}
 
           {/* Tools Controls */}
           {placementMode ? (

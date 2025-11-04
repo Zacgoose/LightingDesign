@@ -2282,6 +2282,11 @@ const Page = () => {
                 onStopPlacement: handleStopPlacement,
                 onDisconnectCable: handleDisconnectCable,
               }}
+              alignProps={{
+                selectedCount: selectedIds.length,
+                onAlignHorizontalCenter: contextMenus.handleAlignHorizontalCenter,
+                onAlignVerticalCenter: contextMenus.handleAlignVerticalCenter,
+              }}
             />
 
             <Box sx={{ mb: 0.75 }}>
@@ -2681,6 +2686,8 @@ const Page = () => {
         onTextFontSize={handleTextFontSize}
         onTextToggleBorder={handleTextToggleBorder}
         onResetConnectorToStraight={contextMenus.handleResetConnectorToStraight}
+        onAlignHorizontalCenter={contextMenus.handleAlignHorizontalCenter}
+        onAlignVerticalCenter={contextMenus.handleAlignVerticalCenter}
       />
 
       <CippComponentDialog

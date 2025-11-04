@@ -742,9 +742,10 @@ const Page = () => {
       } else {
         // Single selection
         setSelectedConnectorIds([connectorId]);
+        // Only clear product/text selections when not holding modifier keys
+        setSelectedIds([]);
       }
       
-      setSelectedIds([]);
       forceGroupUpdate();
     },
     [
@@ -1785,8 +1786,6 @@ const Page = () => {
 
   const handleTextSelect = useCallback(
     (e, textId) => {
-      setSelectedConnectorIds([]);
-
       // Multi-selection logic similar to handleProductClick
       const shiftKey = e.evt?.shiftKey;
       const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
@@ -1815,6 +1814,8 @@ const Page = () => {
         }
       } else {
         // Single selection mode: replace selection with just this text
+        // Only clear connector selections when not holding modifier keys
+        setSelectedConnectorIds([]);
         if (!selectedIds.includes(textIdWithPrefix)) {
           const transformed = applyGroupTransform();
           if (transformed) updateHistory(transformed);

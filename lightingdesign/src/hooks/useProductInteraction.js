@@ -26,8 +26,6 @@ export const useProductInteraction = ({
   const handleProductClick = useCallback(
     (e, productId) => {
       if (isDragging) return;
-      setSelectedConnectorIds([]);
-      setSelectedTextId(null); // Clear text selection when clicking on a product
 
       // Connect mode logic
       if (selectedTool === "connect") {
@@ -90,6 +88,9 @@ export const useProductInteraction = ({
           setGroupKey((k) => k + 1);
         }
       } else {
+        // Only clear connector and text selections when not holding modifier keys
+        setSelectedConnectorIds([]);
+        setSelectedTextId(null);
         if (!selectedIds.includes(productId)) {
           const transformed = applyGroupTransform();
           if (transformed) updateHistory(transformed);

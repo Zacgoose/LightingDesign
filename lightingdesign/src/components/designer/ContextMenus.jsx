@@ -16,6 +16,8 @@ import {
   TextFields,
   BorderColor,
   StraightenOutlined,
+  AlignHorizontalCenter,
+  AlignVerticalCenter,
 } from "@mui/icons-material";
 
 export const ContextMenus = ({
@@ -41,6 +43,8 @@ export const ContextMenus = ({
   onTextFontSize,
   onTextToggleBorder,
   onResetConnectorToStraight,
+  onAlignHorizontalCenter,
+  onAlignVerticalCenter,
 }) => {
   const [sublayerMenuAnchor, setSublayerMenuAnchor] = useState(null);
   const [customObjectMenuAnchor, setCustomObjectMenuAnchor] = useState(null);
@@ -165,6 +169,28 @@ export const ContextMenus = ({
               </ListItemIcon>
               <ListItemText>Duplicate</ListItemText>
             </MenuItem>
+            {selectedProductsCount > 1 && onAlignHorizontalCenter && (
+              <MenuItem
+                onClick={handleMenuItemClick(onAlignHorizontalCenter)}
+                onMouseEnter={handleMenuItemHover}
+              >
+                <ListItemIcon>
+                  <AlignHorizontalCenter fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Align Horizontal Centers</ListItemText>
+              </MenuItem>
+            )}
+            {selectedProductsCount > 1 && onAlignVerticalCenter && (
+              <MenuItem
+                onClick={handleMenuItemClick(onAlignVerticalCenter)}
+                onMouseEnter={handleMenuItemHover}
+              >
+                <ListItemIcon>
+                  <AlignVerticalCenter fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Align Vertical Centers</ListItemText>
+              </MenuItem>
+            )}
             <MenuItem
               onClick={handleMenuItemClick(onOpenColorPicker)}
               onMouseEnter={handleMenuItemHover}

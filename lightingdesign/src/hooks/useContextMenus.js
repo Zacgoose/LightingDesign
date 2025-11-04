@@ -304,6 +304,138 @@ export const useContextMenus = ({
     handleCloseContextMenu();
   }, [selectedConnectorId, connectors, updateConnectorHistory, handleCloseContextMenu]);
 
+  const handleAlignHorizontalCenter = useCallback(() => {
+    // Only align if multiple objects are selected
+    if (selectedIds.length < 2) {
+      handleCloseContextMenu();
+      return;
+    }
+
+    const transformed = applyGroupTransform();
+    const baseProducts = transformed || products;
+    
+    // Separate product IDs and text IDs
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
+    
+    // Get selected products and text boxes
+    const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
+    const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
+    
+    // Calculate average Y position (vertical center)
+    const allYPositions = [
+      ...selectedProducts.map((p) => p.y),
+      ...selectedTextBoxes.map((t) => t.y),
+    ];
+    
+    if (allYPositions.length === 0) {
+      handleCloseContextMenu();
+      return;
+    }
+    
+    const averageY = allYPositions.reduce((sum, y) => sum + y, 0) / allYPositions.length;
+    
+    // Update products to align to average Y
+    if (productIds.length > 0) {
+      const alignedProducts = baseProducts.map((p) => {
+        if (productIds.includes(p.id)) {
+          return { ...p, y: averageY };
+        }
+        return p;
+      });
+      updateHistory(alignedProducts);
+    }
+    
+    // Update text boxes to align to average Y
+    if (textIds.length > 0) {
+      const alignedTextBoxes = textBoxes.map((t) => {
+        if (textIds.includes(t.id)) {
+          return { ...t, y: averageY };
+        }
+        return t;
+      });
+      updateTextBoxHistory(alignedTextBoxes);
+    }
+    
+    setGroupKey((k) => k + 1);
+    handleCloseContextMenu();
+  }, [
+    selectedIds,
+    products,
+    textBoxes,
+    applyGroupTransform,
+    updateHistory,
+    updateTextBoxHistory,
+    setGroupKey,
+    handleCloseContextMenu,
+  ]);
+
+  const handleAlignVerticalCenter = useCallback(() => {
+    // Only align if multiple objects are selected
+    if (selectedIds.length < 2) {
+      handleCloseContextMenu();
+      return;
+    }
+
+    const transformed = applyGroupTransform();
+    const baseProducts = transformed || products;
+    
+    // Separate product IDs and text IDs
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
+    
+    // Get selected products and text boxes
+    const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
+    const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
+    
+    // Calculate average X position (horizontal center)
+    const allXPositions = [
+      ...selectedProducts.map((p) => p.x),
+      ...selectedTextBoxes.map((t) => t.x),
+    ];
+    
+    if (allXPositions.length === 0) {
+      handleCloseContextMenu();
+      return;
+    }
+    
+    const averageX = allXPositions.reduce((sum, x) => sum + x, 0) / allXPositions.length;
+    
+    // Update products to align to average X
+    if (productIds.length > 0) {
+      const alignedProducts = baseProducts.map((p) => {
+        if (productIds.includes(p.id)) {
+          return { ...p, x: averageX };
+        }
+        return p;
+      });
+      updateHistory(alignedProducts);
+    }
+    
+    // Update text boxes to align to average X
+    if (textIds.length > 0) {
+      const alignedTextBoxes = textBoxes.map((t) => {
+        if (textIds.includes(t.id)) {
+          return { ...t, x: averageX };
+        }
+        return t;
+      });
+      updateTextBoxHistory(alignedTextBoxes);
+    }
+    
+    setGroupKey((k) => k + 1);
+    handleCloseContextMenu();
+  }, [
+    selectedIds,
+    products,
+    textBoxes,
+    applyGroupTransform,
+    updateHistory,
+    updateTextBoxHistory,
+    setGroupKey,
+    handleCloseContextMenu,
+  ]);
+
   return {
     contextMenu,
     colorPickerAnchor,
@@ -317,6 +449,8 @@ export const useContextMenus = ({
     handleDeleteSelected,
     handleDuplicateSelected,
     handleResetConnectorToStraight,
+    handleAlignHorizontalCenter,
+    handleAlignVerticalCenter,
     handleCloseContextMenu,
     setContextMenu,
     setColorPickerAnchor,

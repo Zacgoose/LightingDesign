@@ -1317,7 +1317,17 @@ const Page = () => {
         svgElement.appendChild(groupEl);
 
         const offsetX = textWidth / 2;
-        const offsetY = lineHeight / 2;
+        // Use actual text box height if available (as measured by Konva), otherwise calculate
+        // This matches the TextBox component which uses the measured height for positioning
+        // For fallback, calculate height based on line count like TextBox component does
+        let textBoxHeight;
+        if (tb.height) {
+          textBoxHeight = tb.height;
+        } else {
+          const lineCount = (tb.text || '').split(/\r?\n/).length;
+          textBoxHeight = lineCount * lineHeight;
+        }
+        const offsetY = textBoxHeight / 2;
 
         // Add border rectangle if showBorder is enabled
         if (tb.showBorder) {
@@ -1326,7 +1336,7 @@ const Page = () => {
           rectEl.setAttribute("x", String(-offsetX - rectPadding));
           rectEl.setAttribute("y", String(-offsetY - rectPadding));
           rectEl.setAttribute("width", String(textWidth + rectPadding * 2));
-          rectEl.setAttribute("height", String(lineHeight + rectPadding * 2));
+          rectEl.setAttribute("height", String(textBoxHeight + rectPadding * 2));
           rectEl.setAttribute("stroke", tb.borderColor || "#000000");
           rectEl.setAttribute("stroke-width", "2");
           rectEl.setAttribute("fill", "none");
@@ -1335,7 +1345,9 @@ const Page = () => {
 
         const textEl = document.createElementNS(SVG_NS, "text");
         textEl.setAttribute("x", String(-offsetX));
-        textEl.setAttribute("y", String(-offsetY));
+        // Shift text down by one line height to match Konva's Text positioning
+        // The border is at -offsetY, but text with hanging baseline needs to start one line down
+        textEl.setAttribute("y", String(offsetY - (offsetY/3)));
         textEl.setAttribute("fill", tb.color || "#000000");
         textEl.setAttribute("font-family", tb.fontFamily || "Arial");
         textEl.setAttribute("font-size", String(renderedFontSize));

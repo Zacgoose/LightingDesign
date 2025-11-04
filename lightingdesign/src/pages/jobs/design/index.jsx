@@ -2112,7 +2112,7 @@ const Page = () => {
       selectionStartRef.current = null;
       hasDraggedRef.current = false;
     },
-    [selectedTool, handleSelectionEnd, applyGroupTransform, updateHistory, clearSelection],
+    [selectedTool, handleSelectionEnd, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId],
   );
 
   const checkDeselect = useCallback(

@@ -2600,6 +2600,7 @@ const Page = () => {
         onTextFormatUnderline={handleTextFormatUnderline}
         onTextFontSize={handleTextFontSize}
         onTextToggleBorder={handleTextToggleBorder}
+        onResetConnectorToStraight={contextMenus.handleResetConnectorToStraight}
       />
 
       <CippComponentDialog

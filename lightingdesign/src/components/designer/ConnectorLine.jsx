@@ -18,11 +18,16 @@ export const ConnectorLine = ({
   const shapeRef = useRef(null);
 
   // Initialize 3 control points for cubic Bézier curve
-  // Control points positioned to create a natural curve
-  const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25;
-  const defaultControl1Y = Math.min(fromProduct.y, toProduct.y) - 60;
-  const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75;
-  const defaultControl3Y = Math.min(fromProduct.y, toProduct.y) - 60;
+  // Default: control points positioned exactly along the line at 1/3 and 2/3
+  const deltaX = toProduct.x - fromProduct.x;
+  const deltaY = toProduct.y - fromProduct.y;
+  
+  // Default control points are positioned exactly on the straight line
+  // at 1/3 and 2/3 of the distance from start to end
+  const defaultControl1X = fromProduct.x + deltaX * 0.33;
+  const defaultControl1Y = fromProduct.y + deltaY * 0.33;
+  const defaultControl3X = fromProduct.x + deltaX * 0.67;
+  const defaultControl3Y = fromProduct.y + deltaY * 0.67;
 
   const control1 = connector.control1 ?? { x: defaultControl1X, y: defaultControl1Y };
   const control3 = connector.control3 ?? { x: defaultControl3X, y: defaultControl3Y };
@@ -50,7 +55,7 @@ export const ConnectorLine = ({
 
   return (
     <Group>
-      {/* The curved line using cubic Bézier with 3 control points */}
+      {/* The curved line using cubic Bézier with control points */}
       <Shape
         ref={shapeRef}
         id={connector.id}
@@ -131,7 +136,7 @@ export const ConnectorLine = ({
             ref={control1Ref}
             x={control1.x}
             y={control1.y}
-            radius={10}
+            radius={15}
             fill={theme.palette.info.main}
             stroke={theme.palette.background.paper}
             strokeWidth={2}
@@ -153,7 +158,7 @@ export const ConnectorLine = ({
             ref={control3Ref}
             x={control3.x}
             y={control3.y}
-            radius={10}
+            radius={15}
             fill={theme.palette.info.main}
             stroke={theme.palette.background.paper}
             strokeWidth={2}

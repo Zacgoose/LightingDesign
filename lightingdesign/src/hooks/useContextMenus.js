@@ -126,7 +126,11 @@ export const useContextMenus = ({
       if (transformed) updateHistory(transformed);
       setSelectedIds([]);
       setGroupKey((k) => k + 1);
-      setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, type: "connector" });
+      setContextMenu({ 
+        x: e.evt.clientX, 
+        y: e.evt.clientY, 
+        type: "connector"
+      });
     },
     [applyGroupTransform, updateHistory, setSelectedIds, setSelectedConnectorId, setGroupKey],
   );
@@ -286,6 +290,20 @@ export const useContextMenus = ({
     handleCloseContextMenu,
   ]);
 
+  const handleResetConnectorToStraight = useCallback(() => {
+    if (selectedConnectorId) {
+      const newConnectors = connectors.map((c) => {
+        if (c.id === selectedConnectorId) {
+          // Reset control points to null so they default to straight positioning
+          return { ...c, control1: null, control3: null };
+        }
+        return c;
+      });
+      updateConnectorHistory(newConnectors);
+    }
+    handleCloseContextMenu();
+  }, [selectedConnectorId, connectors, updateConnectorHistory, handleCloseContextMenu]);
+
   return {
     contextMenu,
     colorPickerAnchor,
@@ -298,6 +316,7 @@ export const useContextMenus = ({
     handleColorChange,
     handleDeleteSelected,
     handleDuplicateSelected,
+    handleResetConnectorToStraight,
     handleCloseContextMenu,
     setContextMenu,
     setColorPickerAnchor,

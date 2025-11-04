@@ -162,14 +162,14 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
                 onClick={onAlignHorizontalCenter}
                 title="Align Horizontal Centers"
               >
-                <AlignVerticalCenter />
+                <AlignHorizontalCenter />
               </IconButton>
               <IconButton
                 size="small"
                 onClick={onAlignVerticalCenter}
                 title="Align Vertical Centers"
               >
-                <AlignHorizontalCenter />
+                <AlignVerticalCenter />
               </IconButton>
             </>
           )}

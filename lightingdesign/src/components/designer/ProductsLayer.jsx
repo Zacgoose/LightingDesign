@@ -1,4 +1,4 @@
-import { Group, Transformer, Text } from "react-konva";
+import { Group, Transformer, Text, Rect } from "react-konva";
 import { ProductShape } from "./ProductShape";
 import productTypesConfig from "/src/data/productTypes.json";
 import { useEffect, memo } from "react";
@@ -270,6 +270,9 @@ export const ProductsLayer = memo(
               const textWidth = textBox.width || 100;
               const textHeight = renderedFontSize * 1.2;
 
+              // Rectangle padding
+              const rectPadding = 10;
+
               return (
                 <Group
                   key={textBox.id}
@@ -318,6 +321,19 @@ export const ProductsLayer = memo(
                     }
                   }}
                 >
+                  {/* Render rectangle border if enabled */}
+                  {textBox.showBorder && (
+                    <Rect
+                      x={-textWidth / 2 - rectPadding}
+                      y={-textHeight / 2 - rectPadding}
+                      width={textWidth + rectPadding * 2}
+                      height={textBox.height}
+                      stroke={textBox.borderColor || "#000000"}
+                      strokeWidth={8}
+                      fill="transparent"
+                      listening={false}
+                    />
+                  )}
                   <Text
                     x={-textWidth / 2}
                     y={-textHeight / 2}
@@ -385,6 +401,7 @@ export const ProductsLayer = memo(
               rotateEnabled={true}
               keepRatio={textIds.length > 0 && productOnlyIds.length === 0}
               ignoreStroke={true}
+              padding={10}
               anchorSize={8}
               borderDash={[4, 4]}
               rotationSnapTolerance={5}

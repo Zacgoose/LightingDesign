@@ -22,9 +22,15 @@ export const ConnectorLine = ({
   // Improved: Position control points evenly between start and end
   const midY = (fromProduct.y + toProduct.y) / 2;
   const offsetY = -60; // Offset from the middle point
-  const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25;
+  
+  // Calculate horizontal distance between points
+  const deltaX = Math.abs(toProduct.x - fromProduct.x);
+  // For vertical connections (small deltaX), add horizontal offset to create curve
+  const horizontalOffset = deltaX < 100 ? 60 : 0;
+  
+  const defaultControl1X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.25 - horizontalOffset;
   const defaultControl1Y = midY + offsetY;
-  const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75;
+  const defaultControl3X = fromProduct.x + (toProduct.x - fromProduct.x) * 0.75 + horizontalOffset;
   const defaultControl3Y = midY + offsetY;
 
   const control1 = connector.control1 ?? { x: defaultControl1X, y: defaultControl1Y };

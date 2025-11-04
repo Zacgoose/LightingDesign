@@ -719,6 +719,11 @@ const Page = () => {
   // Connector selection handler with multi-select support
   const handleConnectorSelect = useCallback(
     (e, connectorId) => {
+      // Ignore right-clicks (button 2) - those are handled by context menu
+      if (e.evt?.button === 2) {
+        return;
+      }
+      
       e.cancelBubble = true;
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);

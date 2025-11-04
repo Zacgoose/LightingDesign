@@ -1005,7 +1005,7 @@ const Page = () => {
       if (transformed) updateHistory(transformed);
 
       // Use unified timeline to undo the most recent action
-      if (timelineTracker.timelineStep.current < 0) return;
+      if (timelineTracker.timelineStep.current === -1) return;
       
       const historyKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current];
       let didUndo = false;
@@ -2194,7 +2194,7 @@ const Page = () => {
                   if (transformed) updateHistory(transformed);
                   
                   // Use unified timeline to undo the most recent action
-                  if (timelineTracker.timelineStep.current < 0) return;
+                  if (timelineTracker.timelineStep.current === -1) return;
                   
                   const historyKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current];
                   let didUndo = false;
@@ -2235,7 +2235,7 @@ const Page = () => {
                     clearSelection();
                   }
                 },
-                canUndo: timelineTracker.timelineStep.current >= 0,
+                canUndo: timelineTracker.timelineStep.current > -1,
                 canRedo: timelineTracker.timelineStep.current < timelineTracker.timeline.current.length - 1,
                 onMeasure: handleMeasure,
               }}

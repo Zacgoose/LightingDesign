@@ -1683,25 +1683,35 @@ const Page = () => {
       svgElement.setAttribute("width", String(shapeSize));
       svgElement.setAttribute("height", String(shapeSize));
       
-      // Create a group for the product centered at origin
+      // Use natural shape sizes (what the shape functions expect)
+      // These are the default sizes from the shape functions themselves
+      const naturalShapeSize = 50; // Common default for most shapes
+      
+      // Calculate scale factor to fit natural size into available space
+      // Use 0.65 multiplier to make shapes a bit smaller (user feedback)
+      const targetSize = shapeSize * 0.65;
+      const shapeScale = targetSize / naturalShapeSize;
+      
+      // Create a group for the product centered at origin with scaling
       const productGroupEl = document.createElementNS(SVG_NS, "g");
-      productGroupEl.setAttribute("transform", `translate(${shapeSize/2} ${shapeSize/2})`);
+      productGroupEl.setAttribute("transform", `translate(${shapeSize/2} ${shapeSize/2}) scale(${shapeScale})`);
       svgElement.appendChild(productGroupEl);
       
-      // Create shape object (same as canvas export)
+      // Create shape object with natural sizes
+      // This allows hard-coded line widths and offsets in shape functions to scale proportionally
       const shapeObj = {
-        width: () => shapeSize * 0.8, // Slightly smaller to fit nicely
-        height: () => shapeSize * 0.8,
+        width: () => naturalShapeSize,
+        height: () => naturalShapeSize,
         getAttr: (name) => {
           switch (name) {
             case "scaleFactor":
               return 1;
             case "realWorldSize":
-              return 100;
+              return naturalShapeSize;
             case "realWorldWidth":
-              return 100;
+              return naturalShapeSize;
             case "realWorldHeight":
-              return 100;
+              return naturalShapeSize;
             case "stroke":
               return strokeColor;
             case "strokeWidth":
@@ -1885,7 +1895,7 @@ const Page = () => {
       const ctx = createSvgContextForLegend(productGroupEl);
       ctx.fillStyle = fillColor;
       ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = strokeWidth * 0.1;
+      ctx.lineWidth = strokeWidth; // Use the config stroke width, will scale with group transform
       
       try {
         // Use the same shape function as canvas export
@@ -1897,10 +1907,10 @@ const Page = () => {
         const circleEl = document.createElementNS(SVG_NS, "circle");
         circleEl.setAttribute("cx", "0");
         circleEl.setAttribute("cy", "0");
-        circleEl.setAttribute("r", String(shapeSize * 0.4));
+        circleEl.setAttribute("r", String(naturalShapeSize / 2)); // Use natural size, will scale with group
         circleEl.setAttribute("fill", fillColor);
         circleEl.setAttribute("stroke", strokeColor);
-        circleEl.setAttribute("stroke-width", String(strokeWidth * 0.1));
+        circleEl.setAttribute("stroke-width", String(strokeWidth));
         productGroupEl.appendChild(circleEl);
       }
       

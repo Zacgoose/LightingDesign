@@ -9,6 +9,7 @@ import { useCallback } from "react";
 export const useProductInteraction = ({
   products,
   selectedIds,
+  selectedConnectorIds,
   selectedTool,
   isDragging,
   setIsDragging,
@@ -26,8 +27,6 @@ export const useProductInteraction = ({
   const handleProductClick = useCallback(
     (e, productId) => {
       if (isDragging) return;
-      setSelectedConnectorIds([]);
-      setSelectedTextId(null); // Clear text selection when clicking on a product
 
       // Connect mode logic
       if (selectedTool === "connect") {
@@ -78,6 +77,10 @@ export const useProductInteraction = ({
       const shiftKey = e.evt?.shiftKey;
       const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
       if (shiftKey || ctrlKey) {
+        // Ignore product clicks when connectors are already selected
+        if (selectedConnectorIds.length > 0) {
+          return;
+        }
         if (selectedIds.includes(productId)) {
           const transformed = applyGroupTransform();
           if (transformed) updateHistory(transformed);
@@ -90,6 +93,9 @@ export const useProductInteraction = ({
           setGroupKey((k) => k + 1);
         }
       } else {
+        // Only clear connector and text selections when not holding modifier keys
+        setSelectedConnectorIds([]);
+        setSelectedTextId(null);
         if (!selectedIds.includes(productId)) {
           const transformed = applyGroupTransform();
           if (transformed) updateHistory(transformed);
@@ -102,6 +108,7 @@ export const useProductInteraction = ({
       isDragging,
       selectedTool,
       selectedIds,
+      selectedConnectorIds,
       applyGroupTransform,
       updateHistory,
       setSelectedIds,

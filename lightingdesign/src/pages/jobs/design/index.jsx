@@ -694,6 +694,7 @@ const Page = () => {
   const productInteraction = useProductInteraction({
     products,
     selectedIds,
+    selectedConnectorIds,
     selectedTool,
     isDragging,
     setIsDragging,
@@ -733,6 +734,10 @@ const Page = () => {
       const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
       
       if (shiftKey || ctrlKey) {
+        // Ignore connector clicks when products/text are already selected
+        if (selectedIds.length > 0) {
+          return;
+        }
         // Toggle selection
         if (selectedConnectorIds.includes(connectorId)) {
           setSelectedConnectorIds(selectedConnectorIds.filter((id) => id !== connectorId));
@@ -742,12 +747,14 @@ const Page = () => {
       } else {
         // Single selection
         setSelectedConnectorIds([connectorId]);
+        // Only clear product/text selections when not holding modifier keys
+        setSelectedIds([]);
       }
       
-      setSelectedIds([]);
       forceGroupUpdate();
     },
     [
+      selectedIds,
       selectedConnectorIds,
       applyGroupTransform,
       updateHistory,
@@ -1681,6 +1688,10 @@ const Page = () => {
 
   const handleTextDoubleClick = useCallback(
     (e, textId) => {
+      // Don't open text editor when connectors are selected
+      if (selectedConnectorIds.length > 0) {
+        return;
+      }
       const textBox = textBoxes.find((t) => t.id === textId);
       if (textBox) {
         setPendingTextBoxId(textId);
@@ -1695,7 +1706,7 @@ const Page = () => {
         setTextDialogOpen(true);
       }
     },
-    [textBoxes],
+    [textBoxes, selectedConnectorIds],
   );
 
   const handleTextDialogConfirm = useCallback(
@@ -1785,14 +1796,16 @@ const Page = () => {
 
   const handleTextSelect = useCallback(
     (e, textId) => {
-      setSelectedConnectorIds([]);
-
       // Multi-selection logic similar to handleProductClick
       const shiftKey = e.evt?.shiftKey;
       const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
       const textIdWithPrefix = `text-${textId}`;
 
       if (shiftKey || ctrlKey) {
+        // Ignore text clicks when connectors are already selected
+        if (selectedConnectorIds.length > 0) {
+          return;
+        }
         // Multi-select mode: add or remove from selection
         if (selectedIds.includes(textIdWithPrefix)) {
           // Deselect this text box - apply group transform first
@@ -1815,6 +1828,8 @@ const Page = () => {
         }
       } else {
         // Single selection mode: replace selection with just this text
+        // Only clear connector selections when not holding modifier keys
+        setSelectedConnectorIds([]);
         if (!selectedIds.includes(textIdWithPrefix)) {
           const transformed = applyGroupTransform();
           if (transformed) updateHistory(transformed);
@@ -1824,7 +1839,7 @@ const Page = () => {
         }
       }
     },
-    [selectedIds, selectedTextId, setSelectedIds, setSelectedConnectorIds, setSelectedTextId, forceGroupUpdate, applyGroupTransform, updateHistory],
+    [selectedIds, selectedConnectorIds, selectedTextId, setSelectedIds, setSelectedConnectorIds, setSelectedTextId, forceGroupUpdate, applyGroupTransform, updateHistory],
   );
 
   const handleTextContextMenu = useCallback(
@@ -2093,9 +2108,14 @@ const Page = () => {
       handleSelectionEnd();
 
       // If we're in select mode and clicked on empty canvas without dragging, clear selection
+      // ONLY if modifier keys are not pressed (to preserve multi-selection)
       if (selectedTool === "select" && !wasDragging && hadSelectionStart) {
         const clickedOnEmpty = e.target === e.target.getStage();
-        if (clickedOnEmpty) {
+        const shiftKey = e.evt?.shiftKey;
+        const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
+        
+        // Only clear selection if no modifier keys are pressed
+        if (clickedOnEmpty && !shiftKey && !ctrlKey) {
           const transformed = applyGroupTransform();
           if (transformed) updateHistory(transformed);
           clearSelection();
@@ -2107,7 +2127,7 @@ const Page = () => {
       selectionStartRef.current = null;
       hasDraggedRef.current = false;
     },
-    [selectedTool, handleSelectionEnd, applyGroupTransform, updateHistory, clearSelection],
+    [selectedTool, handleSelectionEnd, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId],
   );
 
   const checkDeselect = useCallback(

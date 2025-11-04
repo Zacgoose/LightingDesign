@@ -10,6 +10,7 @@ import {
   Typography,
   TextField,
 } from "@mui/material";
+import { Line } from "react-konva";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { useForm } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -2444,6 +2445,28 @@ const Page = () => {
                             onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
                           />
                         )}
+
+                        {/* Preview line in connect mode */}
+                        {selectedTool === "connect" && connectSequence.length > 0 && (() => {
+                          const lastProductId = connectSequence[connectSequence.length - 1];
+                          const lastProduct = products.find((p) => p.id === lastProductId);
+                          if (!lastProduct) return null;
+                          return (
+                            <Line
+                              points={[
+                                lastProduct.x,
+                                lastProduct.y,
+                                cursorPosition.x,
+                                cursorPosition.y,
+                              ]}
+                              stroke={theme.palette.info.main}
+                              strokeWidth={3}
+                              dash={[10, 5]}
+                              opacity={0.6}
+                              listening={false}
+                            />
+                          );
+                        })()}
 
                         {/* Selection group only (selected products and text) */}
                         <ProductsLayer

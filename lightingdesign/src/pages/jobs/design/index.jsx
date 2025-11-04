@@ -32,6 +32,7 @@ import { TextLayer } from "/src/components/designer/TextLayer";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
 import { TextEntryDialog } from "/src/components/designer/TextEntryDialog";
 import { useHistory } from "/src/hooks/useHistory";
+import { useUnifiedHistory } from "/src/hooks/useUnifiedHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
 import { useLayerManager } from "/src/hooks/useLayerManager";
 import { useCanvasState } from "/src/hooks/useCanvasState";
@@ -128,6 +129,9 @@ const Page = () => {
   const [placementMode, setPlacementMode] = useState(null);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
 
+  // Create unified history timeline tracker
+  const timelineTracker = useUnifiedHistory();
+
   // Products and connectors with history
   const {
     state: products,
@@ -137,7 +141,7 @@ const Page = () => {
     redo: handleRedo,
     canUndo,
     canRedo,
-  } = useHistory(activeLayer?.products || []);
+  } = useHistory(activeLayer?.products || [], timelineTracker, 'products');
 
   // Text boxes with history - similar to products and connectors
   const {
@@ -148,7 +152,7 @@ const Page = () => {
     redo: handleRedoTextBoxes,
     canUndo: canUndoTextBoxes,
     canRedo: canRedoTextBoxes,
-  } = useHistory([]);
+  } = useHistory([], timelineTracker, 'textBoxes');
   const [selectedTextId, setSelectedTextId] = useState(null);
   const isLoadingLayerData = useRef(false);
   const lastLoadedLayerId = useRef(null); // Initialize to null so first layer loads properly
@@ -175,7 +179,7 @@ const Page = () => {
     redo: handleRedoConnectors,
     canUndo: canUndoConnectors,
     canRedo: canRedoConnectors,
-  } = useHistory(activeLayer?.connectors || []);
+  } = useHistory(activeLayer?.connectors || [], timelineTracker, 'connectors');
 
   // Keep activeLayerIdRef in sync with activeLayerId
   useEffect(() => {
@@ -1000,11 +1004,22 @@ const Page = () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
 
-      const didUndoProduct = handleUndo();
-      const didUndoTextBox = handleUndoTextBoxes();
-      const didUndoConnector = handleUndoConnectors();
-
-      if (didUndoProduct || didUndoTextBox || didUndoConnector) {
+      // Use unified timeline to undo the most recent action
+      if (timelineTracker.timelineStep.current < 0) return;
+      
+      const historyKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current];
+      let didUndo = false;
+      
+      if (historyKey === 'products') {
+        didUndo = handleUndo();
+      } else if (historyKey === 'textBoxes') {
+        didUndo = handleUndoTextBoxes();
+      } else if (historyKey === 'connectors') {
+        didUndo = handleUndoConnectors();
+      }
+      
+      if (didUndo) {
+        timelineTracker.timelineStep.current -= 1;
         clearSelection();
       }
     },
@@ -1012,11 +1027,22 @@ const Page = () => {
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
 
-      const didRedoProduct = handleRedo();
-      const didRedoTextBox = handleRedoTextBoxes();
-      const didRedoConnector = handleRedoConnectors();
-
-      if (didRedoProduct || didRedoTextBox || didRedoConnector) {
+      // Use unified timeline to redo the next action
+      if (timelineTracker.timelineStep.current >= timelineTracker.timeline.current.length - 1) return;
+      
+      const nextHistoryKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current + 1];
+      let didRedo = false;
+      
+      if (nextHistoryKey === 'products') {
+        didRedo = handleRedo();
+      } else if (nextHistoryKey === 'textBoxes') {
+        didRedo = handleRedoTextBoxes();
+      } else if (nextHistoryKey === 'connectors') {
+        didRedo = handleRedoConnectors();
+      }
+      
+      if (didRedo) {
+        timelineTracker.timelineStep.current += 1;
         clearSelection();
       }
     },
@@ -2166,21 +2192,51 @@ const Page = () => {
                 onUndo: () => {
                   const transformed = applyGroupTransform();
                   if (transformed) updateHistory(transformed);
-                  handleUndo();
-                  handleUndoTextBoxes();
-                  handleUndoConnectors();
-                  clearSelection();
+                  
+                  // Use unified timeline to undo the most recent action
+                  if (timelineTracker.timelineStep.current < 0) return;
+                  
+                  const historyKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current];
+                  let didUndo = false;
+                  
+                  if (historyKey === 'products') {
+                    didUndo = handleUndo();
+                  } else if (historyKey === 'textBoxes') {
+                    didUndo = handleUndoTextBoxes();
+                  } else if (historyKey === 'connectors') {
+                    didUndo = handleUndoConnectors();
+                  }
+                  
+                  if (didUndo) {
+                    timelineTracker.timelineStep.current -= 1;
+                    clearSelection();
+                  }
                 },
                 onRedo: () => {
                   const transformed = applyGroupTransform();
                   if (transformed) updateHistory(transformed);
-                  handleRedo();
-                  handleRedoTextBoxes();
-                  handleRedoConnectors();
-                  clearSelection();
+                  
+                  // Use unified timeline to redo the next action
+                  if (timelineTracker.timelineStep.current >= timelineTracker.timeline.current.length - 1) return;
+                  
+                  const nextHistoryKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current + 1];
+                  let didRedo = false;
+                  
+                  if (nextHistoryKey === 'products') {
+                    didRedo = handleRedo();
+                  } else if (nextHistoryKey === 'textBoxes') {
+                    didRedo = handleRedoTextBoxes();
+                  } else if (nextHistoryKey === 'connectors') {
+                    didRedo = handleRedoConnectors();
+                  }
+                  
+                  if (didRedo) {
+                    timelineTracker.timelineStep.current += 1;
+                    clearSelection();
+                  }
                 },
-                canUndo: canUndo || canUndoTextBoxes || canUndoConnectors,
-                canRedo: canRedo || canRedoTextBoxes || canRedoConnectors,
+                canUndo: timelineTracker.timelineStep.current >= 0,
+                canRedo: timelineTracker.timelineStep.current < timelineTracker.timeline.current.length - 1,
                 onMeasure: handleMeasure,
               }}
               viewProps={{

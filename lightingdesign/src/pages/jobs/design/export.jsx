@@ -1688,8 +1688,8 @@ const Page = () => {
       const naturalShapeSize = 50; // Common default for most shapes
       
       // Calculate scale factor to fit natural size into available space
-      // Use 0.65 multiplier to make shapes a bit smaller (user feedback)
-      const targetSize = shapeSize * 0.65;
+      // Use 0.75 multiplier to make shapes a bit smaller (user feedback)
+      const targetSize = shapeSize * 0.75;
       const shapeScale = targetSize / naturalShapeSize;
       
       // Create a group for the product centered at origin with scaling

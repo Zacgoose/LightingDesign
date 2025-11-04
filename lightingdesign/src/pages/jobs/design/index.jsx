@@ -2093,9 +2093,14 @@ const Page = () => {
       handleSelectionEnd();
 
       // If we're in select mode and clicked on empty canvas without dragging, clear selection
+      // ONLY if modifier keys are not pressed (to preserve multi-selection)
       if (selectedTool === "select" && !wasDragging && hadSelectionStart) {
         const clickedOnEmpty = e.target === e.target.getStage();
-        if (clickedOnEmpty) {
+        const shiftKey = e.evt?.shiftKey;
+        const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
+        
+        // Only clear selection if no modifier keys are pressed
+        if (clickedOnEmpty && !shiftKey && !ctrlKey) {
           const transformed = applyGroupTransform();
           if (transformed) updateHistory(transformed);
           clearSelection();

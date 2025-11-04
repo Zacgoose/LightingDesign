@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   Box,
   Container,
@@ -10,6 +10,7 @@ import {
   Typography,
   TextField,
 } from "@mui/material";
+import { Line } from "react-konva";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { useForm } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -255,6 +256,15 @@ const Page = () => {
 
   // Upload state for better UX
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Calculate the product for the preview line in connect mode
+  const previewLineProduct = useMemo(() => {
+    if (selectedTool === "connect" && connectSequence.length > 0) {
+      const lastProductId = connectSequence[connectSequence.length - 1];
+      return products.find((p) => p.id === lastProductId);
+    }
+    return null;
+  }, [selectedTool, connectSequence, products]);
 
   // Form hooks
   const scaleForm = useForm({
@@ -2498,6 +2508,23 @@ const Page = () => {
                               updateConnectorHistory(newConnectors);
                             }}
                             onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
+                          />
+                        )}
+
+                        {/* Preview line in connect mode */}
+                        {previewLineProduct && (
+                          <Line
+                            points={[
+                              previewLineProduct.x,
+                              previewLineProduct.y,
+                              cursorPosition.x,
+                              cursorPosition.y,
+                            ]}
+                            stroke={theme.palette.info.main}
+                            strokeWidth={3}
+                            dash={[10, 5]}
+                            opacity={0.6}
+                            listening={false}
                           />
                         )}
 

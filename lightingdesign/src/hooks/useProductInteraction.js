@@ -43,20 +43,31 @@ export const useProductInteraction = ({
           // If at least two, create connector
           if (newSeq.length >= 2) {
             const prevId = newSeq[newSeq.length - 2];
-            // Get default sublayer from active layer
-            const defaultSublayerId = activeLayer?.defaultSublayerId || null;
-            updateConnectorHistory([
-              ...connectors,
-              {
-                id: `connector-${Date.now()}-${Math.random()}`,
-                from: prevId,
-                to: productId,
-                controlX: null,
-                controlY: null,
-                color: null,
-                sublayerId: defaultSublayerId,
-              },
-            ]);
+            
+            // Check if a connection already exists between these two objects (in either direction)
+            const connectionExists = connectors.some(
+              (c) =>
+                (c.from === prevId && c.to === productId) ||
+                (c.from === productId && c.to === prevId)
+            );
+            
+            // Only create connector if connection doesn't already exist
+            if (!connectionExists) {
+              // Get default sublayer from active layer
+              const defaultSublayerId = activeLayer?.defaultSublayerId || null;
+              updateConnectorHistory([
+                ...connectors,
+                {
+                  id: `connector-${Date.now()}-${Math.random()}`,
+                  from: prevId,
+                  to: productId,
+                  controlX: null,
+                  controlY: null,
+                  color: null,
+                  sublayerId: defaultSublayerId,
+                },
+              ]);
+            }
           }
           return newSeq;
         });

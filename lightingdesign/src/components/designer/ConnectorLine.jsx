@@ -99,7 +99,7 @@ export const ConnectorLine = ({
       />
 
       {/* Show control points and guide lines when selected */}
-      {isSelected && selectedTool === "select" && (
+      {isSelected && (selectedTool === "select" || selectedTool === "connect") && (
         <>
           {/* Guide lines to control points */}
           <Line

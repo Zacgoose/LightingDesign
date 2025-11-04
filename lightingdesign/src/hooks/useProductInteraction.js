@@ -13,7 +13,7 @@ export const useProductInteraction = ({
   isDragging,
   setIsDragging,
   setSelectedIds,
-  setSelectedConnectorId,
+  setSelectedConnectorIds,
   setSelectedTextId,
   setGroupKey,
   updateConnectorHistory,
@@ -26,7 +26,7 @@ export const useProductInteraction = ({
   const handleProductClick = useCallback(
     (e, productId) => {
       if (isDragging) return;
-      setSelectedConnectorId(null);
+      setSelectedConnectorIds([]);
       setSelectedTextId(null); // Clear text selection when clicking on a product
 
       // Connect mode logic
@@ -105,7 +105,7 @@ export const useProductInteraction = ({
       applyGroupTransform,
       updateHistory,
       setSelectedIds,
-      setSelectedConnectorId,
+      setSelectedConnectorIds,
       setSelectedTextId,
       setGroupKey,
       updateConnectorHistory,

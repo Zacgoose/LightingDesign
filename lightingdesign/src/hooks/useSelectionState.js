@@ -10,7 +10,7 @@ import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 export const useSelectionState = (products, textBoxes = []) => {
   // Selection state
   const [selectedIds, setSelectedIds] = useState([]);
-  const [selectedConnectorId, setSelectedConnectorId] = useState(null);
+  const [selectedConnectorIds, setSelectedConnectorIds] = useState([]);
   const [groupKey, setGroupKey] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -210,7 +210,7 @@ export const useSelectionState = (products, textBoxes = []) => {
   // Clear selection
   const clearSelection = useCallback(() => {
     setSelectedIds([]);
-    setSelectedConnectorId(null);
+    setSelectedConnectorIds([]);
     setGroupKey((k) => k + 1);
   }, []);
 
@@ -222,7 +222,7 @@ export const useSelectionState = (products, textBoxes = []) => {
   return {
     // State
     selectedIds,
-    selectedConnectorId,
+    selectedConnectorIds,
     groupKey,
     isDragging,
     selectionSnapshot,
@@ -234,7 +234,7 @@ export const useSelectionState = (products, textBoxes = []) => {
 
     // Setters
     setSelectedIds,
-    setSelectedConnectorId,
+    setSelectedConnectorIds,
     setGroupKey,
     setIsDragging,
 

@@ -36,6 +36,7 @@ export const ContextMenus = ({
   onInsertCustomObject,
   sublayers = [],
   selectedProductsCount = 0,
+  selectedConnectorsCount = 0,
   onTextEdit,
   onTextFormatBold,
   onTextFormatItalic,
@@ -293,7 +294,11 @@ export const ContextMenus = ({
               <ListItemIcon>
                 <Delete fontSize="small" />
               </ListItemIcon>
-              <ListItemText>Delete Connection</ListItemText>
+              <ListItemText>
+                {selectedConnectorsCount > 1
+                  ? `Delete ${selectedConnectorsCount} Connections`
+                  : "Delete Connection"}
+              </ListItemText>
             </MenuItem>
           </>
         )}

@@ -3,7 +3,7 @@ import { ConnectorLine } from "/src/components/designer/ConnectorLine";
 export const ConnectorsLayer = ({
   connectors,
   products,
-  selectedConnectorId,
+  selectedConnectorIds,
   selectedTool,
   theme,
   onConnectorSelect,
@@ -11,8 +11,8 @@ export const ConnectorsLayer = ({
   onConnectorContextMenu,
 }) => {
   // Separate connectors into selected and unselected for proper z-index ordering
-  const unselectedConnectors = connectors.filter((c) => c.id !== selectedConnectorId);
-  const selectedConnector = connectors.find((c) => c.id === selectedConnectorId);
+  const unselectedConnectors = connectors.filter((c) => !selectedConnectorIds.includes(c.id));
+  const selectedConnectors = connectors.filter((c) => selectedConnectorIds.includes(c.id));
 
   // Helper function to render a connector with common logic
   const renderConnector = (connector, isSelected) => {
@@ -45,8 +45,8 @@ export const ConnectorsLayer = ({
       {/* Render unselected connectors first (behind) */}
       {unselectedConnectors.map((connector) => renderConnector(connector, false))}
       
-      {/* Render selected connector last (on top) */}
-      {selectedConnector && renderConnector(selectedConnector, true)}
+      {/* Render selected connectors last (on top) */}
+      {selectedConnectors.map((connector) => renderConnector(connector, true))}
     </>
   );
 };

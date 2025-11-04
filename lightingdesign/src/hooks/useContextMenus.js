@@ -10,7 +10,7 @@ export const useContextMenus = ({
   products,
   connectors,
   selectedIds,
-  selectedConnectorId,
+  selectedConnectorIds,
   selectedTool,
   placementMode,
   stagePosition,
@@ -18,7 +18,7 @@ export const useContextMenus = ({
   updateHistory,
   updateConnectorHistory,
   setSelectedIds,
-  setSelectedConnectorId,
+  setSelectedConnectorIds,
   setGroupKey,
   setProductDrawerVisible,
   setConnectSequence,
@@ -60,7 +60,7 @@ export const useContextMenus = ({
         menuType = "placement";
       } else if (selectedIds.length > 0) {
         menuType = "product";
-      } else if (selectedConnectorId) {
+      } else if (selectedConnectorIds.length > 0) {
         menuType = "connector";
       } else if (e.target === e.target.getStage()) {
         menuType = "canvas";
@@ -82,7 +82,7 @@ export const useContextMenus = ({
       selectedTool,
       placementMode,
       selectedIds,
-      selectedConnectorId,
+      selectedConnectorIds,
       stagePosition,
       stageScale,
       setConnectSequence,
@@ -102,7 +102,7 @@ export const useContextMenus = ({
         const transformed = applyGroupTransform();
         if (transformed) updateHistory(transformed);
         setSelectedIds([productId]);
-        setSelectedConnectorId(null);
+        setSelectedConnectorIds([]);
         setGroupKey((k) => k + 1);
       }
       setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, type: "product" });
@@ -113,7 +113,7 @@ export const useContextMenus = ({
       applyGroupTransform,
       updateHistory,
       setSelectedIds,
-      setSelectedConnectorId,
+      setSelectedConnectorIds,
       setGroupKey,
     ],
   );
@@ -121,7 +121,28 @@ export const useContextMenus = ({
   const handleConnectorContextMenu = useCallback(
     (e, connectorId) => {
       e.evt.preventDefault();
-      setSelectedConnectorId(connectorId);
+      
+      // Handle multi-select with Shift/Ctrl
+      const shiftKey = e.evt?.shiftKey;
+      const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
+      
+      if (shiftKey || ctrlKey) {
+        // Add to or remove from selection
+        if (selectedConnectorIds.includes(connectorId)) {
+          setSelectedConnectorIds(selectedConnectorIds.filter((id) => id !== connectorId));
+        } else {
+          setSelectedConnectorIds([...selectedConnectorIds, connectorId]);
+        }
+      } else {
+        // Right-click without modifier keys:
+        // If clicking on an already-selected connector, keep the multi-selection
+        // If clicking on an unselected connector, select only that one
+        if (!selectedConnectorIds.includes(connectorId)) {
+          setSelectedConnectorIds([connectorId]);
+        }
+        // If already selected, don't change the selection (keep multi-selection)
+      }
+      
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
       setSelectedIds([]);
@@ -132,7 +153,7 @@ export const useContextMenus = ({
         type: "connector"
       });
     },
-    [applyGroupTransform, updateHistory, setSelectedIds, setSelectedConnectorId, setGroupKey],
+    [selectedConnectorIds, applyGroupTransform, updateHistory, setSelectedIds, setSelectedConnectorIds, setGroupKey],
   );
 
   const handleInsertProductAtPosition = useCallback(() => {
@@ -151,14 +172,14 @@ export const useContextMenus = ({
       setColorPickerAnchor(e.currentTarget);
       if (selectedIds.length > 0) {
         setColorPickerTarget({ type: "products", ids: selectedIds });
-      } else if (selectedConnectorId) {
-        setColorPickerTarget({ type: "connector", id: selectedConnectorId });
+      } else if (selectedConnectorIds.length > 0) {
+        setColorPickerTarget({ type: "connectors", ids: selectedConnectorIds });
       } else if (selectedTextId) {
         setColorPickerTarget({ type: "text", id: selectedTextId });
       }
       handleCloseContextMenu();
     },
-    [selectedIds, selectedConnectorId, selectedTextId, handleCloseContextMenu],
+    [selectedIds, selectedConnectorIds, selectedTextId, handleCloseContextMenu],
   );
 
   const handleColorChange = useCallback(
@@ -176,9 +197,9 @@ export const useContextMenus = ({
         });
         updateHistory(newProducts);
         setGroupKey((k) => k + 1);
-      } else if (colorPickerTarget.type === "connector") {
+      } else if (colorPickerTarget.type === "connectors") {
         const newConnectors = connectors.map((c) => {
-          if (c.id === colorPickerTarget.id) {
+          if (colorPickerTarget.ids.includes(c.id)) {
             return { ...c, color };
           }
           return c;
@@ -210,10 +231,10 @@ export const useContextMenus = ({
   );
 
   const handleDeleteSelected = useCallback(() => {
-    if (selectedConnectorId) {
-      const newConnectors = connectors.filter((c) => c.id !== selectedConnectorId);
+    if (selectedConnectorIds.length > 0) {
+      const newConnectors = connectors.filter((c) => !selectedConnectorIds.includes(c.id));
       updateConnectorHistory(newConnectors);
-      setSelectedConnectorId(null);
+      setSelectedConnectorIds([]);
     }
 
     if (selectedTextId && updateTextBoxHistory) {
@@ -236,7 +257,7 @@ export const useContextMenus = ({
     handleCloseContextMenu();
   }, [
     selectedIds,
-    selectedConnectorId,
+    selectedConnectorIds,
     selectedTextId,
     products,
     connectors,
@@ -246,7 +267,7 @@ export const useContextMenus = ({
     updateConnectorHistory,
     updateTextBoxHistory,
     setSelectedIds,
-    setSelectedConnectorId,
+    setSelectedConnectorIds,
     setGroupKey,
     handleCloseContextMenu,
   ]);
@@ -291,9 +312,9 @@ export const useContextMenus = ({
   ]);
 
   const handleResetConnectorToStraight = useCallback(() => {
-    if (selectedConnectorId) {
+    if (selectedConnectorIds.length > 0) {
       const newConnectors = connectors.map((c) => {
-        if (c.id === selectedConnectorId) {
+        if (selectedConnectorIds.includes(c.id)) {
           // Reset control points to null so they default to straight positioning
           return { ...c, control1: null, control3: null };
         }
@@ -302,7 +323,7 @@ export const useContextMenus = ({
       updateConnectorHistory(newConnectors);
     }
     handleCloseContextMenu();
-  }, [selectedConnectorId, connectors, updateConnectorHistory, handleCloseContextMenu]);
+  }, [selectedConnectorIds, connectors, updateConnectorHistory, handleCloseContextMenu]);
 
   const handleAlignHorizontalCenter = useCallback(() => {
     // Only align if multiple objects are selected

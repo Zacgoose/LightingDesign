@@ -152,6 +152,20 @@ function Add-CIPPAzDataTableEntity {
                             Add-AzDataTableEntity @Parameters -Entity $NewRow
                         }
 
+                        # Clean up obsolete parts that are no longer needed
+                        # If we previously had more parts, remove them
+                        $cleanupIndex = $entityIndex
+                        while ($true) {
+                            $partRowKey = "$($originalRowKey)-part$cleanupIndex"
+                            try {
+                                Remove-AzDataTableEntity -Context $Context -PartitionKey $originalPartitionKey -RowKey $partRowKey -ErrorAction Stop
+                                Write-Information "Deleted obsolete part: $partRowKey"
+                                $cleanupIndex++
+                            } catch {
+                                break
+                            }
+                        }
+
                     } else {
                         $NewEnt = ([PSCustomObject]$SingleEnt) | Select-Object * -ExcludeProperty Timestamp
                         Add-AzDataTableEntity @Parameters -Entity $NewEnt

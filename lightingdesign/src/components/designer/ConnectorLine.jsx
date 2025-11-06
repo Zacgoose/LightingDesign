@@ -100,10 +100,10 @@ export const ConnectorLine = ({
           connector.color ||
           (isSelected ? theme.palette.secondary.main : theme.palette.primary.main)
         }
-        strokeWidth={isSelected ? 6 : 4}
+        strokeWidth={isSelected ? 6 : 6}
         lineCap="round"
-        dash={[20, 10]} // Dashed line pattern: 20px dash, 10px gap (more spacing)
-        hitStrokeWidth={20} // Makes it easier to click
+        dash={[30, 15]} // Dashed line pattern: 30px dash, 15px gap (more spacing)
+        hitStrokeWidth={40} // Makes it easier to click
         listening={selectedTool === "select" || selectedTool === "connect"} // Only listen when interaction is needed
         onClick={handleLineClick}
         onTap={handleLineClick}

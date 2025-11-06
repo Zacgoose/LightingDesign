@@ -44,32 +44,60 @@ const getProductLetterPrefix = (product, products, productTypesConfig) => {
   const config = productTypesConfig[productType] || productTypesConfig.default;
   const letterPrefix = config.letterPrefix || "O";
 
+  // Filter to products with the same letter prefix
+  const samePrefixProducts = products.filter((p) => {
+    const pType = p.product_type?.toLowerCase() || "default";
+    const pConfig = productTypesConfig[pType] || productTypesConfig.default;
+    const pPrefix = pConfig.letterPrefix || "O";
+    return pPrefix === letterPrefix;
+  });
+
   // Normalize SKU: trim whitespace and handle empty strings as null
   const sku = product.sku?.trim();
-  if (!sku || sku === "") {
-    return letterPrefix; // No SKU, just return letter without number
+  const hasSku = sku && sku !== "";
+
+  // For products with SKUs, group by SKU
+  // For products without SKUs (custom shapes), group by shape type
+  let groupingKey;
+  if (hasSku) {
+    groupingKey = `sku:${sku}`;
+  } else {
+    // For custom shapes, use the shape type from config as grouping key
+    const shapeType = config.shapeType || "rect";
+    groupingKey = `shape:${shapeType}`;
   }
 
-  // Find all unique SKUs for this product type, sorted to ensure consistent ordering
-  const sameTypeProducts = products.filter(
-    (p) => (p.product_type?.toLowerCase() || "default") === productType,
-  );
-
-  // Get unique SKUs, filtering out null/undefined/empty, then sort
-  const uniqueSkus = [
-    ...new Set(sameTypeProducts.map((p) => p.sku?.trim()).filter((s) => s && s !== "")),
+  // Build a list of unique grouping keys from products with same prefix, sorted for consistency
+  const uniqueGroupingKeys = [
+    ...new Set(
+      samePrefixProducts.map((p) => {
+        const pSku = p.sku?.trim();
+        const pHasSku = pSku && pSku !== "";
+        if (pHasSku) {
+          return `sku:${pSku}`;
+        } else {
+          const pType = p.product_type?.toLowerCase() || "default";
+          const pConfig = productTypesConfig[pType] || productTypesConfig.default;
+          const pShapeType = pConfig.shapeType || "rect";
+          return `shape:${pShapeType}`;
+        }
+      }),
+    ),
   ].sort();
 
-  // Find the index of this product's SKU among unique SKUs of this type
-  const skuIndex = uniqueSkus.indexOf(sku);
+  // Find the index of this product's grouping key
+  const groupIndex = uniqueGroupingKeys.indexOf(groupingKey);
 
-  // If SKU not found (shouldn't happen), return just the letter
-  if (skuIndex === -1) {
-    console.warn(`SKU "${sku}" not found in uniqueSkus for ${productType}:`, uniqueSkus);
+  // If grouping key not found (shouldn't happen), return just the letter
+  if (groupIndex === -1) {
+    console.warn(
+      `Grouping key "${groupingKey}" not found in uniqueGroupingKeys for ${productType}:`,
+      uniqueGroupingKeys,
+    );
     return letterPrefix;
   }
 
-  return `${letterPrefix}${skuIndex + 1}`;
+  return `${letterPrefix}${groupIndex + 1}`;
 };
 
 export const ProductsLayer = memo(

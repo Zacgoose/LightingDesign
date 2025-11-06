@@ -2254,6 +2254,7 @@ const Page = () => {
           product_type: shapeName,
           product_type_unigram: shapeName,
           isCustomObject: true,
+          quantity: 1,
           scaleFactor: scaleFactor || 100,
           // Copy all size properties from config, same as regular products
           realWorldSize: shapeConfig.realWorldSize,

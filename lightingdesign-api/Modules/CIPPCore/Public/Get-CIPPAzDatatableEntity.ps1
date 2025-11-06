@@ -18,17 +18,27 @@ function Get-CIPPAzDataTableEntity {
         $partitionKey = $entity.PartitionKey
         $rowKey = $entity.RowKey
         $hasOriginalId = $entity.PSObject.Properties.Match('OriginalEntityId') -and $entity.OriginalEntityId
+        
+        # Check if this is the base entity (RowKey matches OriginalEntityId) or a standalone entity
+        $isBaseEntity = (-not $hasOriginalId) -or ($hasOriginalId -and $rowKey -eq $entity.OriginalEntityId)
 
         if (-not $mergedResults.ContainsKey($partitionKey)) {
             $mergedResults[$partitionKey] = @{}
         }
 
-        if (-not $hasOriginalId) {
-            # It's a standalone root row
-            $rootEntities["$partitionKey|$rowKey"] = $true
-            $mergedResults[$partitionKey][$rowKey] = @{
-                Entity = $entity
-                Parts  = [System.Collections.Generic.List[object]]::new()
+        if ($isBaseEntity) {
+            # It's a standalone root row or the base part of a split entity
+            $entityIdKey = if ($hasOriginalId) { $entity.OriginalEntityId } else { $rowKey }
+            $rootEntities["$partitionKey|$entityIdKey"] = $true
+            
+            if (-not $mergedResults[$partitionKey].ContainsKey($entityIdKey)) {
+                $mergedResults[$partitionKey][$entityIdKey] = @{
+                    Entity = $entity
+                    Parts  = [System.Collections.Generic.List[object]]::new()
+                }
+            } else {
+                # Base entity found after parts - set it as the Entity
+                $mergedResults[$partitionKey][$entityIdKey]['Entity'] = $entity
             }
             continue
         }
@@ -36,15 +46,10 @@ function Get-CIPPAzDataTableEntity {
         # It's a part of something else
         $entityId = $entity.OriginalEntityId
 
-        # Check if this entity's target has a "real" base
-        if ($rootEntities.ContainsKey("$partitionKey|$entityId")) {
-            # Root row exists → skip merging this part
-            continue
-        }
-
         # Merge it as a part
         if (-not $mergedResults[$partitionKey].ContainsKey($entityId)) {
             $mergedResults[$partitionKey][$entityId] = @{
+                Entity = $null
                 Parts = [System.Collections.Generic.List[object]]::new()
             }
         }
@@ -55,8 +60,17 @@ function Get-CIPPAzDataTableEntity {
     foreach ($partitionKey in $mergedResults.Keys) {
         foreach ($entityId in $mergedResults[$partitionKey].Keys) {
             $entityData = $mergedResults[$partitionKey][$entityId]
+            
+            # Check if we have parts to merge
             if (($entityData.Parts | Measure-Object).Count -gt 0) {
-                $fullEntity = [PSCustomObject]@{}
+                # Start with the base entity if it exists, otherwise create empty object
+                if ($null -ne $entityData.Entity) {
+                    $fullEntity = $entityData.Entity | Select-Object * -ExcludeProperty OriginalEntityId, PartIndex
+                } else {
+                    $fullEntity = [PSCustomObject]@{}
+                }
+                
+                # Merge additional parts
                 $parts = $entityData.Parts | Sort-Object PartIndex
                 foreach ($part in $parts) {
                     foreach ($key in $part.PSObject.Properties.Name) {
@@ -69,11 +83,18 @@ function Get-CIPPAzDataTableEntity {
                         }
                     }
                 }
-                $fullEntity | Add-Member -MemberType NoteProperty -Name 'PartitionKey' -Value $parts[0].PartitionKey -Force
+                
+                # Ensure we have the correct metadata
+                $fullEntity | Add-Member -MemberType NoteProperty -Name 'PartitionKey' -Value $partitionKey -Force
                 $fullEntity | Add-Member -MemberType NoteProperty -Name 'RowKey' -Value $entityId -Force
-                $fullEntity | Add-Member -MemberType NoteProperty -Name 'Timestamp' -Value $parts[0].Timestamp -Force
+                if ($null -ne $entityData.Entity) {
+                    $fullEntity | Add-Member -MemberType NoteProperty -Name 'Timestamp' -Value $entityData.Entity.Timestamp -Force
+                } else {
+                    $fullEntity | Add-Member -MemberType NoteProperty -Name 'Timestamp' -Value $parts[0].Timestamp -Force
+                }
                 $finalResults.Add($fullEntity)
             } else {
+                # No parts, just return the entity as-is
                 $FinalResults.Add($entityData.Entity)
             }
         }

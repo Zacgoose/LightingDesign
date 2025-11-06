@@ -38,7 +38,18 @@ const getProductStrokeColor = (product, products, defaultColor) => {
   return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
 };
 
-// Helper function to get grouping key for a product
+/**
+ * Gets the grouping key for a product, which is used to determine its letter prefix number.
+ * 
+ * For products with SKUs, the grouping key is "sku:{SKU_VALUE}".
+ * For custom shapes without SKUs, the grouping key is "shape:{SHAPE_TYPE}".
+ * 
+ * Products with the same grouping key will receive the same number suffix.
+ * 
+ * @param {Object} product - The product object
+ * @param {Object} productTypesConfig - Configuration object for product types
+ * @returns {string} Grouping key in format "sku:XXX" or "shape:YYY"
+ */
 const getProductGroupingKey = (product, productTypesConfig) => {
   // Normalize SKU: trim whitespace and handle empty strings as null
   const sku = product.sku?.trim();
@@ -51,13 +62,26 @@ const getProductGroupingKey = (product, productTypesConfig) => {
   } else {
     const productType = product.product_type?.toLowerCase() || "default";
     const config = productTypesConfig[productType] || productTypesConfig.default;
-    // Use the actual shape property if available, otherwise use shapeType from config
-    const shapeType = product.shape || config.shapeType || "rect";
+    // Use the actual shape property if available, otherwise use shapeType from config,
+    // with a final fallback to the default shapeType
+    const shapeType = product.shape || config.shapeType || productTypesConfig.default.shapeType;
     return `shape:${shapeType}`;
   }
 };
 
-// Calculate letter prefix for a product based on its type and SKU
+/**
+ * Calculate letter prefix for a product based on its type and SKU.
+ * 
+ * Products are assigned numbers based on their grouping key within the same letter prefix.
+ * For example, products with prefix "O" and unique SKUs get O1, O2, O3, etc.
+ * Products with the same SKU get the same number (e.g., all SKU "ABC" get O1).
+ * Custom shapes without SKUs are grouped by shape type (e.g., all circles get one number).
+ * 
+ * @param {Object} product - The product to calculate prefix for
+ * @param {Array} products - All products in the design
+ * @param {Object} productTypesConfig - Configuration object for product types
+ * @returns {string} Letter prefix with number (e.g., "O1", "P2", "D3")
+ */
 const getProductLetterPrefix = (product, products, productTypesConfig) => {
   const productType = product.product_type?.toLowerCase() || "default";
   const config = productTypesConfig[productType] || productTypesConfig.default;

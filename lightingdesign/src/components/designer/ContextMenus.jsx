@@ -18,6 +18,7 @@ import {
   StraightenOutlined,
   AlignHorizontalCenter,
   AlignVerticalCenter,
+  Numbers,
 } from "@mui/icons-material";
 
 export const ContextMenus = ({
@@ -34,6 +35,7 @@ export const ContextMenus = ({
   onAssignToSublayer,
   onShowProperties,
   onInsertCustomObject,
+  onChangeQuantity,
   sublayers = [],
   selectedProductsCount = 0,
   selectedConnectorsCount = 0,
@@ -233,6 +235,15 @@ export const ContextMenus = ({
                 <SettingsBackupRestore fontSize="small" />
               </ListItemIcon>
               <ListItemText>Reset Scale</ListItemText>
+            </MenuItem>
+            <MenuItem
+              onClick={handleMenuItemClick(onChangeQuantity)}
+              onMouseEnter={handleMenuItemHover}
+            >
+              <ListItemIcon>
+                <Numbers fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Change Quantity...</ListItemText>
             </MenuItem>
             {sublayers && sublayers.length > 0 && (
               <MenuItem ref={sublayerMenuItemRef} onMouseEnter={handleSublayerMenuOpen}>

@@ -40,6 +40,12 @@ export const ProductShape = memo(
 
     // Calculate font size based on rendered dimensions
     const fontSize = Math.max(12, Math.min(renderedWidth, renderedHeight) * 0.3);
+    
+    // Calculate quantity badge position and size (top-right corner)
+    const quantity = product.quantity || 1;
+    const showQuantityBadge = quantity > 1;
+    const badgeSize = Math.max(12, Math.min(renderedWidth, renderedHeight) * 0.25);
+    const badgeFontSize = Math.max(8, badgeSize * 0.6);
 
     return (
       <Group
@@ -108,6 +114,40 @@ export const ProductShape = memo(
             offsetY={renderedHeight / 2}
             rotation={-((product.rotation || 0) + (groupRotation || 0))}
           />
+        )}
+        {showQuantityBadge && (
+          <Group
+            x={renderedWidth / 2 - badgeSize / 2}
+            y={-renderedHeight / 2 - badgeSize / 2}
+            rotation={-((product.rotation || 0) + (groupRotation || 0))}
+            listening={false}
+          >
+            <Shape
+              sceneFunc={(context, shape) => {
+                context.beginPath();
+                context.arc(0, 0, badgeSize / 2, 0, Math.PI * 2);
+                context.closePath();
+                context.fillStrokeShape(shape);
+              }}
+              fill="#FF5722"
+              stroke="#FFFFFF"
+              strokeWidth={1}
+            />
+            <Text
+              text={quantity.toString()}
+              fontSize={badgeFontSize}
+              fontFamily="Arial"
+              fontStyle="bold"
+              fill="#FFFFFF"
+              align="center"
+              verticalAlign="middle"
+              listening={false}
+              x={-badgeSize / 2}
+              y={-badgeSize / 2}
+              width={badgeSize}
+              height={badgeSize}
+            />
+          </Group>
         )}
       </Group>
     );

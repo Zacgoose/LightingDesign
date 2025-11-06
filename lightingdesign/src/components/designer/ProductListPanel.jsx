@@ -121,7 +121,7 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
         }}
       >
         {productSummary.map((product, index) => (
-          <React.Fragment key={`${product.sku}-${product.productType}-${index}`}>
+          <div key={`${product.sku}-${product.productType}-${index}`}>
             <ListItem
               sx={{
                 py: 1.5,
@@ -247,7 +247,7 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
               />
             </ListItem>
             {index < productSummary.length - 1 && <Divider variant="inset" component="li" />}
-          </React.Fragment>
+          </div>
         ))}
       </List>
     </Paper>

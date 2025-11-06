@@ -475,7 +475,7 @@ const Page = () => {
     quantityForm.setValue("quantity", currentQuantity);
     setQuantityDialogOpen(true);
     contextMenus.handleCloseContextMenu();
-  }, [products, selectedIds, quantityForm]);
+  }, [products, selectedIds, quantityForm, contextMenus]);
 
   // Reset view when design loads
   useEffect(() => {
@@ -539,6 +539,15 @@ const Page = () => {
     },
     [products, selectedIds, updateHistory, forceGroupUpdate],
   );
+
+  // Memoized onChange handlers for form inputs
+  const handleScaleChange = useCallback((e) => {
+    setScaleValue(Number(e.target.value));
+  }, []);
+
+  const handleQuantityChange = useCallback((e) => {
+    setQuantityValue(Number(e.target.value));
+  }, []);
 
   // Helper function to convert PDF data URL to raster image
   // Helper function to convert PDF to high-quality raster image (returns data URL)
@@ -2839,7 +2848,7 @@ const Page = () => {
       >
         <TextField
           {...scaleForm.register("scale", {
-            onChange: (e) => setScaleValue(Number(e.target.value)),
+            onChange: handleScaleChange,
           })}
           label="Scale"
           type="number"
@@ -2865,7 +2874,7 @@ const Page = () => {
       >
         <TextField
           {...quantityForm.register("quantity", {
-            onChange: (e) => setQuantityValue(Number(e.target.value)),
+            onChange: handleQuantityChange,
           })}
           label="Quantity"
           type="number"

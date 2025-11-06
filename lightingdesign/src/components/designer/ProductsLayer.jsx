@@ -38,6 +38,25 @@ const getProductStrokeColor = (product, products, defaultColor) => {
   return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
 };
 
+// Helper function to get grouping key for a product
+const getProductGroupingKey = (product, productTypesConfig) => {
+  // Normalize SKU: trim whitespace and handle empty strings as null
+  const sku = product.sku?.trim();
+  const hasSku = sku && sku !== "";
+
+  // For products with SKUs, group by SKU
+  // For products without SKUs (custom shapes), group by shape type
+  if (hasSku) {
+    return `sku:${sku}`;
+  } else {
+    const productType = product.product_type?.toLowerCase() || "default";
+    const config = productTypesConfig[productType] || productTypesConfig.default;
+    // Use the actual shape property if available, otherwise use shapeType from config
+    const shapeType = product.shape || config.shapeType || "rect";
+    return `shape:${shapeType}`;
+  }
+};
+
 // Calculate letter prefix for a product based on its type and SKU
 const getProductLetterPrefix = (product, products, productTypesConfig) => {
   const productType = product.product_type?.toLowerCase() || "default";
@@ -52,39 +71,12 @@ const getProductLetterPrefix = (product, products, productTypesConfig) => {
     return pPrefix === letterPrefix;
   });
 
-  // Normalize SKU: trim whitespace and handle empty strings as null
-  const sku = product.sku?.trim();
-  const hasSku = sku && sku !== "";
-
-  // For products with SKUs, group by SKU
-  // For products without SKUs (custom shapes), group by shape type
-  let groupingKey;
-  if (hasSku) {
-    groupingKey = `sku:${sku}`;
-  } else {
-    // For custom shapes, use the actual shape property if available,
-    // otherwise use shapeType from config
-    const shapeType = product.shape || config.shapeType || "rect";
-    groupingKey = `shape:${shapeType}`;
-  }
+  // Get the grouping key for this product
+  const groupingKey = getProductGroupingKey(product, productTypesConfig);
 
   // Build a list of unique grouping keys from products with same prefix, sorted for consistency
   const uniqueGroupingKeys = [
-    ...new Set(
-      samePrefixProducts.map((p) => {
-        const pSku = p.sku?.trim();
-        const pHasSku = pSku && pSku !== "";
-        if (pHasSku) {
-          return `sku:${pSku}`;
-        } else {
-          const pType = p.product_type?.toLowerCase() || "default";
-          const pConfig = productTypesConfig[pType] || productTypesConfig.default;
-          // Use the actual shape property if available, otherwise use shapeType from config
-          const pShapeType = p.shape || pConfig.shapeType || "rect";
-          return `shape:${pShapeType}`;
-        }
-      }),
-    ),
+    ...new Set(samePrefixProducts.map((p) => getProductGroupingKey(p, productTypesConfig))),
   ].sort();
 
   // Find the index of this product's grouping key

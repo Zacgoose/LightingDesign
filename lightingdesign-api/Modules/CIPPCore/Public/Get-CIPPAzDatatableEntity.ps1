@@ -67,6 +67,8 @@ function Get-CIPPAzDataTableEntity {
                 if ($null -ne $entityData.Entity) {
                     $fullEntity = $entityData.Entity | Select-Object * -ExcludeProperty OriginalEntityId, PartIndex
                 } else {
+                    # This shouldn't happen in normal operation - log warning
+                    Write-Warning "Split entity '$entityId' has parts but no base entity. Data may be incomplete."
                     $fullEntity = [PSCustomObject]@{}
                 }
                 

@@ -481,11 +481,6 @@ export const useContextMenus = ({
       ...selectedTextBoxes.map((t) => ({ id: t.id, x: t.x, y: t.y, type: 'text' })),
     ];
     
-    if (allItems.length < 3) {
-      handleCloseContextMenu();
-      return;
-    }
-    
     // Sort items by X position
     allItems.sort((a, b) => a.x - b.x);
     
@@ -562,11 +557,6 @@ export const useContextMenus = ({
       ...selectedProducts.map((p) => ({ id: p.id, x: p.x, y: p.y, type: 'product' })),
       ...selectedTextBoxes.map((t) => ({ id: t.id, x: t.x, y: t.y, type: 'text' })),
     ];
-    
-    if (allItems.length < 3) {
-      handleCloseContextMenu();
-      return;
-    }
     
     // Sort items by Y position
     allItems.sort((a, b) => a.y - b.y);

@@ -53,6 +53,32 @@ export const ConnectorLine = ({
     onSelect(e, connector.id);
   };
 
+  // Helper function to draw the Bézier curve path
+  const drawCurvePath = (ctx) => {
+    ctx.beginPath();
+    ctx.moveTo(fromProduct.x, fromProduct.y);
+    
+    // Get current control point positions (may be mid-drag)
+    const c1 = control1Ref.current ? { x: control1Ref.current.x(), y: control1Ref.current.y() } : control1;
+    const c3 = control3Ref.current ? { x: control3Ref.current.x(), y: control3Ref.current.y() } : control3;
+    
+    // Control2 (center point) is always positioned in a straight line between control1 and control3
+    const c2 = {
+      x: (c1.x + c3.x) / 2,
+      y: (c1.y + c3.y) / 2,
+    };
+    
+    // Draw smooth curve through 3 control points
+    // Use two cubic Bézier curves to pass through all 3 control points
+    const midX = (c1.x + c2.x) / 2;
+    const midY = (c1.y + c2.y) / 2;
+    const mid2X = (c2.x + c3.x) / 2;
+    const mid2Y = (c2.y + c3.y) / 2;
+
+    ctx.bezierCurveTo(c1.x, c1.y, midX, midY, c2.x, c2.y);
+    ctx.bezierCurveTo(mid2X, mid2Y, c3.x, c3.y, toProduct.x, toProduct.y);
+  };
+
   return (
     <Group>
       {/* The curved line using cubic Bézier with control points */}
@@ -60,38 +86,24 @@ export const ConnectorLine = ({
         ref={shapeRef}
         id={connector.id}
         sceneFunc={(ctx, shape) => {
-          ctx.beginPath();
-          ctx.moveTo(fromProduct.x, fromProduct.y);
-          
-          // Get current control point positions (may be mid-drag)
-          const c1 = control1Ref.current ? { x: control1Ref.current.x(), y: control1Ref.current.y() } : control1;
-          const c3 = control3Ref.current ? { x: control3Ref.current.x(), y: control3Ref.current.y() } : control3;
-          
-          // Control2 (center point) is always positioned in a straight line between control1 and control3
-          const c2 = {
-            x: (c1.x + c3.x) / 2,
-            y: (c1.y + c3.y) / 2,
-          };
-          
-          // Draw smooth curve through 3 control points
-          // Use two cubic Bézier curves to pass through all 3 control points
-          const midX = (c1.x + c2.x) / 2;
-          const midY = (c1.y + c2.y) / 2;
-          const mid2X = (c2.x + c3.x) / 2;
-          const mid2Y = (c2.y + c3.y) / 2;
-
-          ctx.bezierCurveTo(c1.x, c1.y, midX, midY, c2.x, c2.y);
-          ctx.bezierCurveTo(mid2X, mid2Y, c3.x, c3.y, toProduct.x, toProduct.y);
+          drawCurvePath(ctx);
           ctx.fillStrokeShape(shape);
+        }}
+        hitFunc={(ctx, shape) => {
+          // Custom hit detection function - only stroke the path for hit detection
+          // This ensures clicks are only detected on the stroke area, not the filled area
+          drawCurvePath(ctx);
+          // Only stroke for hit detection - no fill
+          ctx.strokeShape(shape);
         }}
         stroke={
           connector.color ||
           (isSelected ? theme.palette.secondary.main : theme.palette.primary.main)
         }
-        strokeWidth={isSelected ? 6 : 4}
+        strokeWidth={isSelected ? 6 : 6}
         lineCap="round"
-        dash={[20, 10]} // Dashed line pattern: 20px dash, 10px gap (more spacing)
-        hitStrokeWidth={20} // Makes it easier to click
+        dash={[30, 15]} // Dashed line pattern: 30px dash, 15px gap (more spacing)
+        hitStrokeWidth={40} // Makes it easier to click
         listening={selectedTool === "select" || selectedTool === "connect"} // Only listen when interaction is needed
         onClick={handleLineClick}
         onTap={handleLineClick}

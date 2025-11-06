@@ -49,7 +49,7 @@ Function Invoke-ExecStoreBeaconProducts {
                 RowKey       = [guid]::NewGuid().ToString()
                 ProductJson  = [string]$Product
             }
-            Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $entity -Force -CreateTableIfNotExists
+            Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $entity -CreateTableIfNotExists
         }
 
         $StatusCode = [HttpStatusCode]::Created

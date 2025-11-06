@@ -20,29 +20,42 @@ function Invoke-ExecGetDesign {
     }
 
     try {
-        # Lookup design by JobId
-        # Get-CIPPAzDataTableEntity automatically reassembles split properties
+        # Lookup design by JobId (PartitionKey)
         $Filter = "PartitionKey eq '$JobId'"
         $Row = Get-CIPPAzDataTableEntity @Table -Filter $Filter
 
         if ($Row) {
             Write-Host "Retrieved design: RowKey=$($Row.RowKey)"
-
-            # Check if DesignData exists and is valid
-            $DesignDataJson = $Row.DesignData
-
-            if ([string]::IsNullOrWhiteSpace($DesignDataJson)) {
+            # Get the compressed design data
+            $CompressedData = $Row.DesignData
+            if ([string]::IsNullOrWhiteSpace($CompressedData)) {
                 Write-Warning "DesignData is empty or null"
                 $DesignData = @{
                     canvasSettings = @()
                     layers         = @()
                 }
             } else {
-                Write-Host "DesignData length: $($DesignDataJson.Length) characters"
+                Write-Host "Compressed size: $($CompressedData.Length) characters"
 
-                # Debug: Check for common issues
-                if ($DesignDataJson -match '[^\x20-\x7E\r\n\t]' -and $DesignDataJson -notmatch '^[\x20-\x7E\r\n\t]*$') {
-                    Write-Warning "DesignData contains unexpected non-printable characters"
+                try {
+                    # Decode from Base64
+                    $compressedBytes = [Convert]::FromBase64String($CompressedData)
+
+                    # Decompress
+                    $inputStream = New-Object System.IO.MemoryStream(, $compressedBytes)
+                    $gzipStream = New-Object System.IO.Compression.GZipStream($inputStream, [System.IO.Compression.CompressionMode]::Decompress)
+                    $outputStream = New-Object System.IO.MemoryStream
+
+                    $gzipStream.CopyTo($outputStream)
+                    $gzipStream.Close()
+
+                    $decompressedBytes = $outputStream.ToArray()
+                    $DesignDataJson = [System.Text.Encoding]::UTF8.GetString($decompressedBytes)
+
+                    Write-Host "Decompressed to: $($DesignDataJson.Length) characters"
+                } catch {
+                    Write-Error "Decompression failed: $_"
+                    throw "Failed to decompress design data: $($_.Exception.Message)"
                 }
 
                 try {
@@ -50,9 +63,8 @@ function Invoke-ExecGetDesign {
                     Write-Host "✓ JSON parsing successful"
                 } catch {
                     Write-Error "JSON parsing failed: $_"
-                    Write-Host "Error at position: $($_.Exception.Message -replace '.*position (\d+).*', '$1')"
+                    # Debug info
 
-                    # Get context around error
                     if ($_.Exception.Message -match 'position (\d+)') {
                         $errorPos = [int]$matches[1]
                         $contextStart = [Math]::Max(0, $errorPos - 100)
@@ -60,10 +72,6 @@ function Invoke-ExecGetDesign {
                         $context = $DesignDataJson.Substring($contextStart, $contextEnd - $contextStart)
                         Write-Host "Context around error position:"
                         Write-Host $context
-
-                        # Show bytes around error position
-                        $bytes = [System.Text.Encoding]::UTF8.GetBytes($DesignDataJson.Substring($contextStart, [Math]::Min(50, $contextEnd - $contextStart)))
-                        Write-Host "Hex bytes: $([BitConverter]::ToString($bytes))"
                     }
 
                     throw "Design data is corrupted. The design must be re-saved. Error: $($_.Exception.Message)"

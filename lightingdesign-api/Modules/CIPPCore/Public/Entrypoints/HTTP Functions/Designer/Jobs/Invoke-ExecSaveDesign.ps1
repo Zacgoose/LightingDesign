@@ -40,28 +40,43 @@ function Invoke-ExecSaveDesign {
             throw "Invalid design data structure"
         }
 
-        # Create entity - let Add-CIPPAzDataTableEntity handle splitting automatically
+        Write-Host "Original JSON size: $($DesignDataJson.Length) characters"
+
+        # Compress the data
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($DesignDataJson)
+        $compressedStream = New-Object System.IO.MemoryStream
+        $gzipStream = New-Object System.IO.Compression.GZipStream($compressedStream, [System.IO.Compression.CompressionMode]::Compress)
+        $gzipStream.Write($bytes, 0, $bytes.Length)
+        $gzipStream.Close()
+
+        $compressedBytes = $compressedStream.ToArray()
+        $compressedData = [Convert]::ToBase64String($compressedBytes)
+
+        $compressionRatio = [math]::Round((1 - $compressedData.Length / $DesignDataJson.Length) * 100, 2)
+        Write-Host "Compressed size: $($compressedData.Length) characters (saved $compressionRatio%)"
+
+        # Create entity
         $Entity = @{
-            PartitionKey = [string]$JobId
-            RowKey       = if ($ExistingDesign) { $ExistingDesign.RowKey } else { [guid]::NewGuid().ToString() }
-            JobId        = [string]$JobId
-            DesignData   = $DesignDataJson  # Store as single property - function will split if needed
-            LastModified = (Get-Date).ToUniversalTime().ToString('o')
+            PartitionKey     = [string]$JobId
+            RowKey           = if ($ExistingDesign) { $ExistingDesign.RowKey } else { [guid]::NewGuid().ToString() }
+            JobId            = [string]$JobId
+            DesignData       = $compressedData
+            OriginalSize     = $DesignDataJson.Length
+            CompressionRatio = $compressionRatio
+            LastModified     = (Get-Date).ToUniversalTime().ToString('o')
         }
 
-        # Add-CIPPAzDataTableEntity will automatically:
-        # 1. Try to save as-is
-        # 2. If too large, split DesignData into DesignData_Part0, DesignData_Part1, etc.
-        # 3. Add SplitOverProps metadata for reassembly
         Add-CIPPAzDataTableEntity @Table -Entity $Entity -Force
-
 
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::OK
             Body       = @{
-                Results  = 'Design saved successfully'
-                DesignId = $Entity.RowKey
-                JobId    = $JobId
+                Results          = 'Design saved successfully'
+                DesignId         = $Entity.RowKey
+                JobId            = $JobId
+                OriginalSize     = $DesignDataJson.Length
+                CompressedSize   = $compressedData.Length
+                CompressionRatio = $compressionRatio
             }
         }
 

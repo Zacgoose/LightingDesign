@@ -26,6 +26,8 @@ import {
   TextFields,
   AlignHorizontalCenter,
   AlignVerticalCenter,
+  ViewWeek,
+  ViewStream,
 } from "@mui/icons-material";
 
 export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProps }) => {
@@ -106,6 +108,8 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
     selectedCount = 0,
     onAlignHorizontalCenter,
     onAlignVerticalCenter,
+    onEvenSpacingHorizontal,
+    onEvenSpacingVertical,
   } = alignProps || {};
 
   return (
@@ -170,6 +174,26 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
                 title="Align Vertical Centers"
               >
                 <AlignVerticalCenter />
+              </IconButton>
+            </>
+          )}
+          
+          {/* Even Spacing Controls - only show when 3 or more objects selected */}
+          {selectedCount > 2 && (
+            <>
+              <IconButton
+                size="small"
+                onClick={onEvenSpacingHorizontal}
+                title="Even Spacing Horizontal"
+              >
+                <ViewWeek />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={onEvenSpacingVertical}
+                title="Even Spacing Vertical"
+              >
+                <ViewStream />
               </IconButton>
             </>
           )}

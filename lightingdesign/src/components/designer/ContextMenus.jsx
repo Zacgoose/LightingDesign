@@ -18,6 +18,8 @@ import {
   StraightenOutlined,
   AlignHorizontalCenter,
   AlignVerticalCenter,
+  ViewWeek,
+  ViewStream,
 } from "@mui/icons-material";
 
 export const ContextMenus = ({
@@ -46,6 +48,8 @@ export const ContextMenus = ({
   onResetConnectorToStraight,
   onAlignHorizontalCenter,
   onAlignVerticalCenter,
+  onEvenSpacingHorizontal,
+  onEvenSpacingVertical,
 }) => {
   const [sublayerMenuAnchor, setSublayerMenuAnchor] = useState(null);
   const [customObjectMenuAnchor, setCustomObjectMenuAnchor] = useState(null);
@@ -190,6 +194,28 @@ export const ContextMenus = ({
                   <AlignVerticalCenter fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Align Vertical Centers</ListItemText>
+              </MenuItem>
+            )}
+            {selectedProductsCount > 2 && onEvenSpacingHorizontal && (
+              <MenuItem
+                onClick={handleMenuItemClick(onEvenSpacingHorizontal)}
+                onMouseEnter={handleMenuItemHover}
+              >
+                <ListItemIcon>
+                  <ViewWeek fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Even Spacing Horizontal</ListItemText>
+              </MenuItem>
+            )}
+            {selectedProductsCount > 2 && onEvenSpacingVertical && (
+              <MenuItem
+                onClick={handleMenuItemClick(onEvenSpacingVertical)}
+                onMouseEnter={handleMenuItemHover}
+              >
+                <ListItemIcon>
+                  <ViewStream fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Even Spacing Vertical</ListItemText>
               </MenuItem>
             )}
             <MenuItem

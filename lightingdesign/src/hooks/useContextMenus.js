@@ -457,6 +457,170 @@ export const useContextMenus = ({
     handleCloseContextMenu,
   ]);
 
+  const handleEvenSpacingHorizontal = useCallback(() => {
+    // Only space if 3 or more objects are selected
+    if (selectedIds.length < 3) {
+      handleCloseContextMenu();
+      return;
+    }
+
+    const transformed = applyGroupTransform();
+    const baseProducts = transformed || products;
+    
+    // Separate product IDs and text IDs
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
+    
+    // Get selected products and text boxes
+    const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
+    const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
+    
+    // Combine all items with their IDs and types
+    const allItems = [
+      ...selectedProducts.map((p) => ({ id: p.id, x: p.x, y: p.y, type: 'product' })),
+      ...selectedTextBoxes.map((t) => ({ id: t.id, x: t.x, y: t.y, type: 'text' })),
+    ];
+    
+    if (allItems.length < 3) {
+      handleCloseContextMenu();
+      return;
+    }
+    
+    // Sort items by X position
+    allItems.sort((a, b) => a.x - b.x);
+    
+    // Calculate even spacing between leftmost and rightmost items
+    const leftmost = allItems[0].x;
+    const rightmost = allItems[allItems.length - 1].x;
+    const totalSpacing = rightmost - leftmost;
+    const spacingIncrement = totalSpacing / (allItems.length - 1);
+    
+    // Update positions
+    const updatedPositions = new Map();
+    allItems.forEach((item, index) => {
+      const newX = leftmost + (index * spacingIncrement);
+      updatedPositions.set(item.id, { x: newX, type: item.type });
+    });
+    
+    // Update products
+    if (productIds.length > 0) {
+      const spacedProducts = baseProducts.map((p) => {
+        const newPos = updatedPositions.get(p.id);
+        if (newPos && newPos.type === 'product') {
+          return { ...p, x: newPos.x };
+        }
+        return p;
+      });
+      updateHistory(spacedProducts);
+    }
+    
+    // Update text boxes
+    if (textIds.length > 0) {
+      const spacedTextBoxes = textBoxes.map((t) => {
+        const newPos = updatedPositions.get(t.id);
+        if (newPos && newPos.type === 'text') {
+          return { ...t, x: newPos.x };
+        }
+        return t;
+      });
+      updateTextBoxHistory(spacedTextBoxes);
+    }
+    
+    setGroupKey((k) => k + 1);
+    handleCloseContextMenu();
+  }, [
+    selectedIds,
+    products,
+    textBoxes,
+    applyGroupTransform,
+    updateHistory,
+    updateTextBoxHistory,
+    setGroupKey,
+    handleCloseContextMenu,
+  ]);
+
+  const handleEvenSpacingVertical = useCallback(() => {
+    // Only space if 3 or more objects are selected
+    if (selectedIds.length < 3) {
+      handleCloseContextMenu();
+      return;
+    }
+
+    const transformed = applyGroupTransform();
+    const baseProducts = transformed || products;
+    
+    // Separate product IDs and text IDs
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
+    
+    // Get selected products and text boxes
+    const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
+    const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
+    
+    // Combine all items with their IDs and types
+    const allItems = [
+      ...selectedProducts.map((p) => ({ id: p.id, x: p.x, y: p.y, type: 'product' })),
+      ...selectedTextBoxes.map((t) => ({ id: t.id, x: t.x, y: t.y, type: 'text' })),
+    ];
+    
+    if (allItems.length < 3) {
+      handleCloseContextMenu();
+      return;
+    }
+    
+    // Sort items by Y position
+    allItems.sort((a, b) => a.y - b.y);
+    
+    // Calculate even spacing between topmost and bottommost items
+    const topmost = allItems[0].y;
+    const bottommost = allItems[allItems.length - 1].y;
+    const totalSpacing = bottommost - topmost;
+    const spacingIncrement = totalSpacing / (allItems.length - 1);
+    
+    // Update positions
+    const updatedPositions = new Map();
+    allItems.forEach((item, index) => {
+      const newY = topmost + (index * spacingIncrement);
+      updatedPositions.set(item.id, { y: newY, type: item.type });
+    });
+    
+    // Update products
+    if (productIds.length > 0) {
+      const spacedProducts = baseProducts.map((p) => {
+        const newPos = updatedPositions.get(p.id);
+        if (newPos && newPos.type === 'product') {
+          return { ...p, y: newPos.y };
+        }
+        return p;
+      });
+      updateHistory(spacedProducts);
+    }
+    
+    // Update text boxes
+    if (textIds.length > 0) {
+      const spacedTextBoxes = textBoxes.map((t) => {
+        const newPos = updatedPositions.get(t.id);
+        if (newPos && newPos.type === 'text') {
+          return { ...t, y: newPos.y };
+        }
+        return t;
+      });
+      updateTextBoxHistory(spacedTextBoxes);
+    }
+    
+    setGroupKey((k) => k + 1);
+    handleCloseContextMenu();
+  }, [
+    selectedIds,
+    products,
+    textBoxes,
+    applyGroupTransform,
+    updateHistory,
+    updateTextBoxHistory,
+    setGroupKey,
+    handleCloseContextMenu,
+  ]);
+
   return {
     contextMenu,
     colorPickerAnchor,
@@ -472,6 +636,8 @@ export const useContextMenus = ({
     handleResetConnectorToStraight,
     handleAlignHorizontalCenter,
     handleAlignVerticalCenter,
+    handleEvenSpacingHorizontal,
+    handleEvenSpacingVertical,
     handleCloseContextMenu,
     setContextMenu,
     setColorPickerAnchor,

@@ -62,8 +62,9 @@ const getProductLetterPrefix = (product, products, productTypesConfig) => {
   if (hasSku) {
     groupingKey = `sku:${sku}`;
   } else {
-    // For custom shapes, use the shape type from config as grouping key
-    const shapeType = config.shapeType || "rect";
+    // For custom shapes, use the actual shape property if available,
+    // otherwise use shapeType from config
+    const shapeType = product.shape || config.shapeType || "rect";
     groupingKey = `shape:${shapeType}`;
   }
 
@@ -78,7 +79,8 @@ const getProductLetterPrefix = (product, products, productTypesConfig) => {
         } else {
           const pType = p.product_type?.toLowerCase() || "default";
           const pConfig = productTypesConfig[pType] || productTypesConfig.default;
-          const pShapeType = pConfig.shapeType || "rect";
+          // Use the actual shape property if available, otherwise use shapeType from config
+          const pShapeType = p.shape || pConfig.shapeType || "rect";
           return `shape:${pShapeType}`;
         }
       }),

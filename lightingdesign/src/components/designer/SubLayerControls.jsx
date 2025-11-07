@@ -120,7 +120,7 @@ export const SubLayerControls = React.forwardRef(
           elevation={2}
           sx={{
             position: "absolute",
-            top: 232,
+            top: 200,
             right: 16,
             width: 240,
             display: "flex",

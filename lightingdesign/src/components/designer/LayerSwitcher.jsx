@@ -60,7 +60,7 @@ export const LayerSwitcher = ({
         top: 16,
         right: 16,
         width: 240,
-        maxHeight: "200px",
+        maxHeight: "180px",
         display: "flex",
         flexDirection: "column",
         zIndex: 1000,
@@ -119,7 +119,7 @@ export const LayerSwitcher = ({
                 selected={isActive}
                 onClick={() => onLayerSelect(layer.id)}
                 sx={{
-                  py: 1.5,
+                  py: 0,
                 }}
               >
                 <ListItemText

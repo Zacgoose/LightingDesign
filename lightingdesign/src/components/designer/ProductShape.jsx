@@ -121,6 +121,8 @@ export const ProductShape = memo(
             y={-renderedHeight / 2 - badgeSize / 2}
             rotation={-((product.rotation || 0) + (groupRotation || 0))}
             listening={false}
+            perfectDrawEnabled={false}
+            hitGraphEnabled={false}
           >
             <Shape
               sceneFunc={(context, shape) => {
@@ -132,6 +134,8 @@ export const ProductShape = memo(
               fill="#FF5722"
               stroke="#FFFFFF"
               strokeWidth={1}
+              listening={false}
+              perfectDrawEnabled={false}
             />
             <Text
               text={quantity.toString()}
@@ -142,6 +146,7 @@ export const ProductShape = memo(
               align="center"
               verticalAlign="middle"
               listening={false}
+              perfectDrawEnabled={false}
               x={-badgeSize / 2}
               y={-badgeSize / 2}
               width={badgeSize}

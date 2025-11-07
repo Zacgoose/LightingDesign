@@ -59,7 +59,7 @@ export const LayerSwitcher = ({
         position: "absolute",
         top: 16,
         right: 16,
-        width: 280,
+        width: 240,
         maxHeight: "calc(100vh - 200px)",
         display: "flex",
         flexDirection: "column",
@@ -68,18 +68,19 @@ export const LayerSwitcher = ({
     >
       <Box
         sx={{
-          p: 2,
+          px: 1.5,
+          py: 1,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
           Layers
         </Typography>
         <Tooltip title="Add New Layer">
           <IconButton size="small" onClick={handleAddLayer} color="primary">
-            <AddIcon />
+            <AddIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       </Box>

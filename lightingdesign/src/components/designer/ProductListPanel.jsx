@@ -96,19 +96,19 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
       sx={{
         position: "absolute",
         top: 16,
-        right: 16,
-        width: 320,
+        left: 16,
+        width: 280,
         maxHeight: "calc(100vh - 200px)",
         display: "flex",
         flexDirection: "column",
         zIndex: 1000,
       }}
     >
-      <Box sx={{ p: 2, pb: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+      <Box sx={{ px: 1.5, py: 1 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
           Products on Layer
         </Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
           {productSummary.length} unique product{productSummary.length !== 1 ? "s" : ""}
         </Typography>
       </Box>
@@ -124,27 +124,27 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
           <div key={`${product.sku}-${product.productType}-${index}`}>
             <ListItem
               sx={{
-                py: 1.5,
-                px: 2,
+                py: 0.75,
+                px: 1,
                 "&:hover": {
                   backgroundColor: "action.hover",
                 },
               }}
             >
-              <ListItemAvatar>
+              <ListItemAvatar sx={{ minWidth: 48 }}>
                 {product.thumbnailUrl ? (
                   <Avatar
                     src={product.thumbnailUrl}
                     alt={product.name}
                     variant="rounded"
-                    sx={{ width: 56, height: 56 }}
+                    sx={{ width: 40, height: 40 }}
                   />
                 ) : (
                   <Avatar
                     variant="rounded"
                     sx={{
-                      width: 56,
-                      height: 56,
+                      width: 40,
+                      height: 40,
                       backgroundColor: "background.default",
                       border: "1px solid",
                       borderColor: "divider",
@@ -152,8 +152,8 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
                   >
                     <Box
                       sx={{
-                        width: 40,
-                        height: 40,
+                        width: 32,
+                        height: 32,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -166,6 +166,7 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
                         sx={{
                           fontWeight: "bold",
                           color: "#000",
+                          fontSize: "0.65rem",
                         }}
                       >
                         {product.letterPrefix}
@@ -176,7 +177,7 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
               </ListItemAvatar>
               <ListItemText
                 primary={
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.25 }}>
                     <Chip
                       label={product.letterPrefix}
                       size="small"
@@ -184,9 +185,12 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
                         backgroundColor: product.color,
                         color: "#000",
                         fontWeight: "bold",
-                        minWidth: 40,
-                        height: 20,
-                        fontSize: "0.7rem",
+                        minWidth: 32,
+                        height: 18,
+                        fontSize: "0.65rem",
+                        "& .MuiChip-label": {
+                          px: 0.5,
+                        },
                       }}
                     />
                     <Typography
@@ -195,6 +199,7 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
                         fontWeight: 600,
                         lineHeight: 1.2,
                         flex: 1,
+                        fontSize: "0.8rem",
                       }}
                     >
                       {product.name}
@@ -202,13 +207,14 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
                   </Box>
                 }
                 secondary={
-                  <Box sx={{ mt: 0.5 }}>
+                  <Box sx={{ mt: 0.25 }}>
                     <Typography
                       variant="caption"
                       display="block"
                       sx={{
                         fontFamily: "monospace",
                         color: "text.secondary",
+                        fontSize: "0.65rem",
                       }}
                     >
                       SKU: {product.sku}
@@ -218,7 +224,7 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        mt: 0.5,
+                        mt: 0.25,
                       }}
                     >
                       <Typography
@@ -226,6 +232,7 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
                         sx={{
                           fontWeight: 600,
                           color: "primary.main",
+                          fontSize: "0.7rem",
                         }}
                       >
                         Qty: {product.quantity}
@@ -235,6 +242,7 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
                           variant="caption"
                           sx={{
                             color: "text.secondary",
+                            fontSize: "0.7rem",
                           }}
                         >
                           ${product.price.toFixed(2)}

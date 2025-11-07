@@ -24,8 +24,9 @@ import {
   ZoomIn,
   ZoomOut,
   TextFields,
-  AlignHorizontalCenter,
-  AlignVerticalCenter,
+  VerticalAlignCenter,
+  VerticalAlignTop,
+  MultipleStop,
 } from "@mui/icons-material";
 
 export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProps }) => {
@@ -106,6 +107,12 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
     selectedCount = 0,
     onAlignHorizontalCenter,
     onAlignVerticalCenter,
+    onAlignLeft,
+    onAlignRight,
+    onAlignTop,
+    onAlignBottom,
+    onEvenSpacingHorizontal,
+    onEvenSpacingVertical,
   } = alignProps || {};
 
   return (
@@ -159,17 +166,70 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
             <>
               <IconButton
                 size="small"
+                onClick={onAlignLeft}
+                title="Align Left"
+                sx={{ transform: 'rotate(270deg)' }}
+              >
+                <VerticalAlignTop />
+              </IconButton>
+              <IconButton
+                size="small"
                 onClick={onAlignHorizontalCenter}
                 title="Align Horizontal Centers"
+                sx={{ transform: 'rotate(90deg)' }}
               >
-                <AlignHorizontalCenter />
+                <VerticalAlignCenter />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={onAlignRight}
+                title="Align Right"
+                sx={{ transform: 'rotate(90deg)' }}
+              >
+                <VerticalAlignTop />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={onAlignTop}
+                title="Align Top"
+              >
+                <VerticalAlignTop />
               </IconButton>
               <IconButton
                 size="small"
                 onClick={onAlignVerticalCenter}
                 title="Align Vertical Centers"
               >
-                <AlignVerticalCenter />
+                <VerticalAlignCenter />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={onAlignBottom}
+                title="Align Bottom"
+                sx={{ transform: 'rotate(180deg)' }}
+              >
+                <VerticalAlignTop />
+              </IconButton>
+            </>
+          )}
+          
+          {/* Even Spacing Controls - only show when 3 or more objects selected */}
+          {selectedCount > 2 && (
+            <>
+              <IconButton
+                size="small"
+                onClick={onEvenSpacingHorizontal}
+                title="Even Spacing Horizontal"
+              >
+                <MultipleStop />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={onEvenSpacingVertical}
+                title="Even Spacing Vertical"
+                sx={{ transform: 'rotate(90deg)' }}
+              >
+                <MultipleStop />
               </IconButton>
             </>
           )}

@@ -2431,6 +2431,12 @@ const Page = () => {
                 selectedCount: selectedIds.length,
                 onAlignHorizontalCenter: contextMenus.handleAlignHorizontalCenter,
                 onAlignVerticalCenter: contextMenus.handleAlignVerticalCenter,
+                onAlignLeft: contextMenus.handleAlignLeft,
+                onAlignRight: contextMenus.handleAlignRight,
+                onAlignTop: contextMenus.handleAlignTop,
+                onAlignBottom: contextMenus.handleAlignBottom,
+                onEvenSpacingHorizontal: contextMenus.handleEvenSpacingHorizontal,
+                onEvenSpacingVertical: contextMenus.handleEvenSpacingVertical,
               }}
             />
 
@@ -2831,6 +2837,12 @@ const Page = () => {
         onResetConnectorToStraight={contextMenus.handleResetConnectorToStraight}
         onAlignHorizontalCenter={contextMenus.handleAlignHorizontalCenter}
         onAlignVerticalCenter={contextMenus.handleAlignVerticalCenter}
+        onAlignLeft={contextMenus.handleAlignLeft}
+        onAlignRight={contextMenus.handleAlignRight}
+        onAlignTop={contextMenus.handleAlignTop}
+        onAlignBottom={contextMenus.handleAlignBottom}
+        onEvenSpacingHorizontal={contextMenus.handleEvenSpacingHorizontal}
+        onEvenSpacingVertical={contextMenus.handleEvenSpacingVertical}
       />
 
       <CippComponentDialog

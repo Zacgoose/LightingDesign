@@ -457,6 +457,424 @@ export const useContextMenus = ({
     handleCloseContextMenu,
   ]);
 
+  const handleAlignLeft = useCallback(() => {
+    // Only align if multiple objects are selected
+    if (selectedIds.length < 2) {
+      handleCloseContextMenu();
+      return;
+    }
+
+    const transformed = applyGroupTransform();
+    const baseProducts = transformed || products;
+    
+    // Separate product IDs and text IDs
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
+    
+    // Get selected products and text boxes
+    const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
+    const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
+    
+    // Find leftmost X position
+    const allXPositions = [
+      ...selectedProducts.map((p) => p.x),
+      ...selectedTextBoxes.map((t) => t.x),
+    ];
+    
+    if (allXPositions.length === 0) {
+      handleCloseContextMenu();
+      return;
+    }
+    
+    const leftmostX = Math.min(...allXPositions);
+    
+    // Update products to align to leftmost X
+    if (productIds.length > 0) {
+      const alignedProducts = baseProducts.map((p) => {
+        if (productIds.includes(p.id)) {
+          return { ...p, x: leftmostX };
+        }
+        return p;
+      });
+      updateHistory(alignedProducts);
+    }
+    
+    // Update text boxes to align to leftmost X
+    if (textIds.length > 0) {
+      const alignedTextBoxes = textBoxes.map((t) => {
+        if (textIds.includes(t.id)) {
+          return { ...t, x: leftmostX };
+        }
+        return t;
+      });
+      updateTextBoxHistory(alignedTextBoxes);
+    }
+    
+    setGroupKey((k) => k + 1);
+    handleCloseContextMenu();
+  }, [
+    selectedIds,
+    products,
+    textBoxes,
+    applyGroupTransform,
+    updateHistory,
+    updateTextBoxHistory,
+    setGroupKey,
+    handleCloseContextMenu,
+  ]);
+
+  const handleAlignRight = useCallback(() => {
+    // Only align if multiple objects are selected
+    if (selectedIds.length < 2) {
+      handleCloseContextMenu();
+      return;
+    }
+
+    const transformed = applyGroupTransform();
+    const baseProducts = transformed || products;
+    
+    // Separate product IDs and text IDs
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
+    
+    // Get selected products and text boxes
+    const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
+    const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
+    
+    // Find rightmost X position
+    const allXPositions = [
+      ...selectedProducts.map((p) => p.x),
+      ...selectedTextBoxes.map((t) => t.x),
+    ];
+    
+    if (allXPositions.length === 0) {
+      handleCloseContextMenu();
+      return;
+    }
+    
+    const rightmostX = Math.max(...allXPositions);
+    
+    // Update products to align to rightmost X
+    if (productIds.length > 0) {
+      const alignedProducts = baseProducts.map((p) => {
+        if (productIds.includes(p.id)) {
+          return { ...p, x: rightmostX };
+        }
+        return p;
+      });
+      updateHistory(alignedProducts);
+    }
+    
+    // Update text boxes to align to rightmost X
+    if (textIds.length > 0) {
+      const alignedTextBoxes = textBoxes.map((t) => {
+        if (textIds.includes(t.id)) {
+          return { ...t, x: rightmostX };
+        }
+        return t;
+      });
+      updateTextBoxHistory(alignedTextBoxes);
+    }
+    
+    setGroupKey((k) => k + 1);
+    handleCloseContextMenu();
+  }, [
+    selectedIds,
+    products,
+    textBoxes,
+    applyGroupTransform,
+    updateHistory,
+    updateTextBoxHistory,
+    setGroupKey,
+    handleCloseContextMenu,
+  ]);
+
+  const handleAlignTop = useCallback(() => {
+    // Only align if multiple objects are selected
+    if (selectedIds.length < 2) {
+      handleCloseContextMenu();
+      return;
+    }
+
+    const transformed = applyGroupTransform();
+    const baseProducts = transformed || products;
+    
+    // Separate product IDs and text IDs
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
+    
+    // Get selected products and text boxes
+    const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
+    const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
+    
+    // Find topmost Y position
+    const allYPositions = [
+      ...selectedProducts.map((p) => p.y),
+      ...selectedTextBoxes.map((t) => t.y),
+    ];
+    
+    if (allYPositions.length === 0) {
+      handleCloseContextMenu();
+      return;
+    }
+    
+    const topmostY = Math.min(...allYPositions);
+    
+    // Update products to align to topmost Y
+    if (productIds.length > 0) {
+      const alignedProducts = baseProducts.map((p) => {
+        if (productIds.includes(p.id)) {
+          return { ...p, y: topmostY };
+        }
+        return p;
+      });
+      updateHistory(alignedProducts);
+    }
+    
+    // Update text boxes to align to topmost Y
+    if (textIds.length > 0) {
+      const alignedTextBoxes = textBoxes.map((t) => {
+        if (textIds.includes(t.id)) {
+          return { ...t, y: topmostY };
+        }
+        return t;
+      });
+      updateTextBoxHistory(alignedTextBoxes);
+    }
+    
+    setGroupKey((k) => k + 1);
+    handleCloseContextMenu();
+  }, [
+    selectedIds,
+    products,
+    textBoxes,
+    applyGroupTransform,
+    updateHistory,
+    updateTextBoxHistory,
+    setGroupKey,
+    handleCloseContextMenu,
+  ]);
+
+  const handleAlignBottom = useCallback(() => {
+    // Only align if multiple objects are selected
+    if (selectedIds.length < 2) {
+      handleCloseContextMenu();
+      return;
+    }
+
+    const transformed = applyGroupTransform();
+    const baseProducts = transformed || products;
+    
+    // Separate product IDs and text IDs
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
+    
+    // Get selected products and text boxes
+    const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
+    const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
+    
+    // Find bottommost Y position
+    const allYPositions = [
+      ...selectedProducts.map((p) => p.y),
+      ...selectedTextBoxes.map((t) => t.y),
+    ];
+    
+    if (allYPositions.length === 0) {
+      handleCloseContextMenu();
+      return;
+    }
+    
+    const bottommostY = Math.max(...allYPositions);
+    
+    // Update products to align to bottommost Y
+    if (productIds.length > 0) {
+      const alignedProducts = baseProducts.map((p) => {
+        if (productIds.includes(p.id)) {
+          return { ...p, y: bottommostY };
+        }
+        return p;
+      });
+      updateHistory(alignedProducts);
+    }
+    
+    // Update text boxes to align to bottommost Y
+    if (textIds.length > 0) {
+      const alignedTextBoxes = textBoxes.map((t) => {
+        if (textIds.includes(t.id)) {
+          return { ...t, y: bottommostY };
+        }
+        return t;
+      });
+      updateTextBoxHistory(alignedTextBoxes);
+    }
+    
+    setGroupKey((k) => k + 1);
+    handleCloseContextMenu();
+  }, [
+    selectedIds,
+    products,
+    textBoxes,
+    applyGroupTransform,
+    updateHistory,
+    updateTextBoxHistory,
+    setGroupKey,
+    handleCloseContextMenu,
+  ]);
+
+  const handleEvenSpacingHorizontal = useCallback(() => {
+    // Only space if 3 or more objects are selected
+    if (selectedIds.length < 3) {
+      handleCloseContextMenu();
+      return;
+    }
+
+    const transformed = applyGroupTransform();
+    const baseProducts = transformed || products;
+    
+    // Separate product IDs and text IDs
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
+    
+    // Get selected products and text boxes
+    const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
+    const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
+    
+    // Combine all items with their IDs and types
+    const allItems = [
+      ...selectedProducts.map((p) => ({ id: p.id, x: p.x, y: p.y, type: 'product' })),
+      ...selectedTextBoxes.map((t) => ({ id: t.id, x: t.x, y: t.y, type: 'text' })),
+    ];
+    
+    // Sort items by X position
+    allItems.sort((a, b) => a.x - b.x);
+    
+    // Calculate even spacing between leftmost and rightmost items
+    const leftmost = allItems[0].x;
+    const rightmost = allItems[allItems.length - 1].x;
+    const totalSpacing = rightmost - leftmost;
+    const spacingIncrement = totalSpacing / (allItems.length - 1);
+    
+    // Update positions
+    const updatedPositions = new Map();
+    allItems.forEach((item, index) => {
+      const newX = leftmost + (index * spacingIncrement);
+      updatedPositions.set(item.id, { x: newX, type: item.type });
+    });
+    
+    // Update products
+    if (productIds.length > 0) {
+      const spacedProducts = baseProducts.map((p) => {
+        const newPos = updatedPositions.get(p.id);
+        if (newPos && newPos.type === 'product') {
+          return { ...p, x: newPos.x };
+        }
+        return p;
+      });
+      updateHistory(spacedProducts);
+    }
+    
+    // Update text boxes
+    if (textIds.length > 0) {
+      const spacedTextBoxes = textBoxes.map((t) => {
+        const newPos = updatedPositions.get(t.id);
+        if (newPos && newPos.type === 'text') {
+          return { ...t, x: newPos.x };
+        }
+        return t;
+      });
+      updateTextBoxHistory(spacedTextBoxes);
+    }
+    
+    setGroupKey((k) => k + 1);
+    handleCloseContextMenu();
+  }, [
+    selectedIds,
+    products,
+    textBoxes,
+    applyGroupTransform,
+    updateHistory,
+    updateTextBoxHistory,
+    setGroupKey,
+    handleCloseContextMenu,
+  ]);
+
+  const handleEvenSpacingVertical = useCallback(() => {
+    // Only space if 3 or more objects are selected
+    if (selectedIds.length < 3) {
+      handleCloseContextMenu();
+      return;
+    }
+
+    const transformed = applyGroupTransform();
+    const baseProducts = transformed || products;
+    
+    // Separate product IDs and text IDs
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
+    
+    // Get selected products and text boxes
+    const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
+    const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
+    
+    // Combine all items with their IDs and types
+    const allItems = [
+      ...selectedProducts.map((p) => ({ id: p.id, x: p.x, y: p.y, type: 'product' })),
+      ...selectedTextBoxes.map((t) => ({ id: t.id, x: t.x, y: t.y, type: 'text' })),
+    ];
+    
+    // Sort items by Y position
+    allItems.sort((a, b) => a.y - b.y);
+    
+    // Calculate even spacing between topmost and bottommost items
+    const topmost = allItems[0].y;
+    const bottommost = allItems[allItems.length - 1].y;
+    const totalSpacing = bottommost - topmost;
+    const spacingIncrement = totalSpacing / (allItems.length - 1);
+    
+    // Update positions
+    const updatedPositions = new Map();
+    allItems.forEach((item, index) => {
+      const newY = topmost + (index * spacingIncrement);
+      updatedPositions.set(item.id, { y: newY, type: item.type });
+    });
+    
+    // Update products
+    if (productIds.length > 0) {
+      const spacedProducts = baseProducts.map((p) => {
+        const newPos = updatedPositions.get(p.id);
+        if (newPos && newPos.type === 'product') {
+          return { ...p, y: newPos.y };
+        }
+        return p;
+      });
+      updateHistory(spacedProducts);
+    }
+    
+    // Update text boxes
+    if (textIds.length > 0) {
+      const spacedTextBoxes = textBoxes.map((t) => {
+        const newPos = updatedPositions.get(t.id);
+        if (newPos && newPos.type === 'text') {
+          return { ...t, y: newPos.y };
+        }
+        return t;
+      });
+      updateTextBoxHistory(spacedTextBoxes);
+    }
+    
+    setGroupKey((k) => k + 1);
+    handleCloseContextMenu();
+  }, [
+    selectedIds,
+    products,
+    textBoxes,
+    applyGroupTransform,
+    updateHistory,
+    updateTextBoxHistory,
+    setGroupKey,
+    handleCloseContextMenu,
+  ]);
+
   return {
     contextMenu,
     colorPickerAnchor,
@@ -472,6 +890,12 @@ export const useContextMenus = ({
     handleResetConnectorToStraight,
     handleAlignHorizontalCenter,
     handleAlignVerticalCenter,
+    handleAlignLeft,
+    handleAlignRight,
+    handleAlignTop,
+    handleAlignBottom,
+    handleEvenSpacingHorizontal,
+    handleEvenSpacingVertical,
     handleCloseContextMenu,
     setContextMenu,
     setColorPickerAnchor,

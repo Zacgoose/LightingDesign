@@ -16,8 +16,9 @@ import {
   TextFields,
   BorderColor,
   StraightenOutlined,
-  AlignHorizontalCenter,
-  AlignVerticalCenter,
+  VerticalAlignCenter,
+  VerticalAlignTop,
+  MultipleStop,
   Numbers,
 } from "@mui/icons-material";
 
@@ -48,13 +49,21 @@ export const ContextMenus = ({
   onResetConnectorToStraight,
   onAlignHorizontalCenter,
   onAlignVerticalCenter,
+  onAlignLeft,
+  onAlignRight,
+  onAlignTop,
+  onAlignBottom,
+  onEvenSpacingHorizontal,
+  onEvenSpacingVertical,
 }) => {
   const [sublayerMenuAnchor, setSublayerMenuAnchor] = useState(null);
   const [customObjectMenuAnchor, setCustomObjectMenuAnchor] = useState(null);
   const [fontSizeMenuAnchor, setFontSizeMenuAnchor] = useState(null);
+  const [alignmentMenuAnchor, setAlignmentMenuAnchor] = useState(null);
   const sublayerMenuItemRef = useRef(null);
   const customObjectMenuItemRef = useRef(null);
   const fontSizeMenuItemRef = useRef(null);
+  const alignmentMenuItemRef = useRef(null);
 
   // Prevent right-click on the menu itself - just close it
   const handleContextMenu = (e) => {
@@ -106,12 +115,21 @@ export const ContextMenus = ({
     handleCustomObjectMenuClose();
   };
 
+  const handleAlignmentMenuOpen = (event) => {
+    setAlignmentMenuAnchor(event.currentTarget);
+  };
+
+  const handleAlignmentMenuClose = () => {
+    setAlignmentMenuAnchor(null);
+  };
+
   // Wrapper to ensure submenus close when any menu item is clicked
   const handleMenuItemClick = (handler) => {
     return (e) => {
       handleSublayerMenuClose();
       handleCustomObjectMenuClose();
       handleFontSizeMenuClose();
+      handleAlignmentMenuClose();
       if (handler) {
         handler(e);
       }
@@ -123,12 +141,14 @@ export const ContextMenus = ({
     handleSublayerMenuClose();
     handleCustomObjectMenuClose();
     handleFontSizeMenuClose();
+    handleAlignmentMenuClose();
   };
 
   const handleMainMenuClose = () => {
     handleSublayerMenuClose();
     handleCustomObjectMenuClose();
     handleFontSizeMenuClose();
+    handleAlignmentMenuClose();
     onClose();
   };
 
@@ -172,26 +192,13 @@ export const ContextMenus = ({
               </ListItemIcon>
               <ListItemText>Duplicate</ListItemText>
             </MenuItem>
-            {selectedProductsCount > 1 && onAlignHorizontalCenter && (
-              <MenuItem
-                onClick={handleMenuItemClick(onAlignHorizontalCenter)}
-                onMouseEnter={handleMenuItemHover}
-              >
+            {selectedProductsCount > 1 && (
+              <MenuItem ref={alignmentMenuItemRef} onMouseEnter={handleAlignmentMenuOpen}>
                 <ListItemIcon>
-                  <AlignHorizontalCenter fontSize="small" />
+                  <VerticalAlignCenter fontSize="small" />
                 </ListItemIcon>
-                <ListItemText>Align Horizontal Centers</ListItemText>
-              </MenuItem>
-            )}
-            {selectedProductsCount > 1 && onAlignVerticalCenter && (
-              <MenuItem
-                onClick={handleMenuItemClick(onAlignVerticalCenter)}
-                onMouseEnter={handleMenuItemHover}
-              >
-                <ListItemIcon>
-                  <AlignVerticalCenter fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Align Vertical Centers</ListItemText>
+                <ListItemText>Align</ListItemText>
+                <ChevronRight fontSize="small" sx={{ ml: "auto" }} />
               </MenuItem>
             )}
             <MenuItem
@@ -567,6 +574,105 @@ export const ContextMenus = ({
               <ListItemText>{size}px</ListItemText>
             </MenuItem>
           ))}
+        </Box>
+      </Popover>
+
+      {/* Alignment submenu */}
+      <Popover
+        open={Boolean(alignmentMenuAnchor)}
+        anchorEl={alignmentMenuAnchor}
+        onClose={handleAlignmentMenuClose}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        disableRestoreFocus
+        sx={{
+          pointerEvents: "none",
+        }}
+        PaperProps={{
+          onMouseEnter: () => {},
+          onMouseLeave: handleAlignmentMenuClose,
+          sx: {
+            pointerEvents: "auto",
+            maxHeight: "300px",
+            overflow: "auto",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            minWidth: 200,
+          }}
+        >
+          {onAlignLeft && (
+            <MenuItem onClick={handleMenuItemClick(onAlignLeft)}>
+              <ListItemIcon>
+                <VerticalAlignTop fontSize="small" sx={{ transform: 'rotate(270deg)' }} />
+              </ListItemIcon>
+              <ListItemText>Align Left</ListItemText>
+            </MenuItem>
+          )}
+          {onAlignHorizontalCenter && (
+            <MenuItem onClick={handleMenuItemClick(onAlignHorizontalCenter)}>
+              <ListItemIcon>
+                <VerticalAlignCenter fontSize="small" sx={{ transform: 'rotate(90deg)' }} />
+              </ListItemIcon>
+              <ListItemText>Align Horizontal Centers</ListItemText>
+            </MenuItem>
+          )}
+          {onAlignRight && (
+            <MenuItem onClick={handleMenuItemClick(onAlignRight)}>
+              <ListItemIcon>
+                <VerticalAlignTop fontSize="small" sx={{ transform: 'rotate(90deg)' }} />
+              </ListItemIcon>
+              <ListItemText>Align Right</ListItemText>
+            </MenuItem>
+          )}
+          {onAlignTop && (
+            <MenuItem onClick={handleMenuItemClick(onAlignTop)}>
+              <ListItemIcon>
+                <VerticalAlignTop fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Align Top</ListItemText>
+            </MenuItem>
+          )}
+          {onAlignVerticalCenter && (
+            <MenuItem onClick={handleMenuItemClick(onAlignVerticalCenter)}>
+              <ListItemIcon>
+                <VerticalAlignCenter fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Align Vertical Centers</ListItemText>
+            </MenuItem>
+          )}
+          {onAlignBottom && (
+            <MenuItem onClick={handleMenuItemClick(onAlignBottom)}>
+              <ListItemIcon>
+                <VerticalAlignTop fontSize="small" sx={{ transform: 'rotate(180deg)' }} />
+              </ListItemIcon>
+              <ListItemText>Align Bottom</ListItemText>
+            </MenuItem>
+          )}
+          {selectedProductsCount > 2 && onEvenSpacingHorizontal && (
+            <MenuItem onClick={handleMenuItemClick(onEvenSpacingHorizontal)}>
+              <ListItemIcon>
+                <MultipleStop fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Even Spacing Horizontal</ListItemText>
+            </MenuItem>
+          )}
+          {selectedProductsCount > 2 && onEvenSpacingVertical && (
+            <MenuItem onClick={handleMenuItemClick(onEvenSpacingVertical)}>
+              <ListItemIcon>
+                <MultipleStop fontSize="small" sx={{ transform: 'rotate(90deg)' }} />
+              </ListItemIcon>
+              <ListItemText>Even Spacing Vertical</ListItemText>
+            </MenuItem>
+          )}
         </Box>
       </Popover>
     </Box>

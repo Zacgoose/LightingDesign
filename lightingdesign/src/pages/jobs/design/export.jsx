@@ -1390,9 +1390,8 @@ const Page = () => {
           rectEl.setAttribute("x", String(-offsetX - rectPadding));
           rectEl.setAttribute("y", String(-offsetY - rectPadding));
           rectEl.setAttribute("width", String(textWidth + rectPadding * 2));
-          // Match TextBox.jsx exactly: height is just textBoxHeight (measured height)
-          // The padding is only in the position offset, not added to height
-          rectEl.setAttribute("height", String(textBoxHeight));
+          // Add padding to height to create symmetric border
+          rectEl.setAttribute("height", String(textBoxHeight + rectPadding * 2));
           rectEl.setAttribute("stroke", tb.borderColor || "#000000");
           rectEl.setAttribute("stroke-width", "2");
           rectEl.setAttribute("fill", "none");

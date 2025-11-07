@@ -1368,9 +1368,13 @@ const Page = () => {
         svgElement.appendChild(groupEl);
 
         const offsetX = textWidth / 2;
+        // Calculate single-line text height for positioning (matches TextBox.jsx)
+        // This is used for y-offset of both border and text
+        const textHeight = renderedFontSize * 1.2;
+        const offsetY = textHeight / 2;
+        
+        // Calculate full text box height for border dimensions
         // Use actual text box height if available (as measured by Konva), otherwise calculate
-        // This matches the TextBox component which uses the measured height for positioning
-        // For fallback, calculate height based on line count like TextBox component does
         let textBoxHeight;
         if (tb.height) {
           textBoxHeight = tb.height;
@@ -1378,15 +1382,16 @@ const Page = () => {
           const lineCount = (tb.text || '').split(/\r?\n/).length;
           textBoxHeight = lineCount * lineHeight;
         }
-        const offsetY = textBoxHeight / 2;
 
         // Add border rectangle if showBorder is enabled
         if (tb.showBorder) {
-          const rectPadding = 8;
+          const rectPadding = 10; // Match TextBox.jsx padding  
           const rectEl = document.createElementNS(SVG_NS, "rect");
           rectEl.setAttribute("x", String(-offsetX - rectPadding));
+          // Border positioned at offsetY with padding
           rectEl.setAttribute("y", String(-offsetY - rectPadding));
           rectEl.setAttribute("width", String(textWidth + rectPadding * 2));
+          // Add padding to height to create symmetric border
           rectEl.setAttribute("height", String(textBoxHeight + rectPadding * 2));
           rectEl.setAttribute("stroke", tb.borderColor || "#000000");
           rectEl.setAttribute("stroke-width", "2");
@@ -1396,25 +1401,27 @@ const Page = () => {
 
         const textEl = document.createElementNS(SVG_NS, "text");
         textEl.setAttribute("x", String(-offsetX));
-        // Shift text down by one line height to match Konva's Text positioning
-        // The border is at -offsetY, but text with hanging baseline needs to start one line down
-        textEl.setAttribute("y", String(offsetY - (offsetY/3)));
+        // Position text to align with border, adjusting down by one line height
+        // to match Konva's text rendering behavior
+        textEl.setAttribute("y", String(-offsetY + ((lineHeight/5)*4)));
         textEl.setAttribute("fill", tb.color || "#000000");
         textEl.setAttribute("font-family", tb.fontFamily || "Arial");
         textEl.setAttribute("font-size", String(renderedFontSize));
         if (tb.fontStyle?.includes("italic")) textEl.setAttribute("font-style", "italic");
         if (tb.fontStyle?.includes("bold")) textEl.setAttribute("font-weight", "bold");
         if (tb.textDecoration) textEl.setAttribute("text-decoration", tb.textDecoration);
+        // Use hanging baseline for top-left text positioning
         textEl.setAttribute("dominant-baseline", "hanging");
         textEl.setAttribute("text-anchor", "start");
 
-        const lines = (tb.text || "").split("\n");
+        const lines = (tb.text || "").split(/\r?\n/);
         lines.forEach((ln, idx) => {
           const tspan = document.createElementNS(SVG_NS, "tspan");
           tspan.setAttribute("x", String(-offsetX));
           if (idx === 0) tspan.setAttribute("dy", "0");
-          else tspan.setAttribute("dy", String(lineHeight));
-          tspan.textContent = ln;
+          else tspan.setAttribute("dy", String(lineHeight/5)*4);
+          // Use non-breaking space for empty lines to ensure they render with proper height
+          tspan.textContent = ln || "\u00A0";
           textEl.appendChild(tspan);
         });
         groupEl.appendChild(textEl);

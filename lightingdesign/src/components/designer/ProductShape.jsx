@@ -113,6 +113,8 @@ export const ProductShape = memo(
             offsetX={renderedWidth / 2}
             offsetY={renderedHeight / 2}
             rotation={-((product.rotation || 0) + (groupRotation || 0))}
+            scaleX={product.scaleX ? 1 / product.scaleX : 1}
+            scaleY={product.scaleY ? 1 / product.scaleY : 1}
           />
         )}
         {showQuantityBadge && (
@@ -120,6 +122,8 @@ export const ProductShape = memo(
             x={renderedWidth / 2 - badgeSize / 2}
             y={-renderedHeight / 2 - badgeSize / 2}
             rotation={-((product.rotation || 0) + (groupRotation || 0))}
+            scaleX={product.scaleX ? 1 / product.scaleX : 1}
+            scaleY={product.scaleY ? 1 / product.scaleY : 1}
             listening={false}
             perfectDrawEnabled={false}
             hitGraphEnabled={false}

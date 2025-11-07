@@ -1479,10 +1479,8 @@ const Page = () => {
 
         // Get the SKU of the first selected product
         const firstSelectedProduct = baseProducts.find((p) => selectedIds.includes(p.id));
-        if (!firstSelectedProduct || !firstSelectedProduct.sku) {
-          // If no SKU, fall back to selected products only
-          setSwapAllSameMode(false);
-        } else {
+        
+        if (firstSelectedProduct && firstSelectedProduct.sku) {
           const targetSku = firstSelectedProduct.sku;
 
           // Get product type configuration for real-world dimensions
@@ -1533,6 +1531,7 @@ const Page = () => {
           setGroupKey((k) => k + 1);
           return;
         }
+        // If no SKU found, fall through to regular swap mode below
       }
 
       // Handle swap mode - replace selected products with new product

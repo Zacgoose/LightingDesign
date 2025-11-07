@@ -145,7 +145,7 @@ export const ProductShapes = {
 
     // Main strip
     context.beginPath();
-    context.roundRect(-width / 2, -height / 2, width, height, height / 2);
+    context.rect(-width / 2, -height / 2, width, height);
     context.closePath();
     context.fillStrokeShape(shape);
 

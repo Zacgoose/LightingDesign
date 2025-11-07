@@ -2,16 +2,6 @@ import { Shape, Group, Text } from "react-konva";
 import { getShapeFunction } from "/src/components/designer/productShapes";
 import { memo } from "react";
 
-// Helper function to calculate uniform scale for text
-// Text should scale with the product size (using geometric mean of scaleX/scaleY)
-// but maintain its aspect ratio (not get squished)
-const getUniformScale = (scaleX, scaleY) => {
-  const sx = scaleX || 1;
-  const sy = scaleY || 1;
-  // Use geometric mean to get a uniform scale that represents overall size
-  return Math.sqrt(sx * sy);
-};
-
 export const ProductShape = memo(
   ({
     product,
@@ -48,20 +38,22 @@ export const ProductShape = memo(
       renderedHeight = config.height || 30;
     }
 
-    // Calculate font size based on rendered dimensions
-    const fontSize = Math.max(12, Math.min(renderedWidth, renderedHeight) * 0.3);
+    // Fixed text size based on canvas scale factor for legibility
+    // Text size is independent of product scaling to ensure it's always readable
+    const baseFontSize = 16; // Base font size at scaleFactor=100
+    const fontSize = Math.max(12, (baseFontSize * scaleFactor) / 100);
     
     // Calculate quantity badge position and size (top-right corner)
     const quantity = product.quantity || 1;
     const showQuantityBadge = quantity > 1;
-    const badgeSize = Math.max(12, Math.min(renderedWidth, renderedHeight) * 0.25);
+    const baseBadgeSize = 20; // Base badge size at scaleFactor=100
+    const badgeSize = Math.max(12, (baseBadgeSize * scaleFactor) / 100);
     const badgeFontSize = Math.max(8, badgeSize * 0.6);
 
-    // Calculate uniform scale for text and badge
-    // Text should scale with product size but not get squished
-    const uniformScale = getUniformScale(product.scaleX, product.scaleY);
-    const textScaleX = uniformScale / (product.scaleX || 1);
-    const textScaleY = uniformScale / (product.scaleY || 1);
+    // Calculate counter-scale to neutralize parent group's scaling
+    // This ensures text maintains fixed size regardless of product scaling
+    const textScaleX = 1 / (product.scaleX || 1);
+    const textScaleY = 1 / (product.scaleY || 1);
 
     return (
       <Group
@@ -122,6 +114,7 @@ export const ProductShape = memo(
             align="center"
             verticalAlign="middle"
             listening={false}
+            perfectDrawEnabled={false}
             x={0}
             y={0}
             width={renderedWidth}

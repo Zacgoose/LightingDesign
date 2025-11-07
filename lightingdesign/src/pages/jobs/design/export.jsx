@@ -1319,9 +1319,11 @@ const Page = () => {
           console.error("Custom shape rendering failed for", product.id, err);
         }
 
-        // Add letter prefix text label (centered on the shape, always upright and not scaled)
+        // Add letter prefix text label (centered on the shape, always upright and fixed size)
         const letterPrefix = getProductLetterPrefix(product, products);
-        const fontSize = Math.max(12, Math.min(width, height) * 0.3);
+        // Fixed text size based on canvas scale factor for legibility
+        const baseFontSize = 16; // Base font size at scaleFactor=100
+        const fontSize = Math.max(12, (baseFontSize * productScaleFactor) / 100);
         const textEl = document.createElementNS(SVG_NS, "text");
         textEl.setAttribute("x", "0");
         textEl.setAttribute("y", "0");
@@ -1334,11 +1336,10 @@ const Page = () => {
         // This accounts for the fact that text baseline is not at the visual center
         textEl.setAttribute("dy", "0.1em");
         textEl.setAttribute("dominant-baseline", "auto");
-        // Apply uniform scaling to text - text scales with product size but maintains aspect ratio
-        // Calculate uniform scale using geometric mean of scaleX and scaleY
-        const uniformScale = Math.sqrt(sx * sy);
-        const textScaleX = uniformScale / sx;
-        const textScaleY = uniformScale / sy;
+        // Counter-scale to neutralize parent group's scaling
+        // This ensures text maintains fixed size regardless of product scaling
+        const textScaleX = 1 / sx;
+        const textScaleY = 1 / sy;
         const transforms = [`scale(${textScaleX} ${textScaleY})`];
         if (rotation) {
           transforms.push(`rotate(${-rotation})`);

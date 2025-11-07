@@ -1420,7 +1420,8 @@ const Page = () => {
           tspan.setAttribute("x", String(-offsetX));
           if (idx === 0) tspan.setAttribute("dy", "0");
           else tspan.setAttribute("dy", String(lineHeight));
-          tspan.textContent = ln;
+          // Use non-breaking space for empty lines to ensure they render with proper height
+          tspan.textContent = ln || "\u00A0";
           textEl.appendChild(tspan);
         });
         groupEl.appendChild(textEl);

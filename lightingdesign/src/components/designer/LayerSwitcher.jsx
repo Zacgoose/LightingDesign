@@ -60,7 +60,7 @@ export const LayerSwitcher = ({
         top: 16,
         right: 16,
         width: 240,
-        maxHeight: "calc(100vh - 200px)",
+        maxHeight: "200px",
         display: "flex",
         flexDirection: "column",
         zIndex: 1000,

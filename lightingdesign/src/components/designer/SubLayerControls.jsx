@@ -120,12 +120,12 @@ export const SubLayerControls = React.forwardRef(
           elevation={2}
           sx={{
             position: "absolute",
-            top: "calc(100vh - 200px + 32px)",
+            top: 232,
             right: 16,
             width: 240,
             display: "flex",
             flexDirection: "column",
-            maxHeight: "150px",
+            maxHeight: "180px",
             zIndex: 1000,
           }}
           onClick={(e) => e.stopPropagation()}
@@ -149,7 +149,7 @@ export const SubLayerControls = React.forwardRef(
             </Tooltip>
           </Box>
           <Divider />
-          <Box sx={{ px: 1.5, py: 1, overflow: "auto" }}>
+          <Box sx={{ px: 1.5, py: 1, overflow: "auto", flex: 1 }}>
             <FormGroup>
               {sublayers.map((sublayer) => (
                 <Box

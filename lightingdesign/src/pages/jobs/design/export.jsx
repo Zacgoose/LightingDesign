@@ -1414,7 +1414,7 @@ const Page = () => {
         textEl.setAttribute("dominant-baseline", "hanging");
         textEl.setAttribute("text-anchor", "start");
 
-        const lines = (tb.text || "").split("\n");
+        const lines = (tb.text || "").split(/\r?\n/);
         lines.forEach((ln, idx) => {
           const tspan = document.createElementNS(SVG_NS, "tspan");
           tspan.setAttribute("x", String(-offsetX));

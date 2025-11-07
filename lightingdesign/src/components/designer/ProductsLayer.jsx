@@ -73,7 +73,8 @@ const getProductGroupingKey = (product, productTypesConfig) => {
  * Calculate letter prefix for a product based on its type and SKU.
  * 
  * Products are assigned numbers based on their grouping key within the same letter prefix.
- * For example, products with prefix "O" and unique SKUs get O1, O2, O3, etc.
+ * Numbers are assigned in the order that unique grouping keys first appear in the products array.
+ * For example, products with prefix "O" and unique SKUs get O1, O2, O3, etc. based on insertion order.
  * Products with the same SKU get the same number (e.g., all SKU "ABC" get O1).
  * Custom shapes without SKUs are grouped by shape type (e.g., all circles get one number).
  * 
@@ -98,10 +99,17 @@ const getProductLetterPrefix = (product, products, productTypesConfig) => {
   // Get the grouping key for this product
   const groupingKey = getProductGroupingKey(product, productTypesConfig);
 
-  // Build a list of unique grouping keys from products with same prefix, sorted for consistency
-  const uniqueGroupingKeys = [
-    ...new Set(samePrefixProducts.map((p) => getProductGroupingKey(p, productTypesConfig))),
-  ].sort();
+  // Build a list of unique grouping keys in the order they first appear
+  // This ensures O1 goes to the first unique type, O2 to the second, etc.
+  const uniqueGroupingKeys = [];
+  const seenKeys = new Set();
+  for (const p of samePrefixProducts) {
+    const key = getProductGroupingKey(p, productTypesConfig);
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
+      uniqueGroupingKeys.push(key);
+    }
+  }
 
   // Find the index of this product's grouping key
   const groupIndex = uniqueGroupingKeys.indexOf(groupingKey);

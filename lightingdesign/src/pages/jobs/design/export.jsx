@@ -1401,16 +1401,16 @@ const Page = () => {
 
         const textEl = document.createElementNS(SVG_NS, "text");
         textEl.setAttribute("x", String(-offsetX));
-        // Position text to align with border top, using hanging baseline
-        // which positions text similar to Konva's top-left text positioning
-        textEl.setAttribute("y", String(-offsetY));
+        // Position text to align with border, adjusting down by one line height
+        // to match Konva's text rendering behavior
+        textEl.setAttribute("y", String(-offsetY + lineHeight));
         textEl.setAttribute("fill", tb.color || "#000000");
         textEl.setAttribute("font-family", tb.fontFamily || "Arial");
         textEl.setAttribute("font-size", String(renderedFontSize));
         if (tb.fontStyle?.includes("italic")) textEl.setAttribute("font-style", "italic");
         if (tb.fontStyle?.includes("bold")) textEl.setAttribute("font-weight", "bold");
         if (tb.textDecoration) textEl.setAttribute("text-decoration", tb.textDecoration);
-        // Use hanging baseline which approximates Konva's top-left text positioning
+        // Use hanging baseline for top-left text positioning
         textEl.setAttribute("dominant-baseline", "hanging");
         textEl.setAttribute("text-anchor", "start");
 

@@ -32,6 +32,7 @@ export const ContextMenus = ({
   onInsertProduct,
   onSwapPlacementProduct,
   onSwapProduct,
+  onSwapAllSameProducts,
   onScale,
   onAssignToSublayer,
   onShowProperties,
@@ -60,10 +61,12 @@ export const ContextMenus = ({
   const [customObjectMenuAnchor, setCustomObjectMenuAnchor] = useState(null);
   const [fontSizeMenuAnchor, setFontSizeMenuAnchor] = useState(null);
   const [alignmentMenuAnchor, setAlignmentMenuAnchor] = useState(null);
+  const [swapMenuAnchor, setSwapMenuAnchor] = useState(null);
   const sublayerMenuItemRef = useRef(null);
   const customObjectMenuItemRef = useRef(null);
   const fontSizeMenuItemRef = useRef(null);
   const alignmentMenuItemRef = useRef(null);
+  const swapMenuItemRef = useRef(null);
 
   // Prevent right-click on the menu itself - just close it
   const handleContextMenu = (e) => {
@@ -123,6 +126,14 @@ export const ContextMenus = ({
     setAlignmentMenuAnchor(null);
   };
 
+  const handleSwapMenuOpen = (event) => {
+    setSwapMenuAnchor(event.currentTarget);
+  };
+
+  const handleSwapMenuClose = () => {
+    setSwapMenuAnchor(null);
+  };
+
   // Wrapper to ensure submenus close when any menu item is clicked
   const handleMenuItemClick = (handler) => {
     return (e) => {
@@ -130,6 +141,7 @@ export const ContextMenus = ({
       handleCustomObjectMenuClose();
       handleFontSizeMenuClose();
       handleAlignmentMenuClose();
+      handleSwapMenuClose();
       if (handler) {
         handler(e);
       }
@@ -142,6 +154,7 @@ export const ContextMenus = ({
     handleCustomObjectMenuClose();
     handleFontSizeMenuClose();
     handleAlignmentMenuClose();
+    handleSwapMenuClose();
   };
 
   const handleMainMenuClose = () => {
@@ -149,6 +162,7 @@ export const ContextMenus = ({
     handleCustomObjectMenuClose();
     handleFontSizeMenuClose();
     handleAlignmentMenuClose();
+    handleSwapMenuClose();
     onClose();
   };
 
@@ -219,14 +233,12 @@ export const ContextMenus = ({
               </ListItemIcon>
               <ListItemText>Change Color...</ListItemText>
             </MenuItem>
-            <MenuItem
-              onClick={handleMenuItemClick(onSwapProduct)}
-              onMouseEnter={handleMenuItemHover}
-            >
+            <MenuItem ref={swapMenuItemRef} onMouseEnter={handleSwapMenuOpen}>
               <ListItemIcon>
                 <SwapHoriz fontSize="small" />
               </ListItemIcon>
-              <ListItemText>Swap Product...</ListItemText>
+              <ListItemText>Swap Product</ListItemText>
+              <ChevronRight fontSize="small" sx={{ ml: "auto" }} />
             </MenuItem>
             <MenuItem onClick={handleMenuItemClick(onScale)} onMouseEnter={handleMenuItemHover}>
               <ListItemIcon>
@@ -671,6 +683,47 @@ export const ContextMenus = ({
                 <MultipleStop fontSize="small" sx={{ transform: 'rotate(90deg)' }} />
               </ListItemIcon>
               <ListItemText>Even Spacing Vertical</ListItemText>
+            </MenuItem>
+          )}
+        </Box>
+      </Popover>
+
+      {/* Swap Product submenu */}
+      <Popover
+        open={Boolean(swapMenuAnchor)}
+        anchorEl={swapMenuAnchor}
+        onClose={handleSwapMenuClose}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+        disableRestoreFocus
+        sx={{
+          pointerEvents: "none",
+        }}
+        PaperProps={{
+          onMouseEnter: () => {},
+          onMouseLeave: handleSwapMenuClose,
+          sx: {
+            pointerEvents: "auto",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            minWidth: 200,
+          }}
+        >
+          <MenuItem onClick={handleMenuItemClick(onSwapProduct)}>
+            <ListItemText>Replace Selected</ListItemText>
+          </MenuItem>
+          {onSwapAllSameProducts && (
+            <MenuItem onClick={handleMenuItemClick(onSwapAllSameProducts)}>
+              <ListItemText>Replace All Same Products</ListItemText>
             </MenuItem>
           )}
         </Box>

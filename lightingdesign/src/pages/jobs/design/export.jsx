@@ -1751,22 +1751,14 @@ const Page = () => {
       svgElement.setAttribute("height", String(shapeSize));
       
       // Use natural shape sizes (what the shape functions expect)
-      // These are the default sizes from the shape functions themselves
-      const naturalShapeSize = 50; // Common default for most shapes
-      
-      // Define natural dimensions for shapes with specific aspect ratios
-      const shapeNaturalDimensions = {
-        strip: { width: 60, height: 10 },
-        lamp: { width: 25, height: 50 },
-        // Most other shapes are square or circular
-      };
-      
-      const naturalDims = shapeNaturalDimensions[shapeType] || { width: naturalShapeSize, height: naturalShapeSize };
+      // Get dimensions from productTypes.json configuration
+      const naturalShapeWidth = config.width || 50;
+      const naturalShapeHeight = config.height || 50;
       
       // Calculate scale factor to fit natural size into available space
       // Use 0.75 multiplier to make shapes a bit smaller (user feedback)
       const targetSize = shapeSize * 0.75;
-      const shapeScale = targetSize / Math.max(naturalDims.width, naturalDims.height);
+      const shapeScale = targetSize / Math.max(naturalShapeWidth, naturalShapeHeight);
       
       // Create a group for the product centered at origin with scaling
       const productGroupEl = document.createElementNS(SVG_NS, "g");
@@ -1776,18 +1768,18 @@ const Page = () => {
       // Create shape object with natural sizes
       // This allows hard-coded line widths and offsets in shape functions to scale proportionally
       const shapeObj = {
-        width: () => naturalDims.width,
-        height: () => naturalDims.height,
+        width: () => naturalShapeWidth,
+        height: () => naturalShapeHeight,
         getAttr: (name) => {
           switch (name) {
             case "scaleFactor":
               return 1;
             case "realWorldSize":
-              return Math.max(naturalDims.width, naturalDims.height);
+              return Math.max(naturalShapeWidth, naturalShapeHeight);
             case "realWorldWidth":
-              return naturalDims.width;
+              return naturalShapeWidth;
             case "realWorldHeight":
-              return naturalDims.height;
+              return naturalShapeHeight;
             case "stroke":
               return strokeColor;
             case "strokeWidth":

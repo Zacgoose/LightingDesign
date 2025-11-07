@@ -2255,8 +2255,6 @@ const Page = () => {
 
       const clickedOnEmpty = e.target === e.target.getStage();
       if (clickedOnEmpty) {
-        const transformed = applyGroupTransform();
-        if (transformed) updateHistory(transformed);
         clearSelection();
         setSelectedTextId(null);
       }
@@ -2264,8 +2262,6 @@ const Page = () => {
     [
       selectedTool,
       placementMode,
-      applyGroupTransform,
-      updateHistory,
       clearSelection,
       handleCanvasClick,
       handleTextClick,

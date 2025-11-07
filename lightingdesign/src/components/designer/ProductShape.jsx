@@ -4,7 +4,7 @@ import { memo } from "react";
 
 // Helper function to calculate counter-scale value
 // Returns the inverse of the scale value to neutralize parent scaling
-const getCounterScale = (scale) => (scale ? 1 / scale : 1);
+const getCounterScale = (scale) => (scale && scale !== 0 ? 1 / scale : 1);
 
 export const ProductShape = memo(
   ({

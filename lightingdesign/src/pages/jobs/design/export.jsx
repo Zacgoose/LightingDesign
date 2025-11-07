@@ -1880,23 +1880,47 @@ const Page = () => {
           const [tl, tr, br, bl] = r;
           
           ctx.beginPath();
+          
+          // Start at top-left corner (after the radius)
           ctx.moveTo(x + tl, y);
+          
+          // Top edge and top-right corner
           ctx.lineTo(x + w - tr, y);
           if (tr > 0) {
-            ctx.arc(x + w - tr, y + tr, tr, -Math.PI / 2, 0);
+            // Arc to right edge: SVG arc command (rx ry rotation large-arc sweep x y)
+            const [endX, endY] = applyMatrix(x + w, y + tr);
+            ctx._d += `A ${tr} ${tr} 0 0 1 ${endX} ${endY} `;
+            ctx._currentX = endX;
+            ctx._currentY = endY;
           }
+          
+          // Right edge and bottom-right corner
           ctx.lineTo(x + w, y + h - br);
           if (br > 0) {
-            ctx.arc(x + w - br, y + h - br, br, 0, Math.PI / 2);
+            const [endX, endY] = applyMatrix(x + w - br, y + h);
+            ctx._d += `A ${br} ${br} 0 0 1 ${endX} ${endY} `;
+            ctx._currentX = endX;
+            ctx._currentY = endY;
           }
+          
+          // Bottom edge and bottom-left corner
           ctx.lineTo(x + bl, y + h);
           if (bl > 0) {
-            ctx.arc(x + bl, y + h - bl, bl, Math.PI / 2, Math.PI);
+            const [endX, endY] = applyMatrix(x, y + h - bl);
+            ctx._d += `A ${bl} ${bl} 0 0 1 ${endX} ${endY} `;
+            ctx._currentX = endX;
+            ctx._currentY = endY;
           }
+          
+          // Left edge and top-left corner
           ctx.lineTo(x, y + tl);
           if (tl > 0) {
-            ctx.arc(x + tl, y + tl, tl, Math.PI, -Math.PI / 2);
+            const [endX, endY] = applyMatrix(x + tl, y);
+            ctx._d += `A ${tl} ${tl} 0 0 1 ${endX} ${endY} `;
+            ctx._currentX = endX;
+            ctx._currentY = endY;
           }
+          
           ctx.closePath();
         };
 

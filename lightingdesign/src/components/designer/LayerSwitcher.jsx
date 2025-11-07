@@ -75,7 +75,7 @@ export const LayerSwitcher = ({
           justifyContent: "space-between",
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
+        <Typography variant="h6" sx={{ fontWeight: 500, fontSize: "0.8rem" }}>
           Layers
         </Typography>
         <Tooltip title="Add New Layer">
@@ -127,6 +127,8 @@ export const LayerSwitcher = ({
                   secondary={`${layer.products?.length || 0} objects`}
                   primaryTypographyProps={{
                     fontWeight: isActive ? 600 : 400,
+                    variant:"h6",
+                    fontSize: "0.8rem",
                   }}
                 />
               </ListItemButton>

@@ -139,7 +139,7 @@ export const SubLayerControls = React.forwardRef(
               justifyContent: "space-between",
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
+            <Typography variant="h6" sx={{ fontWeight: 500, fontSize: "0.8rem" }}>
               Sublayers
             </Typography>
             <Tooltip title="Add Sublayer">
@@ -189,7 +189,7 @@ export const SubLayerControls = React.forwardRef(
                         }
                         label={
                           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                            <Typography variant="body2">{sublayer.name}</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 500, fontSize: "0.8rem" }}>{sublayer.name}</Typography>
                             {defaultSublayerId === sublayer.id && (
                               <Tooltip title="Default sublayer for new objects">
                                 <StarIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />

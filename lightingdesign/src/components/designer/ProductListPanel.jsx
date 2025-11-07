@@ -95,19 +95,16 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
       elevation={2}
       sx={{
         position: "absolute",
-        top: 16,
-        left: 16,
-        width: 280,
-        maxHeight: "calc(100vh - 200px)",
+        top: 380,
+        right: 16,
+        width: 240,
+        maxHeight: "calc(100vh - 520px)",
         display: "flex",
         flexDirection: "column",
         zIndex: 1000,
       }}
     >
       <Box sx={{ px: 1.5, py: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
-          Products on Layer
-        </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
           {productSummary.length} unique product{productSummary.length !== 1 ? "s" : ""}
         </Typography>
@@ -158,7 +155,7 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
                         alignItems: "center",
                         justifyContent: "center",
                         backgroundColor: product.color,
-                        borderRadius: "4px",
+                        borderRadius: "2px",
                       }}
                     >
                       <Typography
@@ -199,7 +196,7 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
                         fontWeight: 600,
                         lineHeight: 1.2,
                         flex: 1,
-                        fontSize: "0.8rem",
+                        fontSize: "0.65rem",
                       }}
                     >
                       {product.name}

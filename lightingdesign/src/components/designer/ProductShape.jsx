@@ -2,9 +2,15 @@ import { Shape, Group, Text } from "react-konva";
 import { getShapeFunction } from "/src/components/designer/productShapes";
 import { memo } from "react";
 
-// Helper function to calculate counter-scale value
-// Returns the inverse of the scale value to neutralize parent scaling
-const getCounterScale = (scale) => (scale && scale !== 0 ? 1 / scale : 1);
+// Helper function to calculate uniform scale for text
+// Text should scale with the product size (using geometric mean of scaleX/scaleY)
+// but maintain its aspect ratio (not get squished)
+const getUniformScale = (scaleX, scaleY) => {
+  const sx = scaleX || 1;
+  const sy = scaleY || 1;
+  // Use geometric mean to get a uniform scale that represents overall size
+  return Math.sqrt(sx * sy);
+};
 
 export const ProductShape = memo(
   ({
@@ -50,6 +56,12 @@ export const ProductShape = memo(
     const showQuantityBadge = quantity > 1;
     const badgeSize = Math.max(12, Math.min(renderedWidth, renderedHeight) * 0.25);
     const badgeFontSize = Math.max(8, badgeSize * 0.6);
+
+    // Calculate uniform scale for text and badge
+    // Text should scale with product size but not get squished
+    const uniformScale = getUniformScale(product.scaleX, product.scaleY);
+    const textScaleX = uniformScale / (product.scaleX || 1);
+    const textScaleY = uniformScale / (product.scaleY || 1);
 
     return (
       <Group
@@ -117,8 +129,8 @@ export const ProductShape = memo(
             offsetX={renderedWidth / 2}
             offsetY={renderedHeight / 2}
             rotation={-((product.rotation || 0) + (groupRotation || 0))}
-            scaleX={getCounterScale(product.scaleX)}
-            scaleY={getCounterScale(product.scaleY)}
+            scaleX={textScaleX}
+            scaleY={textScaleY}
           />
         )}
         {showQuantityBadge && (
@@ -126,8 +138,8 @@ export const ProductShape = memo(
             x={renderedWidth / 2 - badgeSize / 2}
             y={-renderedHeight / 2 - badgeSize / 2}
             rotation={-((product.rotation || 0) + (groupRotation || 0))}
-            scaleX={getCounterScale(product.scaleX)}
-            scaleY={getCounterScale(product.scaleY)}
+            scaleX={textScaleX}
+            scaleY={textScaleY}
             listening={false}
             perfectDrawEnabled={false}
             hitGraphEnabled={false}

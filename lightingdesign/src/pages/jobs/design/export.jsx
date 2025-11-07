@@ -1334,11 +1334,12 @@ const Page = () => {
         // This accounts for the fact that text baseline is not at the visual center
         textEl.setAttribute("dy", "0.1em");
         textEl.setAttribute("dominant-baseline", "auto");
-        // Counter-rotate and counter-scale to keep text upright and uniform
-        // This prevents the text from being squished when the product is scaled non-uniformly
-        const counterScaleX = sx !== 0 ? 1 / sx : 1;
-        const counterScaleY = sy !== 0 ? 1 / sy : 1;
-        const transforms = [`scale(${counterScaleX} ${counterScaleY})`];
+        // Apply uniform scaling to text - text scales with product size but maintains aspect ratio
+        // Calculate uniform scale using geometric mean of scaleX and scaleY
+        const uniformScale = Math.sqrt(sx * sy);
+        const textScaleX = uniformScale / sx;
+        const textScaleY = uniformScale / sy;
+        const transforms = [`scale(${textScaleX} ${textScaleY})`];
         if (rotation) {
           transforms.push(`rotate(${-rotation})`);
         }

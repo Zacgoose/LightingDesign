@@ -19,8 +19,6 @@ import {
   VerticalAlignCenter,
   VerticalAlignTop,
   MultipleStop,
-  AlignHorizontalCenter,
-  AlignVerticalCenter,
   Numbers,
 } from "@mui/icons-material";
 

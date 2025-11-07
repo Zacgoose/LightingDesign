@@ -1319,7 +1319,7 @@ const Page = () => {
           console.error("Custom shape rendering failed for", product.id, err);
         }
 
-        // Add letter prefix text label (centered on the shape, always upright)
+        // Add letter prefix text label (centered on the shape, always upright and not scaled)
         const letterPrefix = getProductLetterPrefix(product, products);
         const fontSize = Math.max(12, Math.min(width, height) * 0.3);
         const textEl = document.createElementNS(SVG_NS, "text");
@@ -1334,10 +1334,15 @@ const Page = () => {
         // This accounts for the fact that text baseline is not at the visual center
         textEl.setAttribute("dy", "0.1em");
         textEl.setAttribute("dominant-baseline", "auto");
-        // Counter-rotate to keep text upright
+        // Counter-rotate and counter-scale to keep text upright and uniform
+        // This prevents the text from being squished when the product is scaled non-uniformly
+        const counterScaleX = sx !== 0 ? 1 / sx : 1;
+        const counterScaleY = sy !== 0 ? 1 / sy : 1;
+        const transforms = [`scale(${counterScaleX} ${counterScaleY})`];
         if (rotation) {
-          textEl.setAttribute("transform", `rotate(${-rotation})`);
+          transforms.push(`rotate(${-rotation})`);
         }
+        textEl.setAttribute("transform", transforms.join(" "));
         textEl.textContent = letterPrefix;
         productGroupEl.appendChild(textEl);
 

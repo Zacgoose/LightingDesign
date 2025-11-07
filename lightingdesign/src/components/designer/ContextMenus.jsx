@@ -199,28 +199,6 @@ export const ContextMenus = ({
                 <ChevronRight fontSize="small" sx={{ ml: "auto" }} />
               </MenuItem>
             )}
-            {selectedProductsCount > 2 && onEvenSpacingHorizontal && (
-              <MenuItem
-                onClick={handleMenuItemClick(onEvenSpacingHorizontal)}
-                onMouseEnter={handleMenuItemHover}
-              >
-                <ListItemIcon>
-                  <MultipleStop fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Even Spacing Horizontal</ListItemText>
-              </MenuItem>
-            )}
-            {selectedProductsCount > 2 && onEvenSpacingVertical && (
-              <MenuItem
-                onClick={handleMenuItemClick(onEvenSpacingVertical)}
-                onMouseEnter={handleMenuItemHover}
-              >
-                <ListItemIcon>
-                  <MultipleStop fontSize="small" sx={{ transform: 'rotate(90deg)' }} />
-                </ListItemIcon>
-                <ListItemText>Even Spacing Vertical</ListItemText>
-              </MenuItem>
-            )}
             <MenuItem
               onClick={handleMenuItemClick(onOpenColorPicker)}
               onMouseEnter={handleMenuItemHover}
@@ -666,6 +644,22 @@ export const ContextMenus = ({
                 <VerticalAlignTop fontSize="small" sx={{ transform: 'rotate(180deg)' }} />
               </ListItemIcon>
               <ListItemText>Align Bottom</ListItemText>
+            </MenuItem>
+          )}
+          {selectedProductsCount > 2 && onEvenSpacingHorizontal && (
+            <MenuItem onClick={handleMenuItemClick(onEvenSpacingHorizontal)}>
+              <ListItemIcon>
+                <MultipleStop fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Even Spacing Horizontal</ListItemText>
+            </MenuItem>
+          )}
+          {selectedProductsCount > 2 && onEvenSpacingVertical && (
+            <MenuItem onClick={handleMenuItemClick(onEvenSpacingVertical)}>
+              <ListItemIcon>
+                <MultipleStop fontSize="small" sx={{ transform: 'rotate(90deg)' }} />
+              </ListItemIcon>
+              <ListItemText>Even Spacing Vertical</ListItemText>
             </MenuItem>
           )}
         </Box>

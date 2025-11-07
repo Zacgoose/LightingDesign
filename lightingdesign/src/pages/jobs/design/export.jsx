@@ -1388,7 +1388,8 @@ const Page = () => {
           const rectPadding = 10; // Match TextBox.jsx padding  
           const rectEl = document.createElementNS(SVG_NS, "rect");
           rectEl.setAttribute("x", String(-offsetX - rectPadding));
-          rectEl.setAttribute("y", String(-offsetY - rectPadding));
+          // Move border up by lineHeight to account for text position adjustment
+          rectEl.setAttribute("y", String(-offsetY - rectPadding - lineHeight));
           rectEl.setAttribute("width", String(textWidth + rectPadding * 2));
           // Add padding to height to create symmetric border
           rectEl.setAttribute("height", String(textBoxHeight + rectPadding * 2));
@@ -1400,9 +1401,9 @@ const Page = () => {
 
         const textEl = document.createElementNS(SVG_NS, "text");
         textEl.setAttribute("x", String(-offsetX));
-        // Match Konva's top-left text positioning
+        // Move text down by lineHeight to match Konva's text rendering
         // text-before-edge positions text at the top of its em box
-        textEl.setAttribute("y", String(-offsetY));
+        textEl.setAttribute("y", String(-offsetY + lineHeight));
         textEl.setAttribute("fill", tb.color || "#000000");
         textEl.setAttribute("font-family", tb.fontFamily || "Arial");
         textEl.setAttribute("font-size", String(renderedFontSize));

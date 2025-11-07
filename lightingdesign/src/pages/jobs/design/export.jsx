@@ -1634,10 +1634,25 @@ const Page = () => {
     const gridWidth = pageWidth - margin * 2;
     const cellWidth = gridWidth / maxCols;
     const cellHeight = productAreaHeight / maxRows;
-    const itemsToShow = productGrid.slice(0, maxCols * maxRows);
     
-    // Draw product grid with better styling
-    for (let i = 0; i < itemsToShow.length; i++) {
+    // Calculate total number of pages needed
+    const itemsPerPage = maxCols * maxRows;
+    const totalPages = Math.ceil(productGrid.length / itemsPerPage);
+    
+    // Loop through pages
+    for (let pageNum = 0; pageNum < totalPages; pageNum++) {
+      // Add new page for subsequent pages
+      if (pageNum > 0) {
+        pdf.addPage();
+      }
+      
+      // Get products for this page
+      const startIdx = pageNum * itemsPerPage;
+      const endIdx = Math.min(startIdx + itemsPerPage, productGrid.length);
+      const itemsToShow = productGrid.slice(startIdx, endIdx);
+      
+      // Draw product grid with better styling
+      for (let i = 0; i < itemsToShow.length; i++) {
       const row = Math.floor(i / maxCols);
       const col = i % maxCols;
       const x = margin + col * cellWidth;
@@ -1859,6 +1874,32 @@ const Page = () => {
           ctx.closePath();
         };
 
+        ctx.roundRect = (x, y, w, h, radius) => {
+          // Handle radius as single value or array [topLeft, topRight, bottomRight, bottomLeft]
+          const r = typeof radius === 'number' ? [radius, radius, radius, radius] : radius;
+          const [tl, tr, br, bl] = r;
+          
+          ctx.beginPath();
+          ctx.moveTo(x + tl, y);
+          ctx.lineTo(x + w - tr, y);
+          if (tr > 0) {
+            ctx.arc(x + w - tr, y + tr, tr, -Math.PI / 2, 0);
+          }
+          ctx.lineTo(x + w, y + h - br);
+          if (br > 0) {
+            ctx.arc(x + w - br, y + h - br, br, 0, Math.PI / 2);
+          }
+          ctx.lineTo(x + bl, y + h);
+          if (bl > 0) {
+            ctx.arc(x + bl, y + h - bl, bl, Math.PI / 2, Math.PI);
+          }
+          ctx.lineTo(x, y + tl);
+          if (tl > 0) {
+            ctx.arc(x + tl, y + tl, tl, Math.PI, -Math.PI / 2);
+          }
+          ctx.closePath();
+        };
+
         ctx.ellipse = (cx, cy, rx, ry, rotation, startAngle, endAngle) => {
           const [ecx, ecy] = applyMatrix(cx, cy);
           const scaleX = Math.sqrt(
@@ -2026,122 +2067,123 @@ const Page = () => {
       pdf.setTextColor(0, 0, 0); // Reset color
     }
     
-    // Draw bottom info bar with better styling
-    const infoBarY = pageHeight - bottomBarHeight;
-    
-    // Background for info bar
-    pdf.setFillColor(248, 248, 248);
-    pdf.rect(0, infoBarY, pageWidth, bottomBarHeight, "F");
-    
-    // Top border line (stronger)
-    pdf.setDrawColor(150, 150, 150);
-    pdf.setLineWidth(0.8);
-    pdf.line(0, infoBarY, pageWidth, infoBarY);
-    
-    // Logo section on the left
-    const logoWidth = 50;
-    const logoX = margin;
-    const logoY = infoBarY + 1;
-    
-    // Draw logo images (or placeholders if files don't exist)
-    pdf.setDrawColor(200, 200, 200);
-    pdf.setLineWidth(0.5);
-    
-    try {
-      // Logo 1 (top) - try to load from /public/logos/
-      pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, 44, 20);
-    } catch (error) {
-      // If logo doesn't exist, show placeholder
-      pdf.setFillColor(250, 250, 250);
-      pdf.roundedRect(logoX, logoY, logoWidth - 4, 18, 2, 2, "FD");
+      // Draw bottom info bar with better styling
+      const infoBarY = pageHeight - bottomBarHeight;
+      
+      // Background for info bar
+      pdf.setFillColor(248, 248, 248);
+      pdf.rect(0, infoBarY, pageWidth, bottomBarHeight, "F");
+      
+      // Top border line (stronger)
+      pdf.setDrawColor(150, 150, 150);
+      pdf.setLineWidth(0.8);
+      pdf.line(0, infoBarY, pageWidth, infoBarY);
+      
+      // Logo section on the left
+      const logoWidth = 50;
+      const logoX = margin;
+      const logoY = infoBarY + 1;
+      
+      // Draw logo images (or placeholders if files don't exist)
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.5);
+      
+      try {
+        // Logo 1 (top) - try to load from /public/logos/
+        pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, 44, 20);
+      } catch (error) {
+        // If logo doesn't exist, show placeholder
+        pdf.setFillColor(250, 250, 250);
+        pdf.roundedRect(logoX, logoY, logoWidth - 4, 18, 2, 2, "FD");
+        pdf.setFontSize(6);
+        pdf.setTextColor(150, 150, 150);
+        pdf.text("Logo 1", logoX + (logoWidth - 4) / 2, logoY + 9, { align: "center" });
+      }
+      
+      try {
+        // Logo 2 (bottom)
+        pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 21, 46, 18);
+      } catch (error) {
+        // If logo doesn't exist, show placeholder
+        pdf.setFillColor(250, 250, 250);
+        pdf.roundedRect(logoX, logoY + 20, logoWidth - 4, 18, 2, 2, "FD");
+        pdf.setFontSize(6);
+        pdf.setTextColor(150, 150, 150);
+        pdf.text("Logo 2", logoX + (logoWidth - 4) / 2, logoY + 29, { align: "center" });
+      }
+      
+      pdf.setTextColor(0, 0, 0); // Reset color
+      
+      // Info rows (to the right of logos)
+      let infoX = logoX + logoWidth + 10;
+      const infoY = infoBarY + 10;
+      const labelSpacing = 55;
+      
+      pdf.setFontSize(7);
+      pdf.setTextColor(0, 0, 0);
+      
+      // First row of info
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Designer:", infoX, infoY);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(designer, infoX, infoY + 4);
+      
+      infoX += labelSpacing;
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Job #:", infoX, infoY);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(jobNumber, infoX, infoY + 4);
+      
+      infoX += labelSpacing;
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Client:", infoX, infoY);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(customerName, infoX, infoY + 4);
+      
+      // Second row of info
+      infoX = logoX + logoWidth + 10;
+      const info2Y = infoY + 13;
+      
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Builder:", infoX, info2Y);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(builderName, infoX, info2Y + 4);
+      
+      infoX += labelSpacing;
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Date:", infoX, info2Y);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(new Date().toLocaleDateString(), infoX, info2Y + 4);
+      
+      // Company details section (right side)
+      const companyX = pageWidth - margin - 65;
       pdf.setFontSize(6);
-      pdf.setTextColor(150, 150, 150);
-      pdf.text("Logo 1", logoX + (logoWidth - 4) / 2, logoY + 9, { align: "center" });
-    }
-    
-    try {
-      // Logo 2 (bottom)
-      pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 21, 46, 18);
-    } catch (error) {
-      // If logo doesn't exist, show placeholder
-      pdf.setFillColor(250, 250, 250);
-      pdf.roundedRect(logoX, logoY + 20, logoWidth - 4, 18, 2, 2, "FD");
-      pdf.setFontSize(6);
-      pdf.setTextColor(150, 150, 150);
-      pdf.text("Logo 2", logoX + (logoWidth - 4) / 2, logoY + 29, { align: "center" });
-    }
-    
-    pdf.setTextColor(0, 0, 0); // Reset color
-    
-    // Info rows (to the right of logos)
-    let infoX = logoX + logoWidth + 10;
-    const infoY = infoBarY + 10;
-    const labelSpacing = 55;
-    
-    pdf.setFontSize(7);
-    pdf.setTextColor(0, 0, 0);
-    
-    // First row of info
-    pdf.setFont("helvetica", "bold");
-    pdf.text("Designer:", infoX, infoY);
-    pdf.setFont("helvetica", "normal");
-    pdf.text(designer, infoX, infoY + 4);
-    
-    infoX += labelSpacing;
-    pdf.setFont("helvetica", "bold");
-    pdf.text("Job #:", infoX, infoY);
-    pdf.setFont("helvetica", "normal");
-    pdf.text(jobNumber, infoX, infoY + 4);
-    
-    infoX += labelSpacing;
-    pdf.setFont("helvetica", "bold");
-    pdf.text("Client:", infoX, infoY);
-    pdf.setFont("helvetica", "normal");
-    pdf.text(customerName, infoX, infoY + 4);
-    
-    // Second row of info
-    infoX = logoX + logoWidth + 10;
-    const info2Y = infoY + 13;
-    
-    pdf.setFont("helvetica", "bold");
-    pdf.text("Builder:", infoX, info2Y);
-    pdf.setFont("helvetica", "normal");
-    pdf.text(builderName, infoX, info2Y + 4);
-    
-    infoX += labelSpacing;
-    pdf.setFont("helvetica", "bold");
-    pdf.text("Date:", infoX, info2Y);
-    pdf.setFont("helvetica", "normal");
-    pdf.text(new Date().toLocaleDateString(), infoX, info2Y + 4);
-    
-    // Company details section (right side)
-    const companyX = pageWidth - margin - 65;
-    pdf.setFontSize(6);
-    
-    // Store section with box
-    pdf.setDrawColor(220, 220, 220);
-    pdf.setFillColor(255, 255, 255);
-    pdf.roundedRect(companyX, infoBarY + 4, 60, 14, 1, 1, "FD");
-    
-    pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(80, 80, 80);
-    pdf.text("Store:", companyX + 2, infoBarY + 7);
-    pdf.setFont("helvetica", "normal");
-    pdf.setTextColor(100, 100, 100);
-    const storeText = pdf.splitTextToSize(jobInfo.address || "Store Address", 56);
-    pdf.text(storeText.slice(0, 2), companyX + 2, infoBarY + 10);
-    
-    // Head Office section with box
-    pdf.setDrawColor(220, 220, 220);
-    pdf.setFillColor(255, 255, 255);
-    pdf.roundedRect(companyX, infoBarY + 19, 60, 14, 1, 1, "FD");
-    
-    pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(80, 80, 80);
-    pdf.text("Head Office:", companyX + 2, infoBarY + 22);
-    pdf.setFont("helvetica", "normal");
-    pdf.setTextColor(100, 100, 100);
-    pdf.text("Head Office Address", companyX + 2, infoBarY + 25);
+      
+      // Store section with box
+      pdf.setDrawColor(220, 220, 220);
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(companyX, infoBarY + 4, 60, 14, 1, 1, "FD");
+      
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(80, 80, 80);
+      pdf.text("Store:", companyX + 2, infoBarY + 7);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(100, 100, 100);
+      const storeText = pdf.splitTextToSize(jobInfo.address || "Store Address", 56);
+      pdf.text(storeText.slice(0, 2), companyX + 2, infoBarY + 10);
+      
+      // Head Office section with box
+      pdf.setDrawColor(220, 220, 220);
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(companyX, infoBarY + 19, 60, 14, 1, 1, "FD");
+      
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(80, 80, 80);
+      pdf.text("Head Office:", companyX + 2, infoBarY + 22);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(100, 100, 100);
+      pdf.text("Head Office Address", companyX + 2, infoBarY + 25);
+    } // End of page loop
   };
 
   const canExport = selectedLayers.length > 0;

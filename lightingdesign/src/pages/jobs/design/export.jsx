@@ -1388,8 +1388,8 @@ const Page = () => {
           const rectPadding = 10; // Match TextBox.jsx padding  
           const rectEl = document.createElementNS(SVG_NS, "rect");
           rectEl.setAttribute("x", String(-offsetX - rectPadding));
-          // Move border up by lineHeight to account for text position adjustment
-          rectEl.setAttribute("y", String(-offsetY - rectPadding - lineHeight));
+          // Border positioned at offsetY with padding
+          rectEl.setAttribute("y", String(-offsetY - rectPadding));
           rectEl.setAttribute("width", String(textWidth + rectPadding * 2));
           // Add padding to height to create symmetric border
           rectEl.setAttribute("height", String(textBoxHeight + rectPadding * 2));
@@ -1401,16 +1401,17 @@ const Page = () => {
 
         const textEl = document.createElementNS(SVG_NS, "text");
         textEl.setAttribute("x", String(-offsetX));
-        // Move text down by lineHeight to match Konva's text rendering
-        // text-before-edge positions text at the top of its em box
-        textEl.setAttribute("y", String(-offsetY + lineHeight));
+        // Position text to align with border top, using hanging baseline
+        // which positions text similar to Konva's top-left text positioning
+        textEl.setAttribute("y", String(-offsetY));
         textEl.setAttribute("fill", tb.color || "#000000");
         textEl.setAttribute("font-family", tb.fontFamily || "Arial");
         textEl.setAttribute("font-size", String(renderedFontSize));
         if (tb.fontStyle?.includes("italic")) textEl.setAttribute("font-style", "italic");
         if (tb.fontStyle?.includes("bold")) textEl.setAttribute("font-weight", "bold");
         if (tb.textDecoration) textEl.setAttribute("text-decoration", tb.textDecoration);
-        textEl.setAttribute("dominant-baseline", "text-before-edge");
+        // Use hanging baseline which approximates Konva's top-left text positioning
+        textEl.setAttribute("dominant-baseline", "hanging");
         textEl.setAttribute("text-anchor", "start");
 
         const lines = (tb.text || "").split("\n");

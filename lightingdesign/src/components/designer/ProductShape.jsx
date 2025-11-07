@@ -2,6 +2,10 @@ import { Shape, Group, Text } from "react-konva";
 import { getShapeFunction } from "/src/components/designer/productShapes";
 import { memo } from "react";
 
+// Helper function to calculate counter-scale value
+// Returns the inverse of the scale value to neutralize parent scaling
+const getCounterScale = (scale) => (scale ? 1 / scale : 1);
+
 export const ProductShape = memo(
   ({
     product,
@@ -113,8 +117,8 @@ export const ProductShape = memo(
             offsetX={renderedWidth / 2}
             offsetY={renderedHeight / 2}
             rotation={-((product.rotation || 0) + (groupRotation || 0))}
-            scaleX={product.scaleX ? 1 / product.scaleX : 1}
-            scaleY={product.scaleY ? 1 / product.scaleY : 1}
+            scaleX={getCounterScale(product.scaleX)}
+            scaleY={getCounterScale(product.scaleY)}
           />
         )}
         {showQuantityBadge && (
@@ -122,8 +126,8 @@ export const ProductShape = memo(
             x={renderedWidth / 2 - badgeSize / 2}
             y={-renderedHeight / 2 - badgeSize / 2}
             rotation={-((product.rotation || 0) + (groupRotation || 0))}
-            scaleX={product.scaleX ? 1 / product.scaleX : 1}
-            scaleY={product.scaleY ? 1 / product.scaleY : 1}
+            scaleX={getCounterScale(product.scaleX)}
+            scaleY={getCounterScale(product.scaleY)}
             listening={false}
             perfectDrawEnabled={false}
             hitGraphEnabled={false}

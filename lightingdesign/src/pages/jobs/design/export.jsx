@@ -1754,10 +1754,19 @@ const Page = () => {
       // These are the default sizes from the shape functions themselves
       const naturalShapeSize = 50; // Common default for most shapes
       
+      // Define natural dimensions for shapes with specific aspect ratios
+      const shapeNaturalDimensions = {
+        strip: { width: 60, height: 10 },
+        lamp: { width: 25, height: 50 },
+        // Most other shapes are square or circular
+      };
+      
+      const naturalDims = shapeNaturalDimensions[shapeType] || { width: naturalShapeSize, height: naturalShapeSize };
+      
       // Calculate scale factor to fit natural size into available space
       // Use 0.75 multiplier to make shapes a bit smaller (user feedback)
       const targetSize = shapeSize * 0.75;
-      const shapeScale = targetSize / naturalShapeSize;
+      const shapeScale = targetSize / Math.max(naturalDims.width, naturalDims.height);
       
       // Create a group for the product centered at origin with scaling
       const productGroupEl = document.createElementNS(SVG_NS, "g");
@@ -1767,18 +1776,18 @@ const Page = () => {
       // Create shape object with natural sizes
       // This allows hard-coded line widths and offsets in shape functions to scale proportionally
       const shapeObj = {
-        width: () => naturalShapeSize,
-        height: () => naturalShapeSize,
+        width: () => naturalDims.width,
+        height: () => naturalDims.height,
         getAttr: (name) => {
           switch (name) {
             case "scaleFactor":
               return 1;
             case "realWorldSize":
-              return naturalShapeSize;
+              return Math.max(naturalDims.width, naturalDims.height);
             case "realWorldWidth":
-              return naturalShapeSize;
+              return naturalDims.width;
             case "realWorldHeight":
-              return naturalShapeSize;
+              return naturalDims.height;
             case "stroke":
               return strokeColor;
             case "strokeWidth":

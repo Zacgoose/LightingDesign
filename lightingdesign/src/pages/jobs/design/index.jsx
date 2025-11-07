@@ -18,6 +18,7 @@ import { DesignerToolbarRow } from "/src/components/designer/DesignerToolbarRow"
 import { DesignerCanvas } from "/src/components/designer/DesignerCanvas";
 import { ProductSelectionDrawer } from "/src/components/designer/ProductSelectionDrawer";
 import { ProductDetailsDrawer } from "/src/components/designer/ProductDetailsDrawer";
+import { ProductListPanel } from "/src/components/designer/ProductListPanel";
 import { ContextMenus } from "/src/components/designer/ContextMenus";
 import { ColorPickerPopover } from "/src/components/designer/ColorPickerPopover";
 import { ProductsLayer, COLOR_PALETTE } from "/src/components/designer/ProductsLayer";
@@ -251,6 +252,10 @@ const Page = () => {
   const [scaleDialogOpen, setScaleDialogOpen] = useState(false);
   const [scaleValue, setScaleValue] = useState(1);
 
+  // Quantity dialog state
+  const [quantityDialogOpen, setQuantityDialogOpen] = useState(false);
+  const [quantityValue, setQuantityValue] = useState(1);
+
   // Middle mouse panning state
   const [isMiddlePanning, setIsMiddlePanning] = useState(false);
 
@@ -271,6 +276,13 @@ const Page = () => {
     mode: "onChange",
     defaultValues: {
       scale: 1,
+    },
+  });
+
+  const quantityForm = useForm({
+    mode: "onChange",
+    defaultValues: {
+      quantity: 1,
     },
   });
 
@@ -448,11 +460,46 @@ const Page = () => {
     return () => clearInterval(autoSaveInterval);
   }, [id, hasUnsavedChanges, isSaving, handleSave, settings.autoSaveInterval]);
 
+  // Context menus hook
+  const contextMenus = useContextMenus({
+    products,
+    connectors,
+    selectedIds,
+    selectedConnectorIds,
+    selectedTool,
+    placementMode,
+    stagePosition,
+    stageScale,
+    updateHistory,
+    updateConnectorHistory,
+    setSelectedIds,
+    setSelectedConnectorIds,
+    setGroupKey,
+    setProductDrawerVisible,
+    setConnectSequence,
+    applyGroupTransform,
+    pendingInsertPosition,
+    selectedTextId,
+    textBoxes,
+    updateTextBoxHistory,
+  });
+
   // Handler for context menu 'Scale...'
   const handleOpenScaleDialog = useCallback(() => {
     setScaleDialogOpen(true);
     contextMenus.handleCloseContextMenu();
   }, []);
+
+  // Handler for context menu 'Change Quantity...'
+  const handleOpenQuantityDialog = useCallback(() => {
+    // Get the quantity of the first selected product
+    const firstSelectedProduct = products.find((p) => selectedIds.includes(p.id));
+    const currentQuantity = firstSelectedProduct?.quantity || 1;
+    setQuantityValue(currentQuantity);
+    quantityForm.setValue("quantity", currentQuantity);
+    setQuantityDialogOpen(true);
+    contextMenus.handleCloseContextMenu();
+  }, [products, selectedIds, quantityForm, contextMenus]);
 
   // Reset view when design loads
   useEffect(() => {
@@ -498,6 +545,33 @@ const Page = () => {
     },
     [products, selectedIds, updateHistory, forceGroupUpdate, transformerRef, selectionGroupRef],
   );
+
+  // Handler for applying quantity to selected products
+  const handleQuantityConfirm = useCallback(
+    (quantityValue) => {
+      quantityValue = Number(quantityValue);
+      if (isNaN(quantityValue) || quantityValue < 1) return;
+
+      const newProducts = products.map((product) => {
+        if (!selectedIds.includes(product.id)) return product;
+        return { ...product, quantity: quantityValue };
+      });
+
+      updateHistory(newProducts);
+      forceGroupUpdate();
+      setQuantityDialogOpen(false);
+    },
+    [products, selectedIds, updateHistory, forceGroupUpdate],
+  );
+
+  // Memoized onChange handlers for form inputs
+  const handleScaleChange = useCallback((e) => {
+    setScaleValue(Number(e.target.value));
+  }, []);
+
+  const handleQuantityChange = useCallback((e) => {
+    setQuantityValue(Number(e.target.value));
+  }, []);
 
   // Helper function to convert PDF data URL to raster image
   // Helper function to convert PDF to high-quality raster image (returns data URL)
@@ -665,30 +739,6 @@ const Page = () => {
     // Note: setConnectors, setBackgroundImage, setBackgroundImageNaturalSize, setScaleFactor
     // are stable setState functions and don't need to be in dependencies
   ]);
-
-  // Context menus hook
-  const contextMenus = useContextMenus({
-    products,
-    connectors,
-    selectedIds,
-    selectedConnectorIds,
-    selectedTool,
-    placementMode,
-    stagePosition,
-    stageScale,
-    updateHistory,
-    updateConnectorHistory,
-    setSelectedIds,
-    setSelectedConnectorIds,
-    setGroupKey,
-    setProductDrawerVisible,
-    setConnectSequence,
-    applyGroupTransform,
-    pendingInsertPosition,
-    selectedTextId,
-    textBoxes,
-    updateTextBoxHistory,
-  });
 
   // Product interaction hook
   const productInteraction = useProductInteraction({
@@ -2213,6 +2263,7 @@ const Page = () => {
           product_type: shapeName,
           product_type_unigram: shapeName,
           isCustomObject: true,
+          quantity: 1,
           scaleFactor: scaleFactor || 100,
           // Copy all size properties from config, same as regular products
           realWorldSize: shapeConfig.realWorldSize,
@@ -2739,6 +2790,13 @@ const Page = () => {
                       showPreview && selectedIds.length === 1 && !selectedIds[0].startsWith("text-")
                     }
                   />
+
+                  {/* Product List Panel */}
+                  <ProductListPanel
+                    products={products}
+                    visible={showLayers}
+                    activeLayerId={activeLayerId}
+                  />
                 </Box>
               </CardContent>
             </Card>
@@ -2757,6 +2815,7 @@ const Page = () => {
         onSwapPlacementProduct={handleSwapPlacementProduct}
         onSwapProduct={handleSwapSelectedProducts}
         onScale={handleOpenScaleDialog}
+        onChangeQuantity={handleOpenQuantityDialog}
         onAssignToSublayer={handleAssignToSublayer}
         onShowProperties={handleShowProperties}
         onInsertCustomObject={handleInsertCustomObject}
@@ -2789,7 +2848,7 @@ const Page = () => {
       >
         <TextField
           {...scaleForm.register("scale", {
-            onChange: (e) => setScaleValue(Number(e.target.value)),
+            onChange: handleScaleChange,
           })}
           label="Scale"
           type="number"
@@ -2797,6 +2856,33 @@ const Page = () => {
           fullWidth
           inputProps={{ min: 0.001, step: 0.001 }}
           autoFocus
+        />
+      </CippComponentDialog>
+
+      <CippComponentDialog
+        open={quantityDialogOpen}
+        title="Set Quantity"
+        createDialog={{
+          open: quantityDialogOpen,
+          handleClose: () => setQuantityDialogOpen(false),
+          handleSubmit: (data) => {
+            handleQuantityConfirm(data.quantity);
+            setQuantityValue(data.quantity);
+          },
+          form: quantityForm,
+        }}
+      >
+        <TextField
+          {...quantityForm.register("quantity", {
+            onChange: handleQuantityChange,
+          })}
+          label="Quantity"
+          type="number"
+          defaultValue={quantityValue}
+          fullWidth
+          inputProps={{ min: 1, step: 1 }}
+          autoFocus
+          helperText="Set the quantity for the selected product(s). This allows you to place multiple items without rendering them all."
         />
       </CippComponentDialog>
 

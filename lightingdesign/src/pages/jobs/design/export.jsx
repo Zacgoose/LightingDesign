@@ -1419,7 +1419,7 @@ const Page = () => {
           const tspan = document.createElementNS(SVG_NS, "tspan");
           tspan.setAttribute("x", String(-offsetX));
           if (idx === 0) tspan.setAttribute("dy", "0");
-          else tspan.setAttribute("dy", String(lineHeight));
+          else tspan.setAttribute("dy", String(lineHeight/5)*4);
           // Use non-breaking space for empty lines to ensure they render with proper height
           tspan.textContent = ln || "\u00A0";
           textEl.appendChild(tspan);

@@ -177,7 +177,7 @@ function Add-CIPPAzDataTableEntity {
 
         # CLEANUP: After successful save, delete orphaned rows
         if (($PSCmdlet.ParameterSetName -eq 'Force' -or $OperationType -in @('UpsertMerge', 'UpsertReplace')) -and ($newRowKeysCreated.Count -gt 0)) {
-            Write-Information "Cleaning up orphaned rows for PartitionKey: $originalPartitionKey, RowKey pattern: $originalRowKey"
+            # Write-Information "Cleaning up orphaned rows for PartitionKey: $originalPartitionKey, RowKey pattern: $originalRowKey"
 
             # Filter by both PartitionKey and RowKey to ensure we only clean up related entities
             # We look for entities that have the exact RowKey OR have OriginalEntityId matching the original RowKey

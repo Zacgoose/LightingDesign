@@ -1368,9 +1368,13 @@ const Page = () => {
         svgElement.appendChild(groupEl);
 
         const offsetX = textWidth / 2;
+        // Calculate single-line text height for positioning (matches TextBox.jsx)
+        // This is used for y-offset of both border and text
+        const textHeight = renderedFontSize * 1.2;
+        const offsetY = textHeight / 2;
+        
+        // Calculate full text box height for border dimensions
         // Use actual text box height if available (as measured by Konva), otherwise calculate
-        // This matches the TextBox component which uses the measured height for positioning
-        // For fallback, calculate height based on line count like TextBox component does
         let textBoxHeight;
         if (tb.height) {
           textBoxHeight = tb.height;
@@ -1378,11 +1382,10 @@ const Page = () => {
           const lineCount = (tb.text || '').split(/\r?\n/).length;
           textBoxHeight = lineCount * lineHeight;
         }
-        const offsetY = textBoxHeight / 2;
 
         // Add border rectangle if showBorder is enabled
         if (tb.showBorder) {
-          const rectPadding = 8;
+          const rectPadding = 10; // Match TextBox.jsx padding
           const rectEl = document.createElementNS(SVG_NS, "rect");
           rectEl.setAttribute("x", String(-offsetX - rectPadding));
           rectEl.setAttribute("y", String(-offsetY - rectPadding));
@@ -1396,9 +1399,8 @@ const Page = () => {
 
         const textEl = document.createElementNS(SVG_NS, "text");
         textEl.setAttribute("x", String(-offsetX));
-        // Shift text down by one line height to match Konva's Text positioning
-        // The border is at -offsetY, but text with hanging baseline needs to start one line down
-        textEl.setAttribute("y", String(offsetY - (offsetY/3)));
+        // Position text at same y-offset as border (matches TextBox.jsx)
+        textEl.setAttribute("y", String(-offsetY));
         textEl.setAttribute("fill", tb.color || "#000000");
         textEl.setAttribute("font-family", tb.fontFamily || "Arial");
         textEl.setAttribute("font-size", String(renderedFontSize));

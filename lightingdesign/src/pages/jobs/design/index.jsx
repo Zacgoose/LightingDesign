@@ -460,6 +460,30 @@ const Page = () => {
     return () => clearInterval(autoSaveInterval);
   }, [id, hasUnsavedChanges, isSaving, handleSave, settings.autoSaveInterval]);
 
+  // Context menus hook
+  const contextMenus = useContextMenus({
+    products,
+    connectors,
+    selectedIds,
+    selectedConnectorIds,
+    selectedTool,
+    placementMode,
+    stagePosition,
+    stageScale,
+    updateHistory,
+    updateConnectorHistory,
+    setSelectedIds,
+    setSelectedConnectorIds,
+    setGroupKey,
+    setProductDrawerVisible,
+    setConnectSequence,
+    applyGroupTransform,
+    pendingInsertPosition,
+    selectedTextId,
+    textBoxes,
+    updateTextBoxHistory,
+  });
+
   // Handler for context menu 'Scale...'
   const handleOpenScaleDialog = useCallback(() => {
     setScaleDialogOpen(true);
@@ -715,30 +739,6 @@ const Page = () => {
     // Note: setConnectors, setBackgroundImage, setBackgroundImageNaturalSize, setScaleFactor
     // are stable setState functions and don't need to be in dependencies
   ]);
-
-  // Context menus hook
-  const contextMenus = useContextMenus({
-    products,
-    connectors,
-    selectedIds,
-    selectedConnectorIds,
-    selectedTool,
-    placementMode,
-    stagePosition,
-    stageScale,
-    updateHistory,
-    updateConnectorHistory,
-    setSelectedIds,
-    setSelectedConnectorIds,
-    setGroupKey,
-    setProductDrawerVisible,
-    setConnectSequence,
-    applyGroupTransform,
-    pendingInsertPosition,
-    selectedTextId,
-    textBoxes,
-    updateTextBoxHistory,
-  });
 
   // Product interaction hook
   const productInteraction = useProductInteraction({

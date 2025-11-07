@@ -16,10 +16,9 @@ import {
   TextFields,
   BorderColor,
   StraightenOutlined,
-  AlignHorizontalCenter,
-  AlignVerticalCenter,
-  ViewWeek,
-  ViewStream,
+  VerticalAlignCenter,
+  VerticalAlignTop,
+  MultipleStop,
 } from "@mui/icons-material";
 
 export const ContextMenus = ({
@@ -48,6 +47,10 @@ export const ContextMenus = ({
   onResetConnectorToStraight,
   onAlignHorizontalCenter,
   onAlignVerticalCenter,
+  onAlignLeft,
+  onAlignRight,
+  onAlignTop,
+  onAlignBottom,
   onEvenSpacingHorizontal,
   onEvenSpacingVertical,
 }) => {
@@ -174,15 +177,48 @@ export const ContextMenus = ({
               </ListItemIcon>
               <ListItemText>Duplicate</ListItemText>
             </MenuItem>
+            {selectedProductsCount > 1 && onAlignLeft && (
+              <MenuItem
+                onClick={handleMenuItemClick(onAlignLeft)}
+                onMouseEnter={handleMenuItemHover}
+              >
+                <ListItemIcon>
+                  <VerticalAlignTop fontSize="small" sx={{ transform: 'rotate(270deg)' }} />
+                </ListItemIcon>
+                <ListItemText>Align Left</ListItemText>
+              </MenuItem>
+            )}
             {selectedProductsCount > 1 && onAlignHorizontalCenter && (
               <MenuItem
                 onClick={handleMenuItemClick(onAlignHorizontalCenter)}
                 onMouseEnter={handleMenuItemHover}
               >
                 <ListItemIcon>
-                  <AlignHorizontalCenter fontSize="small" />
+                  <VerticalAlignCenter fontSize="small" sx={{ transform: 'rotate(90deg)' }} />
                 </ListItemIcon>
                 <ListItemText>Align Horizontal Centers</ListItemText>
+              </MenuItem>
+            )}
+            {selectedProductsCount > 1 && onAlignRight && (
+              <MenuItem
+                onClick={handleMenuItemClick(onAlignRight)}
+                onMouseEnter={handleMenuItemHover}
+              >
+                <ListItemIcon>
+                  <VerticalAlignTop fontSize="small" sx={{ transform: 'rotate(90deg)' }} />
+                </ListItemIcon>
+                <ListItemText>Align Right</ListItemText>
+              </MenuItem>
+            )}
+            {selectedProductsCount > 1 && onAlignTop && (
+              <MenuItem
+                onClick={handleMenuItemClick(onAlignTop)}
+                onMouseEnter={handleMenuItemHover}
+              >
+                <ListItemIcon>
+                  <VerticalAlignTop fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Align Top</ListItemText>
               </MenuItem>
             )}
             {selectedProductsCount > 1 && onAlignVerticalCenter && (
@@ -191,9 +227,20 @@ export const ContextMenus = ({
                 onMouseEnter={handleMenuItemHover}
               >
                 <ListItemIcon>
-                  <AlignVerticalCenter fontSize="small" />
+                  <VerticalAlignCenter fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Align Vertical Centers</ListItemText>
+              </MenuItem>
+            )}
+            {selectedProductsCount > 1 && onAlignBottom && (
+              <MenuItem
+                onClick={handleMenuItemClick(onAlignBottom)}
+                onMouseEnter={handleMenuItemHover}
+              >
+                <ListItemIcon>
+                  <VerticalAlignTop fontSize="small" sx={{ transform: 'rotate(180deg)' }} />
+                </ListItemIcon>
+                <ListItemText>Align Bottom</ListItemText>
               </MenuItem>
             )}
             {selectedProductsCount > 2 && onEvenSpacingHorizontal && (
@@ -202,7 +249,7 @@ export const ContextMenus = ({
                 onMouseEnter={handleMenuItemHover}
               >
                 <ListItemIcon>
-                  <ViewWeek fontSize="small" />
+                  <MultipleStop fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Even Spacing Horizontal</ListItemText>
               </MenuItem>
@@ -213,7 +260,7 @@ export const ContextMenus = ({
                 onMouseEnter={handleMenuItemHover}
               >
                 <ListItemIcon>
-                  <ViewStream fontSize="small" />
+                  <MultipleStop fontSize="small" sx={{ transform: 'rotate(90deg)' }} />
                 </ListItemIcon>
                 <ListItemText>Even Spacing Vertical</ListItemText>
               </MenuItem>

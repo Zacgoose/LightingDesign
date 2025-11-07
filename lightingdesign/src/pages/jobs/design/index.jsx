@@ -235,6 +235,7 @@ const Page = () => {
   const [productDetailsDrawerVisible, setProductDetailsDrawerVisible] = useState(false);
   const [selectedProductForDetails, setSelectedProductForDetails] = useState(null);
   const [swapMode, setSwapMode] = useState(false);
+  const [swapAllSameMode, setSwapAllSameMode] = useState(false);
 
   // Refs
   const clipboard = useRef({ products: [], connectors: [] });
@@ -1457,12 +1458,82 @@ const Page = () => {
 
   const handleSwapSelectedProducts = useCallback(() => {
     setSwapMode(true);
+    setSwapAllSameMode(false);
+    setProductDrawerVisible(true);
+    contextMenus.handleCloseContextMenu();
+  }, [contextMenus]);
+
+  const handleSwapAllSameProducts = useCallback(() => {
+    setSwapMode(true);
+    setSwapAllSameMode(true);
     setProductDrawerVisible(true);
     contextMenus.handleCloseContextMenu();
   }, [contextMenus]);
 
   const handleProductAdd = useCallback(
     (product) => {
+      // Handle swap all same mode - replace all products with matching SKU
+      if (swapMode && swapAllSameMode && selectedIds.length > 0) {
+        const transformed = applyGroupTransform();
+        const baseProducts = transformed || products;
+
+        // Get the SKU of the first selected product
+        const firstSelectedProduct = baseProducts.find((p) => selectedIds.includes(p.id));
+        
+        if (firstSelectedProduct && firstSelectedProduct.sku) {
+          const targetSku = firstSelectedProduct.sku;
+
+          // Get product type configuration for real-world dimensions
+          const productType = product.product_type_unigram?.toLowerCase() || "default";
+          const config = productTypesConfig[productType] || productTypesConfig.default;
+
+          // Replace all products with matching SKU
+          const newProducts = baseProducts.map((p) => {
+            if (p.sku === targetSku) {
+              // Create new product from template but preserve position, rotation, scale, etc.
+              const strokeColor = determineStrokeColorForSku(product.sku);
+              return {
+                ...p,
+                name: product.name,
+                sku: product.sku,
+                brand: product.brand,
+                product_type: product.product_type_unigram,
+                product_type_unigram: product.product_type_unigram,
+                price: parseFloat(product.price) || 0,
+                msrp: parseFloat(product.msrp) || 0,
+                imageUrl: product.imageUrl,
+                thumbnailUrl: product.thumbnailImageUrl,
+                thumbnailImageUrl: product.thumbnailImageUrl,
+                url: product.url, // Website link
+                category: product.top_web_category,
+                categories: product.category_hierarchy || [],
+                description: product.short_description,
+                colors: product.item_colours || [],
+                inStock: product.ss_in_stock === "1",
+                stockQty: parseInt(product.stock_qty) || 0,
+                metadata: product,
+                strokeColor: strokeColor,
+                // Update real-world dimensions for the new product type
+                realWorldSize: config.realWorldSize,
+                realWorldWidth: config.realWorldWidth,
+                realWorldHeight: config.realWorldHeight,
+                // Preserve the scaleFactor from the original product (or use current layer scale)
+                scaleFactor: p.scaleFactor || scaleFactor,
+              };
+            }
+            return p;
+          });
+
+          updateHistory(newProducts);
+          setSwapMode(false);
+          setSwapAllSameMode(false);
+          setProductDrawerVisible(false);
+          setGroupKey((k) => k + 1);
+          return;
+        }
+        // If no SKU found, fall through to regular swap mode below
+      }
+
       // Handle swap mode - replace selected products with new product
       if (swapMode && selectedIds.length > 0) {
         const transformed = applyGroupTransform();
@@ -1511,6 +1582,7 @@ const Page = () => {
 
         updateHistory(newProducts);
         setSwapMode(false);
+        setSwapAllSameMode(false);
         setProductDrawerVisible(false);
         setGroupKey((k) => k + 1);
         return;
@@ -1524,9 +1596,11 @@ const Page = () => {
       setProductDrawerVisible(false);
       pendingInsertPosition.current = null;
       setSwapMode(false);
+      setSwapAllSameMode(false);
     },
     [
       swapMode,
+      swapAllSameMode,
       selectedIds,
       products,
       applyGroupTransform,
@@ -2456,6 +2530,7 @@ const Page = () => {
                 onClose={() => {
                   setProductDrawerVisible(false);
                   setSwapMode(false);
+                  setSwapAllSameMode(false);
                   pendingInsertPosition.current = null;
                 }}
               />
@@ -2820,6 +2895,7 @@ const Page = () => {
         onInsertProduct={contextMenus.handleInsertProductAtPosition}
         onSwapPlacementProduct={handleSwapPlacementProduct}
         onSwapProduct={handleSwapSelectedProducts}
+        onSwapAllSameProducts={handleSwapAllSameProducts}
         onScale={handleOpenScaleDialog}
         onChangeQuantity={handleOpenQuantityDialog}
         onAssignToSublayer={handleAssignToSublayer}

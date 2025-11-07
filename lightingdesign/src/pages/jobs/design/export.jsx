@@ -1403,7 +1403,7 @@ const Page = () => {
         textEl.setAttribute("x", String(-offsetX));
         // Position text to align with border, adjusting down by one line height
         // to match Konva's text rendering behavior
-        textEl.setAttribute("y", String(-offsetY + lineHeight));
+        textEl.setAttribute("y", String(-offsetY + ((lineHeight/5)*4)));
         textEl.setAttribute("fill", tb.color || "#000000");
         textEl.setAttribute("font-family", tb.fontFamily || "Arial");
         textEl.setAttribute("font-size", String(renderedFontSize));

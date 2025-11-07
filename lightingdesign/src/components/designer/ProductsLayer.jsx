@@ -38,38 +38,92 @@ const getProductStrokeColor = (product, products, defaultColor) => {
   return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
 };
 
-// Calculate letter prefix for a product based on its type and SKU
+/**
+ * Gets the grouping key for a product, which is used to determine its letter prefix number.
+ * 
+ * For products with SKUs, the grouping key is "sku:{SKU_VALUE}".
+ * For custom shapes without SKUs, the grouping key is "shape:{SHAPE_TYPE}".
+ * 
+ * Products with the same grouping key will receive the same number suffix.
+ * 
+ * @param {Object} product - The product object
+ * @param {Object} productTypesConfig - Configuration object for product types
+ * @returns {string} Grouping key in format "sku:XXX" or "shape:YYY"
+ */
+const getProductGroupingKey = (product, productTypesConfig) => {
+  // Normalize SKU: trim whitespace and handle empty strings as null
+  const sku = product.sku?.trim();
+  const hasSku = sku && sku !== "";
+
+  // For products with SKUs, group by SKU
+  // For products without SKUs (custom shapes), group by shape type
+  if (hasSku) {
+    return `sku:${sku}`;
+  } else {
+    const productType = product.product_type?.toLowerCase() || "default";
+    const config = productTypesConfig[productType] || productTypesConfig.default;
+    // Use the actual shape property if available, otherwise use shapeType from config,
+    // with a final fallback to the default shapeType
+    const shapeType = product.shape || config.shapeType || productTypesConfig.default.shapeType;
+    return `shape:${shapeType}`;
+  }
+};
+
+/**
+ * Calculate letter prefix for a product based on its type and SKU.
+ * 
+ * Products are assigned numbers based on their grouping key within the same letter prefix.
+ * Numbers are assigned in the order that unique grouping keys first appear in the products array.
+ * For example, products with prefix "O" and unique SKUs get O1, O2, O3, etc. based on insertion order.
+ * Products with the same SKU get the same number (e.g., all SKU "ABC" get O1).
+ * Custom shapes without SKUs are grouped by shape type (e.g., all circles get one number).
+ * 
+ * @param {Object} product - The product to calculate prefix for
+ * @param {Array} products - All products in the design
+ * @param {Object} productTypesConfig - Configuration object for product types
+ * @returns {string} Letter prefix with number (e.g., "O1", "P2", "D3")
+ */
 const getProductLetterPrefix = (product, products, productTypesConfig) => {
   const productType = product.product_type?.toLowerCase() || "default";
   const config = productTypesConfig[productType] || productTypesConfig.default;
   const letterPrefix = config.letterPrefix || "O";
 
-  // Normalize SKU: trim whitespace and handle empty strings as null
-  const sku = product.sku?.trim();
-  if (!sku || sku === "") {
-    return letterPrefix; // No SKU, just return letter without number
+  // Filter to products with the same letter prefix
+  const samePrefixProducts = products.filter((p) => {
+    const pType = p.product_type?.toLowerCase() || "default";
+    const pConfig = productTypesConfig[pType] || productTypesConfig.default;
+    const pPrefix = pConfig.letterPrefix || "O";
+    return pPrefix === letterPrefix;
+  });
+
+  // Get the grouping key for this product
+  const groupingKey = getProductGroupingKey(product, productTypesConfig);
+
+  // Build a list of unique grouping keys in the order they first appear
+  // This ensures O1 goes to the first unique type, O2 to the second, etc.
+  const uniqueGroupingKeys = [];
+  const seenKeys = new Set();
+  for (const p of samePrefixProducts) {
+    const key = getProductGroupingKey(p, productTypesConfig);
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
+      uniqueGroupingKeys.push(key);
+    }
   }
 
-  // Find all unique SKUs for this product type, sorted to ensure consistent ordering
-  const sameTypeProducts = products.filter(
-    (p) => (p.product_type?.toLowerCase() || "default") === productType,
-  );
+  // Find the index of this product's grouping key
+  const groupIndex = uniqueGroupingKeys.indexOf(groupingKey);
 
-  // Get unique SKUs, filtering out null/undefined/empty, then sort
-  const uniqueSkus = [
-    ...new Set(sameTypeProducts.map((p) => p.sku?.trim()).filter((s) => s && s !== "")),
-  ].sort();
-
-  // Find the index of this product's SKU among unique SKUs of this type
-  const skuIndex = uniqueSkus.indexOf(sku);
-
-  // If SKU not found (shouldn't happen), return just the letter
-  if (skuIndex === -1) {
-    console.warn(`SKU "${sku}" not found in uniqueSkus for ${productType}:`, uniqueSkus);
+  // If grouping key not found (shouldn't happen), return just the letter
+  if (groupIndex === -1) {
+    console.warn(
+      `Grouping key "${groupingKey}" not found in uniqueGroupingKeys for ${productType}:`,
+      uniqueGroupingKeys,
+    );
     return letterPrefix;
   }
 
-  return `${letterPrefix}${skuIndex + 1}`;
+  return `${letterPrefix}${groupIndex + 1}`;
 };
 
 export const ProductsLayer = memo(

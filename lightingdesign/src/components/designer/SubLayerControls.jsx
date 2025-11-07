@@ -120,25 +120,26 @@ export const SubLayerControls = React.forwardRef(
           elevation={2}
           sx={{
             position: "absolute",
-            top: 16,
-            right: 312,
+            top: 200,
+            right: 16,
             width: 240,
             display: "flex",
             flexDirection: "column",
+            maxHeight: "180px",
             zIndex: 1000,
           }}
           onClick={(e) => e.stopPropagation()}
         >
           <Box
             sx={{
-              p: 2,
-              pb: 1,
+              px: 1.5,
+              py: 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
+            <Typography variant="h6" sx={{ fontWeight: 500, fontSize: "0.8rem" }}>
               Sublayers
             </Typography>
             <Tooltip title="Add Sublayer">
@@ -148,7 +149,7 @@ export const SubLayerControls = React.forwardRef(
             </Tooltip>
           </Box>
           <Divider />
-          <Box sx={{ p: 2, pt: 1 }}>
+          <Box sx={{ px: 1.5, py: 1, overflow: "auto", flex: 1 }}>
             <FormGroup>
               {sublayers.map((sublayer) => (
                 <Box
@@ -188,7 +189,7 @@ export const SubLayerControls = React.forwardRef(
                         }
                         label={
                           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                            <Typography variant="body2">{sublayer.name}</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 500, fontSize: "0.8rem" }}>{sublayer.name}</Typography>
                             {defaultSublayerId === sublayer.id && (
                               <Tooltip title="Default sublayer for new objects">
                                 <StarIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />

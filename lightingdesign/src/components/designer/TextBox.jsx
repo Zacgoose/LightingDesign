@@ -85,10 +85,8 @@ export const TextBox = memo(
           listening={listening}
           onMouseDown={(e) => {
             // Filter out middle mouse clicks (button === 1) to prevent selection during panning
+            // Don't stop propagation - let it bubble to Stage for middle mouse panning
             if (e.evt.button === 1) {
-              e.cancelBubble = true;
-              e.evt.stopPropagation();
-              e.evt.preventDefault();
               return;
             }
             if (onSelect) {

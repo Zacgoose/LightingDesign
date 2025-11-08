@@ -58,6 +58,10 @@ export const useContextMenus = ({
       let menuProps = {};
       if (placementMode) {
         menuType = "placement";
+      } else if (selectedTextId) {
+        // If a text box is selected, show text context menu even when right-clicking on empty canvas
+        menuType = "text";
+        menuProps.textId = selectedTextId;
       } else if (selectedIds.length > 0) {
         menuType = "product";
       } else if (selectedConnectorIds.length > 0) {
@@ -83,6 +87,7 @@ export const useContextMenus = ({
       placementMode,
       selectedIds,
       selectedConnectorIds,
+      selectedTextId,
       stagePosition,
       stageScale,
       setConnectSequence,

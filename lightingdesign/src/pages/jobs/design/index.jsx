@@ -1925,6 +1925,11 @@ const Page = () => {
 
   const handleTextSelect = useCallback(
     (e, textId) => {
+      // Filter out middle mouse clicks (button === 1) to prevent selection during panning
+      if (e.evt?.button === 1) {
+        return;
+      }
+
       // Multi-selection logic similar to handleProductClick
       const shiftKey = e.evt?.shiftKey;
       const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;

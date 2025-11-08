@@ -48,14 +48,16 @@ export const ImageEditorDialogFabric = (props) => {
       return;
     }
 
-    // Set canvas element size attributes first
-    const canvasElement = canvasRef.current;
-    if (!canvasElement) {
-      console.log("[ImageEditor] Canvas element not found");
-      return;
-    }
-    
-    console.log("[ImageEditor] Canvas element found, proceeding with initialization");
+    // Dialog content may not be rendered yet, use setTimeout to wait for next tick
+    const timeoutId = setTimeout(() => {
+      // Set canvas element size attributes first
+      const canvasElement = canvasRef.current;
+      if (!canvasElement) {
+        console.log("[ImageEditor] Canvas element not found even after timeout");
+        return;
+      }
+      
+      console.log("[ImageEditor] Canvas element found, proceeding with initialization");
     
     canvasElement.width = 800;
     canvasElement.height = 600;
@@ -130,9 +132,13 @@ export const ImageEditorDialogFabric = (props) => {
       });
       setHistoryStep((prev) => prev + 1);
     });
+    }, 0); // End of setTimeout
 
     return () => {
-      canvas.dispose();
+      clearTimeout(timeoutId);
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.dispose();
+      }
       fabricCanvasRef.current = null;
       backgroundImageRef.current = null;
     };

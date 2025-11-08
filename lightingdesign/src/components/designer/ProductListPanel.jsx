@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, memo } from "react";
 import {
   Box,
   Paper,
@@ -24,7 +24,7 @@ import productTypesConfig from "/src/data/productTypes.json";
  * - Thumbnail
  * - Prefix letter and number
  */
-export const ProductListPanel = ({ products, visible, activeLayerId }) => {
+export const ProductListPanel = memo(({ products, visible, activeLayerId }) => {
   // Helper function to calculate letter prefix for a product
   const getProductLetterPrefix = (product, allProducts) => {
     const productType = product.product_type?.toLowerCase() || "default";
@@ -257,6 +257,8 @@ export const ProductListPanel = ({ products, visible, activeLayerId }) => {
       </List>
     </Paper>
   );
-};
+});
+
+ProductListPanel.displayName = "ProductListPanel";
 
 export default ProductListPanel;

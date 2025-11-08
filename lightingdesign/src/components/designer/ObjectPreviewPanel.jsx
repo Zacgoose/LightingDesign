@@ -1,11 +1,11 @@
-import React from "react";
+import React, { memo } from "react";
 import { Box, Paper, Typography, Divider } from "@mui/material";
 
 /**
  * ObjectPreviewPanel - UI component for showing preview of selected object
  * Displays thumbnail, product name, and SKU when exactly 1 object is selected
  */
-export const ObjectPreviewPanel = ({ product, visible }) => {
+export const ObjectPreviewPanel = memo(({ product, visible }) => {
   if (!visible || !product) {
     return null;
   }
@@ -100,6 +100,8 @@ export const ObjectPreviewPanel = ({ product, visible }) => {
       </Box>
     </Paper>
   );
-};
+});
+
+ObjectPreviewPanel.displayName = "ObjectPreviewPanel";
 
 export default ObjectPreviewPanel;

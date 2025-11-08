@@ -7,7 +7,7 @@ import {
   ToggleButton,
   Typography,
 } from "@mui/material";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
 import {
   ExpandMore,
   ExpandLess,
@@ -29,10 +29,45 @@ import {
   MultipleStop,
 } from "@mui/icons-material";
 
-export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProps }) => {
+export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alignProps }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showCollapseButton, setShowCollapseButton] = useState(false);
   const containerRef = useRef(null);
+
+  // Memoize stable sx objects to prevent button re-renders
+  const rotate270Sx = useMemo(() => ({ transform: 'rotate(270deg)' }), []);
+  const rotate90Sx = useMemo(() => ({ transform: 'rotate(90deg)' }), []);
+  const rotate180Sx = useMemo(() => ({ transform: 'rotate(180deg)' }), []);
+  const toggleButtonSx = useMemo(() => ({
+    "& .MuiToggleButton-root": {
+      padding: "1px",
+      minWidth: "30px",
+      minHeight: "30px",
+    },
+  }), []);
+  const zoomBoxSx = useMemo(() => ({ display: "flex", gap: 1, alignItems: "center", flexShrink: 0 }), []);
+  const zoomLevelSx = useMemo(() => ({ maxWidth: 35, minWidth: 35, textAlign: "center" }), []);
+  const collapseButtonSx = useMemo(() => ({ ml: 1, my: 0.5, flexShrink: 0 }), []);
+
+  // Memoize icon components to prevent button re-renders
+  const uploadIcon = useMemo(() => <Upload />, []);
+  const saveIcon = useMemo(() => <Save />, []);
+  const downloadIcon = useMemo(() => <Download />, []);
+  const undoIcon = useMemo(() => <Undo />, []);
+  const redoIcon = useMemo(() => <Redo />, []);
+  const straightenIcon = useMemo(() => <Straighten />, []);
+  const closeIcon = useMemo(() => <Close />, []);
+  const cableIcon = useMemo(() => <Cable />, []);
+  const zoomInIcon = useMemo(() => <ZoomIn />, []);
+  const zoomOutIcon = useMemo(() => <ZoomOut />, []);
+  const expandMoreIcon = useMemo(() => <ExpandMore />, []);
+  const expandLessIcon = useMemo(() => <ExpandLess />, []);
+  const nearMeIcon = useMemo(() => <NearMe fontSize="small" />, []);
+  const panToolIcon = useMemo(() => <PanTool fontSize="small" />, []);
+  const textFieldsIcon = useMemo(() => <TextFields fontSize="small" />, []);
+  const verticalAlignTopIcon = useMemo(() => <VerticalAlignTop />, []);
+  const verticalAlignCenterIcon = useMemo(() => <VerticalAlignCenter />, []);
+  const multipleStopIcon = useMemo(() => <MultipleStop />, []);
 
   useEffect(() => {
     const checkIfWrapped = () => {
@@ -115,6 +150,14 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
     onEvenSpacingVertical,
   } = alignProps || {};
 
+  // Memoize callbacks to prevent button re-renders
+  const handleToggleExpand = useCallback(() => setIsExpanded(!isExpanded), [isExpanded]);
+  const handleToggleButtonChange = useCallback((e, newTool) => {
+    if (newTool !== null) {
+      onToolChange(newTool);
+    }
+  }, [onToolChange]);
+
   return (
     <Card sx={{ px: 1, py: 0, mb: 0 }}>
       <Box sx={{ display: "flex", alignItems: "flex-start" }}>
@@ -133,27 +176,27 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
           {/* Main Controls */}
           <Button
             variant="outlined"
-            startIcon={<Upload />}
+            startIcon={uploadIcon}
             size="small"
             onClick={onUploadFloorPlan}
           >
             Upload Floor Plan
           </Button>
-          <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave}>
+          <Button variant="contained" startIcon={saveIcon} size="small" onClick={onSave}>
             Save Project
           </Button>
-          <Button variant="outlined" startIcon={<Download />} size="small" onClick={onExport}>
+          <Button variant="outlined" startIcon={downloadIcon} size="small" onClick={onExport}>
             Export
           </Button>
           <Button variant="outlined" size="small" onClick={onUndo} disabled={!canUndo}>
-            <Undo />
+            {undoIcon}
           </Button>
           <Button variant="outlined" size="small" onClick={onRedo} disabled={!canRedo}>
-            <Redo />
+            {redoIcon}
           </Button>
           <Button
             variant="outlined"
-            startIcon={<Straighten />}
+            startIcon={straightenIcon}
             size="small"
             onClick={onMeasure}
             minWidth={100}
@@ -168,47 +211,47 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
                 size="small"
                 onClick={onAlignLeft}
                 title="Align Left"
-                sx={{ transform: 'rotate(270deg)' }}
+                sx={rotate270Sx}
               >
-                <VerticalAlignTop />
+                {verticalAlignTopIcon}
               </IconButton>
               <IconButton
                 size="small"
                 onClick={onAlignHorizontalCenter}
                 title="Align Horizontal Centers"
-                sx={{ transform: 'rotate(90deg)' }}
+                sx={rotate90Sx}
               >
-                <VerticalAlignCenter />
+                {verticalAlignCenterIcon}
               </IconButton>
               <IconButton
                 size="small"
                 onClick={onAlignRight}
                 title="Align Right"
-                sx={{ transform: 'rotate(90deg)' }}
+                sx={rotate90Sx}
               >
-                <VerticalAlignTop />
+                {verticalAlignTopIcon}
               </IconButton>
               <IconButton
                 size="small"
                 onClick={onAlignTop}
                 title="Align Top"
               >
-                <VerticalAlignTop />
+                {verticalAlignTopIcon}
               </IconButton>
               <IconButton
                 size="small"
                 onClick={onAlignVerticalCenter}
                 title="Align Vertical Centers"
               >
-                <VerticalAlignCenter />
+                {verticalAlignCenterIcon}
               </IconButton>
               <IconButton
                 size="small"
                 onClick={onAlignBottom}
                 title="Align Bottom"
-                sx={{ transform: 'rotate(180deg)' }}
+                sx={rotate180Sx}
               >
-                <VerticalAlignTop />
+                {verticalAlignTopIcon}
               </IconButton>
             </>
           )}
@@ -221,15 +264,15 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
                 onClick={onEvenSpacingHorizontal}
                 title="Even Spacing Horizontal"
               >
-                <MultipleStop />
+                {multipleStopIcon}
               </IconButton>
               <IconButton
                 size="small"
                 onClick={onEvenSpacingVertical}
                 title="Even Spacing Vertical"
-                sx={{ transform: 'rotate(90deg)' }}
+                sx={rotate90Sx}
               >
-                <MultipleStop />
+                {multipleStopIcon}
               </IconButton>
             </>
           )}
@@ -243,7 +286,7 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
               <Button
                 variant="outlined"
                 color="error"
-                startIcon={<Close />}
+                startIcon={closeIcon}
                 onClick={onStopPlacement}
                 size="small"
               >
@@ -255,38 +298,28 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
               <ToggleButtonGroup
                 value={selectedTool}
                 exclusive
-                onChange={(e, newTool) => {
-                  if (newTool !== null) {
-                    onToolChange(newTool);
-                  }
-                }}
+                onChange={handleToggleButtonChange}
                 size="small"
-                sx={{
-                  "& .MuiToggleButton-root": {
-                    padding: "1px",
-                    minWidth: "30px",
-                    minHeight: "30px",
-                  },
-                }}
+                sx={toggleButtonSx}
               >
                 <ToggleButton value="select">
-                  <NearMe fontSize="small" />
+                  {nearMeIcon}
                 </ToggleButton>
                 <ToggleButton value="pan">
-                  <PanTool fontSize="small" />
+                  {panToolIcon}
                 </ToggleButton>
                 <ToggleButton value="connect">
-                  <Cable fontSize="small" />
+                  {cableIcon}
                 </ToggleButton>
                 <ToggleButton value="text">
-                  <TextFields fontSize="small" />
+                  {textFieldsIcon}
                 </ToggleButton>
               </ToggleButtonGroup>
               {selectedTool === "connect" && (
                 <Button
                   variant="outlined"
                   color="primary"
-                  startIcon={<Cable />}
+                  startIcon={cableIcon}
                   onClick={onDisconnectCable}
                   size="small"
                 >
@@ -315,15 +348,15 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
             Preview
           </Button>
           {/* Group zoom controls together so they don't separate when wrapping */}
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexShrink: 0 }}>
+          <Box sx={zoomBoxSx}>
             <IconButton size="small" onClick={onZoomOut}>
-              <ZoomOut />
+              {zoomOutIcon}
             </IconButton>
-            <Typography variant="body2" sx={{ maxWidth: 35, minWidth: 35, textAlign: "center" }}>
+            <Typography variant="body2" sx={zoomLevelSx}>
               {Math.round(zoomLevel * 100)}%
             </Typography>
             <IconButton size="small" onClick={onZoomIn}>
-              <ZoomIn />
+              {zoomInIcon}
             </IconButton>
           </Box>
           <Button variant="outlined" size="small" onClick={onResetView}>
@@ -333,15 +366,17 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
         {showCollapseButton && (
           <IconButton
             size="small"
-            onClick={() => setIsExpanded(!isExpanded)}
-            sx={{ ml: 1, my: 0.5, flexShrink: 0 }}
+            onClick={handleToggleExpand}
+            sx={collapseButtonSx}
           >
-            {isExpanded ? <ExpandLess /> : <ExpandMore />}
+            {isExpanded ? expandLessIcon : expandMoreIcon}
           </IconButton>
         )}
       </Box>
     </Card>
   );
-};
+});
+
+DesignerToolbarRow.displayName = "DesignerToolbarRow";
 
 export default DesignerToolbarRow;

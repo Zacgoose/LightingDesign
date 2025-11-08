@@ -1,4 +1,4 @@
-import React, { useState, memo, useMemo, useCallback } from "react";
+import React, { useState, memo, useMemo, useCallback, forwardRef } from "react";
 import {
   Box,
   Paper,
@@ -73,7 +73,7 @@ LayerItem.displayName = "LayerItem";
 /**
  * LayerSwitcher - UI component for managing and switching between floor layers
  */
-export const LayerSwitcher = memo(({
+export const LayerSwitcher = memo(forwardRef(({
   layers = [],
   activeLayerId,
   onLayerSelect,
@@ -81,7 +81,8 @@ export const LayerSwitcher = memo(({
   onLayerDelete,
   onClose,
   subLayerControlsRef,
-}) => {
+  top = 16,
+}, ref) => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [layerToDelete, setLayerToDelete] = useState(null);
@@ -89,14 +90,14 @@ export const LayerSwitcher = memo(({
   // Memoize stable sx objects to prevent re-renders
   const paperSx = useMemo(() => ({
     position: "absolute",
-    top: 16,
+    top: top,
     right: 16,
     width: 240,
     maxHeight: "180px",
     display: "flex",
     flexDirection: "column",
     zIndex: 1000,
-  }), []);
+  }), [top]);
 
   const headerBoxSx = useMemo(() => ({
     px: 1.5,
@@ -144,6 +145,7 @@ export const LayerSwitcher = memo(({
 
   return (
     <Paper
+      ref={ref}
       elevation={2}
       sx={paperSx}
     >
@@ -197,7 +199,7 @@ export const LayerSwitcher = memo(({
       />
     </Paper>
   );
-});
+}));
 
 LayerSwitcher.displayName = "LayerSwitcher";
 

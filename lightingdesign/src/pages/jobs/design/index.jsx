@@ -255,7 +255,14 @@ const Page = () => {
   const clipboard = useRef({ products: [], connectors: [] });
   const pendingInsertPosition = useRef(null);
   const subLayerControlsRef = useRef();
+  const layerSwitcherRef = useRef();
+  const productListPanelRef = useRef();
   const stageRef = useRef();
+
+  // State for dynamic panel positions
+  const [layerSwitcherTop, setLayerSwitcherTop] = useState(16);
+  const [subLayerControlsTop, setSubLayerControlsTop] = useState(200);
+  const [productListPanelTop, setProductListPanelTop] = useState(380);
 
   // Measurement state
   const [measureMode, setMeasureMode] = useState(false);
@@ -2476,6 +2483,58 @@ const Page = () => {
   // Memoize layer sublayers array to prevent re-renders
   const activeSublayers = useMemo(() => activeLayer?.sublayers || [], [activeLayer?.sublayers]);
   
+  // Calculate dynamic positions for panels based on actual heights
+  useEffect(() => {
+    if (!showLayers) {
+      // Reset to default positions when layers panel is hidden
+      setLayerSwitcherTop(16);
+      setSubLayerControlsTop(200);
+      setProductListPanelTop(380);
+      return;
+    }
+
+    const updatePanelPositions = () => {
+      const gap = 8; // Gap between panels
+      let currentTop = 16;
+
+      // LayerSwitcher is always first
+      setLayerSwitcherTop(currentTop);
+      
+      // Get LayerSwitcher height
+      const layerSwitcherHeight = layerSwitcherRef.current?.offsetHeight || 0;
+      currentTop += layerSwitcherHeight + gap;
+
+      // SubLayerControls comes next (only if sublayers exist)
+      if (activeSublayers.length > 0) {
+        setSubLayerControlsTop(currentTop);
+        const subLayerControlsHeight = subLayerControlsRef.current?.offsetHeight || 0;
+        currentTop += subLayerControlsHeight + gap;
+      }
+
+      // ProductListPanel comes last
+      setProductListPanelTop(currentTop);
+    };
+
+    // Use ResizeObserver to detect panel size changes
+    const resizeObserver = new ResizeObserver(() => {
+      updatePanelPositions();
+    });
+
+    if (layerSwitcherRef.current) {
+      resizeObserver.observe(layerSwitcherRef.current);
+    }
+    if (subLayerControlsRef.current) {
+      resizeObserver.observe(subLayerControlsRef.current);
+    }
+
+    // Initial calculation
+    updatePanelPositions();
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [showLayers, activeSublayers.length]);
+  
   // Memoize selected product for preview panel
   const selectedProduct = useMemo(() => {
     if (selectedIds.length === 1 && !selectedIds[0].startsWith("text-")) {
@@ -2870,6 +2929,7 @@ const Page = () => {
                   {showLayers && (
                     <>
                       <LayerSwitcher
+                        ref={layerSwitcherRef}
                         layers={layers}
                         activeLayerId={activeLayerId}
                         onLayerSelect={setActiveLayerId}
@@ -2877,6 +2937,7 @@ const Page = () => {
                         onLayerDelete={deleteLayer}
                         onClose={handleLayerClose}
                         subLayerControlsRef={subLayerControlsRef}
+                        top={layerSwitcherTop}
                       />
                       <SubLayerControls
                         ref={subLayerControlsRef}
@@ -2889,6 +2950,7 @@ const Page = () => {
                         onSublayerRename={renameSublayer}
                         onSetDefaultSublayer={setDefaultSublayer}
                         onClose={handleLayerClose}
+                        top={subLayerControlsTop}
                       />
                     </>
                   )}
@@ -2901,9 +2963,11 @@ const Page = () => {
 
                   {/* Product List Panel */}
                   <ProductListPanel
+                    ref={productListPanelRef}
                     products={products}
                     visible={showLayers}
                     activeLayerId={activeLayerId}
+                    top={productListPanelTop}
                   />
                 </Box>
               </CardContent>

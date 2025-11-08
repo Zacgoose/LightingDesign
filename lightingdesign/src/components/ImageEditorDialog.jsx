@@ -36,6 +36,8 @@ export const ImageEditorDialog = (props) => {
   const [completedCrop, setCompletedCrop] = useState();
   const [history, setHistory] = useState([]);
   const [historyStep, setHistoryStep] = useState(-1);
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+  const [showCursor, setShowCursor] = useState(false);
 
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
@@ -168,13 +170,56 @@ export const ImageEditorDialog = (props) => {
   const handleMouseDown = (e) => {
     console.log('[ImageEditor] Mouse down', { selectedTool, hasCanvas: !!canvasRef.current });
     if (!selectedTool || selectedTool === "crop") return;
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    // Start a new path for this stroke
+    const ctx = canvas.getContext("2d");
+    ctx.beginPath();
+    
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    ctx.moveTo(x, y);
+    
     setIsDrawing(true);
     draw(e);
   };
 
   const handleMouseMove = (e) => {
+    // Update cursor position for preview
+    if (selectedTool === "draw" || selectedTool === "erase") {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        setCursorPosition({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      }
+    }
+    
     if (!isDrawing) return;
     draw(e);
+  };
+
+  const handleMouseEnter = () => {
+    if (selectedTool === "draw" || selectedTool === "erase") {
+      setShowCursor(true);
+    }
+  };
+
+  const handleMouseLeaveCanvas = () => {
+    setShowCursor(false);
+    if (isDrawing) {
+      console.log('[ImageEditor] Drawing complete (mouse left canvas), saving to history');
+      setIsDrawing(false);
+      saveToHistory();
+    }
   };
 
   const handleMouseUp = () => {
@@ -198,16 +243,6 @@ export const ImageEditorDialog = (props) => {
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
 
-    console.log('[ImageEditor] Drawing at', { 
-      x, y, 
-      canvasWidth: canvas.width, 
-      canvasHeight: canvas.height,
-      rectWidth: rect.width,
-      rectHeight: rect.height,
-      scaleX,
-      scaleY
-    });
-
     const ctx = canvas.getContext("2d");
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -222,8 +257,6 @@ export const ImageEditorDialog = (props) => {
 
     ctx.lineTo(x, y);
     ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x, y);
   };
 
   const handleRotate = () => {
@@ -459,24 +492,39 @@ export const ImageEditorDialog = (props) => {
               )}
             </Box>
           ) : (
-            <canvas
-              ref={canvasRef}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              style={{
-                maxWidth: "100%",
-                maxHeight: "500px",
-                objectFit: "contain",
-                cursor:
-                  selectedTool === "draw"
-                    ? "crosshair"
-                    : selectedTool === "erase"
-                      ? "not-allowed"
-                      : "default",
-              }}
-            />
+            <Box sx={{ position: "relative" }}>
+              <canvas
+                ref={canvasRef}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeaveCanvas}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "500px",
+                  objectFit: "contain",
+                  cursor: "none", // Hide default cursor when using draw/erase tools
+                }}
+              />
+              {/* Custom cursor preview for brush/eraser */}
+              {showCursor && (selectedTool === "draw" || selectedTool === "erase") && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    left: cursorPosition.x,
+                    top: cursorPosition.y,
+                    width: `${brushSize}px`,
+                    height: `${brushSize}px`,
+                    border: selectedTool === "draw" ? "2px solid #000000" : "2px solid #ff0000",
+                    borderRadius: "50%",
+                    pointerEvents: "none",
+                    transform: "translate(-50%, -50%)",
+                    zIndex: 1000,
+                  }}
+                />
+              )}
+            </Box>
           )}
         </Paper>
       </DialogContent>

@@ -39,10 +39,22 @@ export const ImageEditorDialog = (props) => {
 
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
+  const canvasDataRef = useRef(null); // Store canvas data between re-renders
 
   // Load image and initialize canvas
   useEffect(() => {
-    if (!open || !imageUrl) return;
+    if (!open || !imageUrl) {
+      // Reset state when dialog closes
+      if (!open) {
+        setHistory([]);
+        setHistoryStep(-1);
+        setSelectedTool(null);
+        setCrop(undefined);
+        setCompletedCrop(undefined);
+        canvasDataRef.current = null;
+      }
+      return;
+    }
 
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -62,8 +74,12 @@ export const ImageEditorDialog = (props) => {
     const ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0);
 
-    // Save initial state to history
-    saveToHistory();
+    // Save initial state to history and cache
+    const imageData = canvas.toDataURL();
+    canvasDataRef.current = imageData;
+    
+    setHistory([imageData]);
+    setHistoryStep(0);
   };
 
   const saveToHistory = () => {
@@ -71,6 +87,8 @@ export const ImageEditorDialog = (props) => {
     if (!canvas) return;
 
     const imageData = canvas.toDataURL();
+    canvasDataRef.current = imageData; // Keep ref in sync
+    
     setHistory((prev) => {
       const newHistory = prev.slice(0, historyStep + 1);
       newHistory.push(imageData);
@@ -94,6 +112,9 @@ export const ImageEditorDialog = (props) => {
       
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
+      
+      // Update cached data
+      canvasDataRef.current = history[step];
     };
     img.src = history[step];
     setHistoryStep(step);
@@ -113,7 +134,30 @@ export const ImageEditorDialog = (props) => {
 
 
 
+  // Restore canvas content when canvas ref changes or when switching tools
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !canvasDataRef.current) return;
+
+    console.log('[ImageEditor] Restoring canvas from cached data');
+    const img = new Image();
+    img.onload = () => {
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+    };
+    img.src = canvasDataRef.current;
+  }, [selectedTool]);
+
   const handleToolChange = (event, newTool) => {
+    // Save current canvas state before switching tools
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvasDataRef.current = canvas.toDataURL();
+      console.log('[ImageEditor] Saved canvas data before tool change');
+    }
+    
     if (newTool === selectedTool) {
       setSelectedTool(null);
     } else {
@@ -122,6 +166,7 @@ export const ImageEditorDialog = (props) => {
   };
 
   const handleMouseDown = (e) => {
+    console.log('[ImageEditor] Mouse down', { selectedTool, hasCanvas: !!canvasRef.current });
     if (!selectedTool || selectedTool === "crop") return;
     setIsDrawing(true);
     draw(e);
@@ -134,6 +179,7 @@ export const ImageEditorDialog = (props) => {
 
   const handleMouseUp = () => {
     if (isDrawing) {
+      console.log('[ImageEditor] Drawing complete, saving to history');
       setIsDrawing(false);
       saveToHistory();
     }
@@ -141,13 +187,26 @@ export const ImageEditorDialog = (props) => {
 
   const draw = (e) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.error('[ImageEditor] Canvas ref is null in draw()');
+      return;
+    }
 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
+
+    console.log('[ImageEditor] Drawing at', { 
+      x, y, 
+      canvasWidth: canvas.width, 
+      canvasHeight: canvas.height,
+      rectWidth: rect.width,
+      rectHeight: rect.height,
+      scaleX,
+      scaleY
+    });
 
     const ctx = canvas.getContext("2d");
     ctx.lineCap = "round";
@@ -169,7 +228,15 @@ export const ImageEditorDialog = (props) => {
 
   const handleRotate = () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.error('[ImageEditor] Canvas ref is null in handleRotate()');
+      return;
+    }
+
+    console.log('[ImageEditor] Rotating image', { 
+      beforeWidth: canvas.width, 
+      beforeHeight: canvas.height 
+    });
 
     // Get current canvas content
     const tempCanvas = document.createElement('canvas');
@@ -192,12 +259,22 @@ export const ImageEditorDialog = (props) => {
     
     ctx.restore();
     
+    console.log('[ImageEditor] After rotation', { 
+      afterWidth: canvas.width, 
+      afterHeight: canvas.height 
+    });
+    
     saveToHistory();
   };
 
   const handleFlip = () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.error('[ImageEditor] Canvas ref is null in handleFlip()');
+      return;
+    }
+
+    console.log('[ImageEditor] Flipping image horizontally');
 
     // Get current canvas content
     const tempCanvas = document.createElement('canvas');
@@ -207,6 +284,7 @@ export const ImageEditorDialog = (props) => {
     tempCtx.drawImage(canvas, 0, 0);
 
     const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     
     // Flip horizontally
@@ -219,19 +297,35 @@ export const ImageEditorDialog = (props) => {
   };
 
   const handleCropComplete = useCallback(() => {
-    if (!completedCrop || !canvasRef.current) return;
+    if (!completedCrop || !canvasRef.current) {
+      console.log('[ImageEditor] Crop complete called but missing data', { 
+        hasCompletedCrop: !!completedCrop, 
+        hasCanvas: !!canvasRef.current 
+      });
+      return;
+    }
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    const imageData = ctx.getImageData(
-      completedCrop.x,
-      completedCrop.y,
-      completedCrop.width,
-      completedCrop.height,
-    );
+    
+    console.log('[ImageEditor] Cropping with coordinates', {
+      crop: completedCrop,
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height
+    });
+    
+    // ReactCrop returns pixel coordinates, but we need to ensure they're within bounds
+    const x = Math.max(0, Math.min(Math.floor(completedCrop.x), canvas.width - 1));
+    const y = Math.max(0, Math.min(Math.floor(completedCrop.y), canvas.height - 1));
+    const width = Math.max(1, Math.min(Math.floor(completedCrop.width), canvas.width - x));
+    const height = Math.max(1, Math.min(Math.floor(completedCrop.height), canvas.height - y));
+    
+    console.log('[ImageEditor] Adjusted crop coordinates', { x, y, width, height });
+    
+    const imageData = ctx.getImageData(x, y, width, height);
 
-    canvas.width = completedCrop.width;
-    canvas.height = completedCrop.height;
+    canvas.width = width;
+    canvas.height = height;
     ctx.putImageData(imageData, 0, 0);
 
     setCrop(undefined);

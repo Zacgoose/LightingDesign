@@ -8,6 +8,7 @@ export const TextLayer = memo(
     selectedIds = [],
     selectedTool,
     isMiddlePanning = false, // Add isMiddlePanning prop to disable dragging during middle mouse panning
+    isStageDragging = false, // Add isStageDragging prop to disable listening during canvas panning
     onTextSelect,
     onTextChange,
     onTextDragStart,
@@ -25,7 +26,7 @@ export const TextLayer = memo(
       .map((id) => id.substring(5)); // Remove 'text-' prefix
 
     // Determine if text boxes should listen to events
-    const shouldListen = (selectedTool === "select" || selectedTool === "text") && !isMiddlePanning;
+    const shouldListen = (selectedTool === "select" || selectedTool === "text") && !isMiddlePanning && !isStageDragging;
     // Text boxes are only draggable when they are in the selection group (with transformer)
     // Unselected text boxes are NOT draggable - they can only be selected by clicking
     const shouldBeDraggable = false;

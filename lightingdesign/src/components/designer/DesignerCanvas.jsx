@@ -17,6 +17,7 @@ export const DesignerCanvas = memo(
         gridSize = 100,
         scaleFactor = 100,
         onWheel,
+        onDragStart,
         onDragEnd,
         onMouseDown,
         onMouseUp,
@@ -34,6 +35,7 @@ export const DesignerCanvas = memo(
         gridOpacity,
         backgroundOpacity,
         onMiddlePanningChange, // Callback to notify parent of middle mouse panning state
+        onStageDraggingChange, // Callback to notify parent of stage dragging state
       },
       ref,
     ) => {
@@ -89,6 +91,17 @@ export const DesignerCanvas = memo(
       const [isMiddlePanning, setIsMiddlePanning] = useState(false);
       const [lastPanPos, setLastPanPos] = useState(null);
       const panStartPosRef = useState({ x: 0, y: 0 })[0];
+
+      // Stage dragging handlers
+      const handleStageDragStart = (e) => {
+        if (onStageDraggingChange) onStageDraggingChange(true);
+        if (onDragStart) onDragStart(e);
+      };
+
+      const handleStageDragEnd = (e) => {
+        if (onStageDraggingChange) onStageDraggingChange(false);
+        if (onDragEnd) onDragEnd(e);
+      };
 
       // Middle mouse down handler
       const handleStageMouseDown = (e) => {
@@ -165,7 +178,8 @@ export const DesignerCanvas = memo(
             y={stagePosition.y}
             draggable={draggable}
             onWheel={onWheel}
-            onDragEnd={onDragEnd}
+            onDragStart={handleStageDragStart}
+            onDragEnd={handleStageDragEnd}
             onMouseDown={handleStageMouseDown}
             onMouseUp={handleStageMouseUp}
             onTouchStart={onTouchStart}

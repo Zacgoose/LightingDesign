@@ -1,11 +1,12 @@
 import { Drawer, Box, IconButton, Typography, Divider } from "@mui/material";
+import { memo } from "react";
 import { CippPropertyListCard } from "../CippCards/CippPropertyListCard";
 import { getCippTranslation } from "../../utils/get-cipp-translation";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { useMediaQuery, Grid } from "@mui/system";
 import CloseIcon from "@mui/icons-material/Close";
 
-export const CippOffCanvas = (props) => {
+export const CippOffCanvas = memo((props) => {
   const {
     title = "Extended Info",
     visible,
@@ -163,4 +164,4 @@ export const CippOffCanvas = (props) => {
       </Drawer>
     </>
   );
-};
+});

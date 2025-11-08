@@ -274,6 +274,9 @@ const Page = () => {
   // Middle mouse panning state
   const [isMiddlePanning, setIsMiddlePanning] = useState(false);
 
+  // Stage dragging state (for canvas panning performance)
+  const [isStageDragging, setIsStageDragging] = useState(false);
+
   // Upload state for better UX
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
@@ -2529,27 +2532,31 @@ const Page = () => {
               alignProps={toolbarAlignProps}
             />
 
-            <Box sx={{ mb: 0.75 }}>
-              {/* Display API response messages */}
+            {/* Display API response messages - only render when mutation is active */}
+            {(saveDesignMutation.isFetching || 
+              saveDesignMutation.isSuccess || 
+              saveDesignMutation.isError) && (
               <CippApiResults
                 apiObject={saveDesignMutation}
                 floating={true}
                 autoCloseSeconds={5}
                 hideResultsButtons={true}
               />
+            )}
 
-              <ProductSelectionDrawer
-                onProductSelect={handleProductAdd}
-                visible={productDrawerVisible}
-                onOpen={() => setProductDrawerVisible(true)}
-                onClose={() => {
-                  setProductDrawerVisible(false);
-                  setSwapMode(false);
-                  setSwapAllSameMode(false);
-                  pendingInsertPosition.current = null;
-                }}
-              />
+            <ProductSelectionDrawer
+              onProductSelect={handleProductAdd}
+              visible={productDrawerVisible}
+              onOpen={() => setProductDrawerVisible(true)}
+              onClose={() => {
+                setProductDrawerVisible(false);
+                setSwapMode(false);
+                setSwapAllSameMode(false);
+                pendingInsertPosition.current = null;
+              }}
+            />
 
+            {productDetailsDrawerVisible && (
               <ProductDetailsDrawer
                 product={selectedProductForDetails}
                 visible={productDetailsDrawerVisible}
@@ -2558,7 +2565,7 @@ const Page = () => {
                   setSelectedProductForDetails(null);
                 }}
               />
-            </Box>
+            )}
 
             <Card sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
               <CardContent
@@ -2605,6 +2612,7 @@ const Page = () => {
                     scaleFactor={scaleFactor}
                     onPan={handleCanvasPan}
                     onMiddlePanningChange={setIsMiddlePanning}
+                    onStageDraggingChange={setIsStageDragging}
                     gridOpacity={settings.gridOpacity}
                     backgroundOpacity={settings.backgroundOpacity}
                     objectsChildren={
@@ -2618,6 +2626,8 @@ const Page = () => {
                           selectedConnectorIds={[]}
                           selectedTool={selectedTool}
                           theme={theme}
+                          isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
                           onConnectorSelect={handleConnectorSelect}
                           onConnectorChange={(updatedConnector) => {
                             // Merge the updated connector with the full connector list
@@ -2644,6 +2654,7 @@ const Page = () => {
                           placementMode={placementMode}
                           isDragging={isDragging}
                           isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
                           onProductClick={handleProductClick}
                           onProductDragStart={handleProductDragStart}
                           onProductDragEnd={handleProductDragEnd}
@@ -2715,6 +2726,7 @@ const Page = () => {
                           selectedIds={selectedIds}
                           selectedTool={selectedTool}
                           isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
                           onTextSelect={handleTextSelect}
                           onTextChange={handleTextChange}
                           onTextDoubleClick={handleTextDoubleClick}
@@ -2732,6 +2744,8 @@ const Page = () => {
                             selectedConnectorIds={selectedConnectorIds}
                             selectedTool={selectedTool}
                             theme={theme}
+                            isMiddlePanning={isMiddlePanning}
+                            isStageDragging={isStageDragging}
                             onConnectorSelect={handleConnectorSelect}
                             onConnectorChange={(updatedConnector) => {
                               // Merge the updated connector with the full connector list
@@ -2776,6 +2790,7 @@ const Page = () => {
                           placementMode={placementMode}
                           isDragging={isDragging}
                           isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
                           onProductClick={handleProductClick}
                           onProductDragStart={handleProductDragStart}
                           onProductDragEnd={handleProductDragEnd}
@@ -2807,6 +2822,7 @@ const Page = () => {
                           placementMode={placementMode}
                           isDragging={isDragging}
                           isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
                           onProductClick={handleProductClick}
                           onProductDragStart={handleProductDragStart}
                           onProductDragEnd={handleProductDragEnd}
@@ -2826,15 +2842,17 @@ const Page = () => {
                     }
                   />
 
-                  {/* Text entry dialog */}
-                  <TextEntryDialog
-                    open={textDialogOpen}
-                    onClose={handleTextDialogClose}
-                    onConfirm={handleTextDialogConfirm}
-                    title="Enter Text"
-                    defaultValue={textDialogValue}
-                    defaultFormatting={textDialogFormatting}
-                  />
+                  {/* Text entry dialog - only render when open */}
+                  {textDialogOpen && (
+                    <TextEntryDialog
+                      open={textDialogOpen}
+                      onClose={handleTextDialogClose}
+                      onConfirm={handleTextDialogConfirm}
+                      title="Enter Text"
+                      defaultValue={textDialogValue}
+                      defaultFormatting={textDialogFormatting}
+                    />
+                  )}
 
                   {/* Inline measurement confirmation */}
                   <MeasurementConfirmation
@@ -2894,103 +2912,114 @@ const Page = () => {
         </Box>
       )}
 
-      <ContextMenus
-        contextMenu={contextMenus.contextMenu}
-        onClose={contextMenus.handleCloseContextMenu}
-        onDuplicate={contextMenus.handleDuplicateSelected}
-        onOpenColorPicker={contextMenus.handleOpenColorPicker}
-        onResetScale={handleResetScale}
-        onDelete={contextMenus.handleDeleteSelected}
-        onInsertProduct={contextMenus.handleInsertProductAtPosition}
-        onSwapPlacementProduct={handleSwapPlacementProduct}
-        onSwapProduct={handleSwapSelectedProducts}
-        onSwapAllSameProducts={handleSwapAllSameProducts}
-        onScale={handleOpenScaleDialog}
-        onChangeQuantity={handleOpenQuantityDialog}
-        onAssignToSublayer={handleAssignToSublayer}
-        onShowProperties={handleShowProperties}
-        onInsertCustomObject={handleInsertCustomObject}
-        sublayers={activeLayer?.sublayers || []}
-        selectedProductsCount={selectedIds.length}
-        selectedConnectorsCount={selectedConnectorIds.length}
-        onTextEdit={handleTextEdit}
-        onTextFormatBold={handleTextFormatBold}
-        onTextFormatItalic={handleTextFormatItalic}
-        onTextFormatUnderline={handleTextFormatUnderline}
-        onTextFontSize={handleTextFontSize}
-        onTextToggleBorder={handleTextToggleBorder}
-        onResetConnectorToStraight={contextMenus.handleResetConnectorToStraight}
-        onAlignHorizontalCenter={contextMenus.handleAlignHorizontalCenter}
-        onAlignVerticalCenter={contextMenus.handleAlignVerticalCenter}
-        onAlignLeft={contextMenus.handleAlignLeft}
-        onAlignRight={contextMenus.handleAlignRight}
-        onAlignTop={contextMenus.handleAlignTop}
-        onAlignBottom={contextMenus.handleAlignBottom}
-        onEvenSpacingHorizontal={contextMenus.handleEvenSpacingHorizontal}
-        onEvenSpacingVertical={contextMenus.handleEvenSpacingVertical}
-      />
-
-      <CippComponentDialog
-        open={scaleDialogOpen}
-        title="Set Scale"
-        createDialog={{
-          open: scaleDialogOpen,
-          handleClose: () => setScaleDialogOpen(false),
-          handleSubmit: (data) => {
-            handleScaleConfirm(data.scale);
-            setScaleValue(data.scale);
-          },
-          form: scaleForm,
-        }}
-      >
-        <TextField
-          {...scaleForm.register("scale", {
-            onChange: handleScaleChange,
-          })}
-          label="Scale"
-          type="number"
-          defaultValue={scaleValue}
-          fullWidth
-          inputProps={{ min: 0.001, step: 0.001 }}
-          autoFocus
+      {contextMenus.contextMenu && (
+        <ContextMenus
+          contextMenu={contextMenus.contextMenu}
+          onClose={contextMenus.handleCloseContextMenu}
+          onDuplicate={contextMenus.handleDuplicateSelected}
+          onOpenColorPicker={contextMenus.handleOpenColorPicker}
+          onResetScale={handleResetScale}
+          onDelete={contextMenus.handleDeleteSelected}
+          onInsertProduct={contextMenus.handleInsertProductAtPosition}
+          onSwapPlacementProduct={handleSwapPlacementProduct}
+          onSwapProduct={handleSwapSelectedProducts}
+          onSwapAllSameProducts={handleSwapAllSameProducts}
+          onScale={handleOpenScaleDialog}
+          onChangeQuantity={handleOpenQuantityDialog}
+          onAssignToSublayer={handleAssignToSublayer}
+          onShowProperties={handleShowProperties}
+          onInsertCustomObject={handleInsertCustomObject}
+          sublayers={activeLayer?.sublayers || []}
+          selectedProductsCount={selectedIds.length}
+          selectedConnectorsCount={selectedConnectorIds.length}
+          onTextEdit={handleTextEdit}
+          onTextFormatBold={handleTextFormatBold}
+          onTextFormatItalic={handleTextFormatItalic}
+          onTextFormatUnderline={handleTextFormatUnderline}
+          onTextFontSize={handleTextFontSize}
+          onTextToggleBorder={handleTextToggleBorder}
+          onResetConnectorToStraight={contextMenus.handleResetConnectorToStraight}
+          onAlignHorizontalCenter={contextMenus.handleAlignHorizontalCenter}
+          onAlignVerticalCenter={contextMenus.handleAlignVerticalCenter}
+          onAlignLeft={contextMenus.handleAlignLeft}
+          onAlignRight={contextMenus.handleAlignRight}
+          onAlignTop={contextMenus.handleAlignTop}
+          onAlignBottom={contextMenus.handleAlignBottom}
+          onEvenSpacingHorizontal={contextMenus.handleEvenSpacingHorizontal}
+          onEvenSpacingVertical={contextMenus.handleEvenSpacingVertical}
         />
-      </CippComponentDialog>
+      )}
 
-      <CippComponentDialog
-        open={quantityDialogOpen}
-        title="Set Quantity"
-        createDialog={{
-          open: quantityDialogOpen,
-          handleClose: () => setQuantityDialogOpen(false),
-          handleSubmit: (data) => {
-            handleQuantityConfirm(data.quantity);
-            setQuantityValue(data.quantity);
-          },
-          form: quantityForm,
-        }}
-      >
-        <TextField
-          {...quantityForm.register("quantity", {
-            onChange: handleQuantityChange,
-          })}
-          label="Quantity"
-          type="number"
-          defaultValue={quantityValue}
-          fullWidth
-          inputProps={{ min: 1, step: 1 }}
-          autoFocus
-          helperText="Set the quantity for the selected product(s). This allows you to place multiple items without rendering them all."
+      {/* Scale dialog - only render when open */}
+      {scaleDialogOpen && (
+        <CippComponentDialog
+          open={scaleDialogOpen}
+          title="Set Scale"
+          createDialog={{
+            open: scaleDialogOpen,
+            handleClose: () => setScaleDialogOpen(false),
+            handleSubmit: (data) => {
+              handleScaleConfirm(data.scale);
+              setScaleValue(data.scale);
+            },
+            form: scaleForm,
+          }}
+        >
+          <TextField
+            {...scaleForm.register("scale", {
+              onChange: handleScaleChange,
+            })}
+            label="Scale"
+            type="number"
+            defaultValue={scaleValue}
+            fullWidth
+            inputProps={{ min: 0.001, step: 0.001 }}
+            autoFocus
+          />
+        </CippComponentDialog>
+      )}
+
+      {/* Quantity dialog - only render when open */}
+      {quantityDialogOpen && (
+        <CippComponentDialog
+          open={quantityDialogOpen}
+          title="Set Quantity"
+          createDialog={{
+            open: quantityDialogOpen,
+            handleClose: () => setQuantityDialogOpen(false),
+            handleSubmit: (data) => {
+              handleQuantityConfirm(data.quantity);
+              setQuantityValue(data.quantity);
+            },
+            form: quantityForm,
+          }}
+        >
+          <TextField
+            {...quantityForm.register("quantity", {
+              onChange: handleQuantityChange,
+            })}
+            label="Quantity"
+            type="number"
+            defaultValue={quantityValue}
+            fullWidth
+            inputProps={{ min: 1, step: 1 }}
+            autoFocus
+            helperText="Set the quantity for the selected product(s). This allows you to place multiple items without rendering them all."
+          />
+        </CippComponentDialog>
+      )}
+
+      {/* Color picker popover - only render when open */}
+      {contextMenus.colorPickerAnchor && (
+        <ColorPickerPopover
+          anchorEl={contextMenus.colorPickerAnchor}
+          onClose={() => {
+            contextMenus.setColorPickerAnchor(null);
+            contextMenus.setColorPickerTarget(null);
+          }}
+          onColorChange={contextMenus.handleColorChange}
         />
-      </CippComponentDialog>
-
-      <ColorPickerPopover
-        anchorEl={contextMenus.colorPickerAnchor}
-        onClose={() => {
-          contextMenus.setColorPickerAnchor(null);
-          contextMenus.setColorPickerTarget(null);
-        }}
-        onColorChange={contextMenus.handleColorChange}
-      />
+      )}
     </>
   );
 };

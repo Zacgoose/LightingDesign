@@ -1,0 +1,351 @@
+import { useState, useRef, useEffect } from "react";
+import PropTypes from "prop-types";
+import { fabric } from "fabric";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Box,
+  IconButton,
+  ToggleButtonGroup,
+  ToggleButton,
+  Typography,
+  Stack,
+  Slider,
+  Paper,
+} from "@mui/material";
+import {
+  Brush,
+  Delete as EraseIcon,
+  Crop,
+  Rotate90DegreesCcw,
+  Flip,
+  Undo,
+  Redo,
+  ZoomIn,
+  ZoomOut,
+  CenterFocusStrong,
+} from "@mui/icons-material";
+
+export const ImageEditorDialogFabric = (props) => {
+  const { onClose, onSave, open = false, imageUrl, ...other } = props;
+  const [selectedTool, setSelectedTool] = useState("erase");
+  const [brushSize, setBrushSize] = useState(10);
+  const [history, setHistory] = useState([]);
+  const [historyStep, setHistoryStep] = useState(-1);
+
+  const canvasRef = useRef(null);
+  const fabricCanvasRef = useRef(null);
+  const backgroundImageRef = useRef(null);
+
+  // Initialize Fabric.js canvas
+  useEffect(() => {
+    if (!open || !imageUrl) return;
+
+    const canvas = new fabric.Canvas(canvasRef.current, {
+      width: 800,
+      height: 600,
+      backgroundColor: "#f5f5f5",
+    });
+
+    fabricCanvasRef.current = canvas;
+
+    // Load background image
+    fabric.Image.fromURL(imageUrl, (img) => {
+      const scale = Math.min(
+        canvas.width / img.width,
+        canvas.height / img.height
+      );
+      img.set({
+        scaleX: scale,
+        scaleY: scale,
+        left: canvas.width / 2,
+        top: canvas.height / 2,
+        originX: "center",
+        originY: "center",
+        selectable: false,
+        evented: false,
+      });
+      
+      backgroundImageRef.current = img;
+      canvas.add(img);
+      canvas.sendToBack(img);
+      saveToHistory();
+    }, { crossOrigin: "anonymous" });
+
+    // Set up drawing mode
+    canvas.isDrawingMode = true;
+    canvas.freeDrawingBrush.width = brushSize;
+    canvas.freeDrawingBrush.color = "rgba(0, 0, 0, 1)";
+
+    // Save to history after drawing
+    canvas.on("path:created", () => {
+      saveToHistory();
+    });
+
+    return () => {
+      canvas.dispose();
+      fabricCanvasRef.current = null;
+    };
+  }, [open, imageUrl]);
+
+  // Update tool mode
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    if (selectedTool === "draw") {
+      canvas.isDrawingMode = true;
+      canvas.freeDrawingBrush.width = brushSize;
+      canvas.freeDrawingBrush.color = "rgba(0, 0, 0, 1)";
+    } else if (selectedTool === "erase") {
+      canvas.isDrawingMode = true;
+      canvas.freeDrawingBrush.width = brushSize;
+      // Eraser mode using destination-out
+      const eraser = new fabric.EraserBrush(canvas);
+      eraser.width = brushSize;
+      canvas.freeDrawingBrush = eraser;
+    } else {
+      canvas.isDrawingMode = false;
+    }
+  }, [selectedTool, brushSize]);
+
+  // Update brush size
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !canvas.freeDrawingBrush) return;
+    canvas.freeDrawingBrush.width = brushSize;
+  }, [brushSize]);
+
+  const saveToHistory = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    const json = JSON.stringify(canvas.toJSON());
+    setHistory((prev) => {
+      const newHistory = prev.slice(0, historyStep + 1);
+      newHistory.push(json);
+      return newHistory;
+    });
+    setHistoryStep((prev) => prev + 1);
+  };
+
+  const handleUndo = () => {
+    if (historyStep <= 0) return;
+    
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    const newStep = historyStep - 1;
+    setHistoryStep(newStep);
+    
+    canvas.loadFromJSON(history[newStep], () => {
+      canvas.renderAll();
+    });
+  };
+
+  const handleRedo = () => {
+    if (historyStep >= history.length - 1) return;
+    
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    const newStep = historyStep + 1;
+    setHistoryStep(newStep);
+    
+    canvas.loadFromJSON(history[newStep], () => {
+      canvas.renderAll();
+    });
+  };
+
+  const handleRotate = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !backgroundImageRef.current) return;
+
+    const img = backgroundImageRef.current;
+    const currentAngle = img.angle || 0;
+    img.rotate(currentAngle + 90);
+    canvas.renderAll();
+    saveToHistory();
+  };
+
+  const handleFlip = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !backgroundImageRef.current) return;
+
+    const img = backgroundImageRef.current;
+    img.set("flipX", !img.flipX);
+    canvas.renderAll();
+    saveToHistory();
+  };
+
+  const handleZoomIn = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    const zoom = canvas.getZoom();
+    canvas.setZoom(zoom * 1.1);
+  };
+
+  const handleZoomOut = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    const zoom = canvas.getZoom();
+    canvas.setZoom(zoom * 0.9);
+  };
+
+  const handleResetView = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    canvas.setZoom(1);
+    canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
+    canvas.renderAll();
+  };
+
+  const handleSave = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    // Export canvas as image
+    const dataUrl = canvas.toDataURL({
+      format: "png",
+      quality: 1,
+    });
+
+    onSave(dataUrl);
+    onClose();
+  };
+
+  const handleToolChange = (event, newTool) => {
+    if (newTool === selectedTool) {
+      setSelectedTool(null);
+    } else {
+      setSelectedTool(newTool);
+    }
+  };
+
+  return (
+    <Dialog
+      onClose={onClose}
+      open={open}
+      maxWidth="xl"
+      fullWidth
+      PaperProps={{
+        sx: {
+          minHeight: "95vh",
+          maxHeight: "95vh",
+          m: 1,
+        },
+      }}
+      {...other}
+    >
+      <DialogTitle>
+        <Stack spacing={2}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">Edit Background Image</Typography>
+            <Stack direction="row" spacing={1}>
+              <IconButton
+                onClick={handleUndo}
+                disabled={historyStep <= 0}
+                aria-label="undo"
+                size="small"
+              >
+                <Undo />
+              </IconButton>
+              <IconButton
+                onClick={handleRedo}
+                disabled={historyStep >= history.length - 1}
+                aria-label="redo"
+                size="small"
+              >
+                <Redo />
+              </IconButton>
+            </Stack>
+          </Stack>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+            <ToggleButtonGroup
+              value={selectedTool}
+              exclusive
+              onChange={handleToolChange}
+              size="small"
+              aria-label="image editing tools"
+            >
+              <ToggleButton value="draw" aria-label="draw">
+                <Brush fontSize="small" />
+              </ToggleButton>
+              <ToggleButton value="erase" aria-label="erase">
+                <EraseIcon fontSize="small" />
+              </ToggleButton>
+            </ToggleButtonGroup>
+            {(selectedTool === "draw" || selectedTool === "erase") && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, minWidth: 200 }}>
+                <Typography variant="caption">Brush Size:</Typography>
+                <Slider
+                  value={brushSize}
+                  onChange={(e, value) => setBrushSize(value)}
+                  min={1}
+                  max={50}
+                  valueLabelDisplay="auto"
+                  size="small"
+                />
+              </Box>
+            )}
+            <Stack direction="row" spacing={1} alignItems="center">
+              <IconButton onClick={handleRotate} aria-label="rotate" size="small">
+                <Rotate90DegreesCcw />
+              </IconButton>
+              <IconButton onClick={handleFlip} aria-label="flip" size="small">
+                <Flip />
+              </IconButton>
+              <IconButton onClick={handleZoomIn} aria-label="zoom in" size="small">
+                <ZoomIn />
+              </IconButton>
+              <IconButton onClick={handleZoomOut} aria-label="zoom out" size="small">
+                <ZoomOut />
+              </IconButton>
+              <IconButton onClick={handleResetView} aria-label="reset view" size="small">
+                <CenterFocusStrong />
+              </IconButton>
+            </Stack>
+          </Stack>
+        </Stack>
+      </DialogTitle>
+      <DialogContent>
+        <Paper
+          elevation={0}
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "calc(95vh - 200px)",
+            backgroundColor: "#f5f5f5",
+            p: 2,
+          }}
+        >
+          <canvas ref={canvasRef} />
+        </Paper>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="inherit">
+          Cancel
+        </Button>
+        <Button onClick={handleSave} variant="contained" color="primary">
+          Save Changes
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+ImageEditorDialogFabric.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  open: PropTypes.bool,
+  imageUrl: PropTypes.string,
+};
+
+export default ImageEditorDialogFabric;

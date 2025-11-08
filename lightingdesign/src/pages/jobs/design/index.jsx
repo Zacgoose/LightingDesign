@@ -34,6 +34,7 @@ import { TextLayer } from "/src/components/designer/TextLayer";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
 import { TextEntryDialog } from "/src/components/designer/TextEntryDialog";
 import { ImageEditorDialog } from "/src/components/ImageEditorDialog";
+import { ImageEditorDialogFabric } from "/src/components/ImageEditorDialogFabric";
 import { useHistory } from "/src/hooks/useHistory";
 import { useUnifiedHistory } from "/src/hooks/useUnifiedHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
@@ -2842,7 +2843,7 @@ const Page = () => {
                   />
 
                   {/* Image editor dialog */}
-                  <ImageEditorDialog
+                  <ImageEditorDialogFabric
                     open={imageEditorOpen}
                     onClose={() => {
                       setImageEditorOpen(false);

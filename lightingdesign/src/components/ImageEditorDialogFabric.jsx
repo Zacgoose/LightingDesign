@@ -55,6 +55,7 @@ export const ImageEditorDialogFabric = (props) => {
     // Load background image using v6 API
     FabricImage.fromURL(imageUrl, { crossOrigin: "anonymous" })
       .then((img) => {
+        console.log("Image loaded:", img.width, img.height);
         const scale = Math.min(
           canvas.width / img.width,
           canvas.height / img.height
@@ -73,27 +74,43 @@ export const ImageEditorDialogFabric = (props) => {
         backgroundImageRef.current = img;
         canvas.add(img);
         canvas.sendObjectToBack(img);
-        saveToHistory();
+        canvas.renderAll();
+        
+        // Save initial state to history
+        const json = JSON.stringify(canvas.toJSON());
+        setHistory([json]);
+        setHistoryStep(0);
+        
+        console.log("Canvas initialized with image");
       })
       .catch((err) => {
         console.error("Error loading image:", err);
       });
 
-    // Set up drawing mode
+    // Set up drawing mode for eraser (default tool)
     canvas.isDrawingMode = true;
-    const pencilBrush = new PencilBrush(canvas);
-    pencilBrush.width = brushSize;
-    pencilBrush.color = "rgba(0, 0, 0, 1)";
-    canvas.freeDrawingBrush = pencilBrush;
+    const eraserBrush = new PencilBrush(canvas);
+    eraserBrush.width = brushSize;
+    eraserBrush.color = "rgba(255, 255, 255, 1)";
+    eraserBrush.globalCompositeOperation = "destination-out";
+    canvas.freeDrawingBrush = eraserBrush;
 
     // Save to history after drawing
     canvas.on("path:created", () => {
-      saveToHistory();
+      const json = JSON.stringify(canvas.toJSON());
+      setHistory((prev) => {
+        const currentStep = historyStep;
+        const newHistory = prev.slice(0, currentStep + 1);
+        newHistory.push(json);
+        return newHistory;
+      });
+      setHistoryStep((prev) => prev + 1);
     });
 
     return () => {
       canvas.dispose();
       fabricCanvasRef.current = null;
+      backgroundImageRef.current = null;
     };
   }, [open, imageUrl]);
 

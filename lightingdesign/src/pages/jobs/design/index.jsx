@@ -2533,13 +2533,17 @@ const Page = () => {
             />
 
             <Box sx={{ mb: 0.75 }}>
-              {/* Display API response messages */}
-              <CippApiResults
-                apiObject={saveDesignMutation}
-                floating={true}
-                autoCloseSeconds={5}
-                hideResultsButtons={true}
-              />
+              {/* Display API response messages - only render when mutation is active */}
+              {(saveDesignMutation.isFetching || 
+                saveDesignMutation.isSuccess || 
+                saveDesignMutation.isError) && (
+                <CippApiResults
+                  apiObject={saveDesignMutation}
+                  floating={true}
+                  autoCloseSeconds={5}
+                  hideResultsButtons={true}
+                />
+              )}
 
               <ProductSelectionDrawer
                 onProductSelect={handleProductAdd}

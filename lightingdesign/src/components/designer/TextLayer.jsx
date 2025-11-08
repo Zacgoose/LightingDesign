@@ -44,7 +44,10 @@ export const TextLayer = memo(
               isInGroup={isInGroup}
               listening={shouldListen}
               onSelect={(e) => {
-                e.cancelBubble = true;
+                // Don't cancel bubble for middle mouse - let it propagate to Stage for panning
+                if (e.evt.button !== 1) {
+                  e.cancelBubble = true;
+                }
                 onTextSelect(e, textBox.id);
               }}
               onChange={onTextChange}

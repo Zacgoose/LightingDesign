@@ -147,8 +147,6 @@ export const LayerSwitcher = memo(({
       elevation={2}
       sx={paperSx}
     >
-      sx={paperSx}
-    >
       <Box
         sx={headerBoxSx}
       >

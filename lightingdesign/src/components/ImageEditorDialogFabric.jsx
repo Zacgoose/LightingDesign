@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
-import { Canvas, FabricImage, PencilBrush, EraserBrush } from "fabric";
+import { Canvas, FabricImage, PencilBrush } from "fabric";
 import {
   Dialog,
   DialogTitle,
@@ -110,8 +110,11 @@ export const ImageEditorDialogFabric = (props) => {
       canvas.freeDrawingBrush = pencilBrush;
     } else if (selectedTool === "erase") {
       canvas.isDrawingMode = true;
-      const eraserBrush = new EraserBrush(canvas);
+      // Use PencilBrush with destination-out composite operation for erasing
+      const eraserBrush = new PencilBrush(canvas);
       eraserBrush.width = brushSize;
+      eraserBrush.color = "rgba(255, 255, 255, 1)"; // Color doesn't matter for destination-out
+      eraserBrush.globalCompositeOperation = "destination-out";
       canvas.freeDrawingBrush = eraserBrush;
     } else {
       canvas.isDrawingMode = false;

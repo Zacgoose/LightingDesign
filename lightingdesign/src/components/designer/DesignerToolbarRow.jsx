@@ -7,7 +7,7 @@ import {
   ToggleButton,
   Typography,
 } from "@mui/material";
-import { useState, useEffect, useRef, memo } from "react";
+import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
 import {
   ExpandMore,
   ExpandLess,
@@ -33,6 +33,21 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
   const [isExpanded, setIsExpanded] = useState(true);
   const [showCollapseButton, setShowCollapseButton] = useState(false);
   const containerRef = useRef(null);
+
+  // Memoize stable sx objects to prevent button re-renders
+  const rotate270Sx = useMemo(() => ({ transform: 'rotate(270deg)' }), []);
+  const rotate90Sx = useMemo(() => ({ transform: 'rotate(90deg)' }), []);
+  const rotate180Sx = useMemo(() => ({ transform: 'rotate(180deg)' }), []);
+  const toggleButtonSx = useMemo(() => ({
+    "& .MuiToggleButton-root": {
+      padding: "1px",
+      minWidth: "30px",
+      minHeight: "30px",
+    },
+  }), []);
+  const zoomBoxSx = useMemo(() => ({ display: "flex", gap: 1, alignItems: "center", flexShrink: 0 }), []);
+  const zoomLevelSx = useMemo(() => ({ maxWidth: 35, minWidth: 35, textAlign: "center" }), []);
+  const collapseButtonSx = useMemo(() => ({ ml: 1, my: 0.5, flexShrink: 0 }), []);
 
   useEffect(() => {
     const checkIfWrapped = () => {
@@ -115,6 +130,14 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
     onEvenSpacingVertical,
   } = alignProps || {};
 
+  // Memoize callbacks to prevent button re-renders
+  const handleToggleExpand = useCallback(() => setIsExpanded(!isExpanded), [isExpanded]);
+  const handleToggleButtonChange = useCallback((e, newTool) => {
+    if (newTool !== null) {
+      onToolChange(newTool);
+    }
+  }, [onToolChange]);
+
   return (
     <Card sx={{ px: 1, py: 0, mb: 0 }}>
       <Box sx={{ display: "flex", alignItems: "flex-start" }}>
@@ -168,7 +191,7 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
                 size="small"
                 onClick={onAlignLeft}
                 title="Align Left"
-                sx={{ transform: 'rotate(270deg)' }}
+                sx={rotate270Sx}
               >
                 <VerticalAlignTop />
               </IconButton>
@@ -176,7 +199,7 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
                 size="small"
                 onClick={onAlignHorizontalCenter}
                 title="Align Horizontal Centers"
-                sx={{ transform: 'rotate(90deg)' }}
+                sx={rotate90Sx}
               >
                 <VerticalAlignCenter />
               </IconButton>
@@ -184,7 +207,7 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
                 size="small"
                 onClick={onAlignRight}
                 title="Align Right"
-                sx={{ transform: 'rotate(90deg)' }}
+                sx={rotate90Sx}
               >
                 <VerticalAlignTop />
               </IconButton>
@@ -206,7 +229,7 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
                 size="small"
                 onClick={onAlignBottom}
                 title="Align Bottom"
-                sx={{ transform: 'rotate(180deg)' }}
+                sx={rotate180Sx}
               >
                 <VerticalAlignTop />
               </IconButton>
@@ -227,7 +250,7 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
                 size="small"
                 onClick={onEvenSpacingVertical}
                 title="Even Spacing Vertical"
-                sx={{ transform: 'rotate(90deg)' }}
+                sx={rotate90Sx}
               >
                 <MultipleStop />
               </IconButton>
@@ -255,19 +278,9 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
               <ToggleButtonGroup
                 value={selectedTool}
                 exclusive
-                onChange={(e, newTool) => {
-                  if (newTool !== null) {
-                    onToolChange(newTool);
-                  }
-                }}
+                onChange={handleToggleButtonChange}
                 size="small"
-                sx={{
-                  "& .MuiToggleButton-root": {
-                    padding: "1px",
-                    minWidth: "30px",
-                    minHeight: "30px",
-                  },
-                }}
+                sx={toggleButtonSx}
               >
                 <ToggleButton value="select">
                   <NearMe fontSize="small" />
@@ -315,11 +328,11 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
             Preview
           </Button>
           {/* Group zoom controls together so they don't separate when wrapping */}
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexShrink: 0 }}>
+          <Box sx={zoomBoxSx}>
             <IconButton size="small" onClick={onZoomOut}>
               <ZoomOut />
             </IconButton>
-            <Typography variant="body2" sx={{ maxWidth: 35, minWidth: 35, textAlign: "center" }}>
+            <Typography variant="body2" sx={zoomLevelSx}>
               {Math.round(zoomLevel * 100)}%
             </Typography>
             <IconButton size="small" onClick={onZoomIn}>
@@ -333,8 +346,8 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
         {showCollapseButton && (
           <IconButton
             size="small"
-            onClick={() => setIsExpanded(!isExpanded)}
-            sx={{ ml: 1, my: 0.5, flexShrink: 0 }}
+            onClick={handleToggleExpand}
+            sx={collapseButtonSx}
           >
             {isExpanded ? <ExpandLess /> : <ExpandMore />}
           </IconButton>

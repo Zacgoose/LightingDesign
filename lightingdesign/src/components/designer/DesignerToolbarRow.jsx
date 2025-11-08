@@ -348,6 +348,51 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
       </Box>
     </Card>
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  // Only re-render if values that affect the UI actually change
+  
+  // Compare mainProps
+  if (prevProps.mainProps !== nextProps.mainProps) {
+    const prev = prevProps.mainProps || {};
+    const next = nextProps.mainProps || {};
+    if (prev.canUndo !== next.canUndo || prev.canRedo !== next.canRedo) {
+      return false; // Props changed, should re-render
+    }
+  }
+  
+  // Compare toolsProps
+  if (prevProps.toolsProps !== nextProps.toolsProps) {
+    const prev = prevProps.toolsProps || {};
+    const next = nextProps.toolsProps || {};
+    if (prev.selectedTool !== next.selectedTool || 
+        prev.placementMode !== next.placementMode) {
+      return false; // Props changed, should re-render
+    }
+  }
+  
+  // Compare viewProps
+  if (prevProps.viewProps !== nextProps.viewProps) {
+    const prev = prevProps.viewProps || {};
+    const next = nextProps.viewProps || {};
+    if (prev.showGrid !== next.showGrid || 
+        prev.showLayers !== next.showLayers ||
+        prev.showPreview !== next.showPreview ||
+        Math.abs(prev.zoomLevel - next.zoomLevel) > 0.01) {
+      return false; // Props changed, should re-render
+    }
+  }
+  
+  // Compare alignProps
+  if (prevProps.alignProps !== nextProps.alignProps) {
+    const prev = prevProps.alignProps || {};
+    const next = nextProps.alignProps || {};
+    if (prev.selectedCount !== next.selectedCount) {
+      return false; // Props changed, should re-render
+    }
+  }
+  
+  return true; // Props are effectively the same, skip re-render
 });
 
 DesignerToolbarRow.displayName = "DesignerToolbarRow";

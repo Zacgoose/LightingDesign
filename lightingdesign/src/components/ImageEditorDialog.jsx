@@ -34,15 +34,11 @@ export const ImageEditorDialog = (props) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [crop, setCrop] = useState();
   const [completedCrop, setCompletedCrop] = useState();
-  const [rotation, setRotation] = useState(0);
-  const [flipH, setFlipH] = useState(false);
   const [history, setHistory] = useState([]);
   const [historyStep, setHistoryStep] = useState(-1);
 
   const canvasRef = useRef(null);
-  const displayCanvasRef = useRef(null);
   const imageRef = useRef(null);
-  const drawingCanvasRef = useRef(null);
 
   // Load image and initialize canvas
   useEffect(() => {
@@ -91,9 +87,13 @@ export const ImageEditorDialog = (props) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
+      
+      // Set canvas dimensions to match the image
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
-      updateDisplay();
     };
     img.src = history[step];
     setHistoryStep(step);
@@ -111,40 +111,7 @@ export const ImageEditorDialog = (props) => {
     }
   };
 
-  const updateDisplay = () => {
-    const sourceCanvas = canvasRef.current;
-    const displayCanvas = displayCanvasRef.current;
-    if (!sourceCanvas || !displayCanvas) return;
 
-    const ctx = displayCanvas.getContext("2d");
-    const { width, height } = sourceCanvas;
-
-    // Apply rotation and flip transformations
-    if (rotation !== 0 || flipH) {
-      const radians = (rotation * Math.PI) / 180;
-      const cos = Math.abs(Math.cos(radians));
-      const sin = Math.abs(Math.sin(radians));
-      displayCanvas.width = width * cos + height * sin;
-      displayCanvas.height = width * sin + height * cos;
-
-      ctx.save();
-      ctx.translate(displayCanvas.width / 2, displayCanvas.height / 2);
-      ctx.rotate(radians);
-      if (flipH) {
-        ctx.scale(-1, 1);
-      }
-      ctx.drawImage(sourceCanvas, -width / 2, -height / 2);
-      ctx.restore();
-    } else {
-      displayCanvas.width = width;
-      displayCanvas.height = height;
-      ctx.drawImage(sourceCanvas, 0, 0);
-    }
-  };
-
-  useEffect(() => {
-    updateDisplay();
-  }, [rotation, flipH]);
 
   const handleToolChange = (event, newTool) => {
     if (newTool === selectedTool) {
@@ -198,16 +165,57 @@ export const ImageEditorDialog = (props) => {
     ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(x, y);
-
-    updateDisplay();
   };
 
   const handleRotate = () => {
-    setRotation((prev) => (prev + 90) % 360);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Get current canvas content
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    tempCtx.drawImage(canvas, 0, 0);
+
+    // Swap dimensions for 90 degree rotation
+    canvas.width = tempCanvas.height;
+    canvas.height = tempCanvas.width;
+
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    
+    // Rotate 90 degrees counter-clockwise
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.drawImage(tempCanvas, -tempCanvas.width / 2, -tempCanvas.height / 2);
+    
+    ctx.restore();
+    
+    saveToHistory();
   };
 
   const handleFlip = () => {
-    setFlipH((prev) => !prev);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Get current canvas content
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    tempCtx.drawImage(canvas, 0, 0);
+
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    
+    // Flip horizontally
+    ctx.scale(-1, 1);
+    ctx.drawImage(tempCanvas, -canvas.width, 0);
+    
+    ctx.restore();
+    
+    saveToHistory();
   };
 
   const handleCropComplete = useCallback(() => {
@@ -230,21 +238,13 @@ export const ImageEditorDialog = (props) => {
     setCompletedCrop(undefined);
     setSelectedTool(null);
     saveToHistory();
-    updateDisplay();
   }, [completedCrop]);
 
   const handleSave = () => {
-    // Apply rotation and flip if any
-    const sourceCanvas = canvasRef.current;
-    if (!sourceCanvas) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    let finalCanvas = sourceCanvas;
-
-    if (rotation !== 0 || flipH) {
-      finalCanvas = displayCanvasRef.current;
-    }
-
-    const dataURL = finalCanvas.toDataURL("image/png");
+    const dataURL = canvas.toDataURL("image/png");
     onSave?.(dataURL);
     onClose?.();
   };
@@ -345,7 +345,7 @@ export const ImageEditorDialog = (props) => {
             <Box>
               <ReactCrop crop={crop} onChange={(c) => setCrop(c)} onComplete={(c) => setCompletedCrop(c)}>
                 <canvas
-                  ref={displayCanvasRef}
+                  ref={canvasRef}
                   style={{
                     maxWidth: "100%",
                     maxHeight: "500px",
@@ -365,36 +365,24 @@ export const ImageEditorDialog = (props) => {
               )}
             </Box>
           ) : (
-            <Box sx={{ position: "relative" }}>
-              <canvas
-                ref={canvasRef}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "500px",
-                  objectFit: "contain",
-                  cursor:
-                    selectedTool === "draw"
-                      ? "crosshair"
-                      : selectedTool === "erase"
-                        ? "not-allowed"
-                        : "default",
-                  display: rotation === 0 && !flipH ? "block" : "none",
-                }}
-              />
-              <canvas
-                ref={displayCanvasRef}
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "500px",
-                  objectFit: "contain",
-                  display: rotation !== 0 || flipH ? "block" : "none",
-                }}
-              />
-            </Box>
+            <canvas
+              ref={canvasRef}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "500px",
+                objectFit: "contain",
+                cursor:
+                  selectedTool === "draw"
+                    ? "crosshair"
+                    : selectedTool === "erase"
+                      ? "not-allowed"
+                      : "default",
+              }}
+            />
           )}
         </Paper>
       </DialogContent>

@@ -248,11 +248,26 @@ export const ImageEditorDialog = (props) => {
   const handleWheel = (e) => {
     e.preventDefault();
     
-    // Slower, more controlled zoom
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    
+    // Mouse position relative to canvas center
+    const mouseX = e.clientX - rect.left - rect.width / 2;
+    const mouseY = e.clientY - rect.top - rect.height / 2;
+    
+    // Calculate zoom change
     const delta = e.deltaY > 0 ? 0.95 : 1.05;
     const newZoom = Math.min(Math.max(zoom * delta, 0.5), 3);
     
+    // Adjust pan offset to zoom towards mouse position
+    const zoomRatio = newZoom / zoom;
+    const newPanX = panOffset.x - (mouseX * (zoomRatio - 1));
+    const newPanY = panOffset.y - (mouseY * (zoomRatio - 1));
+    
     setZoom(newZoom);
+    setPanOffset({ x: newPanX, y: newPanY });
     
     // Reset pan offset when zooming back to 1x to keep image centered
     if (Math.abs(newZoom - 1) < 0.01) {
@@ -285,11 +300,8 @@ export const ImageEditorDialog = (props) => {
       return;
     }
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    // Get transformed coordinates
+    const coords = getCanvasCoordinates(e);
 
     const ctx = canvas.getContext("2d");
     ctx.lineCap = "round";
@@ -303,7 +315,7 @@ export const ImageEditorDialog = (props) => {
       ctx.globalCompositeOperation = "destination-out";
     }
 
-    ctx.lineTo(x, y);
+    ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
   };
 

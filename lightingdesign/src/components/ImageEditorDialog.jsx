@@ -38,6 +38,10 @@ export const ImageEditorDialog = (props) => {
   const [historyStep, setHistoryStep] = useState(-1);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [showCursor, setShowCursor] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
 
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
@@ -54,6 +58,8 @@ export const ImageEditorDialog = (props) => {
         setCrop(undefined);
         setCompletedCrop(undefined);
         canvasDataRef.current = null;
+        setZoom(1);
+        setPanOffset({ x: 0, y: 0 });
       }
       return;
     }
@@ -169,6 +175,15 @@ export const ImageEditorDialog = (props) => {
 
   const handleMouseDown = (e) => {
     console.log('[ImageEditor] Mouse down', { selectedTool, hasCanvas: !!canvasRef.current });
+    
+    // Handle panning with middle mouse button or space + left click
+    if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+      e.preventDefault();
+      return;
+    }
+    
     if (!selectedTool || selectedTool === "crop") return;
     
     const canvas = canvasRef.current;
@@ -191,6 +206,15 @@ export const ImageEditorDialog = (props) => {
   };
 
   const handleMouseMove = (e) => {
+    // Handle panning
+    if (isPanning) {
+      setPanOffset({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y,
+      });
+      return;
+    }
+    
     // Update cursor position for preview
     if (selectedTool === "draw" || selectedTool === "erase") {
       const canvas = canvasRef.current;
@@ -215,6 +239,7 @@ export const ImageEditorDialog = (props) => {
 
   const handleMouseLeaveCanvas = () => {
     setShowCursor(false);
+    setIsPanning(false);
     if (isDrawing) {
       console.log('[ImageEditor] Drawing complete (mouse left canvas), saving to history');
       setIsDrawing(false);
@@ -222,7 +247,21 @@ export const ImageEditorDialog = (props) => {
     }
   };
 
+  const handleWheel = (e) => {
+    e.preventDefault();
+    
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.min(Math.max(zoom * delta, 0.1), 5);
+    
+    setZoom(newZoom);
+  };
+
   const handleMouseUp = () => {
+    if (isPanning) {
+      setIsPanning(false);
+      return;
+    }
+    
     if (isDrawing) {
       console.log('[ImageEditor] Drawing complete, saving to history');
       setIsDrawing(false);
@@ -492,7 +531,7 @@ export const ImageEditorDialog = (props) => {
               )}
             </Box>
           ) : (
-            <Box sx={{ position: "relative" }}>
+            <Box sx={{ position: "relative", overflow: "hidden" }}>
               <canvas
                 ref={canvasRef}
                 onMouseDown={handleMouseDown}
@@ -500,11 +539,15 @@ export const ImageEditorDialog = (props) => {
                 onMouseUp={handleMouseUp}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeaveCanvas}
+                onWheel={handleWheel}
                 style={{
                   maxWidth: "100%",
                   maxHeight: "500px",
                   objectFit: "contain",
-                  cursor: "none", // Hide default cursor when using draw/erase tools
+                  cursor: isPanning ? "grabbing" : "none",
+                  transform: `scale(${zoom}) translate(${panOffset.x / zoom}px, ${panOffset.y / zoom}px)`,
+                  transformOrigin: "center center",
+                  transition: isPanning ? "none" : "transform 0.1s ease-out",
                 }}
               />
               {/* Custom cursor preview for brush/eraser */}
@@ -514,9 +557,9 @@ export const ImageEditorDialog = (props) => {
                     position: "absolute",
                     left: cursorPosition.x,
                     top: cursorPosition.y,
-                    width: `${brushSize}px`,
-                    height: `${brushSize}px`,
-                    border: selectedTool === "draw" ? "2px solid #000000" : "2px solid #ff0000",
+                    width: `${brushSize * zoom}px`,
+                    height: `${brushSize * zoom}px`,
+                    backgroundColor: selectedTool === "draw" ? "rgba(0, 0, 0, 0.3)" : "rgba(255, 0, 0, 0.3)",
                     borderRadius: "50%",
                     pointerEvents: "none",
                     transform: "translate(-50%, -50%)",

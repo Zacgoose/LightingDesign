@@ -2532,42 +2532,40 @@ const Page = () => {
               alignProps={toolbarAlignProps}
             />
 
-            <Box sx={{ mb: 0.75 }}>
-              {/* Display API response messages - only render when mutation is active */}
-              {(saveDesignMutation.isFetching || 
-                saveDesignMutation.isSuccess || 
-                saveDesignMutation.isError) && (
-                <CippApiResults
-                  apiObject={saveDesignMutation}
-                  floating={true}
-                  autoCloseSeconds={5}
-                  hideResultsButtons={true}
-                />
-              )}
+            {/* Display API response messages - only render when mutation is active */}
+            {(saveDesignMutation.isFetching || 
+              saveDesignMutation.isSuccess || 
+              saveDesignMutation.isError) && (
+              <CippApiResults
+                apiObject={saveDesignMutation}
+                floating={true}
+                autoCloseSeconds={5}
+                hideResultsButtons={true}
+              />
+            )}
 
-              <ProductSelectionDrawer
-                onProductSelect={handleProductAdd}
-                visible={productDrawerVisible}
-                onOpen={() => setProductDrawerVisible(true)}
+            <ProductSelectionDrawer
+              onProductSelect={handleProductAdd}
+              visible={productDrawerVisible}
+              onOpen={() => setProductDrawerVisible(true)}
+              onClose={() => {
+                setProductDrawerVisible(false);
+                setSwapMode(false);
+                setSwapAllSameMode(false);
+                pendingInsertPosition.current = null;
+              }}
+            />
+
+            {productDetailsDrawerVisible && (
+              <ProductDetailsDrawer
+                product={selectedProductForDetails}
+                visible={productDetailsDrawerVisible}
                 onClose={() => {
-                  setProductDrawerVisible(false);
-                  setSwapMode(false);
-                  setSwapAllSameMode(false);
-                  pendingInsertPosition.current = null;
+                  setProductDetailsDrawerVisible(false);
+                  setSelectedProductForDetails(null);
                 }}
               />
-
-              {productDetailsDrawerVisible && (
-                <ProductDetailsDrawer
-                  product={selectedProductForDetails}
-                  visible={productDetailsDrawerVisible}
-                  onClose={() => {
-                    setProductDetailsDrawerVisible(false);
-                    setSelectedProductForDetails(null);
-                  }}
-                />
-              )}
-            </Box>
+            )}
 
             <Card sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
               <CardContent

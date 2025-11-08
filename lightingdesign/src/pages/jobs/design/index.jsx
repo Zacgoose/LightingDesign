@@ -274,6 +274,9 @@ const Page = () => {
   // Middle mouse panning state
   const [isMiddlePanning, setIsMiddlePanning] = useState(false);
 
+  // Stage dragging state (for canvas panning performance)
+  const [isStageDragging, setIsStageDragging] = useState(false);
+
   // Upload state for better UX
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
@@ -2605,6 +2608,7 @@ const Page = () => {
                     scaleFactor={scaleFactor}
                     onPan={handleCanvasPan}
                     onMiddlePanningChange={setIsMiddlePanning}
+                    onStageDraggingChange={setIsStageDragging}
                     gridOpacity={settings.gridOpacity}
                     backgroundOpacity={settings.backgroundOpacity}
                     objectsChildren={
@@ -2644,6 +2648,7 @@ const Page = () => {
                           placementMode={placementMode}
                           isDragging={isDragging}
                           isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
                           onProductClick={handleProductClick}
                           onProductDragStart={handleProductDragStart}
                           onProductDragEnd={handleProductDragEnd}
@@ -2776,6 +2781,7 @@ const Page = () => {
                           placementMode={placementMode}
                           isDragging={isDragging}
                           isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
                           onProductClick={handleProductClick}
                           onProductDragStart={handleProductDragStart}
                           onProductDragEnd={handleProductDragEnd}
@@ -2807,6 +2813,7 @@ const Page = () => {
                           placementMode={placementMode}
                           isDragging={isDragging}
                           isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
                           onProductClick={handleProductClick}
                           onProductDragStart={handleProductDragStart}
                           onProductDragEnd={handleProductDragEnd}

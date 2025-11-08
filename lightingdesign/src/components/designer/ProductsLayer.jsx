@@ -140,6 +140,7 @@ export const ProductsLayer = memo(
     placementMode,
     isDragging = false, // Add isDragging prop for performance optimization
     isMiddlePanning = false, // Add isMiddlePanning prop to disable dragging during middle mouse panning
+    isStageDragging = false, // Add isStageDragging prop to disable listening during canvas panning
     onProductClick,
     onProductDragStart,
     onProductDragEnd,
@@ -205,10 +206,10 @@ export const ProductsLayer = memo(
                   product={product}
                   config={config}
                   isSelected={false}
-                  draggable={selectedTool === "select" && canInteract && !isMiddlePanning}
+                  draggable={selectedTool === "select" && canInteract && !isMiddlePanning && !isStageDragging}
                   listening={
-                    (selectedTool === "select" || selectedTool === "connect") && !isMiddlePanning
-                  } // Only listen when interaction is needed and not middle panning
+                    (selectedTool === "select" || selectedTool === "connect") && !isMiddlePanning && !isStageDragging
+                  } // Disable listening during middle panning AND stage dragging for performance
                   onDragStart={(e) =>
                     selectedTool === "select" && canInteract && onProductDragStart(e, product.id)
                   }

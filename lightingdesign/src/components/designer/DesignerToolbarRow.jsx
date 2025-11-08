@@ -49,6 +49,26 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
   const zoomLevelSx = useMemo(() => ({ maxWidth: 35, minWidth: 35, textAlign: "center" }), []);
   const collapseButtonSx = useMemo(() => ({ ml: 1, my: 0.5, flexShrink: 0 }), []);
 
+  // Memoize icon components to prevent button re-renders
+  const uploadIcon = useMemo(() => <Upload />, []);
+  const saveIcon = useMemo(() => <Save />, []);
+  const downloadIcon = useMemo(() => <Download />, []);
+  const undoIcon = useMemo(() => <Undo />, []);
+  const redoIcon = useMemo(() => <Redo />, []);
+  const straightenIcon = useMemo(() => <Straighten />, []);
+  const closeIcon = useMemo(() => <Close />, []);
+  const cableIcon = useMemo(() => <Cable />, []);
+  const zoomInIcon = useMemo(() => <ZoomIn />, []);
+  const zoomOutIcon = useMemo(() => <ZoomOut />, []);
+  const expandMoreIcon = useMemo(() => <ExpandMore />, []);
+  const expandLessIcon = useMemo(() => <ExpandLess />, []);
+  const nearMeIcon = useMemo(() => <NearMe fontSize="small" />, []);
+  const panToolIcon = useMemo(() => <PanTool fontSize="small" />, []);
+  const textFieldsIcon = useMemo(() => <TextFields fontSize="small" />, []);
+  const verticalAlignTopIcon = useMemo(() => <VerticalAlignTop />, []);
+  const verticalAlignCenterIcon = useMemo(() => <VerticalAlignCenter />, []);
+  const multipleStopIcon = useMemo(() => <MultipleStop />, []);
+
   useEffect(() => {
     const checkIfWrapped = () => {
       if (!containerRef.current) return;
@@ -156,27 +176,27 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
           {/* Main Controls */}
           <Button
             variant="outlined"
-            startIcon={<Upload />}
+            startIcon={uploadIcon}
             size="small"
             onClick={onUploadFloorPlan}
           >
             Upload Floor Plan
           </Button>
-          <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave}>
+          <Button variant="contained" startIcon={saveIcon} size="small" onClick={onSave}>
             Save Project
           </Button>
-          <Button variant="outlined" startIcon={<Download />} size="small" onClick={onExport}>
+          <Button variant="outlined" startIcon={downloadIcon} size="small" onClick={onExport}>
             Export
           </Button>
           <Button variant="outlined" size="small" onClick={onUndo} disabled={!canUndo}>
-            <Undo />
+            {undoIcon}
           </Button>
           <Button variant="outlined" size="small" onClick={onRedo} disabled={!canRedo}>
-            <Redo />
+            {redoIcon}
           </Button>
           <Button
             variant="outlined"
-            startIcon={<Straighten />}
+            startIcon={straightenIcon}
             size="small"
             onClick={onMeasure}
             minWidth={100}
@@ -193,7 +213,7 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
                 title="Align Left"
                 sx={rotate270Sx}
               >
-                <VerticalAlignTop />
+                {verticalAlignTopIcon}
               </IconButton>
               <IconButton
                 size="small"
@@ -201,7 +221,7 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
                 title="Align Horizontal Centers"
                 sx={rotate90Sx}
               >
-                <VerticalAlignCenter />
+                {verticalAlignCenterIcon}
               </IconButton>
               <IconButton
                 size="small"
@@ -209,21 +229,21 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
                 title="Align Right"
                 sx={rotate90Sx}
               >
-                <VerticalAlignTop />
+                {verticalAlignTopIcon}
               </IconButton>
               <IconButton
                 size="small"
                 onClick={onAlignTop}
                 title="Align Top"
               >
-                <VerticalAlignTop />
+                {verticalAlignTopIcon}
               </IconButton>
               <IconButton
                 size="small"
                 onClick={onAlignVerticalCenter}
                 title="Align Vertical Centers"
               >
-                <VerticalAlignCenter />
+                {verticalAlignCenterIcon}
               </IconButton>
               <IconButton
                 size="small"
@@ -231,7 +251,7 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
                 title="Align Bottom"
                 sx={rotate180Sx}
               >
-                <VerticalAlignTop />
+                {verticalAlignTopIcon}
               </IconButton>
             </>
           )}
@@ -244,7 +264,7 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
                 onClick={onEvenSpacingHorizontal}
                 title="Even Spacing Horizontal"
               >
-                <MultipleStop />
+                {multipleStopIcon}
               </IconButton>
               <IconButton
                 size="small"
@@ -252,7 +272,7 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
                 title="Even Spacing Vertical"
                 sx={rotate90Sx}
               >
-                <MultipleStop />
+                {multipleStopIcon}
               </IconButton>
             </>
           )}
@@ -266,7 +286,7 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
               <Button
                 variant="outlined"
                 color="error"
-                startIcon={<Close />}
+                startIcon={closeIcon}
                 onClick={onStopPlacement}
                 size="small"
               >
@@ -283,23 +303,23 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
                 sx={toggleButtonSx}
               >
                 <ToggleButton value="select">
-                  <NearMe fontSize="small" />
+                  {nearMeIcon}
                 </ToggleButton>
                 <ToggleButton value="pan">
-                  <PanTool fontSize="small" />
+                  {panToolIcon}
                 </ToggleButton>
                 <ToggleButton value="connect">
-                  <Cable fontSize="small" />
+                  {cableIcon}
                 </ToggleButton>
                 <ToggleButton value="text">
-                  <TextFields fontSize="small" />
+                  {textFieldsIcon}
                 </ToggleButton>
               </ToggleButtonGroup>
               {selectedTool === "connect" && (
                 <Button
                   variant="outlined"
                   color="primary"
-                  startIcon={<Cable />}
+                  startIcon={cableIcon}
                   onClick={onDisconnectCable}
                   size="small"
                 >
@@ -330,13 +350,13 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
           {/* Group zoom controls together so they don't separate when wrapping */}
           <Box sx={zoomBoxSx}>
             <IconButton size="small" onClick={onZoomOut}>
-              <ZoomOut />
+              {zoomOutIcon}
             </IconButton>
             <Typography variant="body2" sx={zoomLevelSx}>
               {Math.round(zoomLevel * 100)}%
             </Typography>
             <IconButton size="small" onClick={onZoomIn}>
-              <ZoomIn />
+              {zoomInIcon}
             </IconButton>
           </Box>
           <Button variant="outlined" size="small" onClick={onResetView}>
@@ -349,7 +369,7 @@ export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alig
             onClick={handleToggleExpand}
             sx={collapseButtonSx}
           >
-            {isExpanded ? <ExpandLess /> : <ExpandMore />}
+            {isExpanded ? expandLessIcon : expandMoreIcon}
           </IconButton>
         )}
       </Box>

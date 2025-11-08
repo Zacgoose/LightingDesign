@@ -982,6 +982,14 @@ const Page = () => {
           // Font size stays the same, text will wrap
         }
 
+        // Recalculate height based on new font size to ensure border resizes correctly
+        const { height: newHeight } = calculateTextDimensions(
+          textBox.text,
+          newFontSize,
+          textBox.fontFamily || "Arial",
+          textBox.fontStyle || "normal"
+        );
+
         return {
           ...textBox,
           x: newX,
@@ -989,6 +997,7 @@ const Page = () => {
           rotation: (original.rotation || 0) + (selectionSnapshot.rotation || 0) + rotationDelta,
           fontSize: newFontSize,
           width: newWidth,
+          height: newHeight,
           scaleX: 1, // Reset scale after applying to fontSize and width
           scaleY: 1,
         };

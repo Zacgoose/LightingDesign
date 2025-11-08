@@ -44,10 +44,17 @@ export const ImageEditorDialogFabric = (props) => {
   useEffect(() => {
     if (!open || !imageUrl) return;
 
-    const canvas = new Canvas(canvasRef.current, {
+    // Set canvas element size attributes first
+    const canvasElement = canvasRef.current;
+    if (!canvasElement) return;
+    
+    canvasElement.width = 800;
+    canvasElement.height = 600;
+
+    const canvas = new Canvas(canvasElement, {
       width: 800,
       height: 600,
-      backgroundColor: "#f5f5f5",
+      backgroundColor: "#ffffff",
     });
 
     fabricCanvasRef.current = canvas;
@@ -56,15 +63,21 @@ export const ImageEditorDialogFabric = (props) => {
     FabricImage.fromURL(imageUrl, { crossOrigin: "anonymous" })
       .then((img) => {
         console.log("Image loaded:", img.width, img.height);
+        
+        // Calculate scale to fit image in canvas
         const scale = Math.min(
-          canvas.width / img.width,
-          canvas.height / img.height
+          800 / img.width,
+          600 / img.height
         );
+        
+        console.log("Scale factor:", scale);
+        console.log("Scaled dimensions:", img.width * scale, img.height * scale);
+        
         img.set({
           scaleX: scale,
           scaleY: scale,
-          left: canvas.width / 2,
-          top: canvas.height / 2,
+          left: 400, // Center of 800px width
+          top: 300,  // Center of 600px height
           originX: "center",
           originY: "center",
           selectable: false,
@@ -76,12 +89,14 @@ export const ImageEditorDialogFabric = (props) => {
         canvas.sendObjectToBack(img);
         canvas.renderAll();
         
+        console.log("Canvas objects:", canvas.getObjects().length);
+        console.log("Image position:", img.left, img.top);
+        console.log("Canvas initialized with image");
+        
         // Save initial state to history
         const json = JSON.stringify(canvas.toJSON());
         setHistory([json]);
         setHistoryStep(0);
-        
-        console.log("Canvas initialized with image");
       })
       .catch((err) => {
         console.error("Error loading image:", err);
@@ -348,11 +363,17 @@ export const ImageEditorDialogFabric = (props) => {
             justifyContent: "center",
             alignItems: "center",
             minHeight: "calc(95vh - 200px)",
-            backgroundColor: "#f5f5f5",
+            backgroundColor: "#e0e0e0",
             p: 2,
           }}
         >
-          <canvas ref={canvasRef} />
+          <canvas 
+            ref={canvasRef} 
+            style={{ 
+              border: "1px solid #ccc",
+              display: "block",
+            }} 
+          />
         </Paper>
       </DialogContent>
       <DialogActions>

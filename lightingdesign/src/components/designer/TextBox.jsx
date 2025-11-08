@@ -40,34 +40,9 @@ export const TextBox = memo(
     const textWidth = textBox.width || 100;
     const textHeight = renderedFontSize * 1.2;
 
-    // Dynamically measure text width and height using textWidth/textHeight
-    useEffect(() => {
-      if (textRef.current) {
-        const node = textRef.current;
-
-        const measuredWidth = node.textWidth;
-        const lineCount = node.textArr?.length || textBox.text.split(/\r?\n/).length;
-
-        // Per-line height (approx renderedFontSize * 1.2)
-        const singleLineHeight = renderedFontSize * 1.15;
-
-        // If you want to explicitly base height on lines × per-line height:
-        const computedHeight = lineCount * singleLineHeight;
-
-        // Update only if changed to avoid render loops
-        const needsUpdate =
-          Math.abs((textBox.width || 0) - measuredWidth) > 1 ||
-          Math.abs((textBox.height || 0) - computedHeight) > 1;
-
-        if (needsUpdate) {
-          onChange({
-            ...textBox,
-            width: measuredWidth,
-            height: computedHeight,
-          });
-        }
-      }
-    }, [textBox.text, renderedFontSize, textBox.fontFamily, textBox.fontStyle, textBox.fontWeight]);
+    // Note: Removed auto-sizing useEffect to prevent double history entries
+    // Width and height are now explicitly calculated when text/fontSize changes
+    // in the handlers (handleTextDialogConfirm, handleTextFontSize, etc.)
 
     // Rectangle padding
     const rectPadding = 10;
@@ -170,7 +145,7 @@ export const TextBox = memo(
               x={-textWidth / 2 - rectPadding}
               y={-textHeight / 2 - rectPadding}
               width={textWidth + rectPadding * 2}
-              height={textBox.height}
+              height={textBox.height + rectPadding * 2}
               stroke={textBox.borderColor || "#000000"}
               strokeWidth={8}
               fill="transparent"

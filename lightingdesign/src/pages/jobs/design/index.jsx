@@ -47,6 +47,42 @@ import productTypesConfig from "/src/data/productTypes.json";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
 import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
 
+/**
+ * Helper function to calculate text dimensions using canvas measureText API
+ * This ensures consistent sizing across text updates and prevents double history entries
+ */
+const calculateTextDimensions = (text, fontSize, fontFamily, fontStyle) => {
+  const isBold = fontStyle?.includes("bold") || false;
+  const isItalic = fontStyle?.includes("italic") || false;
+  const canvasFontStyle = isItalic ? "italic" : "normal";
+  const fontWeight = isBold ? "bold" : "normal";
+
+  // Create an offscreen canvas for measuring
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  // Match the Konva.Text style exactly
+  ctx.font = `${canvasFontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+
+  // Split into lines and measure each to get the widest line
+  const lines = text.split("\n");
+  const maxWidth = lines.reduce((max, line) => {
+    const w = ctx.measureText(line).width;
+    return w > max ? w : max;
+  }, 0);
+
+  // Measure height using the full text metrics
+  const metrics = ctx.measureText(text);
+  const lineHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+  // Add padding to prevent text cutoff
+  const padding = 10;
+  const width = maxWidth + padding;
+  const height = lineHeight * lines.length + padding;
+
+  return { width, height };
+};
+
 const Page = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -1821,37 +1857,13 @@ const Page = () => {
       if (pendingTextBoxId) {
         const newText = formattingData.text || "";
         if (newText.trim()) {
-          // Use canvas measureText API to calculate exact text dimensions
-          // as recommended by Konva documentation for accurate sizing
-          const fontSize = formattingData.fontSize;
-          const fontFamily = formattingData.fontFamily;
-          const isBold = formattingData.fontStyle?.includes("bold");
-          const isItalic = formattingData.fontStyle?.includes("italic");
-          const fontStyle = isItalic ? "italic" : "normal";
-          const fontWeight = isBold ? "bold" : "normal";
-
-          // Create an offscreen canvas for measuring
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-
-          // Match the Konva.Text style exactly
-          ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-
-          // Split into lines and measure each to get the widest line
-          const lines = newText.split("\n");
-          const maxWidth = lines.reduce((max, line) => {
-            const w = ctx.measureText(line).width;
-            return w > max ? w : max;
-          }, 0);
-
-          // Measure height using the full text metrics
-          const metrics = ctx.measureText(newText);
-          const lineHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-
-          // Add padding to prevent text cutoff
-          const padding = 10;
-          const width = maxWidth + padding;
-          const height = lineHeight * lines.length + padding;
+          // Calculate text dimensions using the helper function
+          const { width, height } = calculateTextDimensions(
+            newText,
+            formattingData.fontSize,
+            formattingData.fontFamily,
+            formattingData.fontStyle
+          );
 
           // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
           const updatedTextBoxes = textBoxes.map((box) =>
@@ -1864,8 +1876,10 @@ const Page = () => {
                   fontStyle: formattingData.fontStyle,
                   textDecoration: formattingData.textDecoration,
                   color: formattingData.color,
-                  width: width, // Use canvas measureText width
-                  height: height, // Use canvas measureText height,
+                  showBorder: formattingData.showBorder,
+                  borderColor: formattingData.borderColor,
+                  width: width,
+                  height: height,
                 }
               : box,
           );
@@ -2003,7 +2017,15 @@ const Page = () => {
           newStyle = "bold";
         }
 
-        return { ...box, fontStyle: newStyle };
+        // Recalculate dimensions with new font style
+        const { width, height } = calculateTextDimensions(
+          box.text,
+          box.fontSize || 24,
+          box.fontFamily || "Arial",
+          newStyle
+        );
+
+        return { ...box, fontStyle: newStyle, width, height };
       });
       updateTextBoxHistory(updatedTextBoxes);
     }
@@ -2024,13 +2046,21 @@ const Page = () => {
         } else if (isItalic) {
           newStyle = "normal";
         } else if (isBold) {
-            newStyle = "bold italic";
-          } else {
-            newStyle = "italic";
-          }
+          newStyle = "bold italic";
+        } else {
+          newStyle = "italic";
+        }
 
-          return { ...box, fontStyle: newStyle };
-        });
+        // Recalculate dimensions with new font style
+        const { width, height } = calculateTextDimensions(
+          box.text,
+          box.fontSize || 24,
+          box.fontFamily || "Arial",
+          newStyle
+        );
+
+        return { ...box, fontStyle: newStyle, width, height };
+      });
       updateTextBoxHistory(updatedTextBoxes);
     }
     contextMenus.handleCloseContextMenu();
@@ -2062,9 +2092,19 @@ const Page = () => {
   const handleTextFontSize = useCallback(
     (fontSize) => {
       if (selectedTextId) {
-        const updatedTextBoxes = textBoxes.map((box) => 
-          box.id === selectedTextId ? { ...box, fontSize } : box
-        );
+        const updatedTextBoxes = textBoxes.map((box) => {
+          if (box.id !== selectedTextId) return box;
+          
+          // Recalculate dimensions with new font size
+          const { width, height } = calculateTextDimensions(
+            box.text,
+            fontSize,
+            box.fontFamily || "Arial",
+            box.fontStyle || "normal"
+          );
+          
+          return { ...box, fontSize, width, height };
+        });
         updateTextBoxHistory(updatedTextBoxes);
       }
       contextMenus.handleCloseContextMenu();

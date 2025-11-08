@@ -874,6 +874,7 @@ const Page = () => {
 
     // Transform products
     if (productIds.length > 0) {
+      console.log('[Transform Debug] Updating products history');
       const transformedProducts = products.map((product) => {
         if (!productIds.includes(product.id)) return product;
 
@@ -919,6 +920,7 @@ const Page = () => {
 
     // Transform text boxes
     if (textIds.length > 0) {
+      console.log('[Transform Debug] Updating textboxes history');
       const transformedTextBoxes = textBoxes.map((textBox) => {
         if (!textIds.includes(textBox.id)) return textBox;
 

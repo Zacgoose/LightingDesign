@@ -1,9 +1,10 @@
 import { Add, Close, Language } from "@mui/icons-material";
 import { IconButton, Box } from "@mui/material";
+import { memo } from "react";
 import { CippOffCanvas } from "../CippComponents/CippOffCanvas";
 import { CippTablePage } from "../CippComponents/CippTablePage";
 
-export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClose, onOpen }) => {
+export const ProductSelectionDrawer = memo(({ onProductSelect, visible = false, onClose, onOpen }) => {
   const filterList = [
     {
       filterName: "Pendants",
@@ -81,4 +82,4 @@ export const ProductSelectionDrawer = ({ onProductSelect, visible = false, onClo
       </CippOffCanvas>
     </>
   );
-};
+});

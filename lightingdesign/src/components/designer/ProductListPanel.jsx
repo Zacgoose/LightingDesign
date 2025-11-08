@@ -1,4 +1,4 @@
-import React, { useMemo, memo } from "react";
+import React, { useMemo, memo, forwardRef } from "react";
 import {
   Box,
   Paper,
@@ -24,7 +24,7 @@ import productTypesConfig from "/src/data/productTypes.json";
  * - Thumbnail
  * - Prefix letter and number
  */
-export const ProductListPanel = memo(({ products, visible, activeLayerId }) => {
+export const ProductListPanel = memo(forwardRef(({ products, visible, activeLayerId, top = 380 }, ref) => {
   // Group products by SKU and calculate totals
   // Optimized to pre-calculate all letter prefixes in a single pass to avoid O(n²) complexity
   const productSummary = useMemo(() => {
@@ -111,10 +111,11 @@ export const ProductListPanel = memo(({ products, visible, activeLayerId }) => {
 
   return (
     <Paper
+      ref={ref}
       elevation={2}
       sx={{
         position: "absolute",
-        top: 380,
+        top: top,
         right: 16,
         width: 240,
         maxHeight: "calc(100vh - 520px)",
@@ -276,7 +277,7 @@ export const ProductListPanel = memo(({ products, visible, activeLayerId }) => {
       </List>
     </Paper>
   );
-});
+}));
 
 ProductListPanel.displayName = "ProductListPanel";
 

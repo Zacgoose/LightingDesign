@@ -40,6 +40,7 @@ export const SubLayerControls = memo(React.forwardRef(
       onSublayerRename,
       onSetDefaultSublayer,
       onClose,
+      top = 200,
     },
     ref,
   ) => {
@@ -120,7 +121,7 @@ export const SubLayerControls = memo(React.forwardRef(
           elevation={2}
           sx={{
             position: "absolute",
-            top: 200,
+            top: top,
             right: 16,
             width: 240,
             display: "flex",

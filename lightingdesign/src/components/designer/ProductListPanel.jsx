@@ -25,36 +25,56 @@ import productTypesConfig from "/src/data/productTypes.json";
  * - Prefix letter and number
  */
 export const ProductListPanel = memo(forwardRef(({ products, visible, activeLayerId, top = 380 }, ref) => {
-  // Helper function to calculate letter prefix for a product
-  const getProductLetterPrefix = (product, allProducts) => {
-    const productType = product.product_type?.toLowerCase() || "default";
-    const config = productTypesConfig[productType] || productTypesConfig.default;
-    const letterPrefix = config.letterPrefix || "O";
-
-    const sku = product.sku?.trim();
-    if (!sku || sku === "") {
-      return letterPrefix;
-    }
-
-    const sameTypeProducts = allProducts.filter(
-      (p) => (p.product_type?.toLowerCase() || "default") === productType,
-    );
-
-    const uniqueSkus = [
-      ...new Set(sameTypeProducts.map((p) => p.sku?.trim()).filter((s) => s && s !== "")),
-    ].sort();
-
-    const skuIndex = uniqueSkus.indexOf(sku);
-
-    if (skuIndex === -1) {
-      return letterPrefix;
-    }
-
-    return `${letterPrefix}${skuIndex + 1}`;
-  };
-
   // Group products by SKU and calculate totals
+  // Optimized to pre-calculate all letter prefixes in a single pass to avoid O(n²) complexity
   const productSummary = useMemo(() => {
+    // First pass: build unique SKU lists per product type for efficient letter prefix calculation
+    const skusByType = new Map();
+    
+    products.forEach((product) => {
+      const productType = product.product_type?.toLowerCase() || "default";
+      const sku = product.sku?.trim();
+      
+      if (!skusByType.has(productType)) {
+        skusByType.set(productType, new Set());
+      }
+      
+      if (sku && sku !== "") {
+        skusByType.get(productType).add(sku);
+      }
+    });
+    
+    // Convert sets to sorted arrays and create SKU index lookup maps
+    const skuIndexMaps = new Map();
+    skusByType.forEach((skuSet, productType) => {
+      const sortedSkus = Array.from(skuSet).sort();
+      const indexMap = new Map();
+      sortedSkus.forEach((sku, index) => {
+        indexMap.set(sku, index);
+      });
+      skuIndexMaps.set(productType, indexMap);
+    });
+    
+    // Helper function to get letter prefix using pre-calculated indices
+    const getLetterPrefix = (product) => {
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      const letterPrefix = config.letterPrefix || "O";
+      
+      const sku = product.sku?.trim();
+      if (!sku || sku === "") {
+        return letterPrefix;
+      }
+      
+      const indexMap = skuIndexMaps.get(productType);
+      if (!indexMap || !indexMap.has(sku)) {
+        return letterPrefix;
+      }
+      
+      return `${letterPrefix}${indexMap.get(sku) + 1}`;
+    };
+    
+    // Second pass: group products by SKU and calculate totals
     const productMap = new Map();
 
     products.forEach((product) => {
@@ -62,7 +82,6 @@ export const ProductListPanel = memo(forwardRef(({ products, visible, activeLaye
       const key = `${sku}-${product.product_type || "default"}`;
 
       if (!productMap.has(key)) {
-        const letterPrefix = getProductLetterPrefix(product, products);
         productMap.set(key, {
           sku: product.sku || "N/A",
           name: product.name || "Unnamed Product",
@@ -70,7 +89,7 @@ export const ProductListPanel = memo(forwardRef(({ products, visible, activeLaye
           productType: product.product_type || "default",
           price: product.price || 0,
           thumbnailUrl: product.thumbnailUrl || product.thumbnailImageUrl || null,
-          letterPrefix,
+          letterPrefix: getLetterPrefix(product),
           quantity: 0,
           color: product.color || productTypesConfig[product.product_type?.toLowerCase() || "default"]?.fill || "#1976d2",
         });

@@ -72,7 +72,7 @@ export const ImageEditorDialogFabric = (props) => {
         
         backgroundImageRef.current = img;
         canvas.add(img);
-        canvas.sendToBack(img);
+        canvas.sendObjectToBack(img);
         saveToHistory();
       })
       .catch((err) => {

@@ -478,7 +478,7 @@ const Page = () => {
     
     try {
       // Logo 1 (top) - try to load from /public/logos/
-      pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, 44, 20);
+      pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, 40, 19);
     } catch (error) {
       // If logo doesn't exist, show placeholder
       pdf.setFillColor(250, 250, 250);
@@ -490,7 +490,7 @@ const Page = () => {
     
     try {
       // Logo 2 (bottom)
-      pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 21, 46, 18);
+      pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 20, 41, 17);
     } catch (error) {
       // If logo doesn't exist, show placeholder
       pdf.setFillColor(250, 250, 250);
@@ -995,10 +995,10 @@ const Page = () => {
           pathEl.setAttribute("d", d);
           pathEl.setAttribute("fill", "none");
           pathEl.setAttribute("stroke", connector.color || "#6464FF");
-          pathEl.setAttribute("stroke-width", "4");
+          pathEl.setAttribute("stroke-width", "6");
           pathEl.setAttribute("stroke-linecap", "round");
           pathEl.setAttribute("stroke-linejoin", "round");
-          pathEl.setAttribute("stroke-dasharray", "20 10"); // Dashed line pattern: 20px dash, 10px gap
+          pathEl.setAttribute("stroke-dasharray", "30 15"); // Dashed line pattern: 20px dash, 10px gap
           svgElement.appendChild(pathEl);
           connectorCount++;
         }
@@ -2129,7 +2129,7 @@ const Page = () => {
       
       try {
         // Logo 1 (top) - try to load from /public/logos/
-        pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, 44, 20);
+        pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, 40, 19);
       } catch (error) {
         // If logo doesn't exist, show placeholder
         pdf.setFillColor(250, 250, 250);
@@ -2141,7 +2141,7 @@ const Page = () => {
       
       try {
         // Logo 2 (bottom)
-        pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 21, 46, 18);
+        pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 20, 41, 17);
       } catch (error) {
         // If logo doesn't exist, show placeholder
         pdf.setFillColor(250, 250, 250);

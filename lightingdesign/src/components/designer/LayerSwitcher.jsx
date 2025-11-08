@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import {
   Box,
   Paper,
@@ -19,7 +19,7 @@ import { ConfirmDialog } from "/src/components/designer/ConfirmDialog";
 /**
  * LayerSwitcher - UI component for managing and switching between floor layers
  */
-export const LayerSwitcher = ({
+export const LayerSwitcher = memo(({
   layers = [],
   activeLayerId,
   onLayerSelect,
@@ -158,6 +158,8 @@ export const LayerSwitcher = ({
       />
     </Paper>
   );
-};
+});
+
+LayerSwitcher.displayName = "LayerSwitcher";
 
 export default LayerSwitcher;

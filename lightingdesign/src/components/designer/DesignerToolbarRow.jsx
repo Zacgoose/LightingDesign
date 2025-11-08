@@ -7,7 +7,7 @@ import {
   ToggleButton,
   Typography,
 } from "@mui/material";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import {
   ExpandMore,
   ExpandLess,
@@ -29,7 +29,7 @@ import {
   MultipleStop,
 } from "@mui/icons-material";
 
-export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProps }) => {
+export const DesignerToolbarRow = memo(({ mainProps, toolsProps, viewProps, alignProps }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showCollapseButton, setShowCollapseButton] = useState(false);
   const containerRef = useRef(null);
@@ -342,6 +342,8 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
       </Box>
     </Card>
   );
-};
+});
+
+DesignerToolbarRow.displayName = "DesignerToolbarRow";
 
 export default DesignerToolbarRow;

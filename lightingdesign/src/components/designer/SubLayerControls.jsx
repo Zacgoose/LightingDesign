@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import {
   Box,
   Paper,
@@ -28,7 +28,7 @@ import { ConfirmDialog } from "/src/components/designer/ConfirmDialog";
 /**
  * SubLayerControls - UI component for showing/hiding sublayers within a floor
  */
-export const SubLayerControls = React.forwardRef(
+export const SubLayerControls = memo(React.forwardRef(
   (
     {
       sublayers = [],
@@ -266,7 +266,7 @@ export const SubLayerControls = React.forwardRef(
       </>
     );
   },
-);
+));
 
 SubLayerControls.displayName = "SubLayerControls";
 

@@ -155,7 +155,10 @@ export const ProductsLayer = memo(
   }) => {
     // Manually attach transformend event listener to Transformer
     // This is necessary because the Group's onTransformEnd prop doesn't fire reliably
+    // IMPORTANT: Only attach listener in the instance that renders the transformer to avoid duplicates
     useEffect(() => {
+      // Only attach if this instance is rendering the transformer
+      if (!renderTransformer) return;
       if (!transformerRef.current || !onGroupTransformEnd) return;
 
       const transformer = transformerRef.current;
@@ -172,7 +175,7 @@ export const ProductsLayer = memo(
       return () => {
         transformer.off("transformend", handleTransformEnd);
       };
-    }, [transformerRef, onGroupTransformEnd]);
+    }, [transformerRef, onGroupTransformEnd, renderTransformer]);
 
     const isPlacementMode = selectedTool === "placement" || placementMode;
     const isPanMode = selectedTool === "pan";

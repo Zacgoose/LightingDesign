@@ -36,9 +36,9 @@ export const TextBox = memo(
     const renderedFontSize = baseFontSize * (scaleFactor / 100);
 
     // Calculate center offset for rotation
-    // Text width is measured dynamically, height is approximately fontSize * 1.2 for single line
+    // Text width and height from textBox properties (measured/calculated values)
     const textWidth = textBox.width || 100;
-    const textHeight = renderedFontSize * 1.2;
+    const textHeight = textBox.height || (renderedFontSize * 1.2);
 
     // Note: Removed auto-sizing useEffect to prevent double history entries
     // Width and height are now explicitly calculated when text/fontSize changes
@@ -145,7 +145,7 @@ export const TextBox = memo(
               x={-textWidth / 2 - rectPadding}
               y={-textHeight / 2 - rectPadding}
               width={textWidth + rectPadding * 2}
-              height={textBox.height + rectPadding * 2}
+              height={textHeight + rectPadding * 2}
               stroke={textBox.borderColor || "#000000"}
               strokeWidth={8}
               fill="transparent"

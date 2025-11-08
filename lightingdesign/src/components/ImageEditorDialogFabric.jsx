@@ -42,11 +42,20 @@ export const ImageEditorDialogFabric = (props) => {
 
   // Initialize Fabric.js canvas
   useEffect(() => {
-    if (!open || !imageUrl) return;
+    console.log("[ImageEditor] useEffect triggered - open:", open, "imageUrl:", imageUrl);
+    if (!open || !imageUrl) {
+      console.log("[ImageEditor] Early return - dialog not ready");
+      return;
+    }
 
     // Set canvas element size attributes first
     const canvasElement = canvasRef.current;
-    if (!canvasElement) return;
+    if (!canvasElement) {
+      console.log("[ImageEditor] Canvas element not found");
+      return;
+    }
+    
+    console.log("[ImageEditor] Canvas element found, proceeding with initialization");
     
     canvasElement.width = 800;
     canvasElement.height = 600;

@@ -75,10 +75,10 @@ const calculateTextDimensions = (text, fontSize, fontFamily, fontStyle) => {
   const metrics = ctx.measureText(text);
   const lineHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
 
-  // Add padding to prevent text cutoff
-  const padding = 10;
-  const width = maxWidth + padding;
-  const height = lineHeight * lines.length + padding;
+  // Width and height are the raw measurements without padding
+  // The border will add its own padding via rectPadding
+  const width = maxWidth;
+  const height = lineHeight * lines.length;
 
   return { width, height };
 };

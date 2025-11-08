@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
-import { fabric } from "fabric";
+import { Canvas, FabricImage, PencilBrush, EraserBrush } from "fabric";
 import {
   Dialog,
   DialogTitle,
@@ -44,7 +44,7 @@ export const ImageEditorDialogFabric = (props) => {
   useEffect(() => {
     if (!open || !imageUrl) return;
 
-    const canvas = new fabric.Canvas(canvasRef.current, {
+    const canvas = new Canvas(canvasRef.current, {
       width: 800,
       height: 600,
       backgroundColor: "#f5f5f5",
@@ -52,33 +52,39 @@ export const ImageEditorDialogFabric = (props) => {
 
     fabricCanvasRef.current = canvas;
 
-    // Load background image
-    fabric.Image.fromURL(imageUrl, (img) => {
-      const scale = Math.min(
-        canvas.width / img.width,
-        canvas.height / img.height
-      );
-      img.set({
-        scaleX: scale,
-        scaleY: scale,
-        left: canvas.width / 2,
-        top: canvas.height / 2,
-        originX: "center",
-        originY: "center",
-        selectable: false,
-        evented: false,
+    // Load background image using v6 API
+    FabricImage.fromURL(imageUrl, { crossOrigin: "anonymous" })
+      .then((img) => {
+        const scale = Math.min(
+          canvas.width / img.width,
+          canvas.height / img.height
+        );
+        img.set({
+          scaleX: scale,
+          scaleY: scale,
+          left: canvas.width / 2,
+          top: canvas.height / 2,
+          originX: "center",
+          originY: "center",
+          selectable: false,
+          evented: false,
+        });
+        
+        backgroundImageRef.current = img;
+        canvas.add(img);
+        canvas.sendToBack(img);
+        saveToHistory();
+      })
+      .catch((err) => {
+        console.error("Error loading image:", err);
       });
-      
-      backgroundImageRef.current = img;
-      canvas.add(img);
-      canvas.sendToBack(img);
-      saveToHistory();
-    }, { crossOrigin: "anonymous" });
 
     // Set up drawing mode
     canvas.isDrawingMode = true;
-    canvas.freeDrawingBrush.width = brushSize;
-    canvas.freeDrawingBrush.color = "rgba(0, 0, 0, 1)";
+    const pencilBrush = new PencilBrush(canvas);
+    pencilBrush.width = brushSize;
+    pencilBrush.color = "rgba(0, 0, 0, 1)";
+    canvas.freeDrawingBrush = pencilBrush;
 
     // Save to history after drawing
     canvas.on("path:created", () => {
@@ -98,15 +104,15 @@ export const ImageEditorDialogFabric = (props) => {
 
     if (selectedTool === "draw") {
       canvas.isDrawingMode = true;
-      canvas.freeDrawingBrush.width = brushSize;
-      canvas.freeDrawingBrush.color = "rgba(0, 0, 0, 1)";
+      const pencilBrush = new PencilBrush(canvas);
+      pencilBrush.width = brushSize;
+      pencilBrush.color = "rgba(0, 0, 0, 1)";
+      canvas.freeDrawingBrush = pencilBrush;
     } else if (selectedTool === "erase") {
       canvas.isDrawingMode = true;
-      canvas.freeDrawingBrush.width = brushSize;
-      // Eraser mode using destination-out
-      const eraser = new fabric.EraserBrush(canvas);
-      eraser.width = brushSize;
-      canvas.freeDrawingBrush = eraser;
+      const eraserBrush = new EraserBrush(canvas);
+      eraserBrush.width = brushSize;
+      canvas.freeDrawingBrush = eraserBrush;
     } else {
       canvas.isDrawingMode = false;
     }

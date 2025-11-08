@@ -82,13 +82,9 @@ export const useProductInteraction = ({
           return;
         }
         if (selectedIds.includes(productId)) {
-          const transformed = applyGroupTransform();
-          if (transformed) updateHistory(transformed);
           setSelectedIds(selectedIds.filter((id) => id !== productId));
           setGroupKey((k) => k + 1);
         } else {
-          const transformed = applyGroupTransform();
-          if (transformed) updateHistory(transformed);
           setSelectedIds([...selectedIds, productId]);
           setGroupKey((k) => k + 1);
         }
@@ -97,8 +93,6 @@ export const useProductInteraction = ({
         setSelectedConnectorIds([]);
         setSelectedTextId(null);
         if (!selectedIds.includes(productId)) {
-          const transformed = applyGroupTransform();
-          if (transformed) updateHistory(transformed);
           setSelectedIds([productId]);
           setGroupKey((k) => k + 1);
         }
@@ -132,14 +126,12 @@ export const useProductInteraction = ({
         if (shiftKey || ctrlKey) {
           setSelectedIds([...selectedIds, productId]);
         } else {
-          const transformed = applyGroupTransform();
-          if (transformed) updateHistory(transformed);
           setSelectedIds([productId]);
         }
         setGroupKey((k) => k + 1);
       }
     },
-    [selectedIds, applyGroupTransform, updateHistory, setSelectedIds, setGroupKey, setIsDragging],
+    [selectedIds, setSelectedIds, setGroupKey, setIsDragging],
   );
 
   const handleProductDragEnd = useCallback(

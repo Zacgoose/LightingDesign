@@ -777,8 +777,6 @@ const Page = () => {
       }
       
       e.cancelBubble = true;
-      const transformed = applyGroupTransform();
-      if (transformed) updateHistory(transformed);
       
       // Handle multi-select with Shift/Ctrl
       const shiftKey = e.evt?.shiftKey;
@@ -807,8 +805,6 @@ const Page = () => {
     [
       selectedIds,
       selectedConnectorIds,
-      applyGroupTransform,
-      updateHistory,
       setSelectedIds,
       setSelectedConnectorIds,
       forceGroupUpdate,
@@ -1008,9 +1004,6 @@ const Page = () => {
       };
     },
     onPaste: () => {
-      const transformed = applyGroupTransform();
-      if (transformed) updateHistory(transformed);
-      
       // Calculate the center of the copied items
       const allCopiedItems = [
         ...(clipboard.current.products || []),
@@ -1091,8 +1084,6 @@ const Page = () => {
       }
     },
     onSelectAll: () => {
-      const transformed = applyGroupTransform();
-      if (transformed) updateHistory(transformed);
       // Select all products and text boxes
       const allIds = [...products.map((p) => p.id), ...textBoxes.map((t) => `text-${t.id}`)];
       setSelectedIds(allIds);
@@ -1104,15 +1095,10 @@ const Page = () => {
         setSelectedTool("select");
         return;
       }
-      const transformed = applyGroupTransform();
-      if (transformed) updateHistory(transformed);
       clearSelection();
       setSelectedTextId(null);
     },
     onUndo: () => {
-      const transformed = applyGroupTransform();
-      if (transformed) updateHistory(transformed);
-
       // Use unified timeline to undo the most recent action
       if (timelineTracker.timelineStep.current === -1) return;
       
@@ -1133,9 +1119,6 @@ const Page = () => {
       }
     },
     onRedo: () => {
-      const transformed = applyGroupTransform();
-      if (transformed) updateHistory(transformed);
-
       // Use unified timeline to redo the next action
       if (timelineTracker.timelineStep.current >= timelineTracker.timeline.current.length - 1) return;
       
@@ -1932,9 +1915,7 @@ const Page = () => {
         }
         // Multi-select mode: add or remove from selection
         if (selectedIds.includes(textIdWithPrefix)) {
-          // Deselect this text box - apply group transform first
-          const transformed = applyGroupTransform();
-          if (transformed) updateHistory(transformed);
+          // Deselect this text box
           const newSelectedIds = selectedIds.filter((id) => id !== textIdWithPrefix);
           setSelectedIds(newSelectedIds);
           // Clear selectedTextId if this text is being deselected
@@ -1943,9 +1924,7 @@ const Page = () => {
           }
           forceGroupUpdate();
         } else {
-          // Add this text box to selection - apply group transform first
-          const transformed = applyGroupTransform();
-          if (transformed) updateHistory(transformed);
+          // Add this text box to selection
           setSelectedIds([...selectedIds, textIdWithPrefix]);
           setSelectedTextId(textId);
           forceGroupUpdate();
@@ -1955,15 +1934,13 @@ const Page = () => {
         // Only clear connector selections when not holding modifier keys
         setSelectedConnectorIds([]);
         if (!selectedIds.includes(textIdWithPrefix)) {
-          const transformed = applyGroupTransform();
-          if (transformed) updateHistory(transformed);
           setSelectedTextId(textId);
           setSelectedIds([textIdWithPrefix]);
           forceGroupUpdate();
         }
       }
     },
-    [selectedIds, selectedConnectorIds, selectedTextId, setSelectedIds, setSelectedConnectorIds, setSelectedTextId, forceGroupUpdate, applyGroupTransform, updateHistory],
+    [selectedIds, selectedConnectorIds, selectedTextId, setSelectedIds, setSelectedConnectorIds, setSelectedTextId, forceGroupUpdate],
   );
 
   const handleTextContextMenu = useCallback(
@@ -2240,8 +2217,6 @@ const Page = () => {
         
         // Only clear selection if no modifier keys are pressed
         if (clickedOnEmpty && !shiftKey && !ctrlKey) {
-          const transformed = applyGroupTransform();
-          if (transformed) updateHistory(transformed);
           clearSelection();
           setSelectedTextId(null);
         }
@@ -2251,7 +2226,7 @@ const Page = () => {
       selectionStartRef.current = null;
       hasDraggedRef.current = false;
     },
-    [selectedTool, handleSelectionEnd, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId],
+    [selectedTool, handleSelectionEnd, clearSelection, setSelectedTextId],
   );
 
   const checkDeselect = useCallback(
@@ -2280,8 +2255,6 @@ const Page = () => {
 
       const clickedOnEmpty = e.target === e.target.getStage();
       if (clickedOnEmpty) {
-        const transformed = applyGroupTransform();
-        if (transformed) updateHistory(transformed);
         clearSelection();
         setSelectedTextId(null);
       }
@@ -2289,8 +2262,6 @@ const Page = () => {
     [
       selectedTool,
       placementMode,
-      applyGroupTransform,
-      updateHistory,
       clearSelection,
       handleCanvasClick,
       handleTextClick,
@@ -2419,9 +2390,6 @@ const Page = () => {
                 onSave: handleSave,
                 onExport: handleExport,
                 onUndo: () => {
-                  const transformed = applyGroupTransform();
-                  if (transformed) updateHistory(transformed);
-                  
                   // Use unified timeline to undo the most recent action
                   if (timelineTracker.timelineStep.current === -1) return;
                   
@@ -2442,9 +2410,6 @@ const Page = () => {
                   }
                 },
                 onRedo: () => {
-                  const transformed = applyGroupTransform();
-                  if (transformed) updateHistory(transformed);
-                  
                   // Use unified timeline to redo the next action
                   if (timelineTracker.timelineStep.current >= timelineTracker.timeline.current.length - 1) return;
                   

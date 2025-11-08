@@ -38,14 +38,22 @@ export const ProductShape = memo(
       renderedHeight = config.height || 30;
     }
 
-    // Calculate font size based on rendered dimensions
-    const fontSize = Math.max(12, Math.min(renderedWidth, renderedHeight) * 0.3);
+    // Fixed text size based on canvas scale factor for legibility
+    // Text size is independent of product scaling to ensure it's always readable
+    const baseFontSize = 16; // Base font size at scaleFactor=100
+    const fontSize = Math.max(12, (baseFontSize * scaleFactor) / 100);
     
     // Calculate quantity badge position and size (top-right corner)
     const quantity = product.quantity || 1;
     const showQuantityBadge = quantity > 1;
-    const badgeSize = Math.max(12, Math.min(renderedWidth, renderedHeight) * 0.25);
+    const baseBadgeSize = 20; // Base badge size at scaleFactor=100
+    const badgeSize = Math.max(12, (baseBadgeSize * scaleFactor) / 100);
     const badgeFontSize = Math.max(8, badgeSize * 0.6);
+
+    // Calculate counter-scale to neutralize parent group's scaling
+    // This ensures text maintains fixed size regardless of product scaling
+    const textScaleX = 1 / (product.scaleX || 1);
+    const textScaleY = 1 / (product.scaleY || 1);
 
     return (
       <Group
@@ -106,6 +114,7 @@ export const ProductShape = memo(
             align="center"
             verticalAlign="middle"
             listening={false}
+            perfectDrawEnabled={false}
             x={0}
             y={0}
             width={renderedWidth}
@@ -113,6 +122,8 @@ export const ProductShape = memo(
             offsetX={renderedWidth / 2}
             offsetY={renderedHeight / 2}
             rotation={-((product.rotation || 0) + (groupRotation || 0))}
+            scaleX={textScaleX}
+            scaleY={textScaleY}
           />
         )}
         {showQuantityBadge && (
@@ -120,6 +131,8 @@ export const ProductShape = memo(
             x={renderedWidth / 2 - badgeSize / 2}
             y={-renderedHeight / 2 - badgeSize / 2}
             rotation={-((product.rotation || 0) + (groupRotation || 0))}
+            scaleX={textScaleX}
+            scaleY={textScaleY}
             listening={false}
             perfectDrawEnabled={false}
             hitGraphEnabled={false}

@@ -106,6 +106,20 @@ const Page = () => {
     handleResetView,
   } = canvasState;
 
+  // Use refs for frequently changing canvas state to avoid re-renders in callbacks
+  // These refs are kept in sync with state but don't trigger re-renders when accessed
+  const stageScaleRef = useRef(stageScale);
+  const stagePositionRef = useRef(stagePosition);
+  
+  // Keep refs in sync with state
+  useEffect(() => {
+    stageScaleRef.current = stageScale;
+  }, [stageScale]);
+  
+  useEffect(() => {
+    stagePositionRef.current = stagePosition;
+  }, [stagePosition]);
+
   // Layer management
   const layerManager = useLayerManager();
   const {
@@ -1322,8 +1336,8 @@ const Page = () => {
       const stage = e.target.getStage();
       const pointerPosition = stage.getPointerPosition();
       const canvasPos = {
-        x: (pointerPosition.x - stagePosition.x) / stageScale,
-        y: (pointerPosition.y - stagePosition.y) / stageScale,
+        x: (pointerPosition.x - stagePositionRef.current.x) / stageScaleRef.current,
+        y: (pointerPosition.y - stagePositionRef.current.y) / stageScaleRef.current,
       };
       setMeasurePoints((points) => {
         if (points.length >= 2) return points;
@@ -1334,7 +1348,7 @@ const Page = () => {
         return newPoints;
       });
     },
-    [measureMode, stagePosition, stageScale],
+    [measureMode],
   );
 
   const calculateDistance = useCallback((point1, point2) => {
@@ -1652,8 +1666,8 @@ const Page = () => {
         const stage = e.target.getStage();
         const pointerPosition = stage.getPointerPosition();
         const canvasPos = {
-          x: (pointerPosition.x - stagePosition.x) / stageScale,
-          y: (pointerPosition.y - stagePosition.y) / stageScale,
+          x: (pointerPosition.x - stagePositionRef.current.x) / stageScaleRef.current,
+          y: (pointerPosition.y - stagePositionRef.current.y) / stageScaleRef.current,
         };
 
         const newProduct = createProductFromTemplate(
@@ -1664,7 +1678,7 @@ const Page = () => {
         updateHistory([...products, newProduct]);
       }
     },
-    [placementMode, stagePosition, stageScale, createProductFromTemplate, products, updateHistory],
+    [placementMode, createProductFromTemplate, products, updateHistory],
   );
 
   // Use ref to track last mouse move time for throttling
@@ -1678,8 +1692,8 @@ const Page = () => {
       const stage = e.target.getStage();
       const pointerPosition = stage.getPointerPosition();
       const canvasPos = {
-        x: (pointerPosition.x - stagePosition.x) / stageScale,
-        y: (pointerPosition.y - stagePosition.y) / stageScale,
+        x: (pointerPosition.x - stagePositionRef.current.x) / stageScaleRef.current,
+        y: (pointerPosition.y - stagePositionRef.current.y) / stageScaleRef.current,
       };
 
       // Check if we've moved beyond the threshold
@@ -1687,7 +1701,7 @@ const Page = () => {
       const dy = Math.abs(canvasPos.y - selectionStartRef.current.y);
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (!hasDraggedRef.current && distance > DRAG_THRESHOLD / stageScale) {
+      if (!hasDraggedRef.current && distance > DRAG_THRESHOLD / stageScaleRef.current) {
         // Start selection - we've moved beyond threshold
         hasDraggedRef.current = true;
         setIsSelecting(true);
@@ -1702,7 +1716,7 @@ const Page = () => {
         });
       }
     },
-    [stagePosition, stageScale, DRAG_THRESHOLD],
+    [DRAG_THRESHOLD],
   );
 
   const handleCanvasMouseMove = useCallback(
@@ -1725,13 +1739,13 @@ const Page = () => {
       const pointerPosition = stage.getPointerPosition();
       if (pointerPosition) {
         const canvasPos = {
-          x: (pointerPosition.x - stagePosition.x) / stageScale,
-          y: (pointerPosition.y - stagePosition.y) / stageScale,
+          x: (pointerPosition.x - stagePositionRef.current.x) / stageScaleRef.current,
+          y: (pointerPosition.y - stagePositionRef.current.y) / stageScaleRef.current,
         };
         setCursorPosition(canvasPos);
       }
     },
-    [handleSelectionMove, stagePosition, stageScale],
+    [handleSelectionMove],
   );
 
   const handleStopPlacement = useCallback(() => {
@@ -1746,8 +1760,8 @@ const Page = () => {
         const stage = e.target.getStage();
         const pointerPosition = stage.getPointerPosition();
         const canvasPos = {
-          x: (pointerPosition.x - stagePosition.x) / stageScale,
-          y: (pointerPosition.y - stagePosition.y) / stageScale,
+          x: (pointerPosition.x - stagePositionRef.current.x) / stageScaleRef.current,
+          y: (pointerPosition.y - stagePositionRef.current.y) / stageScaleRef.current,
         };
 
         const newTextBox = {
@@ -1785,8 +1799,6 @@ const Page = () => {
     [
       selectedTool,
       textBoxes,
-      stagePosition,
-      stageScale,
       theme,
       setSelectedIds,
       setSelectedConnectorIds,
@@ -2106,15 +2118,15 @@ const Page = () => {
       const stage = e.target.getStage();
       const pointerPosition = stage.getPointerPosition();
       const canvasPos = {
-        x: (pointerPosition.x - stagePosition.x) / stageScale,
-        y: (pointerPosition.y - stagePosition.y) / stageScale,
+        x: (pointerPosition.x - stagePositionRef.current.x) / stageScaleRef.current,
+        y: (pointerPosition.y - stagePositionRef.current.y) / stageScaleRef.current,
       };
 
       selectionStartRef.current = canvasPos;
       hasDraggedRef.current = false;
       // Don't set isSelecting yet - wait for actual movement
     },
-    [selectedTool, stagePosition, stageScale],
+    [selectedTool],
   );
 
   const handleSelectionEnd = useCallback(() => {

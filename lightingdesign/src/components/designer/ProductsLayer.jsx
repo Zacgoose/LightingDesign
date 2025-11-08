@@ -254,7 +254,8 @@ export const ProductsLayer = memo(
               }
             }}
             onDragEnd={onGroupTransformEnd}
-            onTransformEnd={onGroupTransformEnd}
+            // Note: onTransformEnd removed - transformer event listener handles this (see useEffect above)
+            // Having both caused duplicate history entries (2x for products, 4x for textboxes)
             onTransform={(e) => {
               const node = e.target;
               // Keep the group centered at its original position during rotation/scale

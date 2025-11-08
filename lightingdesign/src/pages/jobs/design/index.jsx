@@ -2906,41 +2906,43 @@ const Page = () => {
         </Box>
       )}
 
-      <ContextMenus
-        contextMenu={contextMenus.contextMenu}
-        onClose={contextMenus.handleCloseContextMenu}
-        onDuplicate={contextMenus.handleDuplicateSelected}
-        onOpenColorPicker={contextMenus.handleOpenColorPicker}
-        onResetScale={handleResetScale}
-        onDelete={contextMenus.handleDeleteSelected}
-        onInsertProduct={contextMenus.handleInsertProductAtPosition}
-        onSwapPlacementProduct={handleSwapPlacementProduct}
-        onSwapProduct={handleSwapSelectedProducts}
-        onSwapAllSameProducts={handleSwapAllSameProducts}
-        onScale={handleOpenScaleDialog}
-        onChangeQuantity={handleOpenQuantityDialog}
-        onAssignToSublayer={handleAssignToSublayer}
-        onShowProperties={handleShowProperties}
-        onInsertCustomObject={handleInsertCustomObject}
-        sublayers={activeLayer?.sublayers || []}
-        selectedProductsCount={selectedIds.length}
-        selectedConnectorsCount={selectedConnectorIds.length}
-        onTextEdit={handleTextEdit}
-        onTextFormatBold={handleTextFormatBold}
-        onTextFormatItalic={handleTextFormatItalic}
-        onTextFormatUnderline={handleTextFormatUnderline}
-        onTextFontSize={handleTextFontSize}
-        onTextToggleBorder={handleTextToggleBorder}
-        onResetConnectorToStraight={contextMenus.handleResetConnectorToStraight}
-        onAlignHorizontalCenter={contextMenus.handleAlignHorizontalCenter}
-        onAlignVerticalCenter={contextMenus.handleAlignVerticalCenter}
-        onAlignLeft={contextMenus.handleAlignLeft}
-        onAlignRight={contextMenus.handleAlignRight}
-        onAlignTop={contextMenus.handleAlignTop}
-        onAlignBottom={contextMenus.handleAlignBottom}
-        onEvenSpacingHorizontal={contextMenus.handleEvenSpacingHorizontal}
-        onEvenSpacingVertical={contextMenus.handleEvenSpacingVertical}
-      />
+      {contextMenus.contextMenu && (
+        <ContextMenus
+          contextMenu={contextMenus.contextMenu}
+          onClose={contextMenus.handleCloseContextMenu}
+          onDuplicate={contextMenus.handleDuplicateSelected}
+          onOpenColorPicker={contextMenus.handleOpenColorPicker}
+          onResetScale={handleResetScale}
+          onDelete={contextMenus.handleDeleteSelected}
+          onInsertProduct={contextMenus.handleInsertProductAtPosition}
+          onSwapPlacementProduct={handleSwapPlacementProduct}
+          onSwapProduct={handleSwapSelectedProducts}
+          onSwapAllSameProducts={handleSwapAllSameProducts}
+          onScale={handleOpenScaleDialog}
+          onChangeQuantity={handleOpenQuantityDialog}
+          onAssignToSublayer={handleAssignToSublayer}
+          onShowProperties={handleShowProperties}
+          onInsertCustomObject={handleInsertCustomObject}
+          sublayers={activeLayer?.sublayers || []}
+          selectedProductsCount={selectedIds.length}
+          selectedConnectorsCount={selectedConnectorIds.length}
+          onTextEdit={handleTextEdit}
+          onTextFormatBold={handleTextFormatBold}
+          onTextFormatItalic={handleTextFormatItalic}
+          onTextFormatUnderline={handleTextFormatUnderline}
+          onTextFontSize={handleTextFontSize}
+          onTextToggleBorder={handleTextToggleBorder}
+          onResetConnectorToStraight={contextMenus.handleResetConnectorToStraight}
+          onAlignHorizontalCenter={contextMenus.handleAlignHorizontalCenter}
+          onAlignVerticalCenter={contextMenus.handleAlignVerticalCenter}
+          onAlignLeft={contextMenus.handleAlignLeft}
+          onAlignRight={contextMenus.handleAlignRight}
+          onAlignTop={contextMenus.handleAlignTop}
+          onAlignBottom={contextMenus.handleAlignBottom}
+          onEvenSpacingHorizontal={contextMenus.handleEvenSpacingHorizontal}
+          onEvenSpacingVertical={contextMenus.handleEvenSpacingVertical}
+        />
+      )}
 
       <CippComponentDialog
         open={scaleDialogOpen}

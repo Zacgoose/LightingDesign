@@ -11,6 +11,8 @@ export const ConnectorLine = ({
   onContextMenu,
   theme,
   selectedTool,
+  isMiddlePanning = false,
+  isStageDragging = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const control1Ref = useRef(null);
@@ -104,7 +106,7 @@ export const ConnectorLine = ({
         lineCap="round"
         dash={[30, 15]} // Dashed line pattern: 30px dash, 15px gap (more spacing)
         hitStrokeWidth={40} // Makes it easier to click
-        listening={selectedTool === "select" || selectedTool === "connect"} // Only listen when interaction is needed
+        listening={(selectedTool === "select" || selectedTool === "connect") && !isMiddlePanning && !isStageDragging} // Disable listening during panning for performance
         onClick={handleLineClick}
         onTap={handleLineClick}
         onContextMenu={onContextMenu}

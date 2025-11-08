@@ -2622,6 +2622,8 @@ const Page = () => {
                           selectedConnectorIds={[]}
                           selectedTool={selectedTool}
                           theme={theme}
+                          isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
                           onConnectorSelect={handleConnectorSelect}
                           onConnectorChange={(updatedConnector) => {
                             // Merge the updated connector with the full connector list
@@ -2720,6 +2722,7 @@ const Page = () => {
                           selectedIds={selectedIds}
                           selectedTool={selectedTool}
                           isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
                           onTextSelect={handleTextSelect}
                           onTextChange={handleTextChange}
                           onTextDoubleClick={handleTextDoubleClick}
@@ -2737,6 +2740,8 @@ const Page = () => {
                             selectedConnectorIds={selectedConnectorIds}
                             selectedTool={selectedTool}
                             theme={theme}
+                            isMiddlePanning={isMiddlePanning}
+                            isStageDragging={isStageDragging}
                             onConnectorSelect={handleConnectorSelect}
                             onConnectorChange={(updatedConnector) => {
                               // Merge the updated connector with the full connector list

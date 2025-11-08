@@ -9,6 +9,8 @@ export const ConnectorsLayer = ({
   onConnectorSelect,
   onConnectorChange,
   onConnectorContextMenu,
+  isMiddlePanning = false,
+  isStageDragging = false,
 }) => {
   // Separate connectors into selected and unselected for proper z-index ordering
   const unselectedConnectors = connectors.filter((c) => !selectedConnectorIds.includes(c.id));
@@ -36,6 +38,8 @@ export const ConnectorsLayer = ({
         onContextMenu={(e) => onConnectorContextMenu(e, connector.id)}
         theme={theme}
         selectedTool={selectedTool}
+        isMiddlePanning={isMiddlePanning}
+        isStageDragging={isStageDragging}
       />
     );
   };

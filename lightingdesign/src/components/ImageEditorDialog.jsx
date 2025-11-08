@@ -69,6 +69,8 @@ export const ImageEditorDialog = (props) => {
     img.onload = () => {
       imageRef.current = img;
       initializeCanvas(img);
+      // Set eraser as default tool when opening
+      setSelectedTool("erase");
     };
     img.src = imageUrl;
   }, [open, imageUrl]);
@@ -254,6 +256,11 @@ export const ImageEditorDialog = (props) => {
     const newZoom = Math.min(Math.max(zoom * delta, 0.1), 5);
     
     setZoom(newZoom);
+    
+    // Reset pan offset when zooming to keep image centered
+    if (newZoom === 1) {
+      setPanOffset({ x: 0, y: 0 });
+    }
   };
 
   const handleMouseUp = () => {
@@ -419,12 +426,13 @@ export const ImageEditorDialog = (props) => {
     <Dialog
       onClose={onClose}
       open={open}
-      maxWidth="lg"
+      maxWidth="xl"
       fullWidth
       PaperProps={{
         sx: {
-          minHeight: "80vh",
-          maxHeight: "90vh",
+          minHeight: "95vh",
+          maxHeight: "95vh",
+          m: 1,
         },
       }}
       {...other}
@@ -494,14 +502,14 @@ export const ImageEditorDialog = (props) => {
           </Stack>
         </Stack>
       </DialogTitle>
-      <DialogContent>
+      <DialogContent onWheel={handleWheel}>
         <Paper
           elevation={0}
           sx={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            minHeight: "500px",
+            minHeight: "calc(95vh - 200px)",
             backgroundColor: "#f5f5f5",
             p: 2,
             position: "relative",
@@ -514,7 +522,7 @@ export const ImageEditorDialog = (props) => {
                   ref={canvasRef}
                   style={{
                     maxWidth: "100%",
-                    maxHeight: "500px",
+                    maxHeight: "calc(95vh - 250px)",
                     objectFit: "contain",
                   }}
                 />
@@ -539,10 +547,9 @@ export const ImageEditorDialog = (props) => {
                 onMouseUp={handleMouseUp}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeaveCanvas}
-                onWheel={handleWheel}
                 style={{
                   maxWidth: "100%",
-                  maxHeight: "500px",
+                  maxHeight: "calc(95vh - 250px)",
                   objectFit: "contain",
                   cursor: isPanning ? "grabbing" : "none",
                   transform: `scale(${zoom}) translate(${panOffset.x / zoom}px, ${panOffset.y / zoom}px)`,

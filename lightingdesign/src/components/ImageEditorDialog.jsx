@@ -25,6 +25,7 @@ import {
   Flip,
   Undo,
   Redo,
+  CenterFocusStrong,
 } from "@mui/icons-material";
 
 export const ImageEditorDialog = (props) => {
@@ -149,7 +150,6 @@ export const ImageEditorDialog = (props) => {
     const canvas = canvasRef.current;
     if (!canvas || !canvasDataRef.current) return;
 
-    console.log('[ImageEditor] Restoring canvas from cached data');
     const img = new Image();
     img.onload = () => {
       const ctx = canvas.getContext('2d');
@@ -165,7 +165,6 @@ export const ImageEditorDialog = (props) => {
     const canvas = canvasRef.current;
     if (canvas) {
       canvasDataRef.current = canvas.toDataURL();
-      console.log('[ImageEditor] Saved canvas data before tool change');
     }
     
     if (newTool === selectedTool) {
@@ -176,8 +175,6 @@ export const ImageEditorDialog = (props) => {
   };
 
   const handleMouseDown = (e) => {
-    console.log('[ImageEditor] Mouse down', { selectedTool, hasCanvas: !!canvasRef.current });
-    
     // Handle panning with middle mouse button or space + left click
     if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
       setIsPanning(true);
@@ -243,7 +240,6 @@ export const ImageEditorDialog = (props) => {
     setShowCursor(false);
     setIsPanning(false);
     if (isDrawing) {
-      console.log('[ImageEditor] Drawing complete (mouse left canvas), saving to history');
       setIsDrawing(false);
       saveToHistory();
     }
@@ -252,14 +248,16 @@ export const ImageEditorDialog = (props) => {
   const handleWheel = (e) => {
     e.preventDefault();
     
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.min(Math.max(zoom * delta, 0.1), 5);
+    // Slower, more controlled zoom
+    const delta = e.deltaY > 0 ? 0.95 : 1.05;
+    const newZoom = Math.min(Math.max(zoom * delta, 0.5), 3);
     
     setZoom(newZoom);
     
-    // Reset pan offset when zooming to keep image centered
-    if (newZoom === 1) {
+    // Reset pan offset when zooming back to 1x to keep image centered
+    if (Math.abs(newZoom - 1) < 0.01) {
       setPanOffset({ x: 0, y: 0 });
+      setZoom(1);
     }
   };
 
@@ -270,10 +268,14 @@ export const ImageEditorDialog = (props) => {
     }
     
     if (isDrawing) {
-      console.log('[ImageEditor] Drawing complete, saving to history');
       setIsDrawing(false);
       saveToHistory();
     }
+  };
+
+  const handleResetView = () => {
+    setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
   };
 
   const draw = (e) => {
@@ -312,11 +314,6 @@ export const ImageEditorDialog = (props) => {
       return;
     }
 
-    console.log('[ImageEditor] Rotating image', { 
-      beforeWidth: canvas.width, 
-      beforeHeight: canvas.height 
-    });
-
     // Get current canvas content
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d');
@@ -338,11 +335,6 @@ export const ImageEditorDialog = (props) => {
     
     ctx.restore();
     
-    console.log('[ImageEditor] After rotation', { 
-      afterWidth: canvas.width, 
-      afterHeight: canvas.height 
-    });
-    
     saveToHistory();
   };
 
@@ -352,8 +344,6 @@ export const ImageEditorDialog = (props) => {
       console.error('[ImageEditor] Canvas ref is null in handleFlip()');
       return;
     }
-
-    console.log('[ImageEditor] Flipping image horizontally');
 
     // Get current canvas content
     const tempCanvas = document.createElement('canvas');
@@ -377,29 +367,17 @@ export const ImageEditorDialog = (props) => {
 
   const handleCropComplete = useCallback(() => {
     if (!completedCrop || !canvasRef.current) {
-      console.log('[ImageEditor] Crop complete called but missing data', { 
-        hasCompletedCrop: !!completedCrop, 
-        hasCanvas: !!canvasRef.current 
-      });
       return;
     }
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     
-    console.log('[ImageEditor] Cropping with coordinates', {
-      crop: completedCrop,
-      canvasWidth: canvas.width,
-      canvasHeight: canvas.height
-    });
-    
     // ReactCrop returns pixel coordinates, but we need to ensure they're within bounds
     const x = Math.max(0, Math.min(Math.floor(completedCrop.x), canvas.width - 1));
     const y = Math.max(0, Math.min(Math.floor(completedCrop.y), canvas.height - 1));
     const width = Math.max(1, Math.min(Math.floor(completedCrop.width), canvas.width - x));
     const height = Math.max(1, Math.min(Math.floor(completedCrop.height), canvas.height - y));
-    
-    console.log('[ImageEditor] Adjusted crop coordinates', { x, y, width, height });
     
     const imageData = ctx.getImageData(x, y, width, height);
 
@@ -491,13 +469,26 @@ export const ImageEditorDialog = (props) => {
                 />
               </Box>
             )}
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} alignItems="center">
               <IconButton onClick={handleRotate} aria-label="rotate" size="small">
                 <Rotate90DegreesCcw />
               </IconButton>
               <IconButton onClick={handleFlip} aria-label="flip" size="small">
                 <Flip />
               </IconButton>
+              <IconButton 
+                onClick={handleResetView} 
+                aria-label="reset view" 
+                size="small"
+                disabled={zoom === 1 && panOffset.x === 0 && panOffset.y === 0}
+              >
+                <CenterFocusStrong />
+              </IconButton>
+              {zoom !== 1 && (
+                <Typography variant="caption" sx={{ minWidth: 45 }}>
+                  {Math.round(zoom * 100)}%
+                </Typography>
+              )}
             </Stack>
           </Stack>
         </Stack>
@@ -552,9 +543,9 @@ export const ImageEditorDialog = (props) => {
                   maxHeight: "calc(95vh - 250px)",
                   objectFit: "contain",
                   cursor: isPanning ? "grabbing" : "none",
-                  transform: `scale(${zoom}) translate(${panOffset.x / zoom}px, ${panOffset.y / zoom}px)`,
+                  transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`,
                   transformOrigin: "center center",
-                  transition: isPanning ? "none" : "transform 0.1s ease-out",
+                  transition: isPanning ? "none" : "transform 0.15s ease-out",
                 }}
               />
               {/* Custom cursor preview for brush/eraser */}

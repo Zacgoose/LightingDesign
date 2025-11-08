@@ -27,6 +27,7 @@ import {
   VerticalAlignCenter,
   VerticalAlignTop,
   MultipleStop,
+  Edit,
 } from "@mui/icons-material";
 
 export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProps }) => {
@@ -78,6 +79,8 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
   // Extract props for easier access
   const {
     onUploadFloorPlan,
+    onEditBackgroundImage,
+    hasBackgroundImage = false,
     onSave,
     onExport,
     onUndo,
@@ -139,6 +142,16 @@ export const DesignerToolbarRow = ({ mainProps, toolsProps, viewProps, alignProp
           >
             Upload Floor Plan
           </Button>
+          {hasBackgroundImage && (
+            <Button
+              variant="outlined"
+              startIcon={<Edit />}
+              size="small"
+              onClick={onEditBackgroundImage}
+            >
+              Edit Image
+            </Button>
+          )}
           <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave}>
             Save Project
           </Button>

@@ -33,6 +33,7 @@ import { CippComponentDialog } from "/src/components/CippComponents/CippComponen
 import { TextLayer } from "/src/components/designer/TextLayer";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
 import { TextEntryDialog } from "/src/components/designer/TextEntryDialog";
+import { ImageEditorDialog } from "/src/components/ImageEditorDialog";
 import { useHistory } from "/src/hooks/useHistory";
 import { useUnifiedHistory } from "/src/hooks/useUnifiedHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
@@ -262,6 +263,10 @@ const Page = () => {
 
   // Upload state for better UX
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Image editor dialog state
+  const [imageEditorOpen, setImageEditorOpen] = useState(false);
+  const [imageEditorUrl, setImageEditorUrl] = useState(null);
 
   // Calculate the product for the preview line in connect mode
   const previewLineProduct = useMemo(() => {
@@ -1310,6 +1315,42 @@ const Page = () => {
     handleResetView,
     updateLayer,
   ]);
+
+  const handleEditBackgroundImage = useCallback(() => {
+    if (!backgroundImage) return;
+    setImageEditorUrl(backgroundImage);
+    setImageEditorOpen(true);
+  }, [backgroundImage]);
+
+  const handleSaveEditedImage = useCallback(
+    (editedImageUrl) => {
+      // Create an image to get natural size
+      const img = new window.Image();
+      img.onload = () => {
+        const naturalSize = { width: img.width, height: img.height };
+
+        // Update the layer with the edited image
+        updateLayer(activeLayerIdRef.current, {
+          backgroundImage: editedImageUrl,
+          backgroundImageNaturalSize: naturalSize,
+          backgroundFileType: "image",
+        });
+
+        // Set for immediate display
+        setBackgroundImage(editedImageUrl);
+        setBackgroundImageNaturalSize(naturalSize);
+
+        // Update sync refs
+        lastSyncedBackgroundImage.current = editedImageUrl;
+        lastSyncedBackgroundImageNaturalSize.current = naturalSize;
+
+        setImageEditorOpen(false);
+        setImageEditorUrl(null);
+      };
+      img.src = editedImageUrl;
+    },
+    [updateLayer],
+  );
 
   const handleMeasure = useCallback(() => {
     setMeasureMode(true);
@@ -2387,6 +2428,8 @@ const Page = () => {
             <DesignerToolbarRow
               mainProps={{
                 onUploadFloorPlan: handleUploadFloorPlan,
+                onEditBackgroundImage: handleEditBackgroundImage,
+                hasBackgroundImage: !!backgroundImage,
                 onSave: handleSave,
                 onExport: handleExport,
                 onUndo: () => {
@@ -2796,6 +2839,17 @@ const Page = () => {
                     onCancel={handleMeasureCancel}
                     calculateDistance={calculateDistance}
                     scaleFactor={scaleFactor}
+                  />
+
+                  {/* Image editor dialog */}
+                  <ImageEditorDialog
+                    open={imageEditorOpen}
+                    onClose={() => {
+                      setImageEditorOpen(false);
+                      setImageEditorUrl(null);
+                    }}
+                    onSave={handleSaveEditedImage}
+                    imageUrl={imageEditorUrl}
                   />
 
                   {/* Layer management panels */}

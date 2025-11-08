@@ -200,6 +200,44 @@ export const ProductsLayer = memo(
       return prefixMap;
     }, [products]);
     
+    // Pre-calculate stroke colors to avoid O(n²) complexity during rendering
+    const strokeColorMap = useMemo(() => {
+      const colorMap = new Map();
+      const skuList = [...new Set(products.map((p) => p.sku).filter(Boolean))];
+      
+      products.forEach((product) => {
+        // If product already has a strokeColor assigned, use it
+        if (product.strokeColor) {
+          colorMap.set(product.id, product.strokeColor);
+          return;
+        }
+        
+        const sku = product.sku;
+        if (!sku) {
+          colorMap.set(product.id, null); // Will use default
+          return;
+        }
+        
+        const skuProducts = products.filter((p) => p.sku === sku);
+        if (skuProducts.length <= 1) {
+          colorMap.set(product.id, null); // Will use default
+          return;
+        }
+        
+        // Use stored strokeColor if available
+        const existingProduct = skuProducts.find((p) => p.strokeColor);
+        if (existingProduct) {
+          colorMap.set(product.id, existingProduct.strokeColor);
+          return;
+        }
+        
+        const skuIndex = skuList.indexOf(sku);
+        colorMap.set(product.id, COLOR_PALETTE[skuIndex % COLOR_PALETTE.length]);
+      });
+      
+      return colorMap;
+    }, [products]);
+    
     // Manually attach transformend event listener to Transformer
     // This is necessary because the Group's onTransformEnd prop doesn't fire reliably
     // IMPORTANT: Only attach listener in the instance that renders the transformer to avoid duplicates
@@ -243,7 +281,7 @@ export const ProductsLayer = memo(
             .map((product) => {
               const productType = product.product_type?.toLowerCase() || "default";
               const config = productTypesConfig[productType] || productTypesConfig.default;
-              const customStroke = getProductStrokeColor(product, products, config.stroke);
+              const customStroke = strokeColorMap.get(product.id) || config.stroke;
               const letterPrefix = letterPrefixMap.get(product.id) || config.letterPrefix || "O";
 
               return (
@@ -327,7 +365,7 @@ export const ProductsLayer = memo(
             {selectionSnapshot.products?.map((product) => {
               const productType = product.product_type?.toLowerCase() || "default";
               const config = productTypesConfig[productType] || productTypesConfig.default;
-              const customStroke = getProductStrokeColor(product, products, config.stroke);
+              const customStroke = strokeColorMap.get(product.id) || config.stroke;
               const letterPrefix = letterPrefixMap.get(product.id) || config.letterPrefix || "O";
 
               const relativeProduct = {

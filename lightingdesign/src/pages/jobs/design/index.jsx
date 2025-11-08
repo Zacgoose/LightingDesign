@@ -2557,14 +2557,16 @@ const Page = () => {
                 }}
               />
 
-              <ProductDetailsDrawer
-                product={selectedProductForDetails}
-                visible={productDetailsDrawerVisible}
-                onClose={() => {
-                  setProductDetailsDrawerVisible(false);
-                  setSelectedProductForDetails(null);
-                }}
-              />
+              {productDetailsDrawerVisible && (
+                <ProductDetailsDrawer
+                  product={selectedProductForDetails}
+                  visible={productDetailsDrawerVisible}
+                  onClose={() => {
+                    setProductDetailsDrawerVisible(false);
+                    setSelectedProductForDetails(null);
+                  }}
+                />
+              )}
             </Box>
 
             <Card sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -2842,15 +2844,17 @@ const Page = () => {
                     }
                   />
 
-                  {/* Text entry dialog */}
-                  <TextEntryDialog
-                    open={textDialogOpen}
-                    onClose={handleTextDialogClose}
-                    onConfirm={handleTextDialogConfirm}
-                    title="Enter Text"
-                    defaultValue={textDialogValue}
-                    defaultFormatting={textDialogFormatting}
-                  />
+                  {/* Text entry dialog - only render when open */}
+                  {textDialogOpen && (
+                    <TextEntryDialog
+                      open={textDialogOpen}
+                      onClose={handleTextDialogClose}
+                      onConfirm={handleTextDialogConfirm}
+                      title="Enter Text"
+                      defaultValue={textDialogValue}
+                      defaultFormatting={textDialogFormatting}
+                    />
+                  )}
 
                   {/* Inline measurement confirmation */}
                   <MeasurementConfirmation
@@ -2948,67 +2952,76 @@ const Page = () => {
         />
       )}
 
-      <CippComponentDialog
-        open={scaleDialogOpen}
-        title="Set Scale"
-        createDialog={{
-          open: scaleDialogOpen,
-          handleClose: () => setScaleDialogOpen(false),
-          handleSubmit: (data) => {
-            handleScaleConfirm(data.scale);
-            setScaleValue(data.scale);
-          },
-          form: scaleForm,
-        }}
-      >
-        <TextField
-          {...scaleForm.register("scale", {
-            onChange: handleScaleChange,
-          })}
-          label="Scale"
-          type="number"
-          defaultValue={scaleValue}
-          fullWidth
-          inputProps={{ min: 0.001, step: 0.001 }}
-          autoFocus
-        />
-      </CippComponentDialog>
+      {/* Scale dialog - only render when open */}
+      {scaleDialogOpen && (
+        <CippComponentDialog
+          open={scaleDialogOpen}
+          title="Set Scale"
+          createDialog={{
+            open: scaleDialogOpen,
+            handleClose: () => setScaleDialogOpen(false),
+            handleSubmit: (data) => {
+              handleScaleConfirm(data.scale);
+              setScaleValue(data.scale);
+            },
+            form: scaleForm,
+          }}
+        >
+          <TextField
+            {...scaleForm.register("scale", {
+              onChange: handleScaleChange,
+            })}
+            label="Scale"
+            type="number"
+            defaultValue={scaleValue}
+            fullWidth
+            inputProps={{ min: 0.001, step: 0.001 }}
+            autoFocus
+          />
+        </CippComponentDialog>
+      )}
 
-      <CippComponentDialog
-        open={quantityDialogOpen}
-        title="Set Quantity"
-        createDialog={{
-          open: quantityDialogOpen,
-          handleClose: () => setQuantityDialogOpen(false),
-          handleSubmit: (data) => {
-            handleQuantityConfirm(data.quantity);
-            setQuantityValue(data.quantity);
-          },
-          form: quantityForm,
-        }}
-      >
-        <TextField
-          {...quantityForm.register("quantity", {
-            onChange: handleQuantityChange,
-          })}
-          label="Quantity"
-          type="number"
-          defaultValue={quantityValue}
-          fullWidth
-          inputProps={{ min: 1, step: 1 }}
-          autoFocus
-          helperText="Set the quantity for the selected product(s). This allows you to place multiple items without rendering them all."
-        />
-      </CippComponentDialog>
+      {/* Quantity dialog - only render when open */}
+      {quantityDialogOpen && (
+        <CippComponentDialog
+          open={quantityDialogOpen}
+          title="Set Quantity"
+          createDialog={{
+            open: quantityDialogOpen,
+            handleClose: () => setQuantityDialogOpen(false),
+            handleSubmit: (data) => {
+              handleQuantityConfirm(data.quantity);
+              setQuantityValue(data.quantity);
+            },
+            form: quantityForm,
+          }}
+        >
+          <TextField
+            {...quantityForm.register("quantity", {
+              onChange: handleQuantityChange,
+            })}
+            label="Quantity"
+            type="number"
+            defaultValue={quantityValue}
+            fullWidth
+            inputProps={{ min: 1, step: 1 }}
+            autoFocus
+            helperText="Set the quantity for the selected product(s). This allows you to place multiple items without rendering them all."
+          />
+        </CippComponentDialog>
+      )}
 
-      <ColorPickerPopover
-        anchorEl={contextMenus.colorPickerAnchor}
-        onClose={() => {
-          contextMenus.setColorPickerAnchor(null);
-          contextMenus.setColorPickerTarget(null);
-        }}
-        onColorChange={contextMenus.handleColorChange}
-      />
+      {/* Color picker popover - only render when open */}
+      {contextMenus.colorPickerAnchor && (
+        <ColorPickerPopover
+          anchorEl={contextMenus.colorPickerAnchor}
+          onClose={() => {
+            contextMenus.setColorPickerAnchor(null);
+            contextMenus.setColorPickerTarget(null);
+          }}
+          onColorChange={contextMenus.handleColorChange}
+        />
+      )}
     </>
   );
 };

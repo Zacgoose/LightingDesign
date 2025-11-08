@@ -161,6 +161,7 @@ export const ProductsLayer = memo(
       const transformer = transformerRef.current;
 
       const handleTransformEnd = () => {
+        console.log('[ProductsLayer Debug] Transformer transformend event fired');
         onGroupTransformEnd();
       };
 
@@ -253,7 +254,10 @@ export const ProductsLayer = memo(
                 return false;
               }
             }}
-            onDragEnd={onGroupTransformEnd}
+            onDragEnd={(e) => {
+              console.log('[ProductsLayer Debug] Group onDragEnd fired');
+              onGroupTransformEnd(e);
+            }}
             // Note: onTransformEnd removed - transformer event listener handles this (see useEffect above)
             // Having both caused duplicate history entries (2x for products, 4x for textboxes)
             onTransform={(e) => {

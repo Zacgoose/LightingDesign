@@ -813,6 +813,13 @@ const Page = () => {
 
   // Unified group transform handler that handles both products and text boxes
   const handleUnifiedGroupTransformEnd = useCallback(() => {
+    console.log('[Transform Debug] handleUnifiedGroupTransformEnd called', {
+      selectedIds,
+      hasGroup: !!selectionGroupRef.current,
+      hasSnapshot: !!selectionSnapshot,
+      stackTrace: new Error().stack
+    });
+    
     if (!selectedIds.length || !selectionGroupRef.current || !selectionSnapshot) return;
 
     const group = selectionGroupRef.current;
@@ -838,6 +845,20 @@ const Page = () => {
       isClose(groupScaleY, 1) &&
       isClose(groupRotation, selectionSnapshot.rotation || 0)
     );
+
+    console.log('[Transform Debug] Transform check:', {
+      hasTransform,
+      groupX,
+      groupY,
+      groupScaleX,
+      groupScaleY,
+      groupRotation,
+      snapshotCenterX: selectionSnapshot.centerX,
+      snapshotCenterY: selectionSnapshot.centerY,
+      snapshotRotation: selectionSnapshot.rotation,
+      productIds,
+      textIds
+    });
 
     if (!hasTransform) {
       setGroupKey((k) => k + 1);

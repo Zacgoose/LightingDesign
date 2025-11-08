@@ -21,6 +21,14 @@ export const useUnifiedHistory = () => {
     // Add new action to timeline
     timeline.current.push(historyKey);
     timelineStep.current += 1;
+    
+    // Debug logging to track unified timeline updates
+    console.log(`[Unified Timeline Debug] Action recorded:`, {
+      historyKey,
+      step: timelineStep.current,
+      timeline: [...timeline.current],
+      stackTrace: new Error().stack
+    });
   }, []);
 
   /**

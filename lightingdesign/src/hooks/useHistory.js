@@ -12,6 +12,13 @@ export const useHistory = (initialState, timelineTracker, historyKey) => {
     historyStep.current += 1;
     setState(newState);
     
+    // Debug logging to track history updates
+    console.log(`[History Debug] ${historyKey} history updated:`, {
+      step: historyStep.current,
+      totalSteps: history.current.length,
+      stackTrace: new Error().stack
+    });
+    
     // Record action in unified timeline
     timelineTracker.recordAction(historyKey);
   }, [timelineTracker, historyKey]);

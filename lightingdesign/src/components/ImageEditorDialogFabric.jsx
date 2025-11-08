@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
-import { Canvas, FabricImage, PencilBrush } from "fabric";
+import { Canvas, FabricImage, PencilBrush, Point } from "fabric";
 import {
   Dialog,
   DialogTitle,
@@ -59,38 +59,46 @@ export const ImageEditorDialogFabric = (props) => {
       
       console.log("[ImageEditor] Canvas element found, proceeding with initialization");
     
-    canvasElement.width = 800;
-    canvasElement.height = 600;
-
-    const canvas = new Canvas(canvasElement, {
-      width: 800,
-      height: 600,
-      backgroundColor: "#ffffff",
-    });
-
-    fabricCanvasRef.current = canvas;
-
-    // Load background image using v6 API
+    // Create a temporary canvas to load image and determine size
     FabricImage.fromURL(imageUrl, { crossOrigin: "anonymous" })
       .then((img) => {
         console.log("Image loaded:", img.width, img.height);
         
-        // Calculate scale to fit image in canvas
+        // Calculate canvas size to fit image with some max constraints
+        const maxWidth = 1200;
+        const maxHeight = 800;
         const scale = Math.min(
-          800 / img.width,
-          600 / img.height
+          maxWidth / img.width,
+          maxHeight / img.height,
+          1 // Don't scale up, only down
         );
         
-        console.log("Scale factor:", scale);
-        console.log("Scaled dimensions:", img.width * scale, img.height * scale);
+        const canvasWidth = Math.round(img.width * scale);
+        const canvasHeight = Math.round(img.height * scale);
         
+        console.log("Scale factor:", scale);
+        console.log("Canvas dimensions:", canvasWidth, canvasHeight);
+        
+        // Set canvas element size
+        canvasElement.width = canvasWidth;
+        canvasElement.height = canvasHeight;
+
+        const canvas = new Canvas(canvasElement, {
+          width: canvasWidth,
+          height: canvasHeight,
+          backgroundColor: "#ffffff",
+        });
+
+        fabricCanvasRef.current = canvas;
+        
+        // Position image at top-left (0,0) and scale to fill canvas
         img.set({
           scaleX: scale,
           scaleY: scale,
-          left: 400, // Center of 800px width
-          top: 300,  // Center of 600px height
-          originX: "center",
-          originY: "center",
+          left: 0,
+          top: 0,
+          originX: "left",
+          originY: "top",
           selectable: false,
           evented: false,
         });
@@ -101,37 +109,86 @@ export const ImageEditorDialogFabric = (props) => {
         canvas.renderAll();
         
         console.log("Canvas objects:", canvas.getObjects().length);
-        console.log("Image position:", img.left, img.top);
         console.log("Canvas initialized with image");
+        
+        // Enable panning with Alt+drag
+        let isPanning = false;
+        let lastPosX = 0;
+        let lastPosY = 0;
+
+        canvas.on('mouse:down', function(opt) {
+          const evt = opt.e;
+          if (evt.altKey === true) {
+            isPanning = true;
+            canvas.selection = false;
+            lastPosX = evt.clientX;
+            lastPosY = evt.clientY;
+            canvas.defaultCursor = 'grabbing';
+          }
+        });
+
+        canvas.on('mouse:move', function(opt) {
+          if (isPanning) {
+            const evt = opt.e;
+            const vpt = canvas.viewportTransform;
+            vpt[4] += evt.clientX - lastPosX;
+            vpt[5] += evt.clientY - lastPosY;
+            canvas.requestRenderAll();
+            lastPosX = evt.clientX;
+            lastPosY = evt.clientY;
+          }
+        });
+
+        canvas.on('mouse:up', function() {
+          if (isPanning) {
+            isPanning = false;
+            canvas.selection = true;
+            canvas.defaultCursor = 'default';
+          }
+        });
+        
+        // Enable mouse wheel zoom
+        canvas.on('mouse:wheel', function(opt) {
+          const delta = opt.e.deltaY;
+          let zoom = canvas.getZoom();
+          zoom *= 0.999 ** delta;
+          if (zoom > 20) zoom = 20;
+          if (zoom < 0.1) zoom = 0.1;
+          
+          const point = new Point(opt.e.offsetX, opt.e.offsetY);
+          canvas.zoomToPoint(point, zoom);
+          opt.e.preventDefault();
+          opt.e.stopPropagation();
+        });
         
         // Save initial state to history
         const json = JSON.stringify(canvas.toJSON());
         setHistory([json]);
         setHistoryStep(0);
+        
+        // Set up drawing mode for eraser (default tool)
+        canvas.isDrawingMode = true;
+        const eraserBrush = new PencilBrush(canvas);
+        eraserBrush.width = brushSize;
+        eraserBrush.color = "rgba(255, 255, 255, 1)";
+        eraserBrush.globalCompositeOperation = "destination-out";
+        canvas.freeDrawingBrush = eraserBrush;
+
+        // Save to history after drawing
+        canvas.on("path:created", () => {
+          const json = JSON.stringify(canvas.toJSON());
+          setHistory((prev) => {
+            const currentStep = historyStep;
+            const newHistory = prev.slice(0, currentStep + 1);
+            newHistory.push(json);
+            return newHistory;
+          });
+          setHistoryStep((prev) => prev + 1);
+        });
       })
       .catch((err) => {
         console.error("Error loading image:", err);
       });
-
-    // Set up drawing mode for eraser (default tool)
-    canvas.isDrawingMode = true;
-    const eraserBrush = new PencilBrush(canvas);
-    eraserBrush.width = brushSize;
-    eraserBrush.color = "rgba(255, 255, 255, 1)";
-    eraserBrush.globalCompositeOperation = "destination-out";
-    canvas.freeDrawingBrush = eraserBrush;
-
-    // Save to history after drawing
-    canvas.on("path:created", () => {
-      const json = JSON.stringify(canvas.toJSON());
-      setHistory((prev) => {
-        const currentStep = historyStep;
-        const newHistory = prev.slice(0, currentStep + 1);
-        newHistory.push(json);
-        return newHistory;
-      });
-      setHistoryStep((prev) => prev + 1);
-    });
     }, 0); // End of setTimeout
 
     return () => {

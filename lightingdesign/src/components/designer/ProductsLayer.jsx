@@ -1,7 +1,7 @@
 import { Group, Transformer, Text, Rect } from "react-konva";
 import { ProductShape } from "./ProductShape";
 import productTypesConfig from "/src/data/productTypes.json";
-import { useEffect, memo } from "react";
+import { useEffect, memo, useMemo } from "react";
 
 export const COLOR_PALETTE = [
   "#1976d2",
@@ -154,6 +154,52 @@ export const ProductsLayer = memo(
     renderSelection = true, // Control rendering of selection group
     renderTransformer = true, // Control rendering of transformer
   }) => {
+    // Pre-calculate all letter prefixes efficiently to avoid O(n²) complexity during rendering
+    // This optimization prevents recalculating letter prefixes for each product in the map loop
+    const letterPrefixMap = useMemo(() => {
+      const prefixMap = new Map();
+      
+      // Build grouping key to prefix mapping in O(n) time
+      const groupingKeysByPrefix = new Map();
+      
+      products.forEach((product) => {
+        const productType = product.product_type?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
+        const letterPrefix = config.letterPrefix || "O";
+        
+        if (!groupingKeysByPrefix.has(letterPrefix)) {
+          groupingKeysByPrefix.set(letterPrefix, []);
+        }
+        
+        const groupingKey = getProductGroupingKey(product, productTypesConfig);
+        const groupingKeys = groupingKeysByPrefix.get(letterPrefix);
+        
+        // Track order of first appearance for each grouping key
+        if (!groupingKeys.some(gk => gk.key === groupingKey)) {
+          groupingKeys.push({ key: groupingKey, productId: product.id });
+        }
+      });
+      
+      // Now assign letter prefixes based on grouping key order
+      products.forEach((product) => {
+        const productType = product.product_type?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
+        const letterPrefix = config.letterPrefix || "O";
+        const groupingKey = getProductGroupingKey(product, productTypesConfig);
+        
+        const groupingKeys = groupingKeysByPrefix.get(letterPrefix) || [];
+        const groupIndex = groupingKeys.findIndex(gk => gk.key === groupingKey);
+        
+        if (groupIndex !== -1) {
+          prefixMap.set(product.id, `${letterPrefix}${groupIndex + 1}`);
+        } else {
+          prefixMap.set(product.id, letterPrefix);
+        }
+      });
+      
+      return prefixMap;
+    }, [products]);
+    
     // Manually attach transformend event listener to Transformer
     // This is necessary because the Group's onTransformEnd prop doesn't fire reliably
     // IMPORTANT: Only attach listener in the instance that renders the transformer to avoid duplicates
@@ -198,7 +244,7 @@ export const ProductsLayer = memo(
               const productType = product.product_type?.toLowerCase() || "default";
               const config = productTypesConfig[productType] || productTypesConfig.default;
               const customStroke = getProductStrokeColor(product, products, config.stroke);
-              const letterPrefix = getProductLetterPrefix(product, products, productTypesConfig);
+              const letterPrefix = letterPrefixMap.get(product.id) || config.letterPrefix || "O";
 
               return (
                 <ProductShape
@@ -282,7 +328,7 @@ export const ProductsLayer = memo(
               const productType = product.product_type?.toLowerCase() || "default";
               const config = productTypesConfig[productType] || productTypesConfig.default;
               const customStroke = getProductStrokeColor(product, products, config.stroke);
-              const letterPrefix = getProductLetterPrefix(product, products, productTypesConfig);
+              const letterPrefix = letterPrefixMap.get(product.id) || config.letterPrefix || "O";
 
               const relativeProduct = {
                 ...product,

@@ -28,6 +28,11 @@ export const useProductInteraction = ({
     (e, productId) => {
       if (isDragging) return;
 
+      // Filter out middle mouse clicks (button === 1) to prevent selection during panning
+      if (e.evt?.button === 1) {
+        return;
+      }
+
       // Connect mode logic
       if (selectedTool === "connect") {
         // Right-click splits the sequence

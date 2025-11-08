@@ -2347,6 +2347,132 @@ const Page = () => {
     }
   }, [router, id, hasUnsavedChanges, isSaving, handleSave]);
 
+  // Memoize callback functions for toolbar to prevent re-renders
+  const handleToggleGrid = useCallback(() => setShowGrid(!showGrid), [showGrid]);
+  const handleToggleLayers = useCallback(() => setShowLayers(!showLayers), [showLayers]);
+  const handleTogglePreview = useCallback(() => setShowPreview(!showPreview), [showPreview]);
+  
+  const handleToolbarUndo = useCallback(() => {
+    // Use unified timeline to undo the most recent action
+    if (timelineTracker.timelineStep.current === -1) return;
+    
+    const historyKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current];
+    let didUndo = false;
+    
+    if (historyKey === 'products') {
+      didUndo = handleUndo();
+    } else if (historyKey === 'textBoxes') {
+      didUndo = handleUndoTextBoxes();
+    } else if (historyKey === 'connectors') {
+      didUndo = handleUndoConnectors();
+    }
+    
+    if (didUndo) {
+      timelineTracker.timelineStep.current -= 1;
+      clearSelection();
+    }
+  }, [handleUndo, handleUndoTextBoxes, handleUndoConnectors, clearSelection, timelineTracker]);
+
+  const handleToolbarRedo = useCallback(() => {
+    // Use unified timeline to redo the next action
+    if (timelineTracker.timelineStep.current >= timelineTracker.timeline.current.length - 1) return;
+    
+    const nextHistoryKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current + 1];
+    let didRedo = false;
+    
+    if (nextHistoryKey === 'products') {
+      didRedo = handleRedo();
+    } else if (nextHistoryKey === 'textBoxes') {
+      didRedo = handleRedoTextBoxes();
+    } else if (nextHistoryKey === 'connectors') {
+      didRedo = handleRedoConnectors();
+    }
+    
+    if (didRedo) {
+      timelineTracker.timelineStep.current += 1;
+      clearSelection();
+    }
+  }, [handleRedo, handleRedoTextBoxes, handleRedoConnectors, clearSelection, timelineTracker]);
+
+  const handleToolChange = useCallback((tool) => {
+    // If leaving connect mode, clear connectSequence
+    if (selectedTool === "connect" && tool !== "connect") {
+      setConnectSequence([]);
+    }
+    // Clear selections when changing tools
+    applyGroupTransform();
+    setSelectedIds([]);
+    setSelectedConnectorIds([]);
+    setSelectedTextId(null);
+    setGroupKey((k) => k + 1);
+    setSelectedTool(tool);
+  }, [selectedTool, applyGroupTransform, setSelectedIds, setSelectedConnectorIds, setSelectedTextId, setGroupKey, setSelectedTool]);
+
+  // Memoize prop objects for toolbar to prevent re-renders
+  const toolbarMainProps = useMemo(() => ({
+    onUploadFloorPlan: handleUploadFloorPlan,
+    onSave: handleSave,
+    onExport: handleExport,
+    onUndo: handleToolbarUndo,
+    onRedo: handleToolbarRedo,
+    canUndo: timelineTracker.timelineStep.current > -1,
+    canRedo: timelineTracker.timelineStep.current < timelineTracker.timeline.current.length - 1,
+    onMeasure: handleMeasure,
+  }), [handleUploadFloorPlan, handleSave, handleExport, handleToolbarUndo, handleToolbarRedo, handleMeasure, timelineTracker.timelineStep.current, timelineTracker.timeline.current.length]);
+
+  const toolbarViewProps = useMemo(() => ({
+    showGrid: showGrid,
+    onToggleGrid: handleToggleGrid,
+    showLayers: showLayers,
+    onToggleLayers: handleToggleLayers,
+    showPreview: showPreview,
+    onTogglePreview: handleTogglePreview,
+    onZoomIn: handleZoomIn,
+    onZoomOut: handleZoomOut,
+    onResetView: handleResetView,
+    zoomLevel: stageScale,
+    rotationSnaps: rotationSnaps,
+    onRotationSnapsChange: setRotationSnaps,
+  }), [showGrid, handleToggleGrid, showLayers, handleToggleLayers, showPreview, handleTogglePreview, handleZoomIn, handleZoomOut, handleResetView, stageScale, rotationSnaps, setRotationSnaps]);
+
+  const toolbarToolsProps = useMemo(() => ({
+    selectedTool: selectedTool,
+    onToolChange: handleToolChange,
+    placementMode: placementMode,
+    onStopPlacement: handleStopPlacement,
+    onDisconnectCable: handleDisconnectCable,
+  }), [selectedTool, handleToolChange, placementMode, handleStopPlacement, handleDisconnectCable]);
+
+  const toolbarAlignProps = useMemo(() => ({
+    selectedCount: selectedIds.length,
+    onAlignHorizontalCenter: contextMenus.handleAlignHorizontalCenter,
+    onAlignVerticalCenter: contextMenus.handleAlignVerticalCenter,
+    onAlignLeft: contextMenus.handleAlignLeft,
+    onAlignRight: contextMenus.handleAlignRight,
+    onAlignTop: contextMenus.handleAlignTop,
+    onAlignBottom: contextMenus.handleAlignBottom,
+    onEvenSpacingHorizontal: contextMenus.handleEvenSpacingHorizontal,
+    onEvenSpacingVertical: contextMenus.handleEvenSpacingVertical,
+  }), [selectedIds.length, contextMenus.handleAlignHorizontalCenter, contextMenus.handleAlignVerticalCenter, contextMenus.handleAlignLeft, contextMenus.handleAlignRight, contextMenus.handleAlignTop, contextMenus.handleAlignBottom, contextMenus.handleEvenSpacingHorizontal, contextMenus.handleEvenSpacingVertical]);
+
+  // Memoize callbacks for layer components
+  const handleLayerClose = useCallback(() => setShowLayers(false), []);
+  
+  // Memoize layer sublayers array to prevent re-renders
+  const activeSublayers = useMemo(() => activeLayer?.sublayers || [], [activeLayer?.sublayers]);
+  
+  // Memoize selected product for preview panel
+  const selectedProduct = useMemo(() => {
+    if (selectedIds.length === 1 && !selectedIds[0].startsWith("text-")) {
+      return products.find((p) => p.id === selectedIds[0]) || null;
+    }
+    return null;
+  }, [selectedIds, products]);
+
+  const showObjectPreview = useMemo(() => {
+    return showPreview && selectedIds.length === 1 && !selectedIds[0].startsWith("text-");
+  }, [showPreview, selectedIds]);
+
   return (
     <>
       {/* Loading indicator */}
@@ -2385,98 +2511,10 @@ const Page = () => {
             <div style={{ height: 4 }} />
 
             <DesignerToolbarRow
-              mainProps={{
-                onUploadFloorPlan: handleUploadFloorPlan,
-                onSave: handleSave,
-                onExport: handleExport,
-                onUndo: () => {
-                  // Use unified timeline to undo the most recent action
-                  if (timelineTracker.timelineStep.current === -1) return;
-                  
-                  const historyKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current];
-                  let didUndo = false;
-                  
-                  if (historyKey === 'products') {
-                    didUndo = handleUndo();
-                  } else if (historyKey === 'textBoxes') {
-                    didUndo = handleUndoTextBoxes();
-                  } else if (historyKey === 'connectors') {
-                    didUndo = handleUndoConnectors();
-                  }
-                  
-                  if (didUndo) {
-                    timelineTracker.timelineStep.current -= 1;
-                    clearSelection();
-                  }
-                },
-                onRedo: () => {
-                  // Use unified timeline to redo the next action
-                  if (timelineTracker.timelineStep.current >= timelineTracker.timeline.current.length - 1) return;
-                  
-                  const nextHistoryKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current + 1];
-                  let didRedo = false;
-                  
-                  if (nextHistoryKey === 'products') {
-                    didRedo = handleRedo();
-                  } else if (nextHistoryKey === 'textBoxes') {
-                    didRedo = handleRedoTextBoxes();
-                  } else if (nextHistoryKey === 'connectors') {
-                    didRedo = handleRedoConnectors();
-                  }
-                  
-                  if (didRedo) {
-                    timelineTracker.timelineStep.current += 1;
-                    clearSelection();
-                  }
-                },
-                canUndo: timelineTracker.timelineStep.current > -1,
-                canRedo: timelineTracker.timelineStep.current < timelineTracker.timeline.current.length - 1,
-                onMeasure: handleMeasure,
-              }}
-              viewProps={{
-                showGrid: showGrid,
-                onToggleGrid: () => setShowGrid(!showGrid),
-                showLayers: showLayers,
-                onToggleLayers: () => setShowLayers(!showLayers),
-                showPreview: showPreview,
-                onTogglePreview: () => setShowPreview(!showPreview),
-                onZoomIn: handleZoomIn,
-                onZoomOut: handleZoomOut,
-                onResetView: handleResetView,
-                zoomLevel: stageScale,
-                rotationSnaps: rotationSnaps,
-                onRotationSnapsChange: setRotationSnaps,
-              }}
-              toolsProps={{
-                selectedTool: selectedTool,
-                onToolChange: (tool) => {
-                  // If leaving connect mode, clear connectSequence
-                  if (selectedTool === "connect" && tool !== "connect") {
-                    setConnectSequence([]);
-                  }
-                  // Clear selections when changing tools
-                  applyGroupTransform();
-                  setSelectedIds([]);
-                  setSelectedConnectorIds([]);
-                  setSelectedTextId(null);
-                  setGroupKey((k) => k + 1);
-                  setSelectedTool(tool);
-                },
-                placementMode: placementMode,
-                onStopPlacement: handleStopPlacement,
-                onDisconnectCable: handleDisconnectCable,
-              }}
-              alignProps={{
-                selectedCount: selectedIds.length,
-                onAlignHorizontalCenter: contextMenus.handleAlignHorizontalCenter,
-                onAlignVerticalCenter: contextMenus.handleAlignVerticalCenter,
-                onAlignLeft: contextMenus.handleAlignLeft,
-                onAlignRight: contextMenus.handleAlignRight,
-                onAlignTop: contextMenus.handleAlignTop,
-                onAlignBottom: contextMenus.handleAlignBottom,
-                onEvenSpacingHorizontal: contextMenus.handleEvenSpacingHorizontal,
-                onEvenSpacingVertical: contextMenus.handleEvenSpacingVertical,
-              }}
+              mainProps={toolbarMainProps}
+              viewProps={toolbarViewProps}
+              toolsProps={toolbarToolsProps}
+              alignProps={toolbarAlignProps}
             />
 
             <Box sx={{ mb: 0.75 }}>
@@ -2807,12 +2845,12 @@ const Page = () => {
                         onLayerSelect={setActiveLayerId}
                         onLayerAdd={addLayer}
                         onLayerDelete={deleteLayer}
-                        onClose={() => setShowLayers(false)}
+                        onClose={handleLayerClose}
                         subLayerControlsRef={subLayerControlsRef}
                       />
                       <SubLayerControls
                         ref={subLayerControlsRef}
-                        sublayers={activeLayer?.sublayers || []}
+                        sublayers={activeSublayers}
                         layerId={activeLayerId}
                         defaultSublayerId={activeLayer?.defaultSublayerId}
                         onSublayerToggle={toggleSublayerVisibility}
@@ -2820,21 +2858,15 @@ const Page = () => {
                         onSublayerRemove={removeSublayer}
                         onSublayerRename={renameSublayer}
                         onSetDefaultSublayer={setDefaultSublayer}
-                        onClose={() => setShowLayers(false)}
+                        onClose={handleLayerClose}
                       />
                     </>
                   )}
 
                   {/* Object Preview Panel */}
                   <ObjectPreviewPanel
-                    product={
-                      selectedIds.length === 1 && !selectedIds[0].startsWith("text-")
-                        ? products.find((p) => p.id === selectedIds[0])
-                        : null
-                    }
-                    visible={
-                      showPreview && selectedIds.length === 1 && !selectedIds[0].startsWith("text-")
-                    }
+                    product={selectedProduct}
+                    visible={showObjectPreview}
                   />
 
                   {/* Product List Panel */}

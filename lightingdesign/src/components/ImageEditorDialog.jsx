@@ -205,16 +205,7 @@ export const ImageEditorDialog = (props) => {
   };
 
   const handleMouseMove = (e) => {
-    // Handle panning
-    if (isPanning) {
-      setPanOffset({
-        x: e.clientX - panStart.x,
-        y: e.clientY - panStart.y,
-      });
-      return;
-    }
-    
-    // Update cursor position for preview
+    // Update cursor position for preview (always, even when panning)
     if (selectedTool === "draw" || selectedTool === "erase") {
       const canvas = canvasRef.current;
       if (canvas) {
@@ -224,6 +215,15 @@ export const ImageEditorDialog = (props) => {
           y: e.clientY - rect.top,
         });
       }
+    }
+    
+    // Handle panning
+    if (isPanning) {
+      setPanOffset({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y,
+      });
+      return;
     }
     
     if (!isDrawing) return;

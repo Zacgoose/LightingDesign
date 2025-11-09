@@ -84,19 +84,41 @@ export const TextBox = memo(
           draggable={draggable}
           listening={listening}
           hitFunc={(ctx, shape) => {
-            // Custom hit detection: only respond to clicks on the actual text area
-            // Use minimal padding (3px) so clicks in blank space (including border area) pass through
-            const padding = 3;
-            const hitX = -textWidth / 2 - padding;
-            const hitY = -textHeight / 2 - padding;
-            const hitWidth = textWidth + padding * 2;
-            const hitHeight = (textBox.height || textHeight) + padding * 2;
+            // Custom hit detection for text boxes:
+            // - Always make text area clickable (filled)
+            // - If border shown: also make border STROKE clickable (not interior space)
+            // - Blank space between text and border passes through to objects underneath
             
-            // Draw a rectangle for the hit area
             ctx.beginPath();
-            ctx.rect(hitX, hitY, hitWidth, hitHeight);
+            
+            // Always include text area with small padding
+            const textPadding = 5;
+            ctx.rect(
+              -textWidth / 2 - textPadding,
+              -textHeight / 2 - textPadding,
+              textWidth + textPadding * 2,
+              (textBox.height || textHeight) + textPadding * 2
+            );
+            
             ctx.closePath();
-            ctx.fillStrokeShape(shape);
+            ctx.fillShape(shape); // Fill the text area
+            
+            // If border is shown, add the border stroke to hit area
+            if (textBox.showBorder) {
+              ctx.beginPath();
+              const borderX = -textWidth / 2 - rectPadding;
+              const borderY = -textHeight / 2 - rectPadding;
+              const borderWidth = textWidth + rectPadding * 2;
+              const borderHeight = (textBox.height || textHeight) + rectPadding * 2;
+              
+              // Draw border rectangle
+              ctx.rect(borderX, borderY, borderWidth, borderHeight);
+              ctx.closePath();
+              
+              // Stroke the border (makes only the border line clickable, not interior)
+              ctx.lineWidth = 8; // Match border strokeWidth
+              ctx.strokeShape(shape);
+            }
           }}
           onMouseDown={(e) => {
             // Filter out middle mouse clicks (button === 1) to prevent selection during panning

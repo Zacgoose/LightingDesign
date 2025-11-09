@@ -437,9 +437,6 @@ export const ProductsLayer = memo(
               const textWidth = textBox.width || 100;
               const textHeight = renderedFontSize * 1.2;
 
-              // Rectangle padding
-              const rectPadding = 10;
-
               return (
                 <Group
                   key={textBox.id}
@@ -497,19 +494,6 @@ export const ProductsLayer = memo(
                     }
                   }}
                 >
-                  {/* Render rectangle border if enabled */}
-                  {textBox.showBorder && (
-                    <Rect
-                      x={-textWidth / 2 - rectPadding}
-                      y={-textHeight / 2 - rectPadding}
-                      width={textWidth + rectPadding * 2}
-                      height={(textBox.height || textHeight) + rectPadding * 2}
-                      stroke={textBox.borderColor || "#000000"}
-                      strokeWidth={8}
-                      fill="transparent"
-                      listening={false}
-                    />
-                  )}
                   <Text
                     x={-textWidth / 2}
                     y={-textHeight / 2}

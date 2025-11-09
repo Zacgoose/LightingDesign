@@ -12,15 +12,12 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  FormControlLabel,
-  Checkbox,
 } from "@mui/material";
 import {
   FormatBold,
   FormatItalic,
   FormatUnderlined,
   FormatColorText,
-  BorderColor,
 } from "@mui/icons-material";
 import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
@@ -56,8 +53,6 @@ export const TextEntryDialog = ({
     return initial;
   });
   const [textColor, setTextColor] = useState(defaultFormatting.color || "#000000");
-  const [showBorder, setShowBorder] = useState(defaultFormatting.showBorder || false);
-  const [borderColor, setBorderColor] = useState(defaultFormatting.borderColor || "#000000");
 
   // Reset form and formatting with new defaults when dialog opens
   useEffect(() => {
@@ -71,8 +66,6 @@ export const TextEntryDialog = ({
       setCustomFontSize(presetSizes.includes(newFontSize) ? "" : String(newFontSize));
       setFontFamily(defaultFormatting.fontFamily || "Arial");
       setTextColor(defaultFormatting.color || "#000000");
-      setShowBorder(defaultFormatting.showBorder || false);
-      setBorderColor(defaultFormatting.borderColor || "#000000");
       const initial = [];
       if (defaultFormatting.fontStyle?.includes("bold")) initial.push("bold");
       if (defaultFormatting.fontStyle?.includes("italic")) initial.push("italic");
@@ -107,8 +100,6 @@ export const TextEntryDialog = ({
       fontStyle,
       textDecoration,
       color: textColor,
-      showBorder,
-      borderColor,
     };
 
     onConfirm(formatting);
@@ -248,35 +239,6 @@ export const TextEntryDialog = ({
                 }}
               />
             </Box>
-          </Box>
-
-          {/* Border Controls */}
-          <Box sx={{ display: "flex", gap: 2, mt: 2, alignItems: "center" }}>
-            <FormControlLabel
-              control={
-                <Checkbox checked={showBorder} onChange={(e) => setShowBorder(e.target.checked)} />
-              }
-              label="Show Border"
-            />
-
-            {/* Border Color */}
-            {showBorder && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <BorderColor />
-                <input
-                  type="color"
-                  value={borderColor}
-                  onChange={(e) => setBorderColor(e.target.value)}
-                  style={{
-                    width: "40px",
-                    height: "32px",
-                    border: "1px solid rgba(0, 0, 0, 0.23)",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}
-                />
-              </Box>
-            )}
           </Box>
         </DialogContent>
         <DialogActions>

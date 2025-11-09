@@ -1,6 +1,6 @@
 import { Shape, Group, Text } from "react-konva";
 import { getShapeFunction } from "/src/components/designer/productShapes";
-import { memo } from "react";
+import { memo, useRef, useEffect } from "react";
 
 export const ProductShape = memo(
   ({
@@ -42,7 +42,7 @@ export const ProductShape = memo(
     // Text size is independent of product scaling to ensure it's always readable
     const baseFontSize = 16; // Base font size at scaleFactor=100
     const fontSize = Math.max(12, (baseFontSize * scaleFactor) / 100);
-    
+
     // Calculate quantity badge position and size (top-right corner)
     const quantity = product.quantity || 1;
     const showQuantityBadge = quantity > 1;
@@ -54,6 +54,49 @@ export const ProductShape = memo(
     // This ensures text maintains fixed size regardless of product scaling
     const textScaleX = 1 / (product.scaleX || 1);
     const textScaleY = 1 / (product.scaleY || 1);
+
+    // Create refs for text nodes to exclude them from transformer bounds
+    const letterPrefixRef = useRef(null);
+    const quantityBadgeGroupRef = useRef(null);
+
+    // Override getClientRect for text nodes to exclude them from transformer bounding box
+    useEffect(() => {
+      if (letterPrefixRef.current) {
+        const textNode = letterPrefixRef.current;
+        // Store the original getClientRect method
+        const originalGetClientRect = textNode.getClientRect.bind(textNode);
+        // Override to return zero-size rect so transformer ignores it
+        textNode.getClientRect = () => ({
+          x: 0,
+          y: 0,
+          width: 0,
+          height: 0,
+        });
+        // Cleanup: restore original method when component unmounts
+        return () => {
+          textNode.getClientRect = originalGetClientRect;
+        };
+      }
+    }, [letterPrefix]);
+
+    useEffect(() => {
+      if (quantityBadgeGroupRef.current) {
+        const groupNode = quantityBadgeGroupRef.current;
+        // Store the original getClientRect method
+        const originalGetClientRect = groupNode.getClientRect.bind(groupNode);
+        // Override to return zero-size rect so transformer ignores it
+        groupNode.getClientRect = () => ({
+          x: 0,
+          y: 0,
+          width: 0,
+          height: 0,
+        });
+        // Cleanup: restore original method when component unmounts
+        return () => {
+          groupNode.getClientRect = originalGetClientRect;
+        };
+      }
+    }, [showQuantityBadge, quantity]);
 
     return (
       <Group
@@ -105,6 +148,7 @@ export const ProductShape = memo(
         />
         {letterPrefix && (
           <Text
+            ref={letterPrefixRef}
             text={letterPrefix}
             fontSize={fontSize}
             fontFamily="Arial"
@@ -128,6 +172,7 @@ export const ProductShape = memo(
         )}
         {showQuantityBadge && (
           <Group
+            ref={quantityBadgeGroupRef}
             x={renderedWidth / 2 - badgeSize / 2}
             y={-renderedHeight / 2 - badgeSize / 2}
             rotation={-((product.rotation || 0) + (groupRotation || 0))}

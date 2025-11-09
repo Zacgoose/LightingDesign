@@ -1376,7 +1376,7 @@ const Page = () => {
         const quantity = product.quantity || 1;
         const showQuantityBadge = quantity > 1;
         if (showQuantityBadge) {
-          const baseBadgeSize = 20; // Base badge size at scaleFactor=100
+          const baseBadgeSize = 17; // Base badge size at scaleFactor=100
           const badgeSize = Math.max(12, (baseBadgeSize * productScaleFactor) / 100);
           const badgeFontSize = Math.max(8, badgeSize * 0.6);
           
@@ -1414,7 +1414,7 @@ const Page = () => {
           badgeText.setAttribute("font-size", String(badgeFontSize));
           badgeText.setAttribute("font-weight", "bold");
           badgeText.setAttribute("text-anchor", "middle");
-          badgeText.setAttribute("dy", "0.3em"); // Adjusted from 0.35em to move text up slightly
+          badgeText.setAttribute("dy", "0.1em");
           badgeText.setAttribute("dominant-baseline", "middle");
           badgeText.textContent = quantity.toString();
           badgeGroupEl.appendChild(badgeText);

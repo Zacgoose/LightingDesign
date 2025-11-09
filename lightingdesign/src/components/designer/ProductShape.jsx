@@ -47,7 +47,7 @@ export const ProductShape = memo(
     // Calculate quantity badge position and size (top-right corner)
     const quantity = product.quantity || 1;
     const showQuantityBadge = quantity > 1;
-    const baseBadgeSize = 20; // Base badge size at scaleFactor=100
+    const baseBadgeSize = 17; // Base badge size at scaleFactor=100
     const badgeSize = Math.max(12, (baseBadgeSize * scaleFactor) / 100);
     const badgeFontSize = Math.max(8, badgeSize * 0.6);
 

@@ -80,6 +80,22 @@ export const TextBox = memo(
           scaleY={textBox.scaleY || 1}
           draggable={draggable}
           listening={listening}
+          hitFunc={(ctx, shape) => {
+            // Custom hit detection - only make text area clickable (not extra space)
+            ctx.beginPath();
+            
+            // Only include text area with minimal padding
+            const textPadding = 2;
+            ctx.rect(
+              -textWidth / 2 - textPadding,
+              -textHeight / 2 - textPadding,
+              textWidth + textPadding * 2,
+              (textBox.height || textHeight) + textPadding * 2
+            );
+            
+            ctx.closePath();
+            ctx.fillShape(shape);
+          }}
           onMouseDown={(e) => {
             // Filter out middle mouse clicks (button === 1) to prevent selection during panning
             // Don't stop propagation - let it bubble to Stage for middle mouse panning
@@ -159,15 +175,6 @@ export const TextBox = memo(
           }}
           onContextMenu={onContextMenu}
         >
-          {/* Invisible rectangle to make text area clickable */}
-          <Rect
-            x={-textWidth / 2}
-            y={-textHeight / 2}
-            width={textWidth}
-            height={textBox.height || textHeight}
-            fill="transparent"
-            listening={true}
-          />
           <Text
             ref={textRef}
             x={-textWidth / 2}

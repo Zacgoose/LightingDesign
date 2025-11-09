@@ -1,4 +1,4 @@
-import { Text, Transformer, Group } from "react-konva";
+import { Text, Transformer, Group, Rect } from "react-konva";
 import React, { useEffect, useRef, memo } from "react";
 
 export const TextBox = memo(
@@ -81,13 +81,12 @@ export const TextBox = memo(
           draggable={draggable}
           listening={listening}
           hitFunc={(ctx, shape) => {
-            // Custom hit detection for text boxes:
-            // Always make text area clickable (filled)
+            // Custom hit detection for text boxes - make text area clickable
             
             ctx.beginPath();
             
-            // Always include text area with generous padding for easier clicking
-            const textPadding = 10;
+            // Include text area with padding
+            const textPadding = 5;
             ctx.rect(
               -textWidth / 2 - textPadding,
               -textHeight / 2 - textPadding,

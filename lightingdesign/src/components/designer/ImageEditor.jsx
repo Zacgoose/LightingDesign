@@ -28,6 +28,19 @@ import {
 import { Stage, Layer, Image as KonvaImage, Rect, Line, Transformer } from "react-konva";
 import Konva from "konva";
 
+/**
+ * ImageEditor - A canvas-based image editor component
+ * 
+ * Features:
+ * - Crop: Click "Crop" to enable crop mode, drag/resize the crop box, then "Apply Crop"
+ * - Rotate: Click rotate button to rotate image 90° clockwise
+ * - Flip: Click flip horizontal or flip vertical buttons
+ * - Draw: Select the "Draw" tool to add freehand markup annotations
+ * - Clear: Remove all drawings
+ * - Zoom: Use mouse wheel to zoom in/out
+ * - Pan: In "Select" mode, drag to pan around the image
+ * - Undo/Redo: History tracking for all operations
+ */
 export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 600 }) => {
   const stageRef = useRef(null);
   const imageRef = useRef(null);

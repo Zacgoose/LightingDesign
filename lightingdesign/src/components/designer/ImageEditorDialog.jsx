@@ -4,6 +4,20 @@ import { ImageEditor } from "./ImageEditor";
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 
+/**
+ * ImageEditorDialog - Modal wrapper for the ImageEditor component
+ * 
+ * This component provides a responsive dialog that contains the ImageEditor.
+ * It automatically sizes based on the viewport and handles saving/canceling operations.
+ * 
+ * Usage:
+ * <ImageEditorDialog 
+ *   open={isOpen}
+ *   onClose={handleClose}
+ *   imageUrl={backgroundImage}
+ *   onSave={handleSave}
+ * />
+ */
 export const ImageEditorDialog = ({ open, onClose, imageUrl, onSave }) => {
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 

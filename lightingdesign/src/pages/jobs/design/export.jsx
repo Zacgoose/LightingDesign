@@ -44,7 +44,7 @@ const Page = () => {
   const { id } = router.query;
 
   // Export settings state
-  const [paperSize, setPaperSize] = useState("A4");
+  const [paperSize, setPaperSize] = useState("A3");
   const [orientation, setOrientation] = useState("landscape");
   const [selectedLayers, setSelectedLayers] = useState([]);
   const [selectedSublayers, setSelectedSublayers] = useState({});
@@ -87,8 +87,8 @@ const Page = () => {
       const sublayerSeparatePagesDefaults = {};
       layers.forEach((layer) => {
         sublayerSelections[layer.id] = layer.sublayers?.map((s) => s.id) || [];
-        // Set separate pages to true by default for layers with sublayers
-        sublayerSeparatePagesDefaults[layer.id] = layer.sublayers && layer.sublayers.length > 0;
+        // Set separate pages to false by default for all layers
+        sublayerSeparatePagesDefaults[layer.id] = false;
       });
       setSelectedSublayers(sublayerSelections);
       setSublayerSeparatePages(sublayerSeparatePagesDefaults);

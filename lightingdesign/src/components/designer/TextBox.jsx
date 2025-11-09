@@ -85,8 +85,8 @@ export const TextBox = memo(
           listening={listening}
           hitFunc={(ctx, shape) => {
             // Custom hit detection: only respond to clicks on the actual text area
-            // Define the clickable area as the text bounds plus padding
-            const padding = textBox.showBorder ? rectPadding : 5; // Smaller padding when no border
+            // Use minimal padding (3px) so clicks in blank space (including border area) pass through
+            const padding = 3;
             const hitX = -textWidth / 2 - padding;
             const hitY = -textHeight / 2 - padding;
             const hitWidth = textWidth + padding * 2;

@@ -43,6 +43,7 @@ import { useDesignLoader } from "/src/hooks/useDesignLoader";
 import { useProductInteraction } from "/src/hooks/useProductInteraction";
 import { useContextMenus } from "/src/hooks/useContextMenus";
 import { useSettings } from "/src/hooks/use-settings";
+import { useDesignLock } from "/src/hooks/useDesignLock";
 import productTypesConfig from "/src/data/productTypes.json";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
 import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
@@ -76,6 +77,17 @@ const Page = () => {
 
   // Save design mutation
   const saveDesignMutation = ApiPostCall({});
+
+  // Design lock management
+  const designLock = useDesignLock(id);
+  const {
+    isLocked,
+    isOwner,
+    lockInfo,
+    lockDesign,
+    unlockDesign,
+    isLoading: isLockLoading,
+  } = designLock;
 
   // Canvas state management using custom hook
   const canvasState = useCanvasState();
@@ -485,6 +497,28 @@ const Page = () => {
     return () => clearInterval(autoSaveInterval);
   }, [id, hasUnsavedChanges, isSaving, handleSave, settings.autoSaveInterval]);
 
+  // Lock/Unlock handlers
+  const handleLockDesign = useCallback(async () => {
+    const result = await lockDesign();
+    if (result?.success) {
+      // Refresh design data to ensure we have the latest version
+      queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
+    }
+    return result;
+  }, [lockDesign, queryClient, id]);
+
+  const handleUnlockDesign = useCallback(async () => {
+    // Save before unlocking if there are changes
+    if (hasUnsavedChanges && !isSaving) {
+      handleSave();
+      // Wait a moment for save to complete
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    const result = await unlockDesign(true); // Pass true to refresh design data
+    return result;
+  }, [unlockDesign, hasUnsavedChanges, isSaving, handleSave]);
+
   // Context menus hook
   const contextMenus = useContextMenus({
     products,
@@ -786,15 +820,53 @@ const Page = () => {
   });
 
   const {
-    handleProductClick,
-    handleProductDragStart,
-    handleProductDragEnd,
-    handleGroupTransformEnd,
+    handleProductClick: rawHandleProductClick,
+    handleProductDragStart: rawHandleProductDragStart,
+    handleProductDragEnd: rawHandleProductDragEnd,
+    handleGroupTransformEnd: rawHandleGroupTransformEnd,
   } = productInteraction;
+
+  // Wrap interaction handlers to check lock state
+  const isEditingDisabled = isLocked && !isOwner;
+
+  const handleProductClick = useCallback(
+    (...args) => {
+      if (isEditingDisabled) return;
+      return rawHandleProductClick(...args);
+    },
+    [isEditingDisabled, rawHandleProductClick],
+  );
+
+  const handleProductDragStart = useCallback(
+    (...args) => {
+      if (isEditingDisabled) return;
+      return rawHandleProductDragStart(...args);
+    },
+    [isEditingDisabled, rawHandleProductDragStart],
+  );
+
+  const handleProductDragEnd = useCallback(
+    (...args) => {
+      if (isEditingDisabled) return;
+      return rawHandleProductDragEnd(...args);
+    },
+    [isEditingDisabled, rawHandleProductDragEnd],
+  );
+
+  const handleGroupTransformEnd = useCallback(
+    (...args) => {
+      if (isEditingDisabled) return;
+      return rawHandleGroupTransformEnd(...args);
+    },
+    [isEditingDisabled, rawHandleGroupTransformEnd],
+  );
 
   // Connector selection handler with multi-select support
   const handleConnectorSelect = useCallback(
     (e, connectorId) => {
+      // Prevent editing when locked by someone else
+      if (isEditingDisabled) return;
+
       // Ignore right-clicks (button 2) - those are handled by context menu
       if (e.evt?.button === 2) {
         return;
@@ -826,7 +898,7 @@ const Page = () => {
 
       forceGroupUpdate();
     },
-    [selectedIds, selectedConnectorIds, setSelectedIds, setSelectedConnectorIds, forceGroupUpdate],
+    [selectedIds, selectedConnectorIds, setSelectedIds, setSelectedConnectorIds, forceGroupUpdate, isEditingDisabled],
   );
 
   // Unified group transform handler that handles both products and text boxes
@@ -1923,6 +1995,9 @@ const Page = () => {
 
   const handleTextSelect = useCallback(
     (e, textId) => {
+      // Prevent editing when locked by someone else
+      if (isEditingDisabled) return;
+
       // Filter out middle mouse clicks (button === 1) to prevent selection during panning
       if (e.evt?.button === 1) {
         return;
@@ -1973,6 +2048,7 @@ const Page = () => {
       setSelectedConnectorIds,
       setSelectedTextId,
       forceGroupUpdate,
+      isEditingDisabled,
     ],
   );
 
@@ -2452,6 +2528,12 @@ const Page = () => {
       canUndo: timelineTracker.timelineStep.current > -1,
       canRedo: timelineTracker.timelineStep.current < timelineTracker.timeline.current.length - 1,
       onMeasure: handleMeasure,
+      // Lock props
+      isLocked,
+      isOwner,
+      lockInfo,
+      onLock: handleLockDesign,
+      onUnlock: handleUnlockDesign,
     }),
     [
       handleUploadFloorPlan,
@@ -2462,6 +2544,11 @@ const Page = () => {
       handleMeasure,
       timelineTracker.timelineStep.current,
       timelineTracker.timeline.current.length,
+      isLocked,
+      isOwner,
+      lockInfo,
+      handleLockDesign,
+      handleUnlockDesign,
     ],
   );
 
@@ -2683,6 +2770,28 @@ const Page = () => {
             sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}
           >
             <div style={{ height: 4 }} />
+
+            {/* Read-only mode indicator */}
+            {isLocked && !isOwner && lockInfo && (
+              <Box
+                sx={{
+                  backgroundColor: "error.main",
+                  color: "white",
+                  px: 2,
+                  py: 1,
+                  mb: 1,
+                  borderRadius: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography variant="body2" fontWeight="bold">
+                  🔒 Read-Only Mode: Design locked by {lockInfo.LockedBy}. Click "Enable Editing"
+                  to unlock and start making changes.
+                </Typography>
+              </Box>
+            )}
 
             <DesignerToolbarRow
               mainProps={toolbarMainProps}

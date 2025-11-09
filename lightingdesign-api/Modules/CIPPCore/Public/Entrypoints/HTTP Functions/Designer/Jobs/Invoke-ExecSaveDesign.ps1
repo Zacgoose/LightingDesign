@@ -9,9 +9,11 @@ function Invoke-ExecSaveDesign {
     param($Request, $TriggerMetadata)
 
     $Table = Get-CIPPTable -TableName 'Designs'
+    $LocksTable = Get-CIPPTable -TableName 'DesignLocks'
 
     $JobId = $Request.Body.jobId
     $DesignData = $Request.Body.designData
+    $Username = $Request.Headers.'x-ms-client-principal-name'
 
     if (-not $JobId) {
         return [HttpResponseContext]@{
@@ -20,7 +22,33 @@ function Invoke-ExecSaveDesign {
         }
     }
 
+    if (-not $Username) {
+        $Username = 'Unknown User'
+    }
+
     try {
+        # Check if design is locked and if user owns the lock
+        $LockFilter = "PartitionKey eq '$JobId'"
+        $DesignLock = Get-CIPPAzDataTableEntity @LocksTable -Filter $LockFilter
+
+        if ($DesignLock) {
+            $Now = (Get-Date).ToUniversalTime()
+            $LockExpiry = [DateTime]::Parse($DesignLock.ExpiresAt)
+
+            # Check if lock is still valid and owned by current user
+            if ($LockExpiry -gt $Now) {
+                if ($DesignLock.LockedBy -ne $Username) {
+                    return [HttpResponseContext]@{
+                        StatusCode = [System.Net.HttpStatusCode]::Forbidden
+                        Body       = @{
+                            error    = 'Design is locked by another user. You cannot save changes.'
+                            LockedBy = $DesignLock.LockedBy
+                        }
+                    }
+                }
+            }
+        }
+
         # Check if design already exists for this job
         $Filter = "PartitionKey eq '$JobId'"
         $ExistingDesign = Get-CIPPAzDataTableEntity @Table -Filter $Filter

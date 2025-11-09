@@ -28,6 +28,7 @@ import {
   VerticalAlignTop,
   MultipleStop,
 } from "@mui/icons-material";
+import { DesignLockButton } from "/src/components/designer/DesignLockButton";
 
 export const DesignerToolbarRow = memo(
   ({ mainProps, toolsProps, viewProps, alignProps }) => {
@@ -86,6 +87,11 @@ export const DesignerToolbarRow = memo(
       canUndo = false,
       canRedo = false,
       onMeasure,
+      isLocked = false,
+      isOwner = false,
+      lockInfo = null,
+      onLock,
+      onUnlock,
     } = mainProps || {};
 
     const { selectedTool, onToolChange, placementMode, onStopPlacement, onDisconnectCable } =
@@ -151,7 +157,15 @@ export const DesignerToolbarRow = memo(
             >
               Upload Floor Plan
             </Button>
-            <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave}>
+            <DesignLockButton
+              isLocked={isLocked}
+              isOwner={isOwner}
+              lockInfo={lockInfo}
+              onLock={onLock}
+              onUnlock={onUnlock}
+              disabled={false}
+            />
+            <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave} disabled={isLocked && !isOwner}>
               Save Project
             </Button>
             <Button variant="outlined" startIcon={<Download />} size="small" onClick={onExport}>

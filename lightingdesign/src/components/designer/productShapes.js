@@ -246,18 +246,37 @@ export const ProductShapes = {
     const width = shape.width() || 50;
     const height = shape.height() || 50;
 
-    // Draw box outline (no fill)
-    context.save();
-    context.strokeStyle = shape.getAttr("stroke");
-    context.lineWidth = shape.getAttr("strokeWidth") || 2;
+    // Draw box outline with proper hit detection
+    // Use fillStrokeShape for Konva hit detection (fill is transparent but still clickable)
     context.beginPath();
     context.rect(-width / 2, -height / 2, width, height);
-    context.stroke();
-    context.restore();
+    context.closePath();
+    context.fillStrokeShape(shape);
   },
 };
 
 // Helper function to get shape function by name
 export const getShapeFunction = (shapeName) => {
   return ProductShapes[shapeName] || ProductShapes.rect;
+};
+
+// Custom hit functions for shapes that need stroke-only hit detection
+export const getHitFunction = (shapeName) => {
+  const hitFunctions = {
+    boxoutline: (context, shape) => {
+      // Only the stroke is clickable, with some padding for easier clicking
+      const width = shape.width() || 50;
+      const height = shape.height() || 50;
+      const strokeWidth = shape.getAttr("strokeWidth") || 3;
+      const hitPadding = 5; // Extra padding to make it easier to click
+      
+      // Draw the rectangle stroke for hit detection
+      context.beginPath();
+      context.rect(-width / 2, -height / 2, width, height);
+      context.lineWidth = strokeWidth + hitPadding * 2;
+      context.strokeShape(shape);
+    },
+  };
+  
+  return hitFunctions[shapeName] || null;
 };

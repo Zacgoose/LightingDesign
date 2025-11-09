@@ -2201,10 +2201,11 @@ const Page = () => {
       const textWidth = (textBox.width || 200) * (textBox.scaleX || 1);
       const textHeight = renderedFontSize * 1.2 * (textBox.scaleY || 1); // Approximate height with line height multiplier
 
-      const textX1 = textBox.x;
-      const textY1 = textBox.y;
-      const textX2 = textBox.x + textWidth;
-      const textY2 = textBox.y + textHeight;
+      // Text boxes are centered at (x, y), so calculate bounds from center
+      const textX1 = textBox.x - textWidth / 2;
+      const textY1 = textBox.y - textHeight / 2;
+      const textX2 = textBox.x + textWidth / 2;
+      const textY2 = textBox.y + textHeight / 2;
 
       return !(textX2 < x1 || textX1 > x2 || textY2 < y1 || textY1 > y2);
     });

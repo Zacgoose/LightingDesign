@@ -518,7 +518,22 @@ const Page = () => {
       return { success: true, data: result };
     } catch (error) {
       console.error("Error locking design:", error);
-      return { success: false, error: error.message || "Failed to lock design" };
+      
+      // Handle 409 Conflict - design is locked by another user
+      if (error.response?.status === 409) {
+        const lockData = error.response?.data;
+        return { 
+          success: false, 
+          error: lockData?.error || "Design is locked by another user",
+          isConflict: true,
+          lockInfo: lockData
+        };
+      }
+      
+      return { 
+        success: false, 
+        error: error.response?.data?.error || error.message || "Failed to lock design" 
+      };
     }
   }, [id, lockDesignMutation, queryClient]);
 

@@ -17,6 +17,7 @@ import { format } from "date-fns";
 export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock, disabled }) => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [isLocking, setIsLocking] = useState(false);
+  const [errorDialog, setErrorDialog] = useState({ open: false, message: "", lockInfo: null });
 
   const handleLockClick = async () => {
     if (isOwner) {
@@ -28,9 +29,32 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
     } else {
       // Not locked, acquire lock
       setIsLocking(true);
-      await onLock();
+      const result = await onLock();
       setIsLocking(false);
+      
+      // Handle errors (including 409 conflicts)
+      if (!result?.success) {
+        if (result?.isConflict && result?.lockInfo) {
+          // Show conflict dialog with lock info
+          setErrorDialog({
+            open: true,
+            message: result.error,
+            lockInfo: result.lockInfo,
+          });
+        } else {
+          // Show general error dialog
+          setErrorDialog({
+            open: true,
+            message: result?.error || "Failed to lock design",
+            lockInfo: null,
+          });
+        }
+      }
     }
+  };
+
+  const handleCloseErrorDialog = () => {
+    setErrorDialog({ open: false, message: "", lockInfo: null });
   };
 
   const handleConfirmUnlock = async () => {
@@ -150,6 +174,40 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
           </DialogActions>
         </Dialog>
       )}
+
+      {/* Error dialog for lock conflicts and other errors */}
+      <Dialog open={errorDialog.open} onClose={handleCloseErrorDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Cannot Lock Design</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" gutterBottom>
+            {errorDialog.message}
+          </Typography>
+          {errorDialog.lockInfo && (
+            <>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                <strong>Locked by:</strong> {errorDialog.lockInfo.LockedBy}
+              </Typography>
+              {errorDialog.lockInfo.LockedAt && (
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Locked at:</strong>{" "}
+                  {format(new Date(errorDialog.lockInfo.LockedAt), "MMM dd, yyyy HH:mm:ss")}
+                </Typography>
+              )}
+              {errorDialog.lockInfo.ExpiresAt && (
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Expires at:</strong>{" "}
+                  {format(new Date(errorDialog.lockInfo.ExpiresAt), "MMM dd, yyyy HH:mm:ss")}
+                </Typography>
+              )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseErrorDialog} color="primary" variant="contained">
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

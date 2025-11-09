@@ -188,20 +188,45 @@ export const ProductListPanel = memo(
     // Group products by SKU and calculate totals
     // Optimized to pre-calculate all letter prefixes in a single pass to avoid O(n²) complexity
     const productSummary = useMemo(() => {
+      if (products.length === 0) return [];
+
       // First pass: build unique SKU lists per product type for efficient letter prefix calculation
       const skusByType = new Map();
+      const productMap = new Map();
 
+      // Single pass to build both maps
       products.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || "default";
-        const sku = product.sku?.trim();
+        const sku = product.sku?.trim() || "NO-SKU";
 
+        // Build SKU index maps
         if (!skusByType.has(productType)) {
           skusByType.set(productType, new Set());
         }
-
-        if (sku && sku !== "") {
+        if (sku && sku !== "NO-SKU") {
           skusByType.get(productType).add(sku);
         }
+
+        // Build product map simultaneously
+        const key = `${sku}-${productType}`;
+        if (!productMap.has(key)) {
+          productMap.set(key, {
+            sku: product.sku || "N/A",
+            name: product.name || "Unnamed Product",
+            brand: product.brand || "",
+            productType: productType,
+            price: product.price || 0,
+            thumbnailUrl: product.thumbnailUrl || product.thumbnailImageUrl || null,
+            quantity: 0,
+            color:
+              product.color ||
+              productTypesConfig[productType]?.fill ||
+              "#1976d2",
+            rawSku: sku, // Store for later prefix calculation
+          });
+        }
+
+        productMap.get(key).quantity += product.quantity || 1;
       });
 
       // Convert sets to sorted arrays and create SKU index lookup maps
@@ -215,57 +240,25 @@ export const ProductListPanel = memo(
         skuIndexMaps.set(productType, indexMap);
       });
 
-      // Helper function to get letter prefix using pre-calculated indices
-      const getLetterPrefix = (product) => {
-        const productType = product.product_type?.toLowerCase() || "default";
-        const config = productTypesConfig[productType] || productTypesConfig.default;
+      // Add letter prefixes to products
+      const result = Array.from(productMap.values());
+      result.forEach((product) => {
+        const config = productTypesConfig[product.productType] || productTypesConfig.default;
         const letterPrefix = config.letterPrefix || "O";
 
-        const sku = product.sku?.trim();
-        if (!sku || sku === "") {
-          return letterPrefix;
+        const indexMap = skuIndexMaps.get(product.productType);
+        if (indexMap && indexMap.has(product.rawSku)) {
+          product.letterPrefix = `${letterPrefix}${indexMap.get(product.rawSku) + 1}`;
+        } else {
+          product.letterPrefix = letterPrefix;
         }
-
-        const indexMap = skuIndexMaps.get(productType);
-        if (!indexMap || !indexMap.has(sku)) {
-          return letterPrefix;
-        }
-
-        return `${letterPrefix}${indexMap.get(sku) + 1}`;
-      };
-
-      // Second pass: group products by SKU and calculate totals
-      const productMap = new Map();
-
-      products.forEach((product) => {
-        const sku = product.sku || "NO-SKU";
-        const key = `${sku}-${product.product_type || "default"}`;
-
-        if (!productMap.has(key)) {
-          productMap.set(key, {
-            sku: product.sku || "N/A",
-            name: product.name || "Unnamed Product",
-            brand: product.brand || "",
-            productType: product.product_type || "default",
-            price: product.price || 0,
-            thumbnailUrl: product.thumbnailUrl || product.thumbnailImageUrl || null,
-            letterPrefix: getLetterPrefix(product),
-            quantity: 0,
-            color:
-              product.color ||
-              productTypesConfig[product.product_type?.toLowerCase() || "default"]?.fill ||
-              "#1976d2",
-          });
-        }
-
-        const entry = productMap.get(key);
-        entry.quantity += product.quantity || 1;
+        delete product.rawSku; // Clean up temporary property
       });
 
-      return Array.from(productMap.values()).sort((a, b) => {
-        // Sort by letter prefix
-        return a.letterPrefix.localeCompare(b.letterPrefix);
-      });
+      // Sort by letter prefix
+      result.sort((a, b) => a.letterPrefix.localeCompare(b.letterPrefix));
+
+      return result;
     }, [products]);
 
     if (!visible || products.length === 0) {
@@ -317,28 +310,40 @@ export const ProductListPanel = memo(
   if (
     prevProps.visible !== nextProps.visible ||
     prevProps.activeLayerId !== nextProps.activeLayerId ||
-    prevProps.top !== nextProps.top
+    prevProps.top !== nextProps.top ||
+    prevProps.products.length !== nextProps.products.length
   ) {
     return false; // Props changed, should re-render
   }
 
-  // Check if products array has same length
-  if (prevProps.products.length !== nextProps.products.length) {
-    return false; // Length changed, should re-render
+  // Quick check: if arrays are the same reference, no need to re-render
+  if (prevProps.products === nextProps.products) {
+    return true;
   }
 
-  // For performance, create a signature that only includes display-relevant properties
-  // This avoids deep comparison when only position/rotation changes
-  const createProductSignature = (products) => {
-    return products
-      .map((p) => `${p.id}:${p.sku}:${p.name}:${p.product_type}:${p.quantity}:${p.price}:${p.brand}:${p.thumbnailUrl || p.thumbnailImageUrl}:${p.color}`)
-      .join('|');
-  };
+  // Efficient comparison: check only display-relevant properties
+  // Loop through products and compare key properties directly
+  for (let i = 0; i < prevProps.products.length; i++) {
+    const prev = prevProps.products[i];
+    const next = nextProps.products[i];
+    
+    // Compare only the properties that affect the ProductListPanel display
+    if (
+      prev.id !== next.id ||
+      prev.sku !== next.sku ||
+      prev.name !== next.name ||
+      prev.product_type !== next.product_type ||
+      prev.quantity !== next.quantity ||
+      prev.price !== next.price ||
+      prev.brand !== next.brand ||
+      prev.color !== next.color ||
+      (prev.thumbnailUrl || prev.thumbnailImageUrl) !== (next.thumbnailUrl || next.thumbnailImageUrl)
+    ) {
+      return false; // Found a difference, should re-render
+    }
+  }
 
-  const prevSignature = createProductSignature(prevProps.products);
-  const nextSignature = createProductSignature(nextProps.products);
-
-  return prevSignature === nextSignature; // Skip re-render if signatures match
+  return true; // No differences found, skip re-render
 });
 
 ProductListPanel.displayName = "ProductListPanel";

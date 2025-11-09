@@ -212,28 +212,32 @@ export const LayerSwitcher = memo(forwardRef(({
   
   if (
     prevProps.activeLayerId !== nextProps.activeLayerId ||
-    prevProps.top !== nextProps.top
+    prevProps.top !== nextProps.top ||
+    prevProps.layers.length !== nextProps.layers.length
   ) {
     return false; // Props changed, should re-render
   }
 
-  // Check if layers array has same length
-  if (prevProps.layers.length !== nextProps.layers.length) {
-    return false; // Length changed, should re-render
+  // Quick check: if arrays are the same reference, no need to re-render
+  if (prevProps.layers === nextProps.layers) {
+    return true;
   }
 
-  // For performance, create a signature that only includes display-relevant properties
-  // This avoids deep comparison when only layer product positions/rotations change
-  const createLayerSignature = (layers) => {
-    return layers
-      .map((l) => `${l.id}:${l.name}:${l.products?.length || 0}`)
-      .join('|');
-  };
+  // Efficient comparison: check only display-relevant properties directly
+  for (let i = 0; i < prevProps.layers.length; i++) {
+    const prev = prevProps.layers[i];
+    const next = nextProps.layers[i];
+    
+    if (
+      prev.id !== next.id ||
+      prev.name !== next.name ||
+      prev.products?.length !== next.products?.length
+    ) {
+      return false; // Found a difference, should re-render
+    }
+  }
 
-  const prevSignature = createLayerSignature(prevProps.layers);
-  const nextSignature = createLayerSignature(nextProps.layers);
-
-  return prevSignature === nextSignature; // Skip re-render if signatures match
+  return true; // No differences found, skip re-render
 });
 
 LayerSwitcher.displayName = "LayerSwitcher";

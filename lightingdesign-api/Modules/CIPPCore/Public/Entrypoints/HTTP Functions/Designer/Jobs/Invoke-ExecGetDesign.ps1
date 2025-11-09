@@ -9,8 +9,10 @@ function Invoke-ExecGetDesign {
     param($Request, $TriggerMetadata)
 
     $Table = Get-CippTable -tablename 'Designs'
+    $LocksTable = Get-CippTable -tablename 'DesignLocks'
 
     $JobId = $Request.Query.jobId
+    $Username = $Request.Headers.'x-ms-client-principal-name'
 
     if (-not $JobId) {
         return [HttpResponseContext]@{
@@ -19,7 +21,49 @@ function Invoke-ExecGetDesign {
         }
     }
 
+    if (-not $Username) {
+        $Username = 'Unknown User'
+    }
+
     try {
+        # Check lock status
+        $LockFilter = "PartitionKey eq '$JobId'"
+        $LockRow = Get-CIPPAzDataTableEntity @LocksTable -Filter $LockFilter
+        
+        $LockInfo = $null
+        if ($LockRow) {
+            $Now = (Get-Date).ToUniversalTime()
+            $LockExpiry = [DateTime]::Parse($LockRow.ExpiresAt)
+            
+            # Check if lock is still valid
+            if ($LockExpiry -gt $Now) {
+                $IsOwner = $LockRow.LockedBy -eq $Username
+                $LockInfo = @{
+                    IsLocked  = $true
+                    IsOwner   = $IsOwner
+                    LockedBy  = $LockRow.LockedBy
+                    LockedAt  = $LockRow.LockedAt
+                    ExpiresAt = $LockRow.ExpiresAt
+                }
+            } else {
+                # Lock expired, remove it
+                try {
+                    Remove-CIPPAzDataTableEntity @LocksTable -Entity $LockRow
+                } catch {
+                    Write-Warning "Failed to remove expired lock: $_"
+                }
+                $LockInfo = @{
+                    IsLocked = $false
+                    IsOwner  = $false
+                }
+            }
+        } else {
+            $LockInfo = @{
+                IsLocked = $false
+                IsOwner  = $false
+            }
+        }
+
         # Lookup design by JobId (PartitionKey)
         $Filter = "PartitionKey eq '$JobId'"
         $Row = Get-CIPPAzDataTableEntity @Table -Filter $Filter
@@ -84,6 +128,7 @@ function Invoke-ExecGetDesign {
                 designData   = $DesignData
                 lastModified = $Row.LastModified
                 created      = $Row.Timestamp
+                lockInfo     = $LockInfo
             }
         } else {
             # Return empty design for new jobs
@@ -97,6 +142,7 @@ function Invoke-ExecGetDesign {
                 }
                 lastModified = $null
                 created      = $null
+                lockInfo     = $LockInfo
             }
         }
 

@@ -43,7 +43,6 @@ import { useDesignLoader } from "/src/hooks/useDesignLoader";
 import { useProductInteraction } from "/src/hooks/useProductInteraction";
 import { useContextMenus } from "/src/hooks/useContextMenus";
 import { useSettings } from "/src/hooks/use-settings";
-import { useDesignLock } from "/src/hooks/useDesignLock";
 import productTypesConfig from "/src/data/productTypes.json";
 import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
 import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
@@ -78,16 +77,15 @@ const Page = () => {
   // Save design mutation
   const saveDesignMutation = ApiPostCall({});
 
-  // Design lock management
-  const designLock = useDesignLock(id);
-  const {
-    isLocked,
-    isOwner,
-    lockInfo,
-    lockDesign,
-    unlockDesign,
-    isLoading: isLockLoading,
-  } = designLock;
+  // Lock design mutation (for enabling/disabling editing)
+  const lockDesignMutation = ApiPostCall({});
+  const unlockDesignMutation = ApiPostCall({});
+
+  // Extract lock info from design data
+  const lockInfo = designData?.data?.lockInfo || { IsLocked: false, IsOwner: false };
+  const isLocked = lockInfo.IsLocked || false;
+  const isOwner = lockInfo.IsOwner || false;
+  const isEditingDisabled = isLocked && !isOwner;
 
   // Canvas state management using custom hook
   const canvasState = useCanvasState();
@@ -499,15 +497,27 @@ const Page = () => {
 
   // Lock/Unlock handlers
   const handleLockDesign = useCallback(async () => {
-    const result = await lockDesign();
-    if (result?.success) {
-      // Refresh design data to ensure we have the latest version
+    if (!id) return { success: false, error: "No job ID" };
+
+    try {
+      const result = await lockDesignMutation.mutateAsync({
+        url: "/api/ExecLockDesign",
+        data: { jobId: id },
+      });
+
+      // Refresh design data to get updated lock info
       queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
+      
+      return { success: true, data: result };
+    } catch (error) {
+      console.error("Error locking design:", error);
+      return { success: false, error: error.message || "Failed to lock design" };
     }
-    return result;
-  }, [lockDesign, queryClient, id]);
+  }, [id, lockDesignMutation, queryClient]);
 
   const handleUnlockDesign = useCallback(async () => {
+    if (!id) return { success: false, error: "No job ID" };
+
     // Save before unlocking if there are changes
     if (hasUnsavedChanges && !isSaving) {
       handleSave();
@@ -515,9 +525,43 @@ const Page = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
-    const result = await unlockDesign(true); // Pass true to refresh design data
-    return result;
-  }, [unlockDesign, hasUnsavedChanges, isSaving, handleSave]);
+    try {
+      const result = await unlockDesignMutation.mutateAsync({
+        url: "/api/ExecUnlockDesign",
+        data: { jobId: id },
+      });
+
+      // Refresh design data to get updated lock info and latest design
+      queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
+      
+      return { success: true, data: result };
+    } catch (error) {
+      console.error("Error unlocking design:", error);
+      return { success: false, error: error.message || "Failed to unlock design" };
+    }
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient]);
+
+  // Auto-refresh lock every 5 minutes when user owns the lock
+  useEffect(() => {
+    if (!id || !isOwner) return;
+
+    const refreshInterval = setInterval(async () => {
+      if (isOwner) {
+        console.log("Auto-refreshing design lock...");
+        try {
+          await lockDesignMutation.mutateAsync({
+            url: "/api/ExecLockDesign",
+            data: { jobId: id },
+          });
+          queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
+        } catch (error) {
+          console.error("Failed to refresh lock:", error);
+        }
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(refreshInterval);
+  }, [id, isOwner, lockDesignMutation, queryClient]);
 
   // Context menus hook
   const contextMenus = useContextMenus({
@@ -827,8 +871,6 @@ const Page = () => {
   } = productInteraction;
 
   // Wrap interaction handlers to check lock state
-  const isEditingDisabled = isLocked && !isOwner;
-
   const handleProductClick = useCallback(
     (...args) => {
       if (isEditingDisabled) return;

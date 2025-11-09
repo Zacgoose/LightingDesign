@@ -46,7 +46,7 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
 
   const getButtonText = () => {
     if (isLocking) return "Processing...";
-    if (isOwner) return "Unlock Design";
+    if (isOwner) return "Finish Editing";
     if (isLocked) return "Locked";
     return "Enable Editing";
   };
@@ -59,7 +59,7 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
 
   const getTooltipText = () => {
     if (isOwner) {
-      return "You have editing enabled. Click to unlock and save changes.";
+      return "Click to finish editing and save your changes.";
     }
     if (isLocked && lockInfo) {
       return `Locked by ${lockInfo.LockedBy}. Cannot edit until unlocked.`;
@@ -70,10 +70,10 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
   const getDialogContent = () => {
     if (isOwner) {
       return {
-        title: "Unlock Design?",
+        title: "Finish Editing?",
         content:
-          "Are you sure you want to unlock this design? Any unsaved changes will be saved automatically, and the design data will be refreshed to ensure you have the latest version.",
-        action: "Unlock & Save",
+          "Are you sure you want to finish editing? Any unsaved changes will be saved automatically, and the design will be unlocked for others to edit.",
+        action: "Finish Editing",
       };
     } else if (isLocked && lockInfo) {
       return {

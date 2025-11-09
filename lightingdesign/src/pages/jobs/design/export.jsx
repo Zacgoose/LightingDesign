@@ -1339,33 +1339,39 @@ const Page = () => {
         }
 
         // Add letter prefix text label (centered on the shape, always upright and fixed size)
+        // Skip rendering for products with empty letterPrefix (visual helpers like boxoutline)
+        const productType = product.product_type?.toLowerCase() || "default";
+        const productConfig = productTypesConfig[productType] || productTypesConfig.default;
         const letterPrefix = getProductLetterPrefix(product, products);
-        // Fixed text size based on canvas scale factor for legibility
-        const baseFontSize = 16; // Base font size at scaleFactor=100
-        const fontSize = Math.max(12, (baseFontSize * productScaleFactor) / 100);
-        const textEl = document.createElementNS(SVG_NS, "text");
-        textEl.setAttribute("x", "0");
-        textEl.setAttribute("y", "0");
-        textEl.setAttribute("fill", "#000000");
-        textEl.setAttribute("font-family", "Arial");
-        textEl.setAttribute("font-size", String(fontSize));
-        textEl.setAttribute("font-weight", "bold");
-        textEl.setAttribute("text-anchor", "middle");
-        // Use dy to optically center the text - 0.1em is the standard offset for vertical centering
-        // This accounts for the fact that text baseline is not at the visual center
-        textEl.setAttribute("dy", "0.1em");
-        textEl.setAttribute("dominant-baseline", "auto");
-        // Counter-scale to neutralize parent group's scaling
-        // This ensures text maintains fixed size regardless of product scaling
-        const textScaleX = 1 / sx;
-        const textScaleY = 1 / sy;
-        const transforms = [`scale(${textScaleX} ${textScaleY})`];
-        if (rotation) {
-          transforms.push(`rotate(${-rotation})`);
+        
+        if (productConfig.letterPrefix !== "") {
+          // Fixed text size based on canvas scale factor for legibility
+          const baseFontSize = 16; // Base font size at scaleFactor=100
+          const fontSize = Math.max(12, (baseFontSize * productScaleFactor) / 100);
+          const textEl = document.createElementNS(SVG_NS, "text");
+          textEl.setAttribute("x", "0");
+          textEl.setAttribute("y", "0");
+          textEl.setAttribute("fill", "#000000");
+          textEl.setAttribute("font-family", "Arial");
+          textEl.setAttribute("font-size", String(fontSize));
+          textEl.setAttribute("font-weight", "bold");
+          textEl.setAttribute("text-anchor", "middle");
+          // Use dy to optically center the text - 0.1em is the standard offset for vertical centering
+          // This accounts for the fact that text baseline is not at the visual center
+          textEl.setAttribute("dy", "0.1em");
+          textEl.setAttribute("dominant-baseline", "auto");
+          // Counter-scale to neutralize parent group's scaling
+          // This ensures text maintains fixed size regardless of product scaling
+          const textScaleX = 1 / sx;
+          const textScaleY = 1 / sy;
+          const transforms = [`scale(${textScaleX} ${textScaleY})`];
+          if (rotation) {
+            transforms.push(`rotate(${-rotation})`);
+          }
+          textEl.setAttribute("transform", transforms.join(" "));
+          textEl.textContent = letterPrefix;
+          productGroupEl.appendChild(textEl);
         }
-        textEl.setAttribute("transform", transforms.join(" "));
-        textEl.textContent = letterPrefix;
-        productGroupEl.appendChild(textEl);
 
         // Add quantity badge (similar to ProductShape.jsx)
         const quantity = product.quantity || 1;
@@ -1409,7 +1415,7 @@ const Page = () => {
           badgeText.setAttribute("font-size", String(badgeFontSize));
           badgeText.setAttribute("font-weight", "bold");
           badgeText.setAttribute("text-anchor", "middle");
-          badgeText.setAttribute("dy", "0.35em");
+          badgeText.setAttribute("dy", "0.3em"); // Adjusted from 0.35em to move text up slightly
           badgeText.setAttribute("dominant-baseline", "middle");
           badgeText.textContent = quantity.toString();
           badgeGroupEl.appendChild(badgeText);

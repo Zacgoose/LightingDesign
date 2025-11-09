@@ -952,16 +952,20 @@ const Page = () => {
 
         let newFontSize = original.fontSize || 24;
         let newWidth = original.width || 200;
+        let newHeight = original.height || 100;
 
         if (isCornerResize) {
           // Corner resize: scale font size proportionally (keep ratio)
           const averageScale = (groupScaleX + groupScaleY) / 2;
           newFontSize = Math.max(8, Math.round(newFontSize * averageScale));
           newWidth = Math.max(20, newWidth * averageScale);
+          newHeight = Math.max(10, newHeight * averageScale);
         } else {
           // Side/top resize: adjust width only, keep font size constant for text wrapping
           newWidth = Math.max(20, newWidth * groupScaleX);
           // Font size stays the same, text will wrap
+          // Height scales with scaleY for side/top resizes
+          newHeight = Math.max(10, newHeight * groupScaleY);
         }
 
         return {
@@ -971,6 +975,7 @@ const Page = () => {
           rotation: (original.rotation || 0) + (selectionSnapshot.rotation || 0) + rotationDelta,
           fontSize: newFontSize,
           width: newWidth,
+          height: newHeight,
           scaleX: 1, // Reset scale after applying to fontSize and width
           scaleY: 1,
         };

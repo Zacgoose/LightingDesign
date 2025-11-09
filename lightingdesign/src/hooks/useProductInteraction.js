@@ -47,14 +47,14 @@ export const useProductInteraction = ({
           // If at least two, create connector
           if (newSeq.length >= 2) {
             const prevId = newSeq[newSeq.length - 2];
-            
+
             // Check if a connection already exists between these two objects (in either direction)
             const connectionExists = connectors.some(
               (c) =>
                 (c.from === prevId && c.to === productId) ||
-                (c.from === productId && c.to === prevId)
+                (c.from === productId && c.to === prevId),
             );
-            
+
             // Only create connector if connection doesn't already exist
             if (!connectionExists) {
               // Get default sublayer from active layer

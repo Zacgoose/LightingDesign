@@ -24,16 +24,22 @@ const LayerItem = memo(({ layer, isActive, canDelete, onSelect, onDelete, listIt
     onSelect(layer.id);
   }, [onSelect, layer.id]);
 
-  const handleDelete = useCallback((e) => {
-    e.stopPropagation();
-    onDelete(layer.id, layer.name);
-  }, [onDelete, layer.id, layer.name]);
+  const handleDelete = useCallback(
+    (e) => {
+      e.stopPropagation();
+      onDelete(layer.id, layer.name);
+    },
+    [onDelete, layer.id, layer.name],
+  );
 
-  const primaryTypographyProps = useMemo(() => ({
-    fontWeight: isActive ? 600 : 400,
-    variant: "h6",
-    fontSize: "0.8rem",
-  }), [isActive]);
+  const primaryTypographyProps = useMemo(
+    () => ({
+      fontWeight: isActive ? 600 : 400,
+      variant: "h6",
+      fontSize: "0.8rem",
+    }),
+    [isActive],
+  );
 
   return (
     <ListItem
@@ -42,22 +48,14 @@ const LayerItem = memo(({ layer, isActive, canDelete, onSelect, onDelete, listIt
       secondaryAction={
         canDelete && (
           <Tooltip title="Delete Layer">
-            <IconButton
-              edge="end"
-              size="small"
-              onClick={handleDelete}
-            >
+            <IconButton edge="end" size="small" onClick={handleDelete}>
               <DeleteIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         )
       }
     >
-      <ListItemButton
-        selected={isActive}
-        onClick={handleSelect}
-        sx={listItemButtonSx}
-      >
+      <ListItemButton selected={isActive} onClick={handleSelect} sx={listItemButtonSx}>
         <ListItemText
           primary={layer.name}
           secondary={`${layer.products?.length || 0} objects`}

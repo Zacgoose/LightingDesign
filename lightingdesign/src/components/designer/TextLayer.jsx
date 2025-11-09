@@ -26,7 +26,10 @@ export const TextLayer = memo(
       .map((id) => id.substring(5)); // Remove 'text-' prefix
 
     // Determine if text boxes should listen to events
-    const shouldListen = (selectedTool === "select" || selectedTool === "text") && !isMiddlePanning && !isStageDragging;
+    const shouldListen =
+      (selectedTool === "select" || selectedTool === "text") &&
+      !isMiddlePanning &&
+      !isStageDragging;
     // Text boxes are only draggable when they are in the selection group (with transformer)
     // Unselected text boxes are NOT draggable - they can only be selected by clicking
     const shouldBeDraggable = false;

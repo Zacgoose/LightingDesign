@@ -183,117 +183,108 @@ ProductListItem.displayName = "ProductListItem";
  * - Thumbnail
  * - Prefix letter and number
  */
-export const ProductListPanel = memo(forwardRef(({ products, visible, activeLayerId, top = 380 }, ref) => {
-  // Group products by SKU and calculate totals
-  // Optimized to pre-calculate all letter prefixes in a single pass to avoid O(n²) complexity
-  const productSummary = useMemo(() => {
-    // First pass: build unique SKU lists per product type for efficient letter prefix calculation
-    const skusByType = new Map();
-    
-    products.forEach((product) => {
-      const productType = product.product_type?.toLowerCase() || "default";
-      const sku = product.sku?.trim();
-      
-      if (!skusByType.has(productType)) {
-        skusByType.set(productType, new Set());
-      }
-      
-      if (sku && sku !== "") {
-        skusByType.get(productType).add(sku);
-      }
-    });
-    
-    // Convert sets to sorted arrays and create SKU index lookup maps
-    const skuIndexMaps = new Map();
-    skusByType.forEach((skuSet, productType) => {
-      const sortedSkus = Array.from(skuSet).sort();
-      const indexMap = new Map();
-      sortedSkus.forEach((sku, index) => {
-        indexMap.set(sku, index);
+export const ProductListPanel = memo(
+  forwardRef(({ products, visible, activeLayerId, top = 380 }, ref) => {
+    // Group products by SKU and calculate totals
+    // Optimized to pre-calculate all letter prefixes in a single pass to avoid O(n²) complexity
+    const productSummary = useMemo(() => {
+      // First pass: build unique SKU lists per product type for efficient letter prefix calculation
+      const skusByType = new Map();
+
+      products.forEach((product) => {
+        const productType = product.product_type?.toLowerCase() || "default";
+        const sku = product.sku?.trim();
+
+        if (!skusByType.has(productType)) {
+          skusByType.set(productType, new Set());
+        }
+
+        if (sku && sku !== "") {
+          skusByType.get(productType).add(sku);
+        }
       });
-      skuIndexMaps.set(productType, indexMap);
-    });
-    
-    // Helper function to get letter prefix using pre-calculated indices
-    const getLetterPrefix = (product) => {
-      const productType = product.product_type?.toLowerCase() || "default";
-      const config = productTypesConfig[productType] || productTypesConfig.default;
-      const letterPrefix = config.letterPrefix || "O";
-      
-      const sku = product.sku?.trim();
-      if (!sku || sku === "") {
-        return letterPrefix;
-      }
-      
-      const indexMap = skuIndexMaps.get(productType);
-      if (!indexMap || !indexMap.has(sku)) {
-        return letterPrefix;
-      }
-      
-      return `${letterPrefix}${indexMap.get(sku) + 1}`;
-    };
-    
-    // Second pass: group products by SKU and calculate totals
-    const productMap = new Map();
 
-    products.forEach((product) => {
-      const sku = product.sku || "NO-SKU";
-      const key = `${sku}-${product.product_type || "default"}`;
-
-      if (!productMap.has(key)) {
-        productMap.set(key, {
-          sku: product.sku || "N/A",
-          name: product.name || "Unnamed Product",
-          brand: product.brand || "",
-          productType: product.product_type || "default",
-          price: product.price || 0,
-          thumbnailUrl: product.thumbnailUrl || product.thumbnailImageUrl || null,
-          letterPrefix: getLetterPrefix(product),
-          quantity: 0,
-          color: product.color || productTypesConfig[product.product_type?.toLowerCase() || "default"]?.fill || "#1976d2",
+      // Convert sets to sorted arrays and create SKU index lookup maps
+      const skuIndexMaps = new Map();
+      skusByType.forEach((skuSet, productType) => {
+        const sortedSkus = Array.from(skuSet).sort();
+        const indexMap = new Map();
+        sortedSkus.forEach((sku, index) => {
+          indexMap.set(sku, index);
         });
-      }
+        skuIndexMaps.set(productType, indexMap);
+      });
 
-      const entry = productMap.get(key);
-      entry.quantity += product.quantity || 1;
-    });
+      // Helper function to get letter prefix using pre-calculated indices
+      const getLetterPrefix = (product) => {
+        const productType = product.product_type?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
+        const letterPrefix = config.letterPrefix || "O";
 
-    return Array.from(productMap.values()).sort((a, b) => {
-      // Sort by letter prefix
-      return a.letterPrefix.localeCompare(b.letterPrefix);
-    });
-  }, [products]);
+        const sku = product.sku?.trim();
+        if (!sku || sku === "") {
+          return letterPrefix;
+        }
 
-  if (!visible || products.length === 0) {
-    return null;
-  }
+        const indexMap = skuIndexMaps.get(productType);
+        if (!indexMap || !indexMap.has(sku)) {
+          return letterPrefix;
+        }
 
-  return (
-    <Paper
-      ref={ref}
-      elevation={2}
-      sx={{
-        position: "absolute",
-        top: top,
-        right: 16,
-        width: 240,
-        maxHeight: "calc(100vh - 520px)",
-        display: "flex",
-        flexDirection: "column",
-        zIndex: 1000,
-      }}
-    >
-      <Box sx={{ px: 1.5, py: 1 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
-          {productSummary.length} unique product{productSummary.length !== 1 ? "s" : ""}
-        </Typography>
-      </Box>
-      <Divider />
-      <List
+        return `${letterPrefix}${indexMap.get(sku) + 1}`;
+      };
+
+      // Second pass: group products by SKU and calculate totals
+      const productMap = new Map();
+
+      products.forEach((product) => {
+        const sku = product.sku || "NO-SKU";
+        const key = `${sku}-${product.product_type || "default"}`;
+
+        if (!productMap.has(key)) {
+          productMap.set(key, {
+            sku: product.sku || "N/A",
+            name: product.name || "Unnamed Product",
+            brand: product.brand || "",
+            productType: product.product_type || "default",
+            price: product.price || 0,
+            thumbnailUrl: product.thumbnailUrl || product.thumbnailImageUrl || null,
+            letterPrefix: getLetterPrefix(product),
+            quantity: 0,
+            color:
+              product.color ||
+              productTypesConfig[product.product_type?.toLowerCase() || "default"]?.fill ||
+              "#1976d2",
+          });
+        }
+
+        const entry = productMap.get(key);
+        entry.quantity += product.quantity || 1;
+      });
+
+      return Array.from(productMap.values()).sort((a, b) => {
+        // Sort by letter prefix
+        return a.letterPrefix.localeCompare(b.letterPrefix);
+      });
+    }, [products]);
+
+    if (!visible || products.length === 0) {
+      return null;
+    }
+
+    return (
+      <Paper
+        ref={ref}
+        elevation={2}
         sx={{
-          overflowY: "auto",
-          flexGrow: 1,
-          p: 0,
+          position: "absolute",
+          top: top,
+          right: 16,
+          width: 240,
+          maxHeight: "calc(100vh - 520px)",
+          display: "flex",
+          flexDirection: "column",
+          zIndex: 1000,
         }}
       >
         {productSummary.map((product, index) => (

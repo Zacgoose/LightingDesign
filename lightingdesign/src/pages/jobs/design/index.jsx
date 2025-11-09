@@ -110,12 +110,12 @@ const Page = () => {
   // These refs are kept in sync with state but don't trigger re-renders when accessed
   const stageScaleRef = useRef(stageScale);
   const stagePositionRef = useRef(stagePosition);
-  
+
   // Keep refs in sync with state
   useEffect(() => {
     stageScaleRef.current = stageScale;
   }, [stageScale]);
-  
+
   useEffect(() => {
     stagePositionRef.current = stagePosition;
   }, [stagePosition]);
@@ -157,7 +157,7 @@ const Page = () => {
     redo: handleRedo,
     canUndo,
     canRedo,
-  } = useHistory(activeLayer?.products || [], timelineTracker, 'products');
+  } = useHistory(activeLayer?.products || [], timelineTracker, "products");
 
   // Text boxes with history - similar to products and connectors
   const {
@@ -168,7 +168,7 @@ const Page = () => {
     redo: handleRedoTextBoxes,
     canUndo: canUndoTextBoxes,
     canRedo: canRedoTextBoxes,
-  } = useHistory([], timelineTracker, 'textBoxes');
+  } = useHistory([], timelineTracker, "textBoxes");
   const [selectedTextId, setSelectedTextId] = useState(null);
   const isLoadingLayerData = useRef(false);
   const lastLoadedLayerId = useRef(null); // Initialize to null so first layer loads properly
@@ -195,7 +195,7 @@ const Page = () => {
     redo: handleRedoConnectors,
     canUndo: canUndoConnectors,
     canRedo: canRedoConnectors,
-  } = useHistory(activeLayer?.connectors || [], timelineTracker, 'connectors');
+  } = useHistory(activeLayer?.connectors || [], timelineTracker, "connectors");
 
   // Keep activeLayerIdRef in sync with activeLayerId
   useEffect(() => {
@@ -799,13 +799,13 @@ const Page = () => {
       if (e.evt?.button === 2) {
         return;
       }
-      
+
       e.cancelBubble = true;
-      
+
       // Handle multi-select with Shift/Ctrl
       const shiftKey = e.evt?.shiftKey;
       const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
-      
+
       if (shiftKey || ctrlKey) {
         // Ignore connector clicks when products/text are already selected
         if (selectedIds.length > 0) {
@@ -823,16 +823,10 @@ const Page = () => {
         // Only clear product/text selections when not holding modifier keys
         setSelectedIds([]);
       }
-      
+
       forceGroupUpdate();
     },
-    [
-      selectedIds,
-      selectedConnectorIds,
-      setSelectedIds,
-      setSelectedConnectorIds,
-      forceGroupUpdate,
-    ],
+    [selectedIds, selectedConnectorIds, setSelectedIds, setSelectedConnectorIds, forceGroupUpdate],
   );
 
   // Unified group transform handler that handles both products and text boxes
@@ -958,16 +952,20 @@ const Page = () => {
 
         let newFontSize = original.fontSize || 24;
         let newWidth = original.width || 200;
+        let newHeight = original.height || 100;
 
         if (isCornerResize) {
           // Corner resize: scale font size proportionally (keep ratio)
           const averageScale = (groupScaleX + groupScaleY) / 2;
           newFontSize = Math.max(8, Math.round(newFontSize * averageScale));
           newWidth = Math.max(20, newWidth * averageScale);
+          newHeight = Math.max(10, newHeight * averageScale);
         } else {
           // Side/top resize: adjust width only, keep font size constant for text wrapping
           newWidth = Math.max(20, newWidth * groupScaleX);
           // Font size stays the same, text will wrap
+          // Height scales with scaleY for side/top resizes
+          newHeight = Math.max(10, newHeight * groupScaleY);
         }
 
         return {
@@ -977,6 +975,7 @@ const Page = () => {
           rotation: (original.rotation || 0) + (selectionSnapshot.rotation || 0) + rotationDelta,
           fontSize: newFontSize,
           width: newWidth,
+          height: newHeight,
           scaleX: 1, // Reset scale after applying to fontSize and width
           scaleY: 1,
         };
@@ -1033,17 +1032,17 @@ const Page = () => {
         ...(clipboard.current.products || []),
         ...(clipboard.current.textBoxes || []),
       ];
-      
+
       if (allCopiedItems.length === 0) return;
-      
+
       // Find the bounding box center of copied items
       const centerX = allCopiedItems.reduce((sum, item) => sum + item.x, 0) / allCopiedItems.length;
       const centerY = allCopiedItems.reduce((sum, item) => sum + item.y, 0) / allCopiedItems.length;
-      
+
       // Calculate offset to position at cursor
       const offsetX = cursorPosition.x - centerX;
       const offsetY = cursorPosition.y - centerY;
-      
+
       const idMap = {};
       const newProducts = clipboard.current.products.map((p, index) => {
         const newId = `product-${Date.now()}-${index}`;
@@ -1125,18 +1124,18 @@ const Page = () => {
     onUndo: () => {
       // Use unified timeline to undo the most recent action
       if (timelineTracker.timelineStep.current === -1) return;
-      
+
       const historyKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current];
       let didUndo = false;
-      
-      if (historyKey === 'products') {
+
+      if (historyKey === "products") {
         didUndo = handleUndo();
-      } else if (historyKey === 'textBoxes') {
+      } else if (historyKey === "textBoxes") {
         didUndo = handleUndoTextBoxes();
-      } else if (historyKey === 'connectors') {
+      } else if (historyKey === "connectors") {
         didUndo = handleUndoConnectors();
       }
-      
+
       if (didUndo) {
         timelineTracker.timelineStep.current -= 1;
         clearSelection();
@@ -1144,19 +1143,21 @@ const Page = () => {
     },
     onRedo: () => {
       // Use unified timeline to redo the next action
-      if (timelineTracker.timelineStep.current >= timelineTracker.timeline.current.length - 1) return;
-      
-      const nextHistoryKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current + 1];
+      if (timelineTracker.timelineStep.current >= timelineTracker.timeline.current.length - 1)
+        return;
+
+      const nextHistoryKey =
+        timelineTracker.timeline.current[timelineTracker.timelineStep.current + 1];
       let didRedo = false;
-      
-      if (nextHistoryKey === 'products') {
+
+      if (nextHistoryKey === "products") {
         didRedo = handleRedo();
-      } else if (nextHistoryKey === 'textBoxes') {
+      } else if (nextHistoryKey === "textBoxes") {
         didRedo = handleRedoTextBoxes();
-      } else if (nextHistoryKey === 'connectors') {
+      } else if (nextHistoryKey === "connectors") {
         didRedo = handleRedoConnectors();
       }
-      
+
       if (didRedo) {
         timelineTracker.timelineStep.current += 1;
         clearSelection();
@@ -1486,7 +1487,7 @@ const Page = () => {
 
         // Get the SKU of the first selected product
         const firstSelectedProduct = baseProducts.find((p) => selectedIds.includes(p.id));
-        
+
         if (firstSelectedProduct && firstSelectedProduct.sku) {
           const targetSku = firstSelectedProduct.sku;
 
@@ -1806,13 +1807,7 @@ const Page = () => {
         setSelectedConnectorIds([]);
       }
     },
-    [
-      selectedTool,
-      textBoxes,
-      theme,
-      setSelectedIds,
-      setSelectedConnectorIds,
-    ],
+    [selectedTool, textBoxes, theme, setSelectedIds, setSelectedConnectorIds],
   );
 
   const handleTextDoubleClick = useCallback(
@@ -1917,11 +1912,14 @@ const Page = () => {
     setPendingTextBoxId(null);
   }, [pendingTextBoxId, textBoxes, updateTextBoxHistory]);
 
-  const handleTextChange = useCallback((updatedTextBox) => {
-    updateTextBoxHistory((boxes) =>
-      boxes.map((box) => (box.id === updatedTextBox.id ? updatedTextBox : box)),
-    );
-  }, [updateTextBoxHistory]);
+  const handleTextChange = useCallback(
+    (updatedTextBox) => {
+      updateTextBoxHistory((boxes) =>
+        boxes.map((box) => (box.id === updatedTextBox.id ? updatedTextBox : box)),
+      );
+    },
+    [updateTextBoxHistory],
+  );
 
   const handleTextSelect = useCallback(
     (e, textId) => {
@@ -1967,7 +1965,15 @@ const Page = () => {
         }
       }
     },
-    [selectedIds, selectedConnectorIds, selectedTextId, setSelectedIds, setSelectedConnectorIds, setSelectedTextId, forceGroupUpdate],
+    [
+      selectedIds,
+      selectedConnectorIds,
+      selectedTextId,
+      setSelectedIds,
+      setSelectedConnectorIds,
+      setSelectedTextId,
+      forceGroupUpdate,
+    ],
   );
 
   const handleTextContextMenu = useCallback(
@@ -2051,13 +2057,13 @@ const Page = () => {
         } else if (isItalic) {
           newStyle = "normal";
         } else if (isBold) {
-            newStyle = "bold italic";
-          } else {
-            newStyle = "italic";
-          }
+          newStyle = "bold italic";
+        } else {
+          newStyle = "italic";
+        }
 
-          return { ...box, fontStyle: newStyle };
-        });
+        return { ...box, fontStyle: newStyle };
+      });
       updateTextBoxHistory(updatedTextBoxes);
     }
     contextMenus.handleCloseContextMenu();
@@ -2089,8 +2095,8 @@ const Page = () => {
   const handleTextFontSize = useCallback(
     (fontSize) => {
       if (selectedTextId) {
-        const updatedTextBoxes = textBoxes.map((box) => 
-          box.id === selectedTextId ? { ...box, fontSize } : box
+        const updatedTextBoxes = textBoxes.map((box) =>
+          box.id === selectedTextId ? { ...box, fontSize } : box,
         );
         updateTextBoxHistory(updatedTextBoxes);
       }
@@ -2102,8 +2108,8 @@ const Page = () => {
   const handleTextColorChange = useCallback(
     (color) => {
       if (selectedTextId) {
-        const updatedTextBoxes = textBoxes.map((box) => 
-          box.id === selectedTextId ? { ...box, color } : box
+        const updatedTextBoxes = textBoxes.map((box) =>
+          box.id === selectedTextId ? { ...box, color } : box,
         );
         updateTextBoxHistory(updatedTextBoxes);
       }
@@ -2241,7 +2247,7 @@ const Page = () => {
         const clickedOnEmpty = e.target === e.target.getStage();
         const shiftKey = e.evt?.shiftKey;
         const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
-        
+
         // Only clear selection if no modifier keys are pressed
         if (clickedOnEmpty && !shiftKey && !ctrlKey) {
           clearSelection();
@@ -2378,22 +2384,22 @@ const Page = () => {
   const handleToggleGrid = useCallback(() => setShowGrid(!showGrid), [showGrid]);
   const handleToggleLayers = useCallback(() => setShowLayers(!showLayers), [showLayers]);
   const handleTogglePreview = useCallback(() => setShowPreview(!showPreview), [showPreview]);
-  
+
   const handleToolbarUndo = useCallback(() => {
     // Use unified timeline to undo the most recent action
     if (timelineTracker.timelineStep.current === -1) return;
-    
+
     const historyKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current];
     let didUndo = false;
-    
-    if (historyKey === 'products') {
+
+    if (historyKey === "products") {
       didUndo = handleUndo();
-    } else if (historyKey === 'textBoxes') {
+    } else if (historyKey === "textBoxes") {
       didUndo = handleUndoTextBoxes();
-    } else if (historyKey === 'connectors') {
+    } else if (historyKey === "connectors") {
       didUndo = handleUndoConnectors();
     }
-    
+
     if (didUndo) {
       timelineTracker.timelineStep.current -= 1;
       clearSelection();
@@ -2403,91 +2409,147 @@ const Page = () => {
   const handleToolbarRedo = useCallback(() => {
     // Use unified timeline to redo the next action
     if (timelineTracker.timelineStep.current >= timelineTracker.timeline.current.length - 1) return;
-    
-    const nextHistoryKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current + 1];
+
+    const nextHistoryKey =
+      timelineTracker.timeline.current[timelineTracker.timelineStep.current + 1];
     let didRedo = false;
-    
-    if (nextHistoryKey === 'products') {
+
+    if (nextHistoryKey === "products") {
       didRedo = handleRedo();
-    } else if (nextHistoryKey === 'textBoxes') {
+    } else if (nextHistoryKey === "textBoxes") {
       didRedo = handleRedoTextBoxes();
-    } else if (nextHistoryKey === 'connectors') {
+    } else if (nextHistoryKey === "connectors") {
       didRedo = handleRedoConnectors();
     }
-    
+
     if (didRedo) {
       timelineTracker.timelineStep.current += 1;
       clearSelection();
     }
   }, [handleRedo, handleRedoTextBoxes, handleRedoConnectors, clearSelection, timelineTracker]);
 
-  const handleToolChange = useCallback((tool) => {
-    // If leaving connect mode, clear connectSequence
-    if (selectedTool === "connect" && tool !== "connect") {
-      setConnectSequence([]);
-    }
-    // Clear selections when changing tools
-    applyGroupTransform();
-    setSelectedIds([]);
-    setSelectedConnectorIds([]);
-    setSelectedTextId(null);
-    setGroupKey((k) => k + 1);
-    setSelectedTool(tool);
-  }, [selectedTool, applyGroupTransform, setSelectedIds, setSelectedConnectorIds, setSelectedTextId, setGroupKey, setSelectedTool]);
+  const handleToolChange = useCallback(
+    (tool) => {
+      // If leaving connect mode, clear connectSequence
+      if (selectedTool === "connect" && tool !== "connect") {
+        setConnectSequence([]);
+      }
+      // Clear selections when changing tools
+      applyGroupTransform();
+      setSelectedIds([]);
+      setSelectedConnectorIds([]);
+      setSelectedTextId(null);
+      setGroupKey((k) => k + 1);
+      setSelectedTool(tool);
+    },
+    [
+      selectedTool,
+      applyGroupTransform,
+      setSelectedIds,
+      setSelectedConnectorIds,
+      setSelectedTextId,
+      setGroupKey,
+      setSelectedTool,
+    ],
+  );
 
   // Memoize prop objects for toolbar to prevent re-renders
-  const toolbarMainProps = useMemo(() => ({
-    onUploadFloorPlan: handleUploadFloorPlan,
-    onSave: handleSave,
-    onExport: handleExport,
-    onUndo: handleToolbarUndo,
-    onRedo: handleToolbarRedo,
-    canUndo: timelineTracker.timelineStep.current > -1,
-    canRedo: timelineTracker.timelineStep.current < timelineTracker.timeline.current.length - 1,
-    onMeasure: handleMeasure,
-  }), [handleUploadFloorPlan, handleSave, handleExport, handleToolbarUndo, handleToolbarRedo, handleMeasure, timelineTracker.timelineStep.current, timelineTracker.timeline.current.length]);
+  const toolbarMainProps = useMemo(
+    () => ({
+      onUploadFloorPlan: handleUploadFloorPlan,
+      onSave: handleSave,
+      onExport: handleExport,
+      onUndo: handleToolbarUndo,
+      onRedo: handleToolbarRedo,
+      canUndo: timelineTracker.timelineStep.current > -1,
+      canRedo: timelineTracker.timelineStep.current < timelineTracker.timeline.current.length - 1,
+      onMeasure: handleMeasure,
+    }),
+    [
+      handleUploadFloorPlan,
+      handleSave,
+      handleExport,
+      handleToolbarUndo,
+      handleToolbarRedo,
+      handleMeasure,
+      timelineTracker.timelineStep.current,
+      timelineTracker.timeline.current.length,
+    ],
+  );
 
-  const toolbarViewProps = useMemo(() => ({
-    showGrid: showGrid,
-    onToggleGrid: handleToggleGrid,
-    showLayers: showLayers,
-    onToggleLayers: handleToggleLayers,
-    showPreview: showPreview,
-    onTogglePreview: handleTogglePreview,
-    onZoomIn: handleZoomIn,
-    onZoomOut: handleZoomOut,
-    onResetView: handleResetView,
-    zoomLevel: stageScale,
-    rotationSnaps: rotationSnaps,
-    onRotationSnapsChange: setRotationSnaps,
-  }), [showGrid, handleToggleGrid, showLayers, handleToggleLayers, showPreview, handleTogglePreview, handleZoomIn, handleZoomOut, handleResetView, stageScale, rotationSnaps, setRotationSnaps]);
+  const toolbarViewProps = useMemo(
+    () => ({
+      showGrid: showGrid,
+      onToggleGrid: handleToggleGrid,
+      showLayers: showLayers,
+      onToggleLayers: handleToggleLayers,
+      showPreview: showPreview,
+      onTogglePreview: handleTogglePreview,
+      onZoomIn: handleZoomIn,
+      onZoomOut: handleZoomOut,
+      onResetView: handleResetView,
+      zoomLevel: stageScale,
+      rotationSnaps: rotationSnaps,
+      onRotationSnapsChange: setRotationSnaps,
+    }),
+    [
+      showGrid,
+      handleToggleGrid,
+      showLayers,
+      handleToggleLayers,
+      showPreview,
+      handleTogglePreview,
+      handleZoomIn,
+      handleZoomOut,
+      handleResetView,
+      stageScale,
+      rotationSnaps,
+      setRotationSnaps,
+    ],
+  );
 
-  const toolbarToolsProps = useMemo(() => ({
-    selectedTool: selectedTool,
-    onToolChange: handleToolChange,
-    placementMode: placementMode,
-    onStopPlacement: handleStopPlacement,
-    onDisconnectCable: handleDisconnectCable,
-  }), [selectedTool, handleToolChange, placementMode, handleStopPlacement, handleDisconnectCable]);
+  const toolbarToolsProps = useMemo(
+    () => ({
+      selectedTool: selectedTool,
+      onToolChange: handleToolChange,
+      placementMode: placementMode,
+      onStopPlacement: handleStopPlacement,
+      onDisconnectCable: handleDisconnectCable,
+    }),
+    [selectedTool, handleToolChange, placementMode, handleStopPlacement, handleDisconnectCable],
+  );
 
-  const toolbarAlignProps = useMemo(() => ({
-    selectedCount: selectedIds.length,
-    onAlignHorizontalCenter: contextMenus.handleAlignHorizontalCenter,
-    onAlignVerticalCenter: contextMenus.handleAlignVerticalCenter,
-    onAlignLeft: contextMenus.handleAlignLeft,
-    onAlignRight: contextMenus.handleAlignRight,
-    onAlignTop: contextMenus.handleAlignTop,
-    onAlignBottom: contextMenus.handleAlignBottom,
-    onEvenSpacingHorizontal: contextMenus.handleEvenSpacingHorizontal,
-    onEvenSpacingVertical: contextMenus.handleEvenSpacingVertical,
-  }), [selectedIds.length, contextMenus.handleAlignHorizontalCenter, contextMenus.handleAlignVerticalCenter, contextMenus.handleAlignLeft, contextMenus.handleAlignRight, contextMenus.handleAlignTop, contextMenus.handleAlignBottom, contextMenus.handleEvenSpacingHorizontal, contextMenus.handleEvenSpacingVertical]);
+  const toolbarAlignProps = useMemo(
+    () => ({
+      selectedCount: selectedIds.length,
+      onAlignHorizontalCenter: contextMenus.handleAlignHorizontalCenter,
+      onAlignVerticalCenter: contextMenus.handleAlignVerticalCenter,
+      onAlignLeft: contextMenus.handleAlignLeft,
+      onAlignRight: contextMenus.handleAlignRight,
+      onAlignTop: contextMenus.handleAlignTop,
+      onAlignBottom: contextMenus.handleAlignBottom,
+      onEvenSpacingHorizontal: contextMenus.handleEvenSpacingHorizontal,
+      onEvenSpacingVertical: contextMenus.handleEvenSpacingVertical,
+    }),
+    [
+      selectedIds.length,
+      contextMenus.handleAlignHorizontalCenter,
+      contextMenus.handleAlignVerticalCenter,
+      contextMenus.handleAlignLeft,
+      contextMenus.handleAlignRight,
+      contextMenus.handleAlignTop,
+      contextMenus.handleAlignBottom,
+      contextMenus.handleEvenSpacingHorizontal,
+      contextMenus.handleEvenSpacingVertical,
+    ],
+  );
 
   // Memoize callbacks for layer components
   const handleLayerClose = useCallback(() => setShowLayers(false), []);
-  
+
   // Memoize layer sublayers array to prevent re-renders
   const activeSublayers = useMemo(() => activeLayer?.sublayers || [], [activeLayer?.sublayers]);
-  
+
   // Calculate dynamic positions for panels based on actual heights
   useEffect(() => {
     if (!showLayers) {
@@ -2504,7 +2566,7 @@ const Page = () => {
 
       // LayerSwitcher is always first
       setLayerSwitcherTop(currentTop);
-      
+
       // Get LayerSwitcher height
       const layerSwitcherHeight = layerSwitcherRef.current?.offsetHeight || 0;
       currentTop += layerSwitcherHeight + gap;
@@ -2539,12 +2601,57 @@ const Page = () => {
       resizeObserver.disconnect();
     };
   }, [showLayers, activeSublayers.length]);
-  
+
+  // Ref to store the last selected product preview data
+  const lastSelectedProductRef = useRef(null);
+
   // Memoize selected product for preview panel
+  // Only extract properties that ObjectPreviewPanel actually uses to prevent
+  // re-renders when transform properties (x, y, rotation, scale) change
   const selectedProduct = useMemo(() => {
     if (selectedIds.length === 1 && !selectedIds[0].startsWith("text-")) {
-      return products.find((p) => p.id === selectedIds[0]) || null;
+      const product = products.find((p) => p.id === selectedIds[0]);
+      if (!product) {
+        lastSelectedProductRef.current = null;
+        return null;
+      }
+
+      // Extract only the properties that ObjectPreviewPanel needs
+      const previewData = {
+        id: product.id,
+        name: product.name,
+        customLabel: product.customLabel,
+        sku: product.sku,
+        brand: product.brand,
+        quantity: product.quantity,
+        thumbnailUrl: product.thumbnailUrl,
+        thumbnailImageUrl: product.thumbnailImageUrl,
+      };
+
+      // Check if the preview-relevant properties have actually changed
+      // This prevents re-renders when only transform properties change
+      const lastData = lastSelectedProductRef.current;
+      if (
+        lastData &&
+        lastData.id === previewData.id &&
+        lastData.name === previewData.name &&
+        lastData.customLabel === previewData.customLabel &&
+        lastData.sku === previewData.sku &&
+        lastData.brand === previewData.brand &&
+        lastData.quantity === previewData.quantity &&
+        lastData.thumbnailUrl === previewData.thumbnailUrl &&
+        lastData.thumbnailImageUrl === previewData.thumbnailImageUrl
+      ) {
+        // Return the same reference to prevent re-render
+        return lastData;
+      }
+
+      // Properties have changed, update ref and return new data
+      lastSelectedProductRef.current = previewData;
+      return previewData;
     }
+
+    lastSelectedProductRef.current = null;
     return null;
   }, [selectedIds, products]);
 
@@ -2597,8 +2704,8 @@ const Page = () => {
             />
 
             {/* Display API response messages - only render when mutation is active */}
-            {(saveDesignMutation.isFetching || 
-              saveDesignMutation.isSuccess || 
+            {(saveDesignMutation.isFetching ||
+              saveDesignMutation.isSuccess ||
               saveDesignMutation.isError) && (
               <CippApiResults
                 apiObject={saveDesignMutation}
@@ -2684,7 +2791,7 @@ const Page = () => {
                         {/* Unselected connectors only */}
                         <ConnectorsLayer
                           connectors={filterConnectorsBySublayers(connectors, activeLayerId).filter(
-                            (c) => !selectedConnectorIds.includes(c.id)
+                            (c) => !selectedConnectorIds.includes(c.id),
                           )}
                           products={products}
                           selectedConnectorIds={[]}
@@ -2696,7 +2803,7 @@ const Page = () => {
                           onConnectorChange={(updatedConnector) => {
                             // Merge the updated connector with the full connector list
                             const newConnectors = connectors.map((c) =>
-                              c.id === updatedConnector.id ? updatedConnector : c
+                              c.id === updatedConnector.id ? updatedConnector : c,
                             );
                             updateConnectorHistory(newConnectors);
                           }}
@@ -2801,9 +2908,10 @@ const Page = () => {
                         {/* Selected connectors (rendered on top of everything) */}
                         {selectedConnectorIds.length > 0 && (
                           <ConnectorsLayer
-                            connectors={filterConnectorsBySublayers(connectors, activeLayerId).filter(
-                              (c) => selectedConnectorIds.includes(c.id)
-                            )}
+                            connectors={filterConnectorsBySublayers(
+                              connectors,
+                              activeLayerId,
+                            ).filter((c) => selectedConnectorIds.includes(c.id))}
                             products={products}
                             selectedConnectorIds={selectedConnectorIds}
                             selectedTool={selectedTool}
@@ -2814,7 +2922,7 @@ const Page = () => {
                             onConnectorChange={(updatedConnector) => {
                               // Merge the updated connector with the full connector list
                               const newConnectors = connectors.map((c) =>
-                                c.id === updatedConnector.id ? updatedConnector : c
+                                c.id === updatedConnector.id ? updatedConnector : c,
                               );
                               updateConnectorHistory(newConnectors);
                             }}
@@ -2961,10 +3069,7 @@ const Page = () => {
                   )}
 
                   {/* Object Preview Panel */}
-                  <ObjectPreviewPanel
-                    product={selectedProduct}
-                    visible={showObjectPreview}
-                  />
+                  <ObjectPreviewPanel product={selectedProduct} visible={showObjectPreview} />
 
                   {/* Product List Panel */}
                   <ProductListPanel

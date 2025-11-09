@@ -287,16 +287,29 @@ export const ProductListPanel = memo(
           zIndex: 1000,
         }}
       >
-        {productSummary.map((product, index) => (
-          <ProductListItem
-            key={`${product.sku}-${product.productType}`}
-            product={product}
-            showDivider={index < productSummary.length - 1}
-          />
-        ))}
-      </List>
-    </Paper>
-  );
+        <Box sx={{ px: 1.5, py: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
+            {productSummary.length} unique product{productSummary.length !== 1 ? "s" : ""}
+          </Typography>
+        </Box>
+        <Divider />
+        <List
+          sx={{
+            overflowY: "auto",
+            flexGrow: 1,
+            p: 0,
+          }}
+        >
+          {productSummary.map((product, index) => (
+            <ProductListItem
+              key={`${product.sku}-${product.productType}`}
+              product={product}
+              showDivider={index < productSummary.length - 1}
+            />
+          ))}
+        </List>
+      </Paper>
+    );
 }), (prevProps, nextProps) => {
   // Custom comparison for ProductListPanel props
   // Only re-render if visible status, activeLayerId, top position, or actual product data changes

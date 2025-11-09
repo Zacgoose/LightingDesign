@@ -46,11 +46,11 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
   const imageRef = useRef(null);
   const cropperRef = useRef(null);
   const transformerRef = useRef(null);
+  const layerRef = useRef(null);
   const [image, setImage] = useState(null);
   const [tool, setTool] = useState("select");
   const [scale, setScale] = useState(1);
   const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
-  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
   const [flipX, setFlipX] = useState(1);
   const [flipY, setFlipY] = useState(1);
@@ -61,7 +61,7 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
   const [history, setHistory] = useState([]);
   const [historyStep, setHistoryStep] = useState(0);
 
-  // Load image
+  // Load image and center it
   useEffect(() => {
     if (!imageUrl) return;
 
@@ -70,25 +70,41 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
     img.onload = () => {
       setImage(img);
 
-      // Center the image
+      // Calculate initial scale to fit image in viewport
       const imgAspectRatio = img.width / img.height;
       const containerAspectRatio = width / height;
 
       let initialScale;
       if (imgAspectRatio > containerAspectRatio) {
-        initialScale = (width * 0.9) / img.width;
+        initialScale = (width * 0.85) / img.width;
       } else {
-        initialScale = (height * 0.9) / img.height;
+        initialScale = (height * 0.85) / img.height;
       }
 
       setScale(initialScale);
-      setImagePosition({
-        x: width / 2 - (img.width * initialScale) / 2,
-        y: height / 2 - (img.height * initialScale) / 2,
+      
+      // Center the image in the viewport
+      const scaledWidth = img.width * initialScale;
+      const scaledHeight = img.height * initialScale;
+      setStagePosition({
+        x: (width - scaledWidth) / 2,
+        y: (height - scaledHeight) / 2,
       });
 
       // Save initial state
-      saveToHistory();
+      const initialState = {
+        rotation: 0,
+        flipX: 1,
+        flipY: 1,
+        drawings: [],
+        scale: initialScale,
+        stagePosition: {
+          x: (width - scaledWidth) / 2,
+          y: (height - scaledHeight) / 2,
+        },
+      };
+      setHistory([initialState]);
+      setHistoryStep(0);
     };
     img.src = imageUrl;
   }, [imageUrl, width, height]);
@@ -107,15 +123,15 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
       flipX,
       flipY,
       drawings: [...drawings],
-      imagePosition: { ...imagePosition },
       scale,
+      stagePosition: { ...stagePosition },
     };
 
     const newHistory = history.slice(0, historyStep + 1);
     newHistory.push(state);
     setHistory(newHistory);
     setHistoryStep(newHistory.length - 1);
-  }, [rotation, flipX, flipY, drawings, imagePosition, scale, history, historyStep]);
+  }, [rotation, flipX, flipY, drawings, scale, stagePosition, history, historyStep]);
 
   const undo = () => {
     if (historyStep > 0) {
@@ -124,8 +140,8 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
       setFlipX(prevState.flipX);
       setFlipY(prevState.flipY);
       setDrawings(prevState.drawings);
-      setImagePosition(prevState.imagePosition);
       setScale(prevState.scale);
+      setStagePosition(prevState.stagePosition);
       setHistoryStep(historyStep - 1);
     }
   };
@@ -137,8 +153,8 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
       setFlipX(nextState.flipX);
       setFlipY(nextState.flipY);
       setDrawings(nextState.drawings);
-      setImagePosition(nextState.imagePosition);
       setScale(nextState.scale);
+      setStagePosition(nextState.stagePosition);
       setHistoryStep(historyStep + 1);
     }
   };
@@ -146,24 +162,37 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
   const handleWheel = (e) => {
     e.evt.preventDefault();
 
+    if (!image) return;
+
     const scaleBy = 1.1;
     const stage = stageRef.current;
-    const oldScale = stage.scaleX();
+    const oldScale = scale;
     const pointer = stage.getPointerPosition();
 
+    // Calculate the point on the image that's under the mouse
     const mousePointTo = {
-      x: (pointer.x - stage.x()) / oldScale,
-      y: (pointer.y - stage.y()) / oldScale,
+      x: (pointer.x - stagePosition.x) / oldScale,
+      y: (pointer.y - stagePosition.y) / oldScale,
     };
 
     const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
     const boundedScale = Math.max(0.1, Math.min(10, newScale));
 
-    setStagePosition({
+    // Calculate new position to keep the mouse point stationary
+    const newPos = {
       x: pointer.x - mousePointTo.x * boundedScale,
       y: pointer.y - mousePointTo.y * boundedScale,
-    });
+    };
+
     setScale(boundedScale);
+    setStagePosition(newPos);
+  };
+
+  const handleStageDragEnd = (e) => {
+    setStagePosition({
+      x: e.target.x(),
+      y: e.target.y(),
+    });
   };
 
   const handleRotate = () => {
@@ -185,19 +214,21 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
     if (!image) return;
 
     setIsCropping(true);
-    const cropWidth = image.width * 0.6;
-    const cropHeight = image.height * 0.6;
+    
+    // Create crop box in the center of the visible image
+    const cropWidth = Math.min(image.width * 0.6, image.width - 20);
+    const cropHeight = Math.min(image.height * 0.6, image.height - 20);
 
     setCropRect({
-      x: image.width * 0.2,
-      y: image.height * 0.2,
+      x: (image.width - cropWidth) / 2,
+      y: (image.height - cropHeight) / 2,
       width: cropWidth,
       height: cropHeight,
     });
   };
 
   const handleApplyCrop = () => {
-    if (!cropRect || !imageRef.current) return;
+    if (!cropRect || !image) return;
 
     // Create a temporary canvas to crop the image
     const canvas = document.createElement("canvas");
@@ -206,18 +237,71 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
     canvas.width = cropRect.width;
     canvas.height = cropRect.height;
 
-    // Draw the cropped portion
-    ctx.drawImage(
-      image,
-      cropRect.x,
-      cropRect.y,
-      cropRect.width,
-      cropRect.height,
-      0,
-      0,
-      cropRect.width,
-      cropRect.height,
-    );
+    // Apply current transformations and draw the cropped portion
+    ctx.save();
+    
+    // Handle rotation and flips
+    ctx.translate(cropRect.width / 2, cropRect.height / 2);
+    
+    if (rotation === 90) {
+      ctx.rotate((90 * Math.PI) / 180);
+      ctx.scale(flipY, flipX);
+      ctx.drawImage(
+        image,
+        cropRect.x,
+        cropRect.y,
+        cropRect.width,
+        cropRect.height,
+        -cropRect.height / 2,
+        -cropRect.width / 2,
+        cropRect.height,
+        cropRect.width
+      );
+    } else if (rotation === 180) {
+      ctx.rotate((180 * Math.PI) / 180);
+      ctx.scale(flipX, flipY);
+      ctx.drawImage(
+        image,
+        cropRect.x,
+        cropRect.y,
+        cropRect.width,
+        cropRect.height,
+        -cropRect.width / 2,
+        -cropRect.height / 2,
+        cropRect.width,
+        cropRect.height
+      );
+    } else if (rotation === 270) {
+      ctx.rotate((270 * Math.PI) / 180);
+      ctx.scale(flipY, flipX);
+      ctx.drawImage(
+        image,
+        cropRect.x,
+        cropRect.y,
+        cropRect.width,
+        cropRect.height,
+        -cropRect.height / 2,
+        -cropRect.width / 2,
+        cropRect.height,
+        cropRect.width
+      );
+    } else {
+      // No rotation or 0 degrees
+      ctx.scale(flipX, flipY);
+      ctx.drawImage(
+        image,
+        cropRect.x,
+        cropRect.y,
+        cropRect.width,
+        cropRect.height,
+        -cropRect.width / 2,
+        -cropRect.height / 2,
+        cropRect.width,
+        cropRect.height
+      );
+    }
+    
+    ctx.restore();
 
     // Load the cropped image
     const croppedImg = new window.Image();
@@ -228,6 +312,30 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
       setRotation(0);
       setFlipX(1);
       setFlipY(1);
+      
+      // Recenter and rescale the cropped image
+      const imgAspectRatio = croppedImg.width / croppedImg.height;
+      const containerAspectRatio = width / height;
+      
+      let newScale;
+      if (imgAspectRatio > containerAspectRatio) {
+        newScale = (width * 0.85) / croppedImg.width;
+      } else {
+        newScale = (height * 0.85) / croppedImg.height;
+      }
+      
+      const scaledWidth = croppedImg.width * newScale;
+      const scaledHeight = croppedImg.height * newScale;
+      
+      setScale(newScale);
+      setStagePosition({
+        x: (width - scaledWidth) / 2,
+        y: (height - scaledHeight) / 2,
+      });
+      
+      // Clear drawings as they won't align anymore
+      setDrawings([]);
+      
       saveToHistory();
     };
     croppedImg.src = canvas.toDataURL();
@@ -247,7 +355,7 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
     setCurrentLine({
       points: [pos.x, pos.y],
       stroke: "red",
-      strokeWidth: 3,
+      strokeWidth: 3 / scale, // Adjust stroke width based on scale
     });
   };
 
@@ -277,12 +385,48 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
   };
 
   const handleSave = async () => {
-    if (!stageRef.current) return;
+    if (!stageRef.current || !image) return;
 
-    const uri = stageRef.current.toDataURL({
-      pixelRatio: 2,
-    });
+    // Create a new canvas to render the final image with drawings
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
 
+    // Set canvas size based on current image (after any crops)
+    canvas.width = image.width;
+    canvas.height = image.height;
+
+    // Apply transformations
+    ctx.save();
+    ctx.translate(image.width / 2, image.height / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.scale(flipX, flipY);
+    ctx.drawImage(image, -image.width / 2, -image.height / 2);
+    ctx.restore();
+
+    // Draw all the markup lines
+    if (drawings.length > 0) {
+      drawings.forEach((line) => {
+        ctx.beginPath();
+        ctx.strokeStyle = line.stroke;
+        ctx.lineWidth = line.strokeWidth * scale;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        for (let i = 0; i < line.points.length; i += 2) {
+          const x = (line.points[i] - stagePosition.x) / scale;
+          const y = (line.points[i + 1] - stagePosition.y) / scale;
+
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.stroke();
+      });
+    }
+
+    const uri = canvas.toDataURL("image/png");
     onSave(uri);
   };
 
@@ -423,23 +567,24 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
           ref={stageRef}
           width={width}
           height={height}
-          scaleX={scale}
-          scaleY={scale}
           x={stagePosition.x}
           y={stagePosition.y}
           onWheel={handleWheel}
-          draggable={tool === "select"}
+          draggable={tool === "select" && !isCropping}
+          onDragEnd={handleStageDragEnd}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
         >
-          <Layer>
+          <Layer ref={layerRef}>
             {image && (
               <KonvaImage
                 ref={imageRef}
                 image={image}
-                x={imagePosition.x}
-                y={imagePosition.y}
+                x={0}
+                y={0}
+                width={image.width * scale}
+                height={image.height * scale}
                 rotation={rotation}
                 scaleX={flipX}
                 scaleY={flipY}
@@ -458,6 +603,7 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
                 tension={0.5}
                 lineCap="round"
                 lineJoin="round"
+                globalCompositeOperation="source-over"
               />
             ))}
 
@@ -470,6 +616,7 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
                 tension={0.5}
                 lineCap="round"
                 lineJoin="round"
+                globalCompositeOperation="source-over"
               />
             )}
 
@@ -478,29 +625,34 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
               <>
                 <Rect
                   ref={cropperRef}
-                  x={imagePosition.x + cropRect.x}
-                  y={imagePosition.y + cropRect.y}
-                  width={cropRect.width}
-                  height={cropRect.height}
+                  x={cropRect.x * scale}
+                  y={cropRect.y * scale}
+                  width={cropRect.width * scale}
+                  height={cropRect.height * scale}
                   stroke="blue"
-                  strokeWidth={2}
-                  dash={[10, 5]}
+                  strokeWidth={2 / scale}
+                  dash={[10 / scale, 5 / scale]}
                   draggable
                   onDragEnd={(e) => {
                     setCropRect({
                       ...cropRect,
-                      x: e.target.x() - imagePosition.x,
-                      y: e.target.y() - imagePosition.y,
+                      x: e.target.x() / scale,
+                      y: e.target.y() / scale,
                     });
                   }}
                   onTransformEnd={(e) => {
                     const node = cropperRef.current;
+                    const scaleX = node.scaleX();
+                    const scaleY = node.scaleY();
+                    
                     setCropRect({
-                      x: node.x() - imagePosition.x,
-                      y: node.y() - imagePosition.y,
-                      width: node.width() * node.scaleX(),
-                      height: node.height() * node.scaleY(),
+                      x: node.x() / scale,
+                      y: node.y() / scale,
+                      width: (node.width() * scaleX) / scale,
+                      height: (node.height() * scaleY) / scale,
                     });
+                    
+                    // Reset scale
                     node.scaleX(1);
                     node.scaleY(1);
                   }}
@@ -508,7 +660,9 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
                 <Transformer
                   ref={transformerRef}
                   boundBoxFunc={(oldBox, newBox) => {
-                    if (newBox.width < 20 || newBox.height < 20) {
+                    // Prevent crop box from being too small
+                    const minSize = 20;
+                    if (newBox.width < minSize || newBox.height < minSize) {
                       return oldBox;
                     }
                     return newBox;

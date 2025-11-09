@@ -3231,13 +3231,15 @@ const Page = () => {
         </CippComponentDialog>
       )}
 
-      {/* Image editor dialog */}
-      <ImageEditorDialog
-        open={isImageEditorOpen}
-        onClose={handleImageEditorClose}
-        imageUrl={backgroundImage}
-        onSave={handleImageEditorSave}
-      />
+      {/* Image editor dialog - only render when open */}
+      {isImageEditorOpen && (
+        <ImageEditorDialog
+          open={isImageEditorOpen}
+          onClose={handleImageEditorClose}
+          imageUrl={backgroundImage}
+          onSave={handleImageEditorSave}
+        />
+      )}
 
       {/* Color picker popover - only render when open */}
       {contextMenus.colorPickerAnchor && (

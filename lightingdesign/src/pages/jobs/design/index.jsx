@@ -33,6 +33,7 @@ import { CippComponentDialog } from "/src/components/CippComponents/CippComponen
 import { TextLayer } from "/src/components/designer/TextLayer";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
 import { TextEntryDialog } from "/src/components/designer/TextEntryDialog";
+import { ImageEditorDialog } from "/src/components/designer/ImageEditorDialog";
 import { useHistory } from "/src/hooks/useHistory";
 import { useUnifiedHistory } from "/src/hooks/useUnifiedHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
@@ -286,6 +287,9 @@ const Page = () => {
 
   // Upload state for better UX
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Image editor dialog state
+  const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
 
   // Calculate the product for the preview line in connect mode
   const previewLineProduct = useMemo(() => {
@@ -1335,6 +1339,45 @@ const Page = () => {
     handleResetView,
     updateLayer,
   ]);
+
+  const handleEditImage = useCallback(() => {
+    if (backgroundImage) {
+      setIsImageEditorOpen(true);
+    }
+  }, [backgroundImage]);
+
+  const handleImageEditorSave = useCallback(
+    (editedImageUrl) => {
+      // Load the edited image to get its dimensions
+      const img = new window.Image();
+      img.onload = () => {
+        const naturalSize = { width: img.width, height: img.height };
+        
+        // Update the layer with the edited image
+        updateLayer(activeLayerIdRef.current, {
+          backgroundImage: editedImageUrl,
+          backgroundImageNaturalSize: naturalSize,
+          backgroundFileType: "image",
+        });
+
+        // Set for immediate display
+        setBackgroundImage(editedImageUrl);
+        setBackgroundImageNaturalSize(naturalSize);
+
+        // Update sync refs to prevent redundant sync
+        lastSyncedBackgroundImage.current = editedImageUrl;
+        lastSyncedBackgroundImageNaturalSize.current = naturalSize;
+        
+        setIsImageEditorOpen(false);
+      };
+      img.src = editedImageUrl;
+    },
+    [updateLayer, setBackgroundImage, setBackgroundImageNaturalSize]
+  );
+
+  const handleImageEditorClose = useCallback(() => {
+    setIsImageEditorOpen(false);
+  }, []);
 
   const handleMeasure = useCallback(() => {
     setMeasureMode(true);
@@ -2457,6 +2500,8 @@ const Page = () => {
   const toolbarMainProps = useMemo(
     () => ({
       onUploadFloorPlan: handleUploadFloorPlan,
+      onEditImage: handleEditImage,
+      hasBackgroundImage: !!backgroundImage,
       onSave: handleSave,
       onExport: handleExport,
       onUndo: handleToolbarUndo,
@@ -2467,6 +2512,8 @@ const Page = () => {
     }),
     [
       handleUploadFloorPlan,
+      handleEditImage,
+      backgroundImage,
       handleSave,
       handleExport,
       handleToolbarUndo,
@@ -3183,6 +3230,14 @@ const Page = () => {
           />
         </CippComponentDialog>
       )}
+
+      {/* Image editor dialog */}
+      <ImageEditorDialog
+        open={isImageEditorOpen}
+        onClose={handleImageEditorClose}
+        imageUrl={backgroundImage}
+        onSave={handleImageEditorSave}
+      />
 
       {/* Color picker popover - only render when open */}
       {contextMenus.colorPickerAnchor && (

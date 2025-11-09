@@ -1342,6 +1342,11 @@ const Page = () => {
         // Skip rendering for products with empty letterPrefix (visual helpers like boxoutline)
         const letterPrefix = getProductLetterPrefix(product, products);
         
+        // Counter-scale to neutralize parent group's scaling
+        // This ensures text maintains fixed size regardless of product scaling
+        const textScaleX = 1 / sx;
+        const textScaleY = 1 / sy;
+        
         if (config.letterPrefix !== "") {
           // Fixed text size based on canvas scale factor for legibility
           const baseFontSize = 16; // Base font size at scaleFactor=100
@@ -1358,10 +1363,6 @@ const Page = () => {
           // This accounts for the fact that text baseline is not at the visual center
           textEl.setAttribute("dy", "0.1em");
           textEl.setAttribute("dominant-baseline", "auto");
-          // Counter-scale to neutralize parent group's scaling
-          // This ensures text maintains fixed size regardless of product scaling
-          const textScaleX = 1 / sx;
-          const textScaleY = 1 / sy;
           const transforms = [`scale(${textScaleX} ${textScaleY})`];
           if (rotation) {
             transforms.push(`rotate(${-rotation})`);
@@ -1375,7 +1376,7 @@ const Page = () => {
         const quantity = product.quantity || 1;
         const showQuantityBadge = quantity > 1;
         if (showQuantityBadge) {
-          const baseBadgeSize = 20; // Base badge size at scaleFactor=100
+          const baseBadgeSize = 17; // Base badge size at scaleFactor=100
           const badgeSize = Math.max(12, (baseBadgeSize * productScaleFactor) / 100);
           const badgeFontSize = Math.max(8, badgeSize * 0.6);
           
@@ -1413,7 +1414,7 @@ const Page = () => {
           badgeText.setAttribute("font-size", String(badgeFontSize));
           badgeText.setAttribute("font-weight", "bold");
           badgeText.setAttribute("text-anchor", "middle");
-          badgeText.setAttribute("dy", "0.3em"); // Adjusted from 0.35em to move text up slightly
+          badgeText.setAttribute("dy", "0.1em");
           badgeText.setAttribute("dominant-baseline", "middle");
           badgeText.textContent = quantity.toString();
           badgeGroupEl.appendChild(badgeText);

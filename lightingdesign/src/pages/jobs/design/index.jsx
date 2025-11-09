@@ -2704,7 +2704,8 @@ const Page = () => {
             />
 
             {/* Display API response messages - only render when mutation is active */}
-            {(saveDesignMutation.isFetching ||
+            {(saveDesignMutation.isPending ||
+              saveDesignMutation.isFetching ||
               saveDesignMutation.isSuccess ||
               saveDesignMutation.isError) && (
               <CippApiResults

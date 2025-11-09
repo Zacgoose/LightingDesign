@@ -126,11 +126,11 @@ export const useContextMenus = ({
   const handleConnectorContextMenu = useCallback(
     (e, connectorId) => {
       e.evt.preventDefault();
-      
+
       // Handle multi-select with Shift/Ctrl
       const shiftKey = e.evt?.shiftKey;
       const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
-      
+
       if (shiftKey || ctrlKey) {
         // Add to or remove from selection
         if (selectedConnectorIds.includes(connectorId)) {
@@ -147,18 +147,25 @@ export const useContextMenus = ({
         }
         // If already selected, don't change the selection (keep multi-selection)
       }
-      
+
       const transformed = applyGroupTransform();
       if (transformed) updateHistory(transformed);
       setSelectedIds([]);
       setGroupKey((k) => k + 1);
-      setContextMenu({ 
-        x: e.evt.clientX, 
-        y: e.evt.clientY, 
-        type: "connector"
+      setContextMenu({
+        x: e.evt.clientX,
+        y: e.evt.clientY,
+        type: "connector",
       });
     },
-    [selectedConnectorIds, applyGroupTransform, updateHistory, setSelectedIds, setSelectedConnectorIds, setGroupKey],
+    [
+      selectedConnectorIds,
+      applyGroupTransform,
+      updateHistory,
+      setSelectedIds,
+      setSelectedConnectorIds,
+      setGroupKey,
+    ],
   );
 
   const handleInsertProductAtPosition = useCallback(() => {
@@ -212,8 +219,8 @@ export const useContextMenus = ({
         updateConnectorHistory(newConnectors);
       } else if (colorPickerTarget.type === "text") {
         if (updateTextBoxHistory) {
-          const updatedTextBoxes = textBoxes.map((box) => 
-            box.id === colorPickerTarget.id ? { ...box, color } : box
+          const updatedTextBoxes = textBoxes.map((box) =>
+            box.id === colorPickerTarget.id ? { ...box, color } : box,
           );
           updateTextBoxHistory(updatedTextBoxes);
         }
@@ -339,28 +346,28 @@ export const useContextMenus = ({
 
     const transformed = applyGroupTransform();
     const baseProducts = transformed || products;
-    
+
     // Separate product IDs and text IDs
     const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
     const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
-    
+
     // Get selected products and text boxes
     const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
     const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
-    
+
     // Calculate average X position (align horizontal centers - center along the horizontal axis)
     const allXPositions = [
       ...selectedProducts.map((p) => p.x),
       ...selectedTextBoxes.map((t) => t.x),
     ];
-    
+
     if (allXPositions.length === 0) {
       handleCloseContextMenu();
       return;
     }
-    
+
     const averageX = allXPositions.reduce((sum, x) => sum + x, 0) / allXPositions.length;
-    
+
     // Update products to align to average X
     if (productIds.length > 0) {
       const alignedProducts = baseProducts.map((p) => {
@@ -371,7 +378,7 @@ export const useContextMenus = ({
       });
       updateHistory(alignedProducts);
     }
-    
+
     // Update text boxes to align to average X
     if (textIds.length > 0) {
       const alignedTextBoxes = textBoxes.map((t) => {
@@ -382,7 +389,7 @@ export const useContextMenus = ({
       });
       updateTextBoxHistory(alignedTextBoxes);
     }
-    
+
     setGroupKey((k) => k + 1);
     handleCloseContextMenu();
   }, [
@@ -405,28 +412,28 @@ export const useContextMenus = ({
 
     const transformed = applyGroupTransform();
     const baseProducts = transformed || products;
-    
+
     // Separate product IDs and text IDs
     const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
     const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
-    
+
     // Get selected products and text boxes
     const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
     const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
-    
+
     // Calculate average Y position (align vertical centers - center along the vertical axis)
     const allYPositions = [
       ...selectedProducts.map((p) => p.y),
       ...selectedTextBoxes.map((t) => t.y),
     ];
-    
+
     if (allYPositions.length === 0) {
       handleCloseContextMenu();
       return;
     }
-    
+
     const averageY = allYPositions.reduce((sum, y) => sum + y, 0) / allYPositions.length;
-    
+
     // Update products to align to average Y
     if (productIds.length > 0) {
       const alignedProducts = baseProducts.map((p) => {
@@ -437,7 +444,7 @@ export const useContextMenus = ({
       });
       updateHistory(alignedProducts);
     }
-    
+
     // Update text boxes to align to average Y
     if (textIds.length > 0) {
       const alignedTextBoxes = textBoxes.map((t) => {
@@ -448,7 +455,7 @@ export const useContextMenus = ({
       });
       updateTextBoxHistory(alignedTextBoxes);
     }
-    
+
     setGroupKey((k) => k + 1);
     handleCloseContextMenu();
   }, [
@@ -471,28 +478,28 @@ export const useContextMenus = ({
 
     const transformed = applyGroupTransform();
     const baseProducts = transformed || products;
-    
+
     // Separate product IDs and text IDs
     const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
     const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
-    
+
     // Get selected products and text boxes
     const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
     const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
-    
+
     // Find leftmost X position
     const allXPositions = [
       ...selectedProducts.map((p) => p.x),
       ...selectedTextBoxes.map((t) => t.x),
     ];
-    
+
     if (allXPositions.length === 0) {
       handleCloseContextMenu();
       return;
     }
-    
+
     const leftmostX = Math.min(...allXPositions);
-    
+
     // Update products to align to leftmost X
     if (productIds.length > 0) {
       const alignedProducts = baseProducts.map((p) => {
@@ -503,7 +510,7 @@ export const useContextMenus = ({
       });
       updateHistory(alignedProducts);
     }
-    
+
     // Update text boxes to align to leftmost X
     if (textIds.length > 0) {
       const alignedTextBoxes = textBoxes.map((t) => {
@@ -514,7 +521,7 @@ export const useContextMenus = ({
       });
       updateTextBoxHistory(alignedTextBoxes);
     }
-    
+
     setGroupKey((k) => k + 1);
     handleCloseContextMenu();
   }, [
@@ -537,28 +544,28 @@ export const useContextMenus = ({
 
     const transformed = applyGroupTransform();
     const baseProducts = transformed || products;
-    
+
     // Separate product IDs and text IDs
     const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
     const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
-    
+
     // Get selected products and text boxes
     const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
     const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
-    
+
     // Find rightmost X position
     const allXPositions = [
       ...selectedProducts.map((p) => p.x),
       ...selectedTextBoxes.map((t) => t.x),
     ];
-    
+
     if (allXPositions.length === 0) {
       handleCloseContextMenu();
       return;
     }
-    
+
     const rightmostX = Math.max(...allXPositions);
-    
+
     // Update products to align to rightmost X
     if (productIds.length > 0) {
       const alignedProducts = baseProducts.map((p) => {
@@ -569,7 +576,7 @@ export const useContextMenus = ({
       });
       updateHistory(alignedProducts);
     }
-    
+
     // Update text boxes to align to rightmost X
     if (textIds.length > 0) {
       const alignedTextBoxes = textBoxes.map((t) => {
@@ -580,7 +587,7 @@ export const useContextMenus = ({
       });
       updateTextBoxHistory(alignedTextBoxes);
     }
-    
+
     setGroupKey((k) => k + 1);
     handleCloseContextMenu();
   }, [
@@ -603,28 +610,28 @@ export const useContextMenus = ({
 
     const transformed = applyGroupTransform();
     const baseProducts = transformed || products;
-    
+
     // Separate product IDs and text IDs
     const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
     const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
-    
+
     // Get selected products and text boxes
     const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
     const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
-    
+
     // Find topmost Y position
     const allYPositions = [
       ...selectedProducts.map((p) => p.y),
       ...selectedTextBoxes.map((t) => t.y),
     ];
-    
+
     if (allYPositions.length === 0) {
       handleCloseContextMenu();
       return;
     }
-    
+
     const topmostY = Math.min(...allYPositions);
-    
+
     // Update products to align to topmost Y
     if (productIds.length > 0) {
       const alignedProducts = baseProducts.map((p) => {
@@ -635,7 +642,7 @@ export const useContextMenus = ({
       });
       updateHistory(alignedProducts);
     }
-    
+
     // Update text boxes to align to topmost Y
     if (textIds.length > 0) {
       const alignedTextBoxes = textBoxes.map((t) => {
@@ -646,7 +653,7 @@ export const useContextMenus = ({
       });
       updateTextBoxHistory(alignedTextBoxes);
     }
-    
+
     setGroupKey((k) => k + 1);
     handleCloseContextMenu();
   }, [
@@ -669,28 +676,28 @@ export const useContextMenus = ({
 
     const transformed = applyGroupTransform();
     const baseProducts = transformed || products;
-    
+
     // Separate product IDs and text IDs
     const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
     const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
-    
+
     // Get selected products and text boxes
     const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
     const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
-    
+
     // Find bottommost Y position
     const allYPositions = [
       ...selectedProducts.map((p) => p.y),
       ...selectedTextBoxes.map((t) => t.y),
     ];
-    
+
     if (allYPositions.length === 0) {
       handleCloseContextMenu();
       return;
     }
-    
+
     const bottommostY = Math.max(...allYPositions);
-    
+
     // Update products to align to bottommost Y
     if (productIds.length > 0) {
       const alignedProducts = baseProducts.map((p) => {
@@ -701,7 +708,7 @@ export const useContextMenus = ({
       });
       updateHistory(alignedProducts);
     }
-    
+
     // Update text boxes to align to bottommost Y
     if (textIds.length > 0) {
       const alignedTextBoxes = textBoxes.map((t) => {
@@ -712,7 +719,7 @@ export const useContextMenus = ({
       });
       updateTextBoxHistory(alignedTextBoxes);
     }
-    
+
     setGroupKey((k) => k + 1);
     handleCloseContextMenu();
   }, [
@@ -735,61 +742,61 @@ export const useContextMenus = ({
 
     const transformed = applyGroupTransform();
     const baseProducts = transformed || products;
-    
+
     // Separate product IDs and text IDs
     const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
     const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
-    
+
     // Get selected products and text boxes
     const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
     const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
-    
+
     // Combine all items with their IDs and types
     const allItems = [
-      ...selectedProducts.map((p) => ({ id: p.id, x: p.x, y: p.y, type: 'product' })),
-      ...selectedTextBoxes.map((t) => ({ id: t.id, x: t.x, y: t.y, type: 'text' })),
+      ...selectedProducts.map((p) => ({ id: p.id, x: p.x, y: p.y, type: "product" })),
+      ...selectedTextBoxes.map((t) => ({ id: t.id, x: t.x, y: t.y, type: "text" })),
     ];
-    
+
     // Sort items by X position
     allItems.sort((a, b) => a.x - b.x);
-    
+
     // Calculate even spacing between leftmost and rightmost items
     const leftmost = allItems[0].x;
     const rightmost = allItems[allItems.length - 1].x;
     const totalSpacing = rightmost - leftmost;
     const spacingIncrement = totalSpacing / (allItems.length - 1);
-    
+
     // Update positions
     const updatedPositions = new Map();
     allItems.forEach((item, index) => {
-      const newX = leftmost + (index * spacingIncrement);
+      const newX = leftmost + index * spacingIncrement;
       updatedPositions.set(item.id, { x: newX, type: item.type });
     });
-    
+
     // Update products
     if (productIds.length > 0) {
       const spacedProducts = baseProducts.map((p) => {
         const newPos = updatedPositions.get(p.id);
-        if (newPos && newPos.type === 'product') {
+        if (newPos && newPos.type === "product") {
           return { ...p, x: newPos.x };
         }
         return p;
       });
       updateHistory(spacedProducts);
     }
-    
+
     // Update text boxes
     if (textIds.length > 0) {
       const spacedTextBoxes = textBoxes.map((t) => {
         const newPos = updatedPositions.get(t.id);
-        if (newPos && newPos.type === 'text') {
+        if (newPos && newPos.type === "text") {
           return { ...t, x: newPos.x };
         }
         return t;
       });
       updateTextBoxHistory(spacedTextBoxes);
     }
-    
+
     setGroupKey((k) => k + 1);
     handleCloseContextMenu();
   }, [
@@ -812,61 +819,61 @@ export const useContextMenus = ({
 
     const transformed = applyGroupTransform();
     const baseProducts = transformed || products;
-    
+
     // Separate product IDs and text IDs
     const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
     const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5));
-    
+
     // Get selected products and text boxes
     const selectedProducts = baseProducts.filter((p) => productIds.includes(p.id));
     const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
-    
+
     // Combine all items with their IDs and types
     const allItems = [
-      ...selectedProducts.map((p) => ({ id: p.id, x: p.x, y: p.y, type: 'product' })),
-      ...selectedTextBoxes.map((t) => ({ id: t.id, x: t.x, y: t.y, type: 'text' })),
+      ...selectedProducts.map((p) => ({ id: p.id, x: p.x, y: p.y, type: "product" })),
+      ...selectedTextBoxes.map((t) => ({ id: t.id, x: t.x, y: t.y, type: "text" })),
     ];
-    
+
     // Sort items by Y position
     allItems.sort((a, b) => a.y - b.y);
-    
+
     // Calculate even spacing between topmost and bottommost items
     const topmost = allItems[0].y;
     const bottommost = allItems[allItems.length - 1].y;
     const totalSpacing = bottommost - topmost;
     const spacingIncrement = totalSpacing / (allItems.length - 1);
-    
+
     // Update positions
     const updatedPositions = new Map();
     allItems.forEach((item, index) => {
-      const newY = topmost + (index * spacingIncrement);
+      const newY = topmost + index * spacingIncrement;
       updatedPositions.set(item.id, { y: newY, type: item.type });
     });
-    
+
     // Update products
     if (productIds.length > 0) {
       const spacedProducts = baseProducts.map((p) => {
         const newPos = updatedPositions.get(p.id);
-        if (newPos && newPos.type === 'product') {
+        if (newPos && newPos.type === "product") {
           return { ...p, y: newPos.y };
         }
         return p;
       });
       updateHistory(spacedProducts);
     }
-    
+
     // Update text boxes
     if (textIds.length > 0) {
       const spacedTextBoxes = textBoxes.map((t) => {
         const newPos = updatedPositions.get(t.id);
-        if (newPos && newPos.type === 'text') {
+        if (newPos && newPos.type === "text") {
           return { ...t, y: newPos.y };
         }
         return t;
       });
       updateTextBoxHistory(spacedTextBoxes);
     }
-    
+
     setGroupKey((k) => k + 1);
     handleCloseContextMenu();
   }, [

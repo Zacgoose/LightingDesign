@@ -19,9 +19,7 @@ export const createEmptyLayer = (id, name) => ({
   backgroundImageNaturalSize: null,
   products: [],
   connectors: [],
-  sublayers: [
-    { id: `${id}-default`, name: "Default", visible: true, isDefault: true },
-  ],
+  sublayers: [{ id: `${id}-default`, name: "Default", visible: true, isDefault: true }],
   defaultSublayerId: `${id}-default`, // Track which sublayer is default for new objects
   scaleFactor: 100, // 100px per meter - each floor can have different scale
 });

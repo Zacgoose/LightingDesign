@@ -2602,11 +2602,56 @@ const Page = () => {
     };
   }, [showLayers, activeSublayers.length]);
 
+  // Ref to store the last selected product preview data
+  const lastSelectedProductRef = useRef(null);
+
   // Memoize selected product for preview panel
+  // Only extract properties that ObjectPreviewPanel actually uses to prevent
+  // re-renders when transform properties (x, y, rotation, scale) change
   const selectedProduct = useMemo(() => {
     if (selectedIds.length === 1 && !selectedIds[0].startsWith("text-")) {
-      return products.find((p) => p.id === selectedIds[0]) || null;
+      const product = products.find((p) => p.id === selectedIds[0]);
+      if (!product) {
+        lastSelectedProductRef.current = null;
+        return null;
+      }
+
+      // Extract only the properties that ObjectPreviewPanel needs
+      const previewData = {
+        id: product.id,
+        name: product.name,
+        customLabel: product.customLabel,
+        sku: product.sku,
+        brand: product.brand,
+        quantity: product.quantity,
+        thumbnailUrl: product.thumbnailUrl,
+        thumbnailImageUrl: product.thumbnailImageUrl,
+      };
+
+      // Check if the preview-relevant properties have actually changed
+      // This prevents re-renders when only transform properties change
+      const lastData = lastSelectedProductRef.current;
+      if (
+        lastData &&
+        lastData.id === previewData.id &&
+        lastData.name === previewData.name &&
+        lastData.customLabel === previewData.customLabel &&
+        lastData.sku === previewData.sku &&
+        lastData.brand === previewData.brand &&
+        lastData.quantity === previewData.quantity &&
+        lastData.thumbnailUrl === previewData.thumbnailUrl &&
+        lastData.thumbnailImageUrl === previewData.thumbnailImageUrl
+      ) {
+        // Return the same reference to prevent re-render
+        return lastData;
+      }
+
+      // Properties have changed, update ref and return new data
+      lastSelectedProductRef.current = previewData;
+      return previewData;
     }
+
+    lastSelectedProductRef.current = null;
     return null;
   }, [selectedIds, products]);
 

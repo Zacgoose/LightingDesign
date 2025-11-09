@@ -1342,6 +1342,11 @@ const Page = () => {
         // Skip rendering for products with empty letterPrefix (visual helpers like boxoutline)
         const letterPrefix = getProductLetterPrefix(product, products);
         
+        // Counter-scale to neutralize parent group's scaling
+        // This ensures text maintains fixed size regardless of product scaling
+        const textScaleX = 1 / sx;
+        const textScaleY = 1 / sy;
+        
         if (config.letterPrefix !== "") {
           // Fixed text size based on canvas scale factor for legibility
           const baseFontSize = 16; // Base font size at scaleFactor=100
@@ -1358,10 +1363,6 @@ const Page = () => {
           // This accounts for the fact that text baseline is not at the visual center
           textEl.setAttribute("dy", "0.1em");
           textEl.setAttribute("dominant-baseline", "auto");
-          // Counter-scale to neutralize parent group's scaling
-          // This ensures text maintains fixed size regardless of product scaling
-          const textScaleX = 1 / sx;
-          const textScaleY = 1 / sy;
           const transforms = [`scale(${textScaleX} ${textScaleY})`];
           if (rotation) {
             transforms.push(`rotate(${-rotation})`);

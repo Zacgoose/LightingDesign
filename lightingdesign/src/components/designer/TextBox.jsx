@@ -204,7 +204,7 @@ export const TextBox = memo(
             width={textBox.max}
             wrap="none"
             draggable={false}
-            listening={true}
+            listening={false}
           />
         </Group>
       </>

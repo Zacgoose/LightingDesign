@@ -13,7 +13,27 @@ function Invoke-ExecSaveDesign {
 
     $JobId = $Request.Body.jobId
     $DesignData = $Request.Body.designData
-    $Username = $Request.Headers.'x-ms-client-principal-name'
+    
+    # Extract username using the correct method (same as Write-LogMessage)
+    if ($Request.Headers.'x-ms-client-principal-idp' -eq 'azureStaticWebApps' -or !$Request.Headers.'x-ms-client-principal-idp') {
+        $user = $Request.Headers.'x-ms-client-principal'
+        try {
+            $Username = ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($user)) | ConvertFrom-Json).userDetails
+        } catch {
+            $Username = $null
+        }
+    } elseif ($Request.Headers.'x-ms-client-principal-idp' -eq 'aad') {
+        $ClientTable = Get-CIPPTable -TableName 'ApiClients'
+        $Client = Get-CIPPAzDataTableEntity @ClientTable -Filter "RowKey eq '$($Request.Headers.'x-ms-client-principal-name')'"
+        $Username = $Client.AppName ?? $null
+    } else {
+        try {
+            $user = $Request.Headers.'x-ms-client-principal'
+            $Username = ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($user)) | ConvertFrom-Json).userDetails
+        } catch {
+            $Username = $null
+        }
+    }
 
     if (-not $JobId) {
         return [HttpResponseContext]@{
@@ -23,7 +43,10 @@ function Invoke-ExecSaveDesign {
     }
 
     if (-not $Username) {
-        $Username = 'Unknown User'
+        return [HttpResponseContext]@{
+            StatusCode = [System.Net.HttpStatusCode]::Forbidden
+            Body       = @{ error = 'Unable to identify user. Saving not allowed.' }
+        }
     }
 
     try {

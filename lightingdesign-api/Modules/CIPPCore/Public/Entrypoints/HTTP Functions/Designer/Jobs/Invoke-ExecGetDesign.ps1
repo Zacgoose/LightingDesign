@@ -12,7 +12,27 @@ function Invoke-ExecGetDesign {
     $LocksTable = Get-CippTable -tablename 'DesignLocks'
 
     $JobId = $Request.Query.jobId
-    $Username = $Request.Headers.'x-ms-client-principal-name'
+    
+    # Extract username using the correct method (same as Write-LogMessage)
+    if ($Request.Headers.'x-ms-client-principal-idp' -eq 'azureStaticWebApps' -or !$Request.Headers.'x-ms-client-principal-idp') {
+        $user = $Request.Headers.'x-ms-client-principal'
+        try {
+            $Username = ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($user)) | ConvertFrom-Json).userDetails
+        } catch {
+            $Username = $null
+        }
+    } elseif ($Request.Headers.'x-ms-client-principal-idp' -eq 'aad') {
+        $ClientTable = Get-CIPPTable -TableName 'ApiClients'
+        $Client = Get-CIPPAzDataTableEntity @ClientTable -Filter "RowKey eq '$($Request.Headers.'x-ms-client-principal-name')'"
+        $Username = $Client.AppName ?? $null
+    } else {
+        try {
+            $user = $Request.Headers.'x-ms-client-principal'
+            $Username = ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($user)) | ConvertFrom-Json).userDetails
+        } catch {
+            $Username = $null
+        }
+    }
 
     if (-not $JobId) {
         return [HttpResponseContext]@{
@@ -21,9 +41,7 @@ function Invoke-ExecGetDesign {
         }
     }
 
-    if (-not $Username) {
-        $Username = 'Unknown User'
-    }
+    # Note: Username can be null for read-only viewing, but lock ownership won't be granted
 
     try {
         # Check lock status

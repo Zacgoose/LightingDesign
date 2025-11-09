@@ -10,7 +10,27 @@ function Invoke-ExecLockDesign {
 
     $Table = Get-CIPPTable -TableName 'DesignLocks'
     $JobId = $Request.Body.jobId
-    $Username = $Request.Headers.'x-ms-client-principal-name'
+    
+    # Extract username using the correct method (same as Write-LogMessage)
+    if ($Request.Headers.'x-ms-client-principal-idp' -eq 'azureStaticWebApps' -or !$Request.Headers.'x-ms-client-principal-idp') {
+        $user = $Request.Headers.'x-ms-client-principal'
+        try {
+            $Username = ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($user)) | ConvertFrom-Json).userDetails
+        } catch {
+            $Username = $null
+        }
+    } elseif ($Request.Headers.'x-ms-client-principal-idp' -eq 'aad') {
+        $ClientTable = Get-CIPPTable -TableName 'ApiClients'
+        $Client = Get-CIPPAzDataTableEntity @ClientTable -Filter "RowKey eq '$($Request.Headers.'x-ms-client-principal-name')'"
+        $Username = $Client.AppName ?? $null
+    } else {
+        try {
+            $user = $Request.Headers.'x-ms-client-principal'
+            $Username = ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($user)) | ConvertFrom-Json).userDetails
+        } catch {
+            $Username = $null
+        }
+    }
 
     if (-not $JobId) {
         return [HttpResponseContext]@{
@@ -20,7 +40,10 @@ function Invoke-ExecLockDesign {
     }
 
     if (-not $Username) {
-        $Username = 'Unknown User'
+        return [HttpResponseContext]@{
+            StatusCode = [System.Net.HttpStatusCode]::Forbidden
+            Body       = @{ error = 'Unable to identify user. Editing not allowed.' }
+        }
     }
 
     try {
@@ -29,7 +52,7 @@ function Invoke-ExecLockDesign {
         $ExistingLock = Get-CIPPAzDataTableEntity @Table -Filter $Filter
 
         $Now = (Get-Date).ToUniversalTime()
-        $LockTimeout = 30 # minutes
+        $LockTimeout = 15 # minutes - auto unlock after 15 minutes if not refreshed
 
         if ($ExistingLock) {
             # Check if lock is expired

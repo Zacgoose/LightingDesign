@@ -541,7 +541,7 @@ const Page = () => {
     }
   }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient]);
 
-  // Auto-refresh lock every 5 minutes when user owns the lock
+  // Auto-refresh lock every 1 minute when user owns the lock (15 min timeout)
   useEffect(() => {
     if (!id || !isOwner) return;
 
@@ -558,7 +558,7 @@ const Page = () => {
           console.error("Failed to refresh lock:", error);
         }
       }
-    }, 5 * 60 * 1000); // 5 minutes
+    }, 1 * 60 * 1000); // 1 minute
 
     return () => clearInterval(refreshInterval);
   }, [id, isOwner, lockDesignMutation, queryClient]);

@@ -165,6 +165,12 @@ export const ProductsLayer = memo(
       products.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || "default";
         const config = productTypesConfig[productType] || productTypesConfig.default;
+        
+        // Skip products with empty letterPrefix (visual helpers like boxoutline)
+        if (config.letterPrefix === "") {
+          return;
+        }
+        
         const letterPrefix = config.letterPrefix || "O";
 
         if (!groupingKeysByPrefix.has(letterPrefix)) {
@@ -184,6 +190,13 @@ export const ProductsLayer = memo(
       products.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || "default";
         const config = productTypesConfig[productType] || productTypesConfig.default;
+        
+        // Skip products with empty letterPrefix (visual helpers like boxoutline)
+        if (config.letterPrefix === "") {
+          prefixMap.set(product.id, "");
+          return;
+        }
+        
         const letterPrefix = config.letterPrefix || "O";
         const groupingKey = getProductGroupingKey(product, productTypesConfig);
 

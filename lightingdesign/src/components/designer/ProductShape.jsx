@@ -1,5 +1,5 @@
 import { Shape, Group, Text } from "react-konva";
-import { getShapeFunction } from "/src/components/designer/productShapes";
+import { getShapeFunction, getHitFunction } from "/src/components/designer/productShapes";
 import { memo, useRef, useEffect } from "react";
 
 export const ProductShape = memo(
@@ -19,6 +19,7 @@ export const ProductShape = memo(
     groupRotation = 0, // New: rotation of parent group (for selected products)
   }) => {
     const shapeFunction = getShapeFunction(config.shapeType);
+    const hitFunction = getHitFunction(config.shapeType);
 
     // Calculate actual rendered dimensions based on scaleFactor and real-world size
     // Ensure shape is always centered at (x, y) with no offset for text
@@ -133,6 +134,15 @@ export const ProductShape = memo(
             context.translate(renderedWidth / 2, renderedHeight / 2);
             shapeFunction(context, shape);
           }}
+          hitFunc={
+            hitFunction
+              ? (context, shape) => {
+                  // Compensate for the offset in hit detection too
+                  context.translate(renderedWidth / 2, renderedHeight / 2);
+                  hitFunction(context, shape);
+                }
+              : undefined
+          }
           fill={product.color || config.fill}
           stroke={customStroke}
           strokeWidth={config.strokeWidth + 1}

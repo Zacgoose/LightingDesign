@@ -295,7 +295,10 @@ export const ProductsLayer = memo(
               const productType = product.product_type?.toLowerCase() || "default";
               const config = productTypesConfig[productType] || productTypesConfig.default;
               const customStroke = strokeColorMap.get(product.id) || config.stroke;
-              const letterPrefix = letterPrefixMap.get(product.id) || config.letterPrefix || "O";
+              // Use explicit check for map presence to handle empty string letterPrefix
+              const letterPrefix = letterPrefixMap.has(product.id) 
+                ? letterPrefixMap.get(product.id) 
+                : (config.letterPrefix || "O");
 
               return (
                 <ProductShape
@@ -383,7 +386,10 @@ export const ProductsLayer = memo(
               const productType = product.product_type?.toLowerCase() || "default";
               const config = productTypesConfig[productType] || productTypesConfig.default;
               const customStroke = strokeColorMap.get(product.id) || config.stroke;
-              const letterPrefix = letterPrefixMap.get(product.id) || config.letterPrefix || "O";
+              // Use explicit check for map presence to handle empty string letterPrefix
+              const letterPrefix = letterPrefixMap.has(product.id) 
+                ? letterPrefixMap.get(product.id) 
+                : (config.letterPrefix || "O");
 
               const relativeProduct = {
                 ...product,

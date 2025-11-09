@@ -1,4 +1,4 @@
-import React, { useState, memo } from "react";
+import React, { useState, memo, useCallback } from "react";
 import {
   Box,
   Paper,
@@ -24,6 +24,106 @@ import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { TextInputDialog } from "/src/components/designer/TextInputDialog";
 import { ConfirmDialog } from "/src/components/designer/ConfirmDialog";
+
+/**
+ * Memoized sublayer item component to prevent unnecessary re-renders
+ */
+const SublayerItem = memo(({ 
+  sublayer, 
+  defaultSublayerId,
+  editingSublayerId,
+  editingName,
+  onToggle,
+  onContextMenu,
+  onEditingNameChange,
+  onFinishRename,
+  onEditKeyDown
+}) => {
+  const handleToggle = useCallback(() => {
+    onToggle(sublayer.id);
+  }, [sublayer.id, onToggle]);
+
+  const handleContextMenuClick = useCallback((e) => {
+    onContextMenu(e, sublayer);
+  }, [sublayer, onContextMenu]);
+
+  const handleNameChange = useCallback((e) => {
+    onEditingNameChange(e.target.value);
+  }, [onEditingNameChange]);
+
+  const handleFinishRename = useCallback(() => {
+    onFinishRename(sublayer.id);
+  }, [sublayer.id, onFinishRename]);
+
+  const isEditing = editingSublayerId === sublayer.id;
+  const isDefault = defaultSublayerId === sublayer.id;
+
+  return (
+    <Box
+      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+      onContextMenu={handleContextMenuClick}
+    >
+      {isEditing ? (
+        <TextField
+          size="small"
+          value={editingName}
+          onChange={handleNameChange}
+          onBlur={handleFinishRename}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onKeyDown={onEditKeyDown}
+          autoFocus
+          fullWidth
+          sx={{ my: 0.5 }}
+        />
+      ) : (
+        <>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={sublayer.visible}
+                onChange={handleToggle}
+                size="small"
+              />
+            }
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Typography variant="h6" sx={{ fontWeight: 500, fontSize: "0.8rem" }}>
+                  {sublayer.name}
+                </Typography>
+                {isDefault && (
+                  <Tooltip title="Default sublayer for new objects">
+                    <StarIcon
+                      fontSize="small"
+                      color="primary"
+                      sx={{ fontSize: 14 }}
+                    />
+                  </Tooltip>
+                )}
+              </Box>
+            }
+            sx={{ flex: 1 }}
+          />
+          <IconButton size="small" onClick={handleContextMenuClick}>
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
+        </>
+      )}
+    </Box>
+  );
+}, (prevProps, nextProps) => {
+  // Only re-render if sublayer properties or editing state changes
+  return (
+    prevProps.sublayer.id === nextProps.sublayer.id &&
+    prevProps.sublayer.name === nextProps.sublayer.name &&
+    prevProps.sublayer.visible === nextProps.sublayer.visible &&
+    prevProps.defaultSublayerId === nextProps.defaultSublayerId &&
+    prevProps.editingSublayerId === nextProps.editingSublayerId &&
+    prevProps.editingName === nextProps.editingName
+  );
+});
+
+SublayerItem.displayName = "SublayerItem";
 
 /**
  * SubLayerControls - UI component for showing/hiding sublayers within a floor
@@ -80,14 +180,14 @@ export const SubLayerControls = memo(
         }, 0);
       };
 
-      const handleFinishRename = (sublayerId) => {
+      const handleFinishRename = useCallback((sublayerId) => {
         if (editingName.trim()) {
           onSublayerRename(layerId, sublayerId, editingName.trim());
         }
         // Always reset editing state, even if name is empty
         setEditingSublayerId(null);
         setEditingName("");
-      };
+      }, [editingName, layerId, onSublayerRename]);
 
       const handleDelete = (sublayerId) => {
         setSublayerToDelete(sublayerId);
@@ -114,6 +214,26 @@ export const SubLayerControls = memo(
       const handleConfirmAdd = (name) => {
         onSublayerAdd(layerId, name);
       };
+
+      const handleSublayerToggle = useCallback((sublayerId) => {
+        onSublayerToggle(layerId, sublayerId);
+      }, [layerId, onSublayerToggle]);
+
+      const handleEditingNameChange = useCallback((value) => {
+        setEditingName(value);
+      }, []);
+
+      const handleEditKeyDown = useCallback((e) => {
+        if (e.key === "Enter") {
+          const sublayerId = editingSublayerId;
+          if (sublayerId) {
+            handleFinishRename(sublayerId);
+          }
+        } else if (e.key === "Escape") {
+          setEditingSublayerId(null);
+          setEditingName("");
+        }
+      }, [editingSublayerId, handleFinishRename]);
 
       return (
         <>
@@ -154,65 +274,18 @@ export const SubLayerControls = memo(
             <Box sx={{ px: 1.5, py: 1, overflow: "auto", flex: 1 }}>
               <FormGroup>
                 {sublayers.map((sublayer) => (
-                  <Box
+                  <SublayerItem
                     key={sublayer.id}
-                    sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                    onContextMenu={(e) => handleContextMenu(e, sublayer)}
-                  >
-                    {editingSublayerId === sublayer.id ? (
-                      <TextField
-                        size="small"
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                        onBlur={() => handleFinishRename(sublayer.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            handleFinishRename(sublayer.id);
-                          } else if (e.key === "Escape") {
-                            setEditingSublayerId(null);
-                            setEditingName("");
-                          }
-                        }}
-                        autoFocus
-                        fullWidth
-                        sx={{ my: 0.5 }}
-                      />
-                    ) : (
-                      <>
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              checked={sublayer.visible}
-                              onChange={() => onSublayerToggle(layerId, sublayer.id)}
-                              size="small"
-                            />
-                          }
-                          label={
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                              <Typography variant="h6" sx={{ fontWeight: 500, fontSize: "0.8rem" }}>
-                                {sublayer.name}
-                              </Typography>
-                              {defaultSublayerId === sublayer.id && (
-                                <Tooltip title="Default sublayer for new objects">
-                                  <StarIcon
-                                    fontSize="small"
-                                    color="primary"
-                                    sx={{ fontSize: 14 }}
-                                  />
-                                </Tooltip>
-                              )}
-                            </Box>
-                          }
-                          sx={{ flex: 1 }}
-                        />
-                        <IconButton size="small" onClick={(e) => handleContextMenu(e, sublayer)}>
-                          <MoreVertIcon fontSize="small" />
-                        </IconButton>
-                      </>
-                    )}
-                  </Box>
+                    sublayer={sublayer}
+                    defaultSublayerId={defaultSublayerId}
+                    editingSublayerId={editingSublayerId}
+                    editingName={editingName}
+                    onToggle={handleSublayerToggle}
+                    onContextMenu={handleContextMenu}
+                    onEditingNameChange={handleEditingNameChange}
+                    onFinishRename={handleFinishRename}
+                    onEditKeyDown={handleEditKeyDown}
+                  />
                 ))}
               </FormGroup>
             </Box>
@@ -277,6 +350,40 @@ export const SubLayerControls = memo(
       );
     },
   ),
+  (prevProps, nextProps) => {
+    // Custom comparison for SubLayerControls props
+    // Only re-render if sublayers, layerId, defaultSublayerId, or top changes
+    
+    if (
+      prevProps.layerId !== nextProps.layerId ||
+      prevProps.defaultSublayerId !== nextProps.defaultSublayerId ||
+      prevProps.top !== nextProps.top ||
+      prevProps.sublayers.length !== nextProps.sublayers.length
+    ) {
+      return false; // Props changed, should re-render
+    }
+
+    // Quick check: if arrays are the same reference, no need to re-render
+    if (prevProps.sublayers === nextProps.sublayers) {
+      return true;
+    }
+
+    // Efficient comparison: check only display-relevant properties directly
+    for (let i = 0; i < prevProps.sublayers.length; i++) {
+      const prev = prevProps.sublayers[i];
+      const next = nextProps.sublayers[i];
+      
+      if (
+        prev.id !== next.id ||
+        prev.name !== next.name ||
+        prev.visible !== next.visible
+      ) {
+        return false; // Found a difference, should re-render
+      }
+    }
+
+    return true; // No differences found, skip re-render
+  }
 );
 
 SubLayerControls.displayName = "SubLayerControls";

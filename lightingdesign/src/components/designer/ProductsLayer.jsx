@@ -129,6 +129,7 @@ const getProductLetterPrefix = (product, products, productTypesConfig) => {
 export const ProductsLayer = memo(
   ({
     products,
+    allProducts, // All products for consistent numbering (optional, defaults to products)
     selectedIds,
     selectedTool,
     selectionSnapshot,
@@ -157,13 +158,16 @@ export const ProductsLayer = memo(
     // Pre-calculate all letter prefixes efficiently to avoid O(n²) complexity during rendering
     // This optimization prevents recalculating letter prefixes for each product in the map loop
     // Uses the same logic as export.jsx for consistent numbering
+    // IMPORTANT: Use allProducts (if provided) for numbering to ensure consistency when sublayers are toggled
+    const productsForNumbering = allProducts || products;
+    
     const letterPrefixMap = useMemo(() => {
       const prefixMap = new Map();
 
       // Build a map of letter prefixes to their filtered products
       const productsByPrefix = new Map();
       
-      products.forEach((product) => {
+      productsForNumbering.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || "default";
         const config = productTypesConfig[productType] || productTypesConfig.default;
         
@@ -200,7 +204,7 @@ export const ProductsLayer = memo(
       });
 
       // Assign letter prefixes based on grouping key position
-      products.forEach((product) => {
+      productsForNumbering.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || "default";
         const config = productTypesConfig[productType] || productTypesConfig.default;
         
@@ -224,14 +228,15 @@ export const ProductsLayer = memo(
       });
 
       return prefixMap;
-    }, [products]);
+    }, [productsForNumbering]);
 
     // Pre-calculate stroke colors to avoid O(n²) complexity during rendering
+    // IMPORTANT: Use productsForNumbering for consistency with letter prefix numbering
     const strokeColorMap = useMemo(() => {
       const colorMap = new Map();
-      const skuList = [...new Set(products.map((p) => p.sku).filter(Boolean))];
+      const skuList = [...new Set(productsForNumbering.map((p) => p.sku).filter(Boolean))];
 
-      products.forEach((product) => {
+      productsForNumbering.forEach((product) => {
         // If product already has a strokeColor assigned, use it
         if (product.strokeColor) {
           colorMap.set(product.id, product.strokeColor);
@@ -244,7 +249,7 @@ export const ProductsLayer = memo(
           return;
         }
 
-        const skuProducts = products.filter((p) => p.sku === sku);
+        const skuProducts = productsForNumbering.filter((p) => p.sku === sku);
         if (skuProducts.length <= 1) {
           colorMap.set(product.id, null); // Will use default
           return;
@@ -262,7 +267,7 @@ export const ProductsLayer = memo(
       });
 
       return colorMap;
-    }, [products]);
+    }, [productsForNumbering]);
 
     // Manually attach transformend event listener to Transformer
     // This is necessary because the Group's onTransformEnd prop doesn't fire reliably
@@ -599,6 +604,7 @@ export const ProductsLayer = memo(
     // Only re-render if these specific props change
     return (
       prevProps.products === nextProps.products &&
+      prevProps.allProducts === nextProps.allProducts &&
       prevProps.textBoxes === nextProps.textBoxes &&
       prevProps.selectedIds === nextProps.selectedIds &&
       prevProps.selectedTool === nextProps.selectedTool &&

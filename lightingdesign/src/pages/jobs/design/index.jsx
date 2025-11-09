@@ -3057,6 +3057,7 @@ const Page = () => {
                         {/* Unselected products only */}
                         <ProductsLayer
                           products={filterProductsBySublayers(products, activeLayerId)}
+                          allProducts={products}
                           textBoxes={textBoxes}
                           selectedIds={selectedIds}
                           selectedTool={selectedTool}
@@ -3194,6 +3195,7 @@ const Page = () => {
                         {/* Selection group only (selected products and text) */}
                         <ProductsLayer
                           products={filterProductsBySublayers(products, activeLayerId)}
+                          allProducts={products}
                           textBoxes={textBoxes}
                           selectedIds={selectedIds}
                           selectedTool={selectedTool}
@@ -3226,6 +3228,7 @@ const Page = () => {
                         {/* Transformer only (always on top) */}
                         <ProductsLayer
                           products={filterProductsBySublayers(products, activeLayerId)}
+                          allProducts={products}
                           textBoxes={textBoxes}
                           selectedIds={selectedIds}
                           selectedTool={selectedTool}

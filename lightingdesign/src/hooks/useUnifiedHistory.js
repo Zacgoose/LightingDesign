@@ -17,7 +17,7 @@ export const useUnifiedHistory = () => {
   const recordAction = useCallback((historyKey) => {
     // Trim future timeline if we're not at the latest step
     timeline.current = timeline.current.slice(0, timelineStep.current + 1);
-    
+
     // Add new action to timeline
     timeline.current.push(historyKey);
     timelineStep.current += 1;
@@ -32,10 +32,13 @@ export const useUnifiedHistory = () => {
   }, []);
 
   // Return a stable object that won't change between renders
-  return useMemo(() => ({
-    recordAction,
-    resetTimeline,
-    timeline,
-    timelineStep,
-  }), [recordAction, resetTimeline]);
+  return useMemo(
+    () => ({
+      recordAction,
+      resetTimeline,
+      timeline,
+      timelineStep,
+    }),
+    [recordAction, resetTimeline],
+  );
 };

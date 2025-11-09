@@ -40,12 +40,12 @@ const getProductStrokeColor = (product, products, defaultColor) => {
 
 /**
  * Gets the grouping key for a product, which is used to determine its letter prefix number.
- * 
+ *
  * For products with SKUs, the grouping key is "sku:{SKU_VALUE}".
  * For custom shapes without SKUs, the grouping key is "shape:{SHAPE_TYPE}".
- * 
+ *
  * Products with the same grouping key will receive the same number suffix.
- * 
+ *
  * @param {Object} product - The product object
  * @param {Object} productTypesConfig - Configuration object for product types
  * @returns {string} Grouping key in format "sku:XXX" or "shape:YYY"
@@ -71,13 +71,13 @@ const getProductGroupingKey = (product, productTypesConfig) => {
 
 /**
  * Calculate letter prefix for a product based on its type and SKU.
- * 
+ *
  * Products are assigned numbers based on their grouping key within the same letter prefix.
  * Numbers are assigned in the order that unique grouping keys first appear in the products array.
  * For example, products with prefix "O" and unique SKUs get O1, O2, O3, etc. based on insertion order.
  * Products with the same SKU get the same number (e.g., all SKU "ABC" get O1).
  * Custom shapes without SKUs are grouped by shape type (e.g., all circles get one number).
- * 
+ *
  * @param {Object} product - The product to calculate prefix for
  * @param {Array} products - All products in the design
  * @param {Object} productTypesConfig - Configuration object for product types
@@ -158,86 +158,86 @@ export const ProductsLayer = memo(
     // This optimization prevents recalculating letter prefixes for each product in the map loop
     const letterPrefixMap = useMemo(() => {
       const prefixMap = new Map();
-      
+
       // Build grouping key to prefix mapping in O(n) time
       const groupingKeysByPrefix = new Map();
-      
+
       products.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || "default";
         const config = productTypesConfig[productType] || productTypesConfig.default;
         const letterPrefix = config.letterPrefix || "O";
-        
+
         if (!groupingKeysByPrefix.has(letterPrefix)) {
           groupingKeysByPrefix.set(letterPrefix, []);
         }
-        
+
         const groupingKey = getProductGroupingKey(product, productTypesConfig);
         const groupingKeys = groupingKeysByPrefix.get(letterPrefix);
-        
+
         // Track order of first appearance for each grouping key
-        if (!groupingKeys.some(gk => gk.key === groupingKey)) {
+        if (!groupingKeys.some((gk) => gk.key === groupingKey)) {
           groupingKeys.push({ key: groupingKey, productId: product.id });
         }
       });
-      
+
       // Now assign letter prefixes based on grouping key order
       products.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || "default";
         const config = productTypesConfig[productType] || productTypesConfig.default;
         const letterPrefix = config.letterPrefix || "O";
         const groupingKey = getProductGroupingKey(product, productTypesConfig);
-        
+
         const groupingKeys = groupingKeysByPrefix.get(letterPrefix) || [];
-        const groupIndex = groupingKeys.findIndex(gk => gk.key === groupingKey);
-        
+        const groupIndex = groupingKeys.findIndex((gk) => gk.key === groupingKey);
+
         if (groupIndex !== -1) {
           prefixMap.set(product.id, `${letterPrefix}${groupIndex + 1}`);
         } else {
           prefixMap.set(product.id, letterPrefix);
         }
       });
-      
+
       return prefixMap;
     }, [products]);
-    
+
     // Pre-calculate stroke colors to avoid O(n²) complexity during rendering
     const strokeColorMap = useMemo(() => {
       const colorMap = new Map();
       const skuList = [...new Set(products.map((p) => p.sku).filter(Boolean))];
-      
+
       products.forEach((product) => {
         // If product already has a strokeColor assigned, use it
         if (product.strokeColor) {
           colorMap.set(product.id, product.strokeColor);
           return;
         }
-        
+
         const sku = product.sku;
         if (!sku) {
           colorMap.set(product.id, null); // Will use default
           return;
         }
-        
+
         const skuProducts = products.filter((p) => p.sku === sku);
         if (skuProducts.length <= 1) {
           colorMap.set(product.id, null); // Will use default
           return;
         }
-        
+
         // Use stored strokeColor if available
         const existingProduct = skuProducts.find((p) => p.strokeColor);
         if (existingProduct) {
           colorMap.set(product.id, existingProduct.strokeColor);
           return;
         }
-        
+
         const skuIndex = skuList.indexOf(sku);
         colorMap.set(product.id, COLOR_PALETTE[skuIndex % COLOR_PALETTE.length]);
       });
-      
+
       return colorMap;
     }, [products]);
-    
+
     // Manually attach transformend event listener to Transformer
     // This is necessary because the Group's onTransformEnd prop doesn't fire reliably
     // IMPORTANT: Only attach listener in the instance that renders the transformer to avoid duplicates
@@ -290,9 +290,13 @@ export const ProductsLayer = memo(
                   product={product}
                   config={config}
                   isSelected={false}
-                  draggable={selectedTool === "select" && canInteract && !isMiddlePanning && !isStageDragging}
+                  draggable={
+                    selectedTool === "select" && canInteract && !isMiddlePanning && !isStageDragging
+                  }
                   listening={
-                    (selectedTool === "select" || selectedTool === "connect") && !isMiddlePanning && !isStageDragging
+                    (selectedTool === "select" || selectedTool === "connect") &&
+                    !isMiddlePanning &&
+                    !isStageDragging
                   } // Disable listening during middle panning AND stage dragging for performance
                   onDragStart={(e) =>
                     selectedTool === "select" && canInteract && onProductDragStart(e, product.id)

@@ -6,15 +6,18 @@ export const useHistory = (initialState, timelineTracker, historyKey) => {
   const historyStep = useRef(0);
   const minHistoryStep = useRef(0); // Minimum history step that can be undone to
 
-  const updateHistory = useCallback((newState) => {
-    history.current = history.current.slice(0, historyStep.current + 1);
-    history.current = history.current.concat([newState]);
-    historyStep.current += 1;
-    setState(newState);
-    
-    // Record action in unified timeline
-    timelineTracker.recordAction(historyKey);
-  }, [timelineTracker, historyKey]);
+  const updateHistory = useCallback(
+    (newState) => {
+      history.current = history.current.slice(0, historyStep.current + 1);
+      history.current = history.current.concat([newState]);
+      historyStep.current += 1;
+      setState(newState);
+
+      // Record action in unified timeline
+      timelineTracker.recordAction(historyKey);
+    },
+    [timelineTracker, historyKey],
+  );
 
   const updateCurrentState = useCallback((newState) => {
     // Update the current state without adding to history
@@ -23,16 +26,19 @@ export const useHistory = (initialState, timelineTracker, historyKey) => {
     setState(newState);
   }, []);
 
-  const resetHistoryBaseline = useCallback((newState) => {
-    // Reset history with a new baseline that cannot be undone past
-    history.current = [newState];
-    historyStep.current = 0;
-    minHistoryStep.current = 0;
-    setState(newState);
-    
-    // Reset unified timeline
-    timelineTracker.resetTimeline();
-  }, [timelineTracker]);
+  const resetHistoryBaseline = useCallback(
+    (newState) => {
+      // Reset history with a new baseline that cannot be undone past
+      history.current = [newState];
+      historyStep.current = 0;
+      minHistoryStep.current = 0;
+      setState(newState);
+
+      // Reset unified timeline
+      timelineTracker.resetTimeline();
+    },
+    [timelineTracker],
+  );
 
   const undo = useCallback(() => {
     if (historyStep.current <= minHistoryStep.current) return false;

@@ -23,7 +23,7 @@ export const ConnectorLine = ({
   // Default: control points positioned exactly along the line at 1/3 and 2/3
   const deltaX = toProduct.x - fromProduct.x;
   const deltaY = toProduct.y - fromProduct.y;
-  
+
   // Default control points are positioned exactly on the straight line
   // at 1/3 and 2/3 of the distance from start to end
   const defaultControl1X = fromProduct.x + deltaX * 0.33;
@@ -33,7 +33,7 @@ export const ConnectorLine = ({
 
   const control1 = connector.control1 ?? { x: defaultControl1X, y: defaultControl1Y };
   const control3 = connector.control3 ?? { x: defaultControl3X, y: defaultControl3Y };
-  
+
   // Control2 (center point) is always positioned in a straight line between control1 and control3
   // Not user-adjustable - ensures smooth flow from one end to the other
   const control2 = {
@@ -59,17 +59,21 @@ export const ConnectorLine = ({
   const drawCurvePath = (ctx) => {
     ctx.beginPath();
     ctx.moveTo(fromProduct.x, fromProduct.y);
-    
+
     // Get current control point positions (may be mid-drag)
-    const c1 = control1Ref.current ? { x: control1Ref.current.x(), y: control1Ref.current.y() } : control1;
-    const c3 = control3Ref.current ? { x: control3Ref.current.x(), y: control3Ref.current.y() } : control3;
-    
+    const c1 = control1Ref.current
+      ? { x: control1Ref.current.x(), y: control1Ref.current.y() }
+      : control1;
+    const c3 = control3Ref.current
+      ? { x: control3Ref.current.x(), y: control3Ref.current.y() }
+      : control3;
+
     // Control2 (center point) is always positioned in a straight line between control1 and control3
     const c2 = {
       x: (c1.x + c3.x) / 2,
       y: (c1.y + c3.y) / 2,
     };
-    
+
     // Draw smooth curve through 3 control points
     // Use two cubic Bézier curves to pass through all 3 control points
     const midX = (c1.x + c2.x) / 2;
@@ -106,7 +110,11 @@ export const ConnectorLine = ({
         lineCap="round"
         dash={[30, 15]} // Dashed line pattern: 30px dash, 15px gap (more spacing)
         hitStrokeWidth={40} // Makes it easier to click
-        listening={(selectedTool === "select" || selectedTool === "connect") && !isMiddlePanning && !isStageDragging} // Disable listening during panning for performance
+        listening={
+          (selectedTool === "select" || selectedTool === "connect") &&
+          !isMiddlePanning &&
+          !isStageDragging
+        } // Disable listening during panning for performance
         onClick={handleLineClick}
         onTap={handleLineClick}
         onContextMenu={onContextMenu}

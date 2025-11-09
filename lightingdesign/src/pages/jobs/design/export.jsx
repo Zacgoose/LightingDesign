@@ -97,12 +97,12 @@ const Page = () => {
 
   /**
    * Gets the grouping key for a product, which is used to determine its letter prefix number.
-   * 
+   *
    * For products with SKUs, the grouping key is "sku:{SKU_VALUE}".
    * For custom shapes without SKUs, the grouping key is "shape:{SHAPE_TYPE}".
-   * 
+   *
    * Products with the same grouping key will receive the same number suffix.
-   * 
+   *
    * @param {Object} product - The product object
    * @returns {string} Grouping key in format "sku:XXX" or "shape:YYY"
    */
@@ -127,59 +127,62 @@ const Page = () => {
 
   /**
    * Calculate letter prefix for a product based on its type and SKU.
-   * 
+   *
    * Products are assigned numbers based on their grouping key within the same letter prefix.
    * Numbers are assigned in the order that unique grouping keys first appear in the products array.
    * For example, products with prefix "O" and unique SKUs get O1, O2, O3, etc. based on insertion order.
    * Products with the same SKU get the same number (e.g., all SKU "ABC" get O1).
    * Custom shapes without SKUs are grouped by shape type (e.g., all circles get one number).
-   * 
+   *
    * @param {Object} product - The product to calculate prefix for
    * @param {Array} allProducts - All products in the design
    * @returns {string} Letter prefix with number (e.g., "O1", "P2", "D3")
    */
-  const getProductLetterPrefix = useCallback((product, allProducts) => {
-    const productType = product.product_type?.toLowerCase() || "default";
-    const config = productTypesConfig[productType] || productTypesConfig.default;
-    const letterPrefix = config.letterPrefix || "O";
+  const getProductLetterPrefix = useCallback(
+    (product, allProducts) => {
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+      const letterPrefix = config.letterPrefix || "O";
 
-    // Filter to products with the same letter prefix
-    const samePrefixProducts = allProducts.filter((p) => {
-      const pType = p.product_type?.toLowerCase() || "default";
-      const pConfig = productTypesConfig[pType] || productTypesConfig.default;
-      const pPrefix = pConfig.letterPrefix || "O";
-      return pPrefix === letterPrefix;
-    });
+      // Filter to products with the same letter prefix
+      const samePrefixProducts = allProducts.filter((p) => {
+        const pType = p.product_type?.toLowerCase() || "default";
+        const pConfig = productTypesConfig[pType] || productTypesConfig.default;
+        const pPrefix = pConfig.letterPrefix || "O";
+        return pPrefix === letterPrefix;
+      });
 
-    // Get the grouping key for this product
-    const groupingKey = getProductGroupingKey(product);
+      // Get the grouping key for this product
+      const groupingKey = getProductGroupingKey(product);
 
-    // Build a list of unique grouping keys in the order they first appear
-    // This ensures O1 goes to the first unique type, O2 to the second, etc.
-    const uniqueGroupingKeys = [];
-    const seenKeys = new Set();
-    for (const p of samePrefixProducts) {
-      const key = getProductGroupingKey(p);
-      if (!seenKeys.has(key)) {
-        seenKeys.add(key);
-        uniqueGroupingKeys.push(key);
+      // Build a list of unique grouping keys in the order they first appear
+      // This ensures O1 goes to the first unique type, O2 to the second, etc.
+      const uniqueGroupingKeys = [];
+      const seenKeys = new Set();
+      for (const p of samePrefixProducts) {
+        const key = getProductGroupingKey(p);
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          uniqueGroupingKeys.push(key);
+        }
       }
-    }
 
-    // Find the index of this product's grouping key
-    const groupIndex = uniqueGroupingKeys.indexOf(groupingKey);
+      // Find the index of this product's grouping key
+      const groupIndex = uniqueGroupingKeys.indexOf(groupingKey);
 
-    // If grouping key not found (shouldn't happen), return just the letter
-    if (groupIndex === -1) {
-      console.warn(
-        `Grouping key "${groupingKey}" not found in uniqueGroupingKeys for ${productType}:`,
-        uniqueGroupingKeys,
-      );
-      return letterPrefix;
-    }
+      // If grouping key not found (shouldn't happen), return just the letter
+      if (groupIndex === -1) {
+        console.warn(
+          `Grouping key "${groupingKey}" not found in uniqueGroupingKeys for ${productType}:`,
+          uniqueGroupingKeys,
+        );
+        return letterPrefix;
+      }
 
-    return `${letterPrefix}${groupIndex + 1}`;
-  }, [getProductGroupingKey]);
+      return `${letterPrefix}${groupIndex + 1}`;
+    },
+    [getProductGroupingKey],
+  );
 
   const handleLayerToggle = useCallback(
     (layerId) => {
@@ -259,9 +262,10 @@ const Page = () => {
       const jobInfo = jobData.data || {};
       const jobNumber = jobInfo.jobNumber || "N/A";
       // Extract string values from potential objects
-      const customerName = typeof jobInfo.customerName === 'object' && jobInfo.customerName !== null
-        ? (jobInfo.customerName.label || jobInfo.customerName.value || "N/A")
-        : (jobInfo.customerName || "N/A");
+      const customerName =
+        typeof jobInfo.customerName === "object" && jobInfo.customerName !== null
+          ? jobInfo.customerName.label || jobInfo.customerName.value || "N/A"
+          : jobInfo.customerName || "N/A";
       const jobAddress =
         [jobInfo.address, jobInfo.city, jobInfo.state, jobInfo.postalCode]
           .filter(Boolean)
@@ -270,36 +274,47 @@ const Page = () => {
       // Collect all products from selected layers and prepare pages
       let allProducts = [];
       const pagesToRender = [];
-      
+
       selectedLayers.forEach((layerId) => {
         const layer = layers.find((l) => l.id === layerId);
         if (!layer) return;
 
         const selectedSublayerIds = selectedSublayers[layerId] || [];
-        const shouldSeparateSublayers = sublayerSeparatePages[layerId] && layer.sublayers && layer.sublayers.length > 0;
-        
+        const shouldSeparateSublayers =
+          sublayerSeparatePages[layerId] && layer.sublayers && layer.sublayers.length > 0;
+
         if (shouldSeparateSublayers) {
           // Export each sublayer to a separate page
           selectedSublayerIds.forEach((sublayerId) => {
             const sublayer = layer.sublayers.find((s) => s.id === sublayerId);
             if (!sublayer) return;
-            
-            const sublayerProducts = (layer.products || []).filter((product) => product.sublayerId === sublayerId);
-            const sublayerConnectors = (layer.connectors || []).filter((connector) => connector.sublayerId === sublayerId);
-            const sublayerTextBoxes = (layer.textBoxes || []).filter((tb) => tb.sublayerId === sublayerId);
-            
+
+            const sublayerProducts = (layer.products || []).filter(
+              (product) => product.sublayerId === sublayerId,
+            );
+            const sublayerConnectors = (layer.connectors || []).filter(
+              (connector) => connector.sublayerId === sublayerId,
+            );
+            const sublayerTextBoxes = (layer.textBoxes || []).filter(
+              (tb) => tb.sublayerId === sublayerId,
+            );
+
             // Skip empty sublayers
-            if (sublayerProducts.length === 0 && sublayerConnectors.length === 0 && sublayerTextBoxes.length === 0) {
+            if (
+              sublayerProducts.length === 0 &&
+              sublayerConnectors.length === 0 &&
+              sublayerTextBoxes.length === 0
+            ) {
               return;
             }
-            
+
             allProducts = allProducts.concat(
               sublayerProducts.map((p) => ({
                 ...p,
                 layerName: `${layer.name} - ${sublayer.name}`,
               })),
             );
-            
+
             pagesToRender.push({
               layer,
               sublayer,
@@ -315,19 +330,23 @@ const Page = () => {
             if (!product.sublayerId) return true; // Include products without sublayer assignment
             return selectedSublayerIds.includes(product.sublayerId);
           });
-          
+
           const filteredConnectors = (layer.connectors || []).filter((connector) => {
             if (!connector.sublayerId) return true;
             return selectedSublayerIds.includes(connector.sublayerId);
           });
-          
+
           const filteredTextBoxes = (layer.textBoxes || []).filter((tb) => {
             if (!tb.sublayerId) return true;
             return selectedSublayerIds.includes(tb.sublayerId);
           });
 
           // Skip empty layers
-          if (filteredProducts.length === 0 && filteredConnectors.length === 0 && filteredTextBoxes.length === 0) {
+          if (
+            filteredProducts.length === 0 &&
+            filteredConnectors.length === 0 &&
+            filteredTextBoxes.length === 0
+          ) {
             return;
           }
 
@@ -457,28 +476,28 @@ const Page = () => {
     const bottomBarHeight = 40;
     const infoBarY = pageHeight - bottomBarHeight;
     const margin = 1; // Reduced margin for less wasted space
-    
+
     // Background for info bar
     pdf.setFillColor(248, 248, 248);
     pdf.rect(0, infoBarY, pageWidth, bottomBarHeight, "F");
-    
+
     // Top border line (stronger)
     pdf.setDrawColor(150, 150, 150);
     pdf.setLineWidth(0.8);
     pdf.line(0, infoBarY, pageWidth, infoBarY);
-    
+
     // Logo section on the left
     const logoWidth = 50;
     const logoX = margin;
     const logoY = infoBarY + 1;
-    
+
     // Draw logo images (or placeholders if files don't exist)
     pdf.setDrawColor(200, 200, 200);
     pdf.setLineWidth(0.5);
-    
+
     try {
       // Logo 1 (top) - try to load from /public/logos/
-      pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, 40, 19);
+      pdf.addImage("/logos/Logo 1.png", "PNG", logoX, logoY, 40, 19);
     } catch (error) {
       // If logo doesn't exist, show placeholder
       pdf.setFillColor(250, 250, 250);
@@ -487,10 +506,10 @@ const Page = () => {
       pdf.setTextColor(150, 150, 150);
       pdf.text("Logo 1", logoX + (logoWidth - 4) / 2, logoY + 9, { align: "center" });
     }
-    
+
     try {
       // Logo 2 (bottom)
-      pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 20, 41, 17);
+      pdf.addImage("/logos/Logo 2.png", "PNG", logoX, logoY + 20, 41, 17);
     } catch (error) {
       // If logo doesn't exist, show placeholder
       pdf.setFillColor(250, 250, 250);
@@ -499,59 +518,59 @@ const Page = () => {
       pdf.setTextColor(150, 150, 150);
       pdf.text("Logo 2", logoX + (logoWidth - 4) / 2, logoY + 29, { align: "center" });
     }
-    
+
     pdf.setTextColor(0, 0, 0); // Reset color
-    
+
     // Info rows (to the right of logos)
     let infoX = logoX + logoWidth + 10;
     const infoY = infoBarY + 10;
     const labelSpacing = 55;
-    
+
     pdf.setFontSize(7);
     pdf.setTextColor(0, 0, 0);
-    
+
     // First row of info
     pdf.setFont("helvetica", "bold");
     pdf.text("Job #:", infoX, infoY);
     pdf.setFont("helvetica", "normal");
     pdf.text(info.jobNumber, infoX, infoY + 4);
-    
+
     infoX += labelSpacing;
     pdf.setFont("helvetica", "bold");
     pdf.text("Client:", infoX, infoY);
     pdf.setFont("helvetica", "normal");
     pdf.text(info.customerName, infoX, infoY + 4);
-    
+
     infoX += labelSpacing;
     pdf.setFont("helvetica", "bold");
     pdf.text("Floor:", infoX, infoY);
     pdf.setFont("helvetica", "normal");
     pdf.text(info.floorName, infoX, infoY + 4);
-    
+
     // Second row of info
     infoX = logoX + logoWidth + 10;
     const info2Y = infoY + 13;
-    
+
     pdf.setFont("helvetica", "bold");
     pdf.text("Page:", infoX, info2Y);
     pdf.setFont("helvetica", "normal");
     pdf.text(`${info.pageNumber} of ${info.totalPages}`, infoX, info2Y + 4);
-    
+
     infoX += labelSpacing;
     pdf.setFont("helvetica", "bold");
     pdf.text("Date:", infoX, info2Y);
     pdf.setFont("helvetica", "normal");
     pdf.text(info.date, infoX, info2Y + 4);
-    
+
     // Company details section (right side)
     const companyX = pageWidth - margin - 65;
     pdf.setFontSize(6);
-    
+
     // Store section with box
     pdf.setDrawColor(220, 220, 220);
     pdf.setFillColor(255, 255, 255);
     pdf.roundedRect(companyX, infoBarY + 4, 60, 14, 1, 1, "FD");
-    
+
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(80, 80, 80);
     pdf.text("Store:", companyX + 2, infoBarY + 7);
@@ -559,19 +578,19 @@ const Page = () => {
     pdf.setTextColor(100, 100, 100);
     const storeText = pdf.splitTextToSize(info.address || "Store Address", 56);
     pdf.text(storeText.slice(0, 2), companyX + 2, infoBarY + 13);
-    
+
     // Head Office section with box
     pdf.setDrawColor(220, 220, 220);
     pdf.setFillColor(255, 255, 255);
     pdf.roundedRect(companyX, infoBarY + 19, 60, 14, 1, 1, "FD");
-    
+
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(80, 80, 80);
     pdf.text("Head Office:", companyX + 2, infoBarY + 22);
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(100, 100, 100);
     pdf.text("Head Office Address", companyX + 2, infoBarY + 25);
-    
+
     pdf.setTextColor(0, 0, 0); // Reset color
   };
 
@@ -966,7 +985,7 @@ const Page = () => {
           // Default: control points positioned exactly along the line at 1/3 and 2/3
           const deltaX = toProduct.x - fromProduct.x;
           const deltaY = toProduct.y - fromProduct.y;
-          
+
           // Default control points are positioned exactly on the straight line
           const defaultControl1X = fromProduct.x + deltaX * 0.33;
           const defaultControl1Y = fromProduct.y + deltaY * 0.33;
@@ -975,7 +994,7 @@ const Page = () => {
 
           const c1 = connector.control1 || { x: defaultControl1X, y: defaultControl1Y };
           const c3 = connector.control3 || { x: defaultControl3X, y: defaultControl3Y };
-          
+
           // Control2 (center point) is always positioned in a straight line between control1 and control3
           const c2 = {
             x: (c1.x + c3.x) / 2,
@@ -990,7 +1009,7 @@ const Page = () => {
 
           // Build SVG path string with two cubic bezier segments (mirrors ConnectorLine)
           const d = `M ${fromProduct.x} ${fromProduct.y} C ${c1.x} ${c1.y}, ${midX} ${midY2}, ${c2.x} ${c2.y} C ${mid2X} ${mid2Y}, ${c3.x} ${c3.y}, ${toProduct.x} ${toProduct.y}`;
-          
+
           const pathEl = document.createElementNS(SVG_NS, "path");
           pathEl.setAttribute("d", d);
           pathEl.setAttribute("fill", "none");
@@ -1379,20 +1398,20 @@ const Page = () => {
         // This is used for y-offset of both border and text
         const textHeight = renderedFontSize * 1.2;
         const offsetY = textHeight / 2;
-        
+
         // Calculate full text box height for border dimensions
         // Use actual text box height if available (as measured by Konva), otherwise calculate
         let textBoxHeight;
         if (tb.height) {
           textBoxHeight = tb.height;
         } else {
-          const lineCount = (tb.text || '').split(/\r?\n/).length;
+          const lineCount = (tb.text || "").split(/\r?\n/).length;
           textBoxHeight = lineCount * lineHeight;
         }
 
         // Add border rectangle if showBorder is enabled
         if (tb.showBorder) {
-          const rectPadding = 10; // Match TextBox.jsx padding  
+          const rectPadding = 10; // Match TextBox.jsx padding
           const rectEl = document.createElementNS(SVG_NS, "rect");
           rectEl.setAttribute("x", String(-offsetX - rectPadding));
           // Border positioned at offsetY with padding
@@ -1410,7 +1429,7 @@ const Page = () => {
         textEl.setAttribute("x", String(-offsetX));
         // Position text to align with border, adjusting down by one line height
         // to match Konva's text rendering behavior
-        textEl.setAttribute("y", String(-offsetY + ((lineHeight/5)*4)));
+        textEl.setAttribute("y", String(-offsetY + (lineHeight / 5) * 4));
         textEl.setAttribute("fill", tb.color || "#000000");
         textEl.setAttribute("font-family", tb.fontFamily || "Arial");
         textEl.setAttribute("font-size", String(renderedFontSize));
@@ -1426,7 +1445,7 @@ const Page = () => {
           const tspan = document.createElementNS(SVG_NS, "tspan");
           tspan.setAttribute("x", String(-offsetX));
           if (idx === 0) tspan.setAttribute("dy", "0");
-          else tspan.setAttribute("dy", String(lineHeight/5)*4);
+          else tspan.setAttribute("dy", String(lineHeight / 5) * 4);
           // Use non-breaking space for empty lines to ensure they render with proper height
           tspan.textContent = ln || "\u00A0";
           textEl.appendChild(tspan);
@@ -1478,21 +1497,21 @@ const Page = () => {
       // Use ApiPostCall mutation to fetch images via proxy
       // Even though the endpoint is GET, we use mutateAsync to call it imperatively
       const response = await proxyImagesMutation.mutateAsync({
-        url: '/api/ExecProxyBeaconImages',
+        url: "/api/ExecProxyBeaconImages",
         data: {
           urls: imageUrls, // Send as array in request body
         },
       });
 
       const data = response.data;
-      
+
       if (!data.success) {
-        throw new Error(data.error || 'Proxy request failed');
+        throw new Error(data.error || "Proxy request failed");
       }
 
       return data.images || [];
     } catch (error) {
-      console.warn('Failed to fetch images via proxy:', error);
+      console.warn("Failed to fetch images via proxy:", error);
       return [];
     }
   };
@@ -1501,7 +1520,7 @@ const Page = () => {
   const imageUrlToDataUrl = async (url) => {
     try {
       // Try using the proxy endpoint first for HTTP URLs
-      if (url.startsWith('http://') || url.startsWith('https://')) {
+      if (url.startsWith("http://") || url.startsWith("https://")) {
         const proxyResults = await fetchImagesViaProxy([url]);
         if (proxyResults.length > 0 && proxyResults[0].success) {
           return proxyResults[0].dataUrl;
@@ -1511,51 +1530,51 @@ const Page = () => {
 
       // Create an image element
       const img = new Image();
-      
+
       // Try loading without crossOrigin first - this sometimes works
       // Don't set crossOrigin unless needed as it triggers stricter CORS checks
-      
+
       // Load the image
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
         img.src = url;
       });
-      
+
       // Create a canvas and draw the image
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = img.width;
       canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      
+      const ctx = canvas.getContext("2d");
+
       try {
         ctx.drawImage(img, 0, 0);
         // Convert to data URL
-        return canvas.toDataURL('image/jpeg', 0.9);
+        return canvas.toDataURL("image/jpeg", 0.9);
       } catch (canvasError) {
         // If canvas drawing fails due to CORS, the image was tainted
         // Try again with crossOrigin='anonymous'
-        console.log('Retrying with crossOrigin=anonymous for:', url);
-        
+        console.log("Retrying with crossOrigin=anonymous for:", url);
+
         const img2 = new Image();
-        img2.crossOrigin = 'anonymous';
-        
+        img2.crossOrigin = "anonymous";
+
         await new Promise((resolve, reject) => {
           img2.onload = resolve;
           img2.onerror = reject;
           img2.src = url;
         });
-        
-        const canvas2 = document.createElement('canvas');
+
+        const canvas2 = document.createElement("canvas");
         canvas2.width = img2.width;
         canvas2.height = img2.height;
-        const ctx2 = canvas2.getContext('2d');
+        const ctx2 = canvas2.getContext("2d");
         ctx2.drawImage(img2, 0, 0);
-        
-        return canvas2.toDataURL('image/jpeg', 0.9);
+
+        return canvas2.toDataURL("image/jpeg", 0.9);
       }
     } catch (error) {
-      console.warn('Failed to convert image URL to data URL:', url, error);
+      console.warn("Failed to convert image URL to data URL:", url, error);
       return null;
     }
   };
@@ -1563,11 +1582,13 @@ const Page = () => {
   // Helper to convert hex color to RGB object
   const hexToRgb = (hex) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : { r: 0, g: 0, b: 0 };
+    return result
+      ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16),
+        }
+      : { r: 0, g: 0, b: 0 };
   };
 
   // Helper function to add product legend using ExportDocumentLayout style
@@ -1576,20 +1597,23 @@ const Page = () => {
     const jobInfo = jobData.data || {};
     const jobNumber = jobInfo.jobNumber || "N/A";
     // Extract string values from potential objects
-    const customerName = typeof jobInfo.customerName === 'object' && jobInfo.customerName !== null
-      ? (jobInfo.customerName.label || jobInfo.customerName.value || "N/A")
-      : (jobInfo.customerName || "N/A");
-    const designer = typeof jobInfo.designer === 'object' && jobInfo.designer !== null
-      ? (jobInfo.designer.label || jobInfo.designer.value || "N/A")
-      : (jobInfo.designer || "N/A");
-    const builderName = typeof jobInfo.builder === 'object' && jobInfo.builder !== null
-      ? (jobInfo.builder.label || jobInfo.builder.value || "N/A")
-      : (jobInfo.builder || "N/A");
-    
+    const customerName =
+      typeof jobInfo.customerName === "object" && jobInfo.customerName !== null
+        ? jobInfo.customerName.label || jobInfo.customerName.value || "N/A"
+        : jobInfo.customerName || "N/A";
+    const designer =
+      typeof jobInfo.designer === "object" && jobInfo.designer !== null
+        ? jobInfo.designer.label || jobInfo.designer.value || "N/A"
+        : jobInfo.designer || "N/A";
+    const builderName =
+      typeof jobInfo.builder === "object" && jobInfo.builder !== null
+        ? jobInfo.builder.label || jobInfo.builder.value || "N/A"
+        : jobInfo.builder || "N/A";
+
     // Calculate font scale factor based on page size (using A4 as baseline)
     const basePageWidth = 297; // A4 landscape width in mm
     const fontScaleFactor = Math.min(pageWidth / basePageWidth, 2.5); // Cap at 2.5x for very large sizes
-    
+
     // Group products by SKU for the grid
     const productMap = new Map();
     allProducts.forEach((product) => {
@@ -1609,107 +1633,127 @@ const Page = () => {
       const entry = productMap.get(sku);
       entry.quantity += product.quantity || 1;
     });
-    
+
     const productGrid = Array.from(productMap.values());
-    
+
     // Pre-fetch and convert all product images to data URLs to avoid CORS issues
     setExportStatus("Loading product images...");
-    
+
     // Collect all HTTP image URLs to fetch via proxy in batch
     const httpImageUrls = productGrid
-      .filter(p => p.thumbnailUrl && (p.thumbnailUrl.startsWith('http://') || p.thumbnailUrl.startsWith('https://')))
-      .map(p => p.thumbnailUrl);
-    
+      .filter(
+        (p) =>
+          p.thumbnailUrl &&
+          (p.thumbnailUrl.startsWith("http://") || p.thumbnailUrl.startsWith("https://")),
+      )
+      .map((p) => p.thumbnailUrl);
+
     // Fetch all images via proxy in a single request
     let proxyResults = [];
     if (httpImageUrls.length > 0) {
       proxyResults = await fetchImagesViaProxy(httpImageUrls);
     }
-    
+
     // Map proxy results back to products
-    productGrid.forEach(product => {
-      if (product.thumbnailUrl && (product.thumbnailUrl.startsWith('http://') || product.thumbnailUrl.startsWith('https://'))) {
-        const proxyResult = proxyResults.find(r => r.url === product.thumbnailUrl);
+    productGrid.forEach((product) => {
+      if (
+        product.thumbnailUrl &&
+        (product.thumbnailUrl.startsWith("http://") || product.thumbnailUrl.startsWith("https://"))
+      ) {
+        const proxyResult = proxyResults.find((r) => r.url === product.thumbnailUrl);
         if (proxyResult && proxyResult.success) {
           product.thumbnailDataUrl = proxyResult.dataUrl;
         }
       }
     });
-    
+
     // Layout settings
     const maxCols = 5;
     const maxRows = 4;
     const bottomBarHeight = 40; // Increased height for better spacing
     const margin = 1; // Reduced margin for less wasted space
     const productAreaHeight = pageHeight - bottomBarHeight - margin * 2;
-    
+
     // Calculate product grid dimensions
     const gridStartY = margin;
     const gridWidth = pageWidth - margin * 2;
     const cellWidth = gridWidth / maxCols;
     const cellHeight = productAreaHeight / maxRows;
-    
+
     // Calculate total number of pages needed
     const itemsPerPage = maxCols * maxRows;
     const totalPages = Math.ceil(productGrid.length / itemsPerPage);
-    
+
     // Loop through pages
     for (let pageNum = 0; pageNum < totalPages; pageNum++) {
       // Add new page for subsequent pages
       if (pageNum > 0) {
         pdf.addPage();
       }
-      
+
       // Get products for this page
       const startIdx = pageNum * itemsPerPage;
       const endIdx = Math.min(startIdx + itemsPerPage, productGrid.length);
       const itemsToShow = productGrid.slice(startIdx, endIdx);
-      
+
       // Draw product grid with better styling
       for (let i = 0; i < itemsToShow.length; i++) {
-      const row = Math.floor(i / maxCols);
-      const col = i % maxCols;
-      const x = margin + col * cellWidth;
-      const y = gridStartY + row * cellHeight;
-      const product = itemsToShow[i];
-      
-      const padding = 1.5; // Reduced padding to minimize wasted space
-      const innerX = x + padding;
-      const innerY = y + padding;
-      const innerWidth = cellWidth - padding * 2;
-      const innerHeight = cellHeight - padding * 2;
-      
-      // Draw cell background
-      pdf.setFillColor(255, 255, 255);
-      pdf.rect(innerX, innerY, innerWidth, innerHeight, "F");
-      
-      // Draw cell border with rounded corners effect
-      pdf.setDrawColor(180, 180, 180);
-      pdf.setLineWidth(0.5);
-      pdf.roundedRect(innerX, innerY, innerWidth, innerHeight, 2, 2, "S");
-      
-      // New layout: Left half = image, Right half = vector shape + qty + SKU, Product name at bottom of entire cell
-      const leftHalfWidth = innerWidth / 2;
-      const rightHalfWidth = innerWidth / 2;
-      const leftX = innerX + 2;
-      const rightX = innerX + leftHalfWidth + 2;
-      
-      // Reserve space for product name at bottom
-      const nameHeight = 8; // Reserve space for 2 lines of small text
-      const contentHeight = innerHeight - nameHeight - 2; // Content area above name
-      
-      // LEFT HALF: Product image
-      const imageToUse = product.thumbnailDataUrl || product.thumbnailUrl;
-      const imageHeight = contentHeight - 4; // Use most of content area for image
-      const imageWidth = leftHalfWidth - 4;
-      
-      if (imageToUse) {
-        try {
-          // Use the pre-fetched data URL if available, otherwise use original URL
-          pdf.addImage(imageToUse, 'JPEG', leftX, innerY + 2, imageWidth, imageHeight);
-        } catch (error) {
-          // If image loading fails, show placeholder
-          console.warn('Failed to load product image:', error);
+        const row = Math.floor(i / maxCols);
+        const col = i % maxCols;
+        const x = margin + col * cellWidth;
+        const y = gridStartY + row * cellHeight;
+        const product = itemsToShow[i];
+
+        const padding = 1.5; // Reduced padding to minimize wasted space
+        const innerX = x + padding;
+        const innerY = y + padding;
+        const innerWidth = cellWidth - padding * 2;
+        const innerHeight = cellHeight - padding * 2;
+
+        // Draw cell background
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(innerX, innerY, innerWidth, innerHeight, "F");
+
+        // Draw cell border with rounded corners effect
+        pdf.setDrawColor(180, 180, 180);
+        pdf.setLineWidth(0.5);
+        pdf.roundedRect(innerX, innerY, innerWidth, innerHeight, 2, 2, "S");
+
+        // New layout: Left half = image, Right half = vector shape + qty + SKU, Product name at bottom of entire cell
+        const leftHalfWidth = innerWidth / 2;
+        const rightHalfWidth = innerWidth / 2;
+        const leftX = innerX + 2;
+        const rightX = innerX + leftHalfWidth + 2;
+
+        // Reserve space for product name at bottom
+        const nameHeight = 8; // Reserve space for 2 lines of small text
+        const contentHeight = innerHeight - nameHeight - 2; // Content area above name
+
+        // LEFT HALF: Product image
+        const imageToUse = product.thumbnailDataUrl || product.thumbnailUrl;
+        const imageHeight = contentHeight - 4; // Use most of content area for image
+        const imageWidth = leftHalfWidth - 4;
+
+        if (imageToUse) {
+          try {
+            // Use the pre-fetched data URL if available, otherwise use original URL
+            pdf.addImage(imageToUse, "JPEG", leftX, innerY + 2, imageWidth, imageHeight);
+          } catch (error) {
+            // If image loading fails, show placeholder
+            console.warn("Failed to load product image:", error);
+            pdf.setFillColor(240, 240, 240);
+            pdf.rect(leftX, innerY + 2, imageWidth, imageHeight, "F");
+            pdf.setDrawColor(200, 200, 200);
+            pdf.setLineWidth(0.3);
+            pdf.rect(leftX, innerY + 2, imageWidth, imageHeight, "S");
+            pdf.setFontSize(5);
+            pdf.setTextColor(150, 150, 150);
+            pdf.text("No Image", leftX + imageWidth / 2, innerY + 2 + imageHeight / 2, {
+              align: "center",
+            });
+          }
+        } else {
+          // No image - show placeholder
           pdf.setFillColor(240, 240, 240);
           pdf.rect(leftX, innerY + 2, imageWidth, imageHeight, "F");
           pdf.setDrawColor(200, 200, 200);
@@ -1717,419 +1761,416 @@ const Page = () => {
           pdf.rect(leftX, innerY + 2, imageWidth, imageHeight, "S");
           pdf.setFontSize(5);
           pdf.setTextColor(150, 150, 150);
-          pdf.text("No Image", leftX + imageWidth / 2, innerY + 2 + imageHeight / 2, { align: "center" });
+          pdf.text("No Image", leftX + imageWidth / 2, innerY + 2 + imageHeight / 2, {
+            align: "center",
+          });
         }
-      } else {
-        // No image - show placeholder
-        pdf.setFillColor(240, 240, 240);
-        pdf.rect(leftX, innerY + 2, imageWidth, imageHeight, "F");
-        pdf.setDrawColor(200, 200, 200);
-        pdf.setLineWidth(0.3);
-        pdf.rect(leftX, innerY + 2, imageWidth, imageHeight, "S");
-        pdf.setFontSize(5);
-        pdf.setTextColor(150, 150, 150);
-        pdf.text("No Image", leftX + imageWidth / 2, innerY + 2 + imageHeight / 2, { align: "center" });
-      }
-      
-      // RIGHT HALF: Product vector shape with letter/number prefix, qty, SKU
-      const rightStartY = innerY + 4;
-      
-      // Draw vector shape based on product type using PDF primitives (matching canvas export)
-      const shapeSize = Math.min(rightHalfWidth - 8, contentHeight * 0.5);
-      const shapeCenterX = rightX + rightHalfWidth / 2;
-      const shapeCenterY = rightStartY + shapeSize / 2;
-      
-      // Get the product type and configuration
-      const productType = product.type?.toLowerCase() || "default";
-      const config = productTypesConfig[productType] || productTypesConfig.default;
-      
-      // Get letter/number prefix using shared function
-      const matchingProducts = allProducts.filter(p => 
-        (p.product_type?.toLowerCase() || "default") === productType && p.sku === product.sku
-      );
-      const firstProduct = matchingProducts[0];
-      const letterNumber = firstProduct ? getProductLetterPrefix(firstProduct, allProducts) : (config.letterPrefix || "O") + "1";
-      
-      // Draw shape using PDF primitives (simpler approach - draw circles/shapes directly)
-      const shapeType = config.shapeType || config.shape || "circle";
-      const strokeColor = config.stroke || "#000000";
-      const fillColor = config.fill || "#FFFFFF";
-      const strokeWidth = config.strokeWidth || 2;
-      
-      // Create SVG element for the product shape (reuse exact approach from canvas export)
-      const SVG_NS = "http://www.w3.org/2000/svg";
-      const svgElement = document.createElementNS(SVG_NS, "svg");
-      svgElement.setAttribute("xmlns", SVG_NS);
-      svgElement.setAttribute("viewBox", `0 0 ${shapeSize} ${shapeSize}`);
-      svgElement.setAttribute("width", String(shapeSize));
-      svgElement.setAttribute("height", String(shapeSize));
-      
-      // Use natural shape sizes (what the shape functions expect)
-      // Get dimensions from productTypes.json configuration
-      const naturalShapeWidth = config.width || 50;
-      const naturalShapeHeight = config.height || 50;
-      
-      // Calculate scale factor to fit natural size into available space
-      // Use 0.75 multiplier to make shapes a bit smaller (user feedback)
-      const targetSize = shapeSize * 0.75;
-      const shapeScale = targetSize / Math.max(naturalShapeWidth, naturalShapeHeight);
-      
-      // Create a group for the product centered at origin with scaling
-      const productGroupEl = document.createElementNS(SVG_NS, "g");
-      productGroupEl.setAttribute("transform", `translate(${shapeSize/2} ${shapeSize/2}) scale(${shapeScale})`);
-      svgElement.appendChild(productGroupEl);
-      
-      // Create shape object with natural sizes
-      // This allows hard-coded line widths and offsets in shape functions to scale proportionally
-      const shapeObj = {
-        width: () => naturalShapeWidth,
-        height: () => naturalShapeHeight,
-        getAttr: (name) => {
-          switch (name) {
-            case "scaleFactor":
-              return 1;
-            case "realWorldSize":
-              return Math.max(naturalShapeWidth, naturalShapeHeight);
-            case "realWorldWidth":
-              return naturalShapeWidth;
-            case "realWorldHeight":
-              return naturalShapeHeight;
-            case "stroke":
-              return strokeColor;
-            case "strokeWidth":
-              return strokeWidth;
-            default:
-              return undefined;
-          }
-        },
-        fill: fillColor,
-      };
-      
-      // Create SVG context (same approach as canvas export)
-      const createSvgContextForLegend = (svgGroup) => {
-        const ctx = {
-          _d: "",
-          _currentX: 0,
-          _currentY: 0,
-          strokeStyle: strokeColor,
-          fillStyle: fillColor,
-          lineWidth: strokeWidth * 0.1,
-          _transformStack: [],
-          _matrix: [1, 0, 0, 1, 0, 0],
+
+        // RIGHT HALF: Product vector shape with letter/number prefix, qty, SKU
+        const rightStartY = innerY + 4;
+
+        // Draw vector shape based on product type using PDF primitives (matching canvas export)
+        const shapeSize = Math.min(rightHalfWidth - 8, contentHeight * 0.5);
+        const shapeCenterX = rightX + rightHalfWidth / 2;
+        const shapeCenterY = rightStartY + shapeSize / 2;
+
+        // Get the product type and configuration
+        const productType = product.type?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
+
+        // Get letter/number prefix using shared function
+        const matchingProducts = allProducts.filter(
+          (p) =>
+            (p.product_type?.toLowerCase() || "default") === productType && p.sku === product.sku,
+        );
+        const firstProduct = matchingProducts[0];
+        const letterNumber = firstProduct
+          ? getProductLetterPrefix(firstProduct, allProducts)
+          : (config.letterPrefix || "O") + "1";
+
+        // Draw shape using PDF primitives (simpler approach - draw circles/shapes directly)
+        const shapeType = config.shapeType || config.shape || "circle";
+        const strokeColor = config.stroke || "#000000";
+        const fillColor = config.fill || "#FFFFFF";
+        const strokeWidth = config.strokeWidth || 2;
+
+        // Create SVG element for the product shape (reuse exact approach from canvas export)
+        const SVG_NS = "http://www.w3.org/2000/svg";
+        const svgElement = document.createElementNS(SVG_NS, "svg");
+        svgElement.setAttribute("xmlns", SVG_NS);
+        svgElement.setAttribute("viewBox", `0 0 ${shapeSize} ${shapeSize}`);
+        svgElement.setAttribute("width", String(shapeSize));
+        svgElement.setAttribute("height", String(shapeSize));
+
+        // Use natural shape sizes (what the shape functions expect)
+        // Get dimensions from productTypes.json configuration
+        const naturalShapeWidth = config.width || 50;
+        const naturalShapeHeight = config.height || 50;
+
+        // Calculate scale factor to fit natural size into available space
+        // Use 0.75 multiplier to make shapes a bit smaller (user feedback)
+        const targetSize = shapeSize * 0.75;
+        const shapeScale = targetSize / Math.max(naturalShapeWidth, naturalShapeHeight);
+
+        // Create a group for the product centered at origin with scaling
+        const productGroupEl = document.createElementNS(SVG_NS, "g");
+        productGroupEl.setAttribute(
+          "transform",
+          `translate(${shapeSize / 2} ${shapeSize / 2}) scale(${shapeScale})`,
+        );
+        svgElement.appendChild(productGroupEl);
+
+        // Create shape object with natural sizes
+        // This allows hard-coded line widths and offsets in shape functions to scale proportionally
+        const shapeObj = {
+          width: () => naturalShapeWidth,
+          height: () => naturalShapeHeight,
+          getAttr: (name) => {
+            switch (name) {
+              case "scaleFactor":
+                return 1;
+              case "realWorldSize":
+                return Math.max(naturalShapeWidth, naturalShapeHeight);
+              case "realWorldWidth":
+                return naturalShapeWidth;
+              case "realWorldHeight":
+                return naturalShapeHeight;
+              case "stroke":
+                return strokeColor;
+              case "strokeWidth":
+                return strokeWidth;
+              default:
+                return undefined;
+            }
+          },
+          fill: fillColor,
         };
 
-        const applyMatrix = (x, y) => {
-          const [a, b, c, d, e, f] = ctx._matrix;
-          return [a * x + c * y + e, b * x + d * y + f];
-        };
+        // Create SVG context (same approach as canvas export)
+        const createSvgContextForLegend = (svgGroup) => {
+          const ctx = {
+            _d: "",
+            _currentX: 0,
+            _currentY: 0,
+            strokeStyle: strokeColor,
+            fillStyle: fillColor,
+            lineWidth: strokeWidth * 0.1,
+            _transformStack: [],
+            _matrix: [1, 0, 0, 1, 0, 0],
+          };
 
-        ctx.save = () => {
-          ctx._transformStack.push(ctx._matrix.slice());
-        };
+          const applyMatrix = (x, y) => {
+            const [a, b, c, d, e, f] = ctx._matrix;
+            return [a * x + c * y + e, b * x + d * y + f];
+          };
 
-        ctx.restore = () => {
-          const m = ctx._transformStack.pop();
-          if (m) ctx._matrix = m;
-        };
+          ctx.save = () => {
+            ctx._transformStack.push(ctx._matrix.slice());
+          };
 
-        ctx.rotate = (angle) => {
-          const cos = Math.cos(angle);
-          const sin = Math.sin(angle);
-          const [a, b, c, d, e, f] = ctx._matrix;
-          ctx._matrix = [
-            a * cos + c * sin,
-            b * cos + d * sin,
-            -a * sin + c * cos,
-            -b * sin + d * cos,
-            e,
-            f,
-          ];
-        };
+          ctx.restore = () => {
+            const m = ctx._transformStack.pop();
+            if (m) ctx._matrix = m;
+          };
 
-        ctx.translate = (tx, ty) => {
-          const [a, b, c, d, e, f] = ctx._matrix;
-          ctx._matrix = [a, b, c, d, a * tx + c * ty + e, b * tx + d * ty + f];
-        };
+          ctx.rotate = (angle) => {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            const [a, b, c, d, e, f] = ctx._matrix;
+            ctx._matrix = [
+              a * cos + c * sin,
+              b * cos + d * sin,
+              -a * sin + c * cos,
+              -b * sin + d * cos,
+              e,
+              f,
+            ];
+          };
 
-        ctx.scale = (sx, sy) => {
-          const [a, b, c, d, e, f] = ctx._matrix;
-          ctx._matrix = [a * sx, b * sx, c * sy, d * sy, e, f];
-        };
+          ctx.translate = (tx, ty) => {
+            const [a, b, c, d, e, f] = ctx._matrix;
+            ctx._matrix = [a, b, c, d, a * tx + c * ty + e, b * tx + d * ty + f];
+          };
 
-        ctx.beginPath = () => {
-          ctx._d = "";
-          ctx._currentX = 0;
-          ctx._currentY = 0;
-        };
+          ctx.scale = (sx, sy) => {
+            const [a, b, c, d, e, f] = ctx._matrix;
+            ctx._matrix = [a * sx, b * sx, c * sy, d * sy, e, f];
+          };
 
-        ctx.moveTo = (x, y) => {
-          const [mx, my] = applyMatrix(x, y);
-          ctx._d += `M ${mx} ${my} `;
-          ctx._currentX = mx;
-          ctx._currentY = my;
-        };
+          ctx.beginPath = () => {
+            ctx._d = "";
+            ctx._currentX = 0;
+            ctx._currentY = 0;
+          };
 
-        ctx.lineTo = (x, y) => {
-          const [lx, ly] = applyMatrix(x, y);
-          ctx._d += `L ${lx} ${ly} `;
-          ctx._currentX = lx;
-          ctx._currentY = ly;
-        };
+          ctx.moveTo = (x, y) => {
+            const [mx, my] = applyMatrix(x, y);
+            ctx._d += `M ${mx} ${my} `;
+            ctx._currentX = mx;
+            ctx._currentY = my;
+          };
 
-        ctx.closePath = () => {
-          ctx._d += "Z ";
-        };
+          ctx.lineTo = (x, y) => {
+            const [lx, ly] = applyMatrix(x, y);
+            ctx._d += `L ${lx} ${ly} `;
+            ctx._currentX = lx;
+            ctx._currentY = ly;
+          };
 
-        ctx.rect = (x, y, w, h) => {
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-          ctx.lineTo(x + w, y);
-          ctx.lineTo(x + w, y + h);
-          ctx.lineTo(x, y + h);
-          ctx.closePath();
-        };
+          ctx.closePath = () => {
+            ctx._d += "Z ";
+          };
 
-        ctx.roundRect = (x, y, w, h, radius) => {
-          // Handle radius as single value or array [topLeft, topRight, bottomRight, bottomLeft]
-          const r = typeof radius === 'number' ? [radius, radius, radius, radius] : radius;
-          const [tl, tr, br, bl] = r;
-          
-          ctx.beginPath();
-          
-          // Start at top-left corner (after the radius)
-          ctx.moveTo(x + tl, y);
-          
-          // Top edge and top-right corner
-          ctx.lineTo(x + w - tr, y);
-          if (tr > 0) {
-            // Arc to right edge: SVG arc command (rx ry rotation large-arc sweep x y)
-            const [endX, endY] = applyMatrix(x + w, y + tr);
-            ctx._d += `A ${tr} ${tr} 0 0 1 ${endX} ${endY} `;
-            ctx._currentX = endX;
-            ctx._currentY = endY;
-          }
-          
-          // Right edge and bottom-right corner
-          ctx.lineTo(x + w, y + h - br);
-          if (br > 0) {
-            const [endX, endY] = applyMatrix(x + w - br, y + h);
-            ctx._d += `A ${br} ${br} 0 0 1 ${endX} ${endY} `;
-            ctx._currentX = endX;
-            ctx._currentY = endY;
-          }
-          
-          // Bottom edge and bottom-left corner
-          ctx.lineTo(x + bl, y + h);
-          if (bl > 0) {
-            const [endX, endY] = applyMatrix(x, y + h - bl);
-            ctx._d += `A ${bl} ${bl} 0 0 1 ${endX} ${endY} `;
-            ctx._currentX = endX;
-            ctx._currentY = endY;
-          }
-          
-          // Left edge and top-left corner
-          ctx.lineTo(x, y + tl);
-          if (tl > 0) {
-            const [endX, endY] = applyMatrix(x + tl, y);
-            ctx._d += `A ${tl} ${tl} 0 0 1 ${endX} ${endY} `;
-            ctx._currentX = endX;
-            ctx._currentY = endY;
-          }
-          
-          ctx.closePath();
-        };
+          ctx.rect = (x, y, w, h) => {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + w, y);
+            ctx.lineTo(x + w, y + h);
+            ctx.lineTo(x, y + h);
+            ctx.closePath();
+          };
 
-        ctx.ellipse = (cx, cy, rx, ry, rotation, startAngle, endAngle) => {
-          const [ecx, ecy] = applyMatrix(cx, cy);
-          const scaleX = Math.sqrt(
-            ctx._matrix[0] * ctx._matrix[0] + ctx._matrix[1] * ctx._matrix[1],
-          );
-          const scaleY = Math.sqrt(
-            ctx._matrix[2] * ctx._matrix[2] + ctx._matrix[3] * ctx._matrix[3],
-          );
-          const matrixAngle = Math.atan2(ctx._matrix[2], ctx._matrix[0]);
-          const ellipseEl = document.createElementNS(SVG_NS, "ellipse");
-          ellipseEl.setAttribute("cx", String(ecx));
-          ellipseEl.setAttribute("cy", String(ecy));
-          ellipseEl.setAttribute("rx", String(Math.abs(rx * scaleX)));
-          ellipseEl.setAttribute("ry", String(Math.abs(ry * scaleY)));
-          let rotDeg = (matrixAngle * 180) / Math.PI;
-          if (rotation) rotDeg += (rotation * 180) / Math.PI;
-          if (rotDeg) ellipseEl.setAttribute("transform", `rotate(${rotDeg} ${ecx} ${ecy})`);
-          ellipseEl.setAttribute("fill", ctx.fillStyle || "none");
-          ellipseEl.setAttribute("stroke", ctx.strokeStyle || "none");
-          ellipseEl.setAttribute("stroke-width", String(ctx.lineWidth || 1));
-          svgGroup.appendChild(ellipseEl);
-        };
+          ctx.roundRect = (x, y, w, h, radius) => {
+            // Handle radius as single value or array [topLeft, topRight, bottomRight, bottomLeft]
+            const r = typeof radius === "number" ? [radius, radius, radius, radius] : radius;
+            const [tl, tr, br, bl] = r;
 
-        ctx.arc = (cx, cy, r, startAngle, endAngle) => {
-          const full = Math.abs(endAngle - startAngle) >= Math.PI * 2 - 1e-6;
-          if (full) {
-            const [acx, acy] = applyMatrix(cx, cy);
+            ctx.beginPath();
+
+            // Start at top-left corner (after the radius)
+            ctx.moveTo(x + tl, y);
+
+            // Top edge and top-right corner
+            ctx.lineTo(x + w - tr, y);
+            if (tr > 0) {
+              // Arc to right edge: SVG arc command (rx ry rotation large-arc sweep x y)
+              const [endX, endY] = applyMatrix(x + w, y + tr);
+              ctx._d += `A ${tr} ${tr} 0 0 1 ${endX} ${endY} `;
+              ctx._currentX = endX;
+              ctx._currentY = endY;
+            }
+
+            // Right edge and bottom-right corner
+            ctx.lineTo(x + w, y + h - br);
+            if (br > 0) {
+              const [endX, endY] = applyMatrix(x + w - br, y + h);
+              ctx._d += `A ${br} ${br} 0 0 1 ${endX} ${endY} `;
+              ctx._currentX = endX;
+              ctx._currentY = endY;
+            }
+
+            // Bottom edge and bottom-left corner
+            ctx.lineTo(x + bl, y + h);
+            if (bl > 0) {
+              const [endX, endY] = applyMatrix(x, y + h - bl);
+              ctx._d += `A ${bl} ${bl} 0 0 1 ${endX} ${endY} `;
+              ctx._currentX = endX;
+              ctx._currentY = endY;
+            }
+
+            // Left edge and top-left corner
+            ctx.lineTo(x, y + tl);
+            if (tl > 0) {
+              const [endX, endY] = applyMatrix(x + tl, y);
+              ctx._d += `A ${tl} ${tl} 0 0 1 ${endX} ${endY} `;
+              ctx._currentX = endX;
+              ctx._currentY = endY;
+            }
+
+            ctx.closePath();
+          };
+
+          ctx.ellipse = (cx, cy, rx, ry, rotation, startAngle, endAngle) => {
+            const [ecx, ecy] = applyMatrix(cx, cy);
             const scaleX = Math.sqrt(
               ctx._matrix[0] * ctx._matrix[0] + ctx._matrix[1] * ctx._matrix[1],
             );
             const scaleY = Math.sqrt(
               ctx._matrix[2] * ctx._matrix[2] + ctx._matrix[3] * ctx._matrix[3],
             );
-            const avgScale = (scaleX + scaleY) / 2;
-            const circleEl = document.createElementNS(SVG_NS, "circle");
-            circleEl.setAttribute("cx", String(acx));
-            circleEl.setAttribute("cy", String(acy));
-            circleEl.setAttribute("r", String(r * avgScale));
-            circleEl.setAttribute("fill", ctx.fillStyle || "none");
-            circleEl.setAttribute("stroke", ctx.strokeStyle || "none");
-            circleEl.setAttribute("stroke-width", String(ctx.lineWidth || 1));
-            svgGroup.appendChild(circleEl);
-          }
-        };
+            const matrixAngle = Math.atan2(ctx._matrix[2], ctx._matrix[0]);
+            const ellipseEl = document.createElementNS(SVG_NS, "ellipse");
+            ellipseEl.setAttribute("cx", String(ecx));
+            ellipseEl.setAttribute("cy", String(ecy));
+            ellipseEl.setAttribute("rx", String(Math.abs(rx * scaleX)));
+            ellipseEl.setAttribute("ry", String(Math.abs(ry * scaleY)));
+            let rotDeg = (matrixAngle * 180) / Math.PI;
+            if (rotation) rotDeg += (rotation * 180) / Math.PI;
+            if (rotDeg) ellipseEl.setAttribute("transform", `rotate(${rotDeg} ${ecx} ${ecy})`);
+            ellipseEl.setAttribute("fill", ctx.fillStyle || "none");
+            ellipseEl.setAttribute("stroke", ctx.strokeStyle || "none");
+            ellipseEl.setAttribute("stroke-width", String(ctx.lineWidth || 1));
+            svgGroup.appendChild(ellipseEl);
+          };
 
-        ctx.fill = () => {
-          if (ctx._d) {
+          ctx.arc = (cx, cy, r, startAngle, endAngle) => {
+            const full = Math.abs(endAngle - startAngle) >= Math.PI * 2 - 1e-6;
+            if (full) {
+              const [acx, acy] = applyMatrix(cx, cy);
+              const scaleX = Math.sqrt(
+                ctx._matrix[0] * ctx._matrix[0] + ctx._matrix[1] * ctx._matrix[1],
+              );
+              const scaleY = Math.sqrt(
+                ctx._matrix[2] * ctx._matrix[2] + ctx._matrix[3] * ctx._matrix[3],
+              );
+              const avgScale = (scaleX + scaleY) / 2;
+              const circleEl = document.createElementNS(SVG_NS, "circle");
+              circleEl.setAttribute("cx", String(acx));
+              circleEl.setAttribute("cy", String(acy));
+              circleEl.setAttribute("r", String(r * avgScale));
+              circleEl.setAttribute("fill", ctx.fillStyle || "none");
+              circleEl.setAttribute("stroke", ctx.strokeStyle || "none");
+              circleEl.setAttribute("stroke-width", String(ctx.lineWidth || 1));
+              svgGroup.appendChild(circleEl);
+            }
+          };
+
+          ctx.fill = () => {
+            if (ctx._d) {
+              const pathEl = document.createElementNS(SVG_NS, "path");
+              pathEl.setAttribute("d", ctx._d);
+              pathEl.setAttribute("fill", ctx.fillStyle || "none");
+              pathEl.setAttribute("stroke", "none");
+              svgGroup.appendChild(pathEl);
+              ctx._d = "";
+            }
+          };
+
+          ctx.stroke = () => {
+            if (ctx._d) {
+              const pathEl = document.createElementNS(SVG_NS, "path");
+              pathEl.setAttribute("d", ctx._d);
+              pathEl.setAttribute("fill", "none");
+              pathEl.setAttribute("stroke", ctx.strokeStyle || "none");
+              pathEl.setAttribute("stroke-width", String(ctx.lineWidth || 1));
+              svgGroup.appendChild(pathEl);
+              ctx._d = "";
+            }
+          };
+
+          ctx.fillStrokeShape = (shape) => {
+            if (!ctx._d.trim()) return; // nothing to draw
             const pathEl = document.createElementNS(SVG_NS, "path");
-            pathEl.setAttribute("d", ctx._d);
-            pathEl.setAttribute("fill", ctx.fillStyle || "none");
-            pathEl.setAttribute("stroke", "none");
+            pathEl.setAttribute("d", ctx._d.trim());
+            pathEl.setAttribute("fill", ctx.fillStyle || shape.fill || "none");
+            pathEl.setAttribute("stroke", ctx.strokeStyle || shape.getAttr("stroke") || "none");
+            pathEl.setAttribute(
+              "stroke-width",
+              String(ctx.lineWidth || shape.getAttr("strokeWidth") || 1),
+            );
             svgGroup.appendChild(pathEl);
             ctx._d = "";
-          }
+          };
+
+          return ctx;
         };
 
-        ctx.stroke = () => {
-          if (ctx._d) {
-            const pathEl = document.createElementNS(SVG_NS, "path");
-            pathEl.setAttribute("d", ctx._d);
-            pathEl.setAttribute("fill", "none");
-            pathEl.setAttribute("stroke", ctx.strokeStyle || "none");
-            pathEl.setAttribute("stroke-width", String(ctx.lineWidth || 1));
-            svgGroup.appendChild(pathEl);
-            ctx._d = "";
-          }
-        };
+        const ctx = createSvgContextForLegend(productGroupEl);
+        ctx.fillStyle = fillColor;
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = strokeWidth; // Use the config stroke width, will scale with group transform
 
-        ctx.fillStrokeShape = (shape) => {
-          if (!ctx._d.trim()) return; // nothing to draw
-          const pathEl = document.createElementNS(SVG_NS, "path");
-          pathEl.setAttribute("d", ctx._d.trim());
-          pathEl.setAttribute("fill", ctx.fillStyle || shape.fill || "none");
-          pathEl.setAttribute("stroke", ctx.strokeStyle || shape.getAttr("stroke") || "none");
-          pathEl.setAttribute(
-            "stroke-width",
-            String(ctx.lineWidth || shape.getAttr("strokeWidth") || 1),
-          );
-          svgGroup.appendChild(pathEl);
-          ctx._d = "";
-        };
+        try {
+          // Use the same shape function as canvas export
+          const shapeFunction = getShapeFunction(config.shapeType || "circle");
+          shapeFunction(ctx, shapeObj);
+        } catch (err) {
+          // Fallback to simple circle if shape function fails
+          console.error("Shape rendering failed for", product.sku, err);
+          const circleEl = document.createElementNS(SVG_NS, "circle");
+          circleEl.setAttribute("cx", "0");
+          circleEl.setAttribute("cy", "0");
+          circleEl.setAttribute("r", String(naturalShapeSize / 2)); // Use natural size, will scale with group
+          circleEl.setAttribute("fill", fillColor);
+          circleEl.setAttribute("stroke", strokeColor);
+          circleEl.setAttribute("stroke-width", String(strokeWidth));
+          productGroupEl.appendChild(circleEl);
+        }
 
-        return ctx;
-      };
-      
-      const ctx = createSvgContextForLegend(productGroupEl);
-      ctx.fillStyle = fillColor;
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = strokeWidth; // Use the config stroke width, will scale with group transform
-      
-      try {
-        // Use the same shape function as canvas export
-        const shapeFunction = getShapeFunction(config.shapeType || "circle");
-        shapeFunction(ctx, shapeObj);
-      } catch (err) {
-        // Fallback to simple circle if shape function fails
-        console.error("Shape rendering failed for", product.sku, err);
-        const circleEl = document.createElementNS(SVG_NS, "circle");
-        circleEl.setAttribute("cx", "0");
-        circleEl.setAttribute("cy", "0");
-        circleEl.setAttribute("r", String(naturalShapeSize / 2)); // Use natural size, will scale with group
-        circleEl.setAttribute("fill", fillColor);
-        circleEl.setAttribute("stroke", strokeColor);
-        circleEl.setAttribute("stroke-width", String(strokeWidth));
-        productGroupEl.appendChild(circleEl);
-      }
-      
-      // Render SVG to PDF using svg2pdf.js (same as canvas export)
-      try {
-        await pdf.svg(svgElement, {
-          x: shapeCenterX - shapeSize / 2,
-          y: shapeCenterY - shapeSize / 2,
-          width: shapeSize,
-          height: shapeSize,
+        // Render SVG to PDF using svg2pdf.js (same as canvas export)
+        try {
+          await pdf.svg(svgElement, {
+            x: shapeCenterX - shapeSize / 2,
+            y: shapeCenterY - shapeSize / 2,
+            width: shapeSize,
+            height: shapeSize,
+          });
+        } catch (err) {
+          console.error("Failed to render SVG shape to PDF:", err);
+          // Fallback to simple circle
+          const strokeRgb = hexToRgb(strokeColor);
+          const fillRgb = hexToRgb(fillColor);
+          pdf.setDrawColor(strokeRgb.r, strokeRgb.g, strokeRgb.b);
+          pdf.setFillColor(fillRgb.r, fillRgb.g, fillRgb.b);
+          pdf.circle(shapeCenterX, shapeCenterY, shapeSize / 2, "FD");
+        }
+
+        // Add letter/number prefix over the shape
+        pdf.setFontSize(6 * fontScaleFactor);
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(letterNumber, shapeCenterX, shapeCenterY + 1, { align: "center" });
+
+        let infoY = shapeCenterY + shapeSize / 2 + 2;
+
+        // Quantity (bold, blue)
+        pdf.setFontSize(7 * fontScaleFactor);
+        pdf.setTextColor(0, 100, 200);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(`Qty: ${product.quantity}`, shapeCenterX, infoY, {
+          align: "center",
         });
-      } catch (err) {
-        console.error("Failed to render SVG shape to PDF:", err);
-        // Fallback to simple circle
-        const strokeRgb = hexToRgb(strokeColor);
-        const fillRgb = hexToRgb(fillColor);
-        pdf.setDrawColor(strokeRgb.r, strokeRgb.g, strokeRgb.b);
-        pdf.setFillColor(fillRgb.r, fillRgb.g, fillRgb.b);
-        pdf.circle(shapeCenterX, shapeCenterY, shapeSize / 2, "FD");
+
+        infoY += 4 * fontScaleFactor;
+
+        // SKU (smaller, gray)
+        pdf.setFontSize(5 * fontScaleFactor);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(100, 100, 100);
+        const skuLines = pdf.splitTextToSize(`SKU: ${product.sku}`, rightHalfWidth - 4);
+        pdf.text(skuLines.slice(0, 2), shapeCenterX, infoY, {
+          align: "center",
+          maxWidth: rightHalfWidth - 4,
+        });
+
+        // Product name at the bottom of entire cell (spanning full width)
+        const nameY = innerY + contentHeight + 3;
+        pdf.setFontSize(7 * fontScaleFactor);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(0, 0, 0);
+        const nameLines = pdf.splitTextToSize(product.name, innerWidth - 4);
+        pdf.text(nameLines.slice(0, 2), innerX + innerWidth / 2, nameY, {
+          align: "center",
+          maxWidth: innerWidth - 4,
+        });
+
+        pdf.setTextColor(0, 0, 0); // Reset color
       }
-      
-      // Add letter/number prefix over the shape
-      pdf.setFontSize(6 * fontScaleFactor);
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(0, 0, 0);
-      pdf.text(letterNumber, shapeCenterX, shapeCenterY + 1, { align: "center" });
-      
-      let infoY = shapeCenterY + shapeSize / 2 + 2;
-      
-      // Quantity (bold, blue)
-      pdf.setFontSize(7 * fontScaleFactor);
-      pdf.setTextColor(0, 100, 200);
-      pdf.setFont("helvetica", "bold");
-      pdf.text(`Qty: ${product.quantity}`, shapeCenterX, infoY, {
-        align: "center",
-      });
-      
-      infoY += 4 * fontScaleFactor;
-      
-      // SKU (smaller, gray)
-      pdf.setFontSize(5 * fontScaleFactor);
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(100, 100, 100);
-      const skuLines = pdf.splitTextToSize(`SKU: ${product.sku}`, rightHalfWidth - 4);
-      pdf.text(skuLines.slice(0, 2), shapeCenterX, infoY, {
-        align: "center",
-        maxWidth: rightHalfWidth - 4,
-      });
-      
-      // Product name at the bottom of entire cell (spanning full width)
-      const nameY = innerY + contentHeight + 3;
-      pdf.setFontSize(7 * fontScaleFactor);
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(0, 0, 0);
-      const nameLines = pdf.splitTextToSize(product.name, innerWidth - 4);
-      pdf.text(nameLines.slice(0, 2), innerX + innerWidth / 2, nameY, {
-        align: "center",
-        maxWidth: innerWidth - 4,
-      });
-      
-      pdf.setTextColor(0, 0, 0); // Reset color
-    }
-    
+
       // Draw bottom info bar with better styling
       const infoBarY = pageHeight - bottomBarHeight;
-      
+
       // Background for info bar
       pdf.setFillColor(248, 248, 248);
       pdf.rect(0, infoBarY, pageWidth, bottomBarHeight, "F");
-      
+
       // Top border line (stronger)
       pdf.setDrawColor(150, 150, 150);
       pdf.setLineWidth(0.8);
       pdf.line(0, infoBarY, pageWidth, infoBarY);
-      
+
       // Logo section on the left
       const logoWidth = 50;
       const logoX = margin;
       const logoY = infoBarY + 1;
-      
+
       // Draw logo images (or placeholders if files don't exist)
       pdf.setDrawColor(200, 200, 200);
       pdf.setLineWidth(0.5);
-      
+
       try {
         // Logo 1 (top) - try to load from /public/logos/
-        pdf.addImage('/logos/Logo 1.png', 'PNG', logoX, logoY, 40, 19);
+        pdf.addImage("/logos/Logo 1.png", "PNG", logoX, logoY, 40, 19);
       } catch (error) {
         // If logo doesn't exist, show placeholder
         pdf.setFillColor(250, 250, 250);
@@ -2138,10 +2179,10 @@ const Page = () => {
         pdf.setTextColor(150, 150, 150);
         pdf.text("Logo 1", logoX + (logoWidth - 4) / 2, logoY + 9, { align: "center" });
       }
-      
+
       try {
         // Logo 2 (bottom)
-        pdf.addImage('/logos/Logo 2.png', 'PNG', logoX, logoY + 20, 41, 17);
+        pdf.addImage("/logos/Logo 2.png", "PNG", logoX, logoY + 20, 41, 17);
       } catch (error) {
         // If logo doesn't exist, show placeholder
         pdf.setFillColor(250, 250, 250);
@@ -2150,59 +2191,59 @@ const Page = () => {
         pdf.setTextColor(150, 150, 150);
         pdf.text("Logo 2", logoX + (logoWidth - 4) / 2, logoY + 29, { align: "center" });
       }
-      
+
       pdf.setTextColor(0, 0, 0); // Reset color
-      
+
       // Info rows (to the right of logos)
       let infoX = logoX + logoWidth + 10;
       const infoY = infoBarY + 10;
       const labelSpacing = 55;
-      
+
       pdf.setFontSize(7);
       pdf.setTextColor(0, 0, 0);
-      
+
       // First row of info
       pdf.setFont("helvetica", "bold");
       pdf.text("Designer:", infoX, infoY);
       pdf.setFont("helvetica", "normal");
       pdf.text(designer, infoX, infoY + 4);
-      
+
       infoX += labelSpacing;
       pdf.setFont("helvetica", "bold");
       pdf.text("Job #:", infoX, infoY);
       pdf.setFont("helvetica", "normal");
       pdf.text(jobNumber, infoX, infoY + 4);
-      
+
       infoX += labelSpacing;
       pdf.setFont("helvetica", "bold");
       pdf.text("Client:", infoX, infoY);
       pdf.setFont("helvetica", "normal");
       pdf.text(customerName, infoX, infoY + 4);
-      
+
       // Second row of info
       infoX = logoX + logoWidth + 10;
       const info2Y = infoY + 13;
-      
+
       pdf.setFont("helvetica", "bold");
       pdf.text("Builder:", infoX, info2Y);
       pdf.setFont("helvetica", "normal");
       pdf.text(builderName, infoX, info2Y + 4);
-      
+
       infoX += labelSpacing;
       pdf.setFont("helvetica", "bold");
       pdf.text("Date:", infoX, info2Y);
       pdf.setFont("helvetica", "normal");
       pdf.text(new Date().toLocaleDateString(), infoX, info2Y + 4);
-      
+
       // Company details section (right side)
       const companyX = pageWidth - margin - 65;
       pdf.setFontSize(6);
-      
+
       // Store section with box
       pdf.setDrawColor(220, 220, 220);
       pdf.setFillColor(255, 255, 255);
       pdf.roundedRect(companyX, infoBarY + 4, 60, 14, 1, 1, "FD");
-      
+
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(80, 80, 80);
       pdf.text("Store:", companyX + 2, infoBarY + 7);
@@ -2210,12 +2251,12 @@ const Page = () => {
       pdf.setTextColor(100, 100, 100);
       const storeText = pdf.splitTextToSize(jobInfo.address || "Store Address", 56);
       pdf.text(storeText.slice(0, 2), companyX + 2, infoBarY + 10);
-      
+
       // Head Office section with box
       pdf.setDrawColor(220, 220, 220);
       pdf.setFillColor(255, 255, 255);
       pdf.roundedRect(companyX, infoBarY + 19, 60, 14, 1, 1, "FD");
-      
+
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(80, 80, 80);
       pdf.text("Head Office:", companyX + 2, infoBarY + 22);

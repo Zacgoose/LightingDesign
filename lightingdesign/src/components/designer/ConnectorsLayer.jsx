@@ -48,7 +48,7 @@ export const ConnectorsLayer = ({
     <>
       {/* Render unselected connectors first (behind) */}
       {unselectedConnectors.map((connector) => renderConnector(connector, false))}
-      
+
       {/* Render selected connectors last (on top) */}
       {selectedConnectors.map((connector) => renderConnector(connector, true))}
     </>

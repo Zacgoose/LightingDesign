@@ -624,7 +624,7 @@ export const ContextMenus = ({
           {onAlignLeft && (
             <MenuItem onClick={handleMenuItemClick(onAlignLeft)}>
               <ListItemIcon>
-                <VerticalAlignTop fontSize="small" sx={{ transform: 'rotate(270deg)' }} />
+                <VerticalAlignTop fontSize="small" sx={{ transform: "rotate(270deg)" }} />
               </ListItemIcon>
               <ListItemText>Align Left</ListItemText>
             </MenuItem>
@@ -632,7 +632,7 @@ export const ContextMenus = ({
           {onAlignHorizontalCenter && (
             <MenuItem onClick={handleMenuItemClick(onAlignHorizontalCenter)}>
               <ListItemIcon>
-                <VerticalAlignCenter fontSize="small" sx={{ transform: 'rotate(90deg)' }} />
+                <VerticalAlignCenter fontSize="small" sx={{ transform: "rotate(90deg)" }} />
               </ListItemIcon>
               <ListItemText>Align Horizontal Centers</ListItemText>
             </MenuItem>
@@ -640,7 +640,7 @@ export const ContextMenus = ({
           {onAlignRight && (
             <MenuItem onClick={handleMenuItemClick(onAlignRight)}>
               <ListItemIcon>
-                <VerticalAlignTop fontSize="small" sx={{ transform: 'rotate(90deg)' }} />
+                <VerticalAlignTop fontSize="small" sx={{ transform: "rotate(90deg)" }} />
               </ListItemIcon>
               <ListItemText>Align Right</ListItemText>
             </MenuItem>
@@ -664,7 +664,7 @@ export const ContextMenus = ({
           {onAlignBottom && (
             <MenuItem onClick={handleMenuItemClick(onAlignBottom)}>
               <ListItemIcon>
-                <VerticalAlignTop fontSize="small" sx={{ transform: 'rotate(180deg)' }} />
+                <VerticalAlignTop fontSize="small" sx={{ transform: "rotate(180deg)" }} />
               </ListItemIcon>
               <ListItemText>Align Bottom</ListItemText>
             </MenuItem>
@@ -680,7 +680,7 @@ export const ContextMenus = ({
           {selectedProductsCount > 2 && onEvenSpacingVertical && (
             <MenuItem onClick={handleMenuItemClick(onEvenSpacingVertical)}>
               <ListItemIcon>
-                <MultipleStop fontSize="small" sx={{ transform: 'rotate(90deg)' }} />
+                <MultipleStop fontSize="small" sx={{ transform: "rotate(90deg)" }} />
               </ListItemIcon>
               <ListItemText>Even Spacing Vertical</ListItemText>
             </MenuItem>

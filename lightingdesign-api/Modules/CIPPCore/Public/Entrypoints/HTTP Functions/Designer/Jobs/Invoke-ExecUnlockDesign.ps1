@@ -51,7 +51,7 @@ function Invoke-ExecUnlockDesign {
         }
 
         # Remove the lock
-        Remove-CIPPAzDataTableEntity @Table -Entity $ExistingLock
+        Remove-AzDataTableEntity @Table -Entity $ExistingLock
 
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::OK

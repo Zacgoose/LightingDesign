@@ -44,7 +44,7 @@ function Invoke-ExecCheckDesignLock {
         # Check if lock is expired
         if ($LockExpiry -le $Now) {
             # Lock has expired, remove it
-            Remove-CIPPAzDataTableEntity @Table -Entity $ExistingLock
+            Remove-AzDataTableEntity @Table -Entity $ExistingLock
 
             return [HttpResponseContext]@{
                 StatusCode = [System.Net.HttpStatusCode]::OK

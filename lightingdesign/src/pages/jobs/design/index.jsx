@@ -426,6 +426,12 @@ const Page = () => {
       return;
     }
 
+    // Only allow save if user owns the lock
+    if (!isOwner) {
+      console.error("Cannot save: design is not locked by current user.");
+      return;
+    }
+
     const transformed = applyGroupTransform();
     if (transformed) updateHistory(transformed);
     setIsSaving(true);
@@ -463,6 +469,7 @@ const Page = () => {
     });
   }, [
     id,
+    isOwner,
     layers,
     canvasWidth,
     canvasHeight,
@@ -477,9 +484,9 @@ const Page = () => {
     updateLayer,
   ]);
 
-  // Auto-save functionality
+  // Auto-save functionality - only when user owns the lock
   useEffect(() => {
-    if (!id || !hasUnsavedChanges || isSaving) return;
+    if (!id || !hasUnsavedChanges || isSaving || !isOwner) return;
 
     // Get auto-save interval from user settings (in minutes), default to 2 minutes
     const autoSaveMinutes = parseInt(settings.autoSaveInterval?.value || "2", 10);
@@ -493,7 +500,7 @@ const Page = () => {
     }, autoSaveMs);
 
     return () => clearInterval(autoSaveInterval);
-  }, [id, hasUnsavedChanges, isSaving, handleSave, settings.autoSaveInterval]);
+  }, [id, hasUnsavedChanges, isSaving, isOwner, handleSave, settings.autoSaveInterval]);
 
   // Lock/Unlock handlers
   const handleLockDesign = useCallback(async () => {
@@ -562,6 +569,17 @@ const Page = () => {
 
     return () => clearInterval(refreshInterval);
   }, [id, isOwner, lockDesignMutation, queryClient]);
+
+  // Switch to pan mode when user doesn't own lock
+  useEffect(() => {
+    if (!isOwner && selectedTool !== "pan") {
+      setSelectedTool("pan");
+      // Clear any selections when switching out of edit mode
+      setSelectedIds([]);
+      setSelectedConnectorIds([]);
+      setSelectedTextId(null);
+    }
+  }, [isOwner, selectedTool, setSelectedTool, setSelectedIds, setSelectedConnectorIds, setSelectedTextId]);
 
   // Context menus hook
   const contextMenus = useContextMenus({
@@ -3191,6 +3209,7 @@ const Page = () => {
                         onClose={handleLayerClose}
                         subLayerControlsRef={subLayerControlsRef}
                         top={layerSwitcherTop}
+                        editingEnabled={isOwner}
                       />
                       <SubLayerControls
                         ref={subLayerControlsRef}
@@ -3204,6 +3223,7 @@ const Page = () => {
                         onSetDefaultSublayer={setDefaultSublayer}
                         onClose={handleLayerClose}
                         top={subLayerControlsTop}
+                        editingEnabled={isOwner}
                       />
                     </>
                   )}

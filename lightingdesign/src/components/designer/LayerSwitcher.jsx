@@ -89,6 +89,7 @@ export const LayerSwitcher = memo(forwardRef(({
   onClose,
   subLayerControlsRef,
   top = 16,
+  editingEnabled = true,
 }, ref) => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -162,11 +163,13 @@ export const LayerSwitcher = memo(forwardRef(({
         <Typography variant="h6" sx={titleSx}>
           Layers
         </Typography>
-        <Tooltip title="Add New Layer">
-          <IconButton size="small" onClick={handleAddLayer} color="primary">
-            <AddIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        {editingEnabled && (
+          <Tooltip title="Add New Layer">
+            <IconButton size="small" onClick={handleAddLayer} color="primary">
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
       <Divider />
       <List
@@ -179,7 +182,7 @@ export const LayerSwitcher = memo(forwardRef(({
               key={layer.id}
               layer={layer}
               isActive={isActive}
-              canDelete={layers.length > 1}
+              canDelete={editingEnabled && layers.length > 1}
               onSelect={onLayerSelect}
               onDelete={handleDeleteLayer}
               listItemButtonSx={listItemButtonSx}

@@ -154,6 +154,7 @@ export const DesignerToolbarRow = memo(
               startIcon={<Upload />}
               size="small"
               onClick={onUploadFloorPlan}
+              disabled={!isOwner}
             >
               Upload Floor Plan
             </Button>
@@ -165,19 +166,26 @@ export const DesignerToolbarRow = memo(
               onUnlock={onUnlock}
               disabled={false}
             />
-            <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave} disabled={isLocked && !isOwner}>
+            <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave} disabled={!isOwner}>
               Save Project
             </Button>
             <Button variant="outlined" startIcon={<Download />} size="small" onClick={onExport}>
               Export
             </Button>
-            <Button variant="outlined" size="small" onClick={onUndo} disabled={!canUndo}>
+            <Button variant="outlined" size="small" onClick={onUndo} disabled={!canUndo || !isOwner}>
               <Undo />
             </Button>
-            <Button variant="outlined" size="small" onClick={onRedo} disabled={!canRedo}>
+            <Button variant="outlined" size="small" onClick={onRedo} disabled={!canRedo || !isOwner}>
               <Redo />
             </Button>
             <Button
+              variant="outlined"
+              startIcon={<Straighten />}
+              size="small"
+              onClick={onMeasure}
+              minWidth={100}
+              disabled={!isOwner}
+            >
               variant="outlined"
               startIcon={<Straighten />}
               size="small"
@@ -287,20 +295,27 @@ export const DesignerToolbarRow = memo(
                     },
                   }}
                 >
-                  <ToggleButton value="select">
-                    <NearMe fontSize="small" />
-                  </ToggleButton>
+                  {/* Only show select/connect/text tools when user owns the lock */}
+                  {isOwner && (
+                    <ToggleButton value="select">
+                      <NearMe fontSize="small" />
+                    </ToggleButton>
+                  )}
                   <ToggleButton value="pan">
                     <PanTool fontSize="small" />
                   </ToggleButton>
-                  <ToggleButton value="connect">
-                    <Cable fontSize="small" />
-                  </ToggleButton>
-                  <ToggleButton value="text">
-                    <TextFields fontSize="small" />
-                  </ToggleButton>
+                  {isOwner && (
+                    <>
+                      <ToggleButton value="connect">
+                        <Cable fontSize="small" />
+                      </ToggleButton>
+                      <ToggleButton value="text">
+                        <TextFields fontSize="small" />
+                      </ToggleButton>
+                    </>
+                  )}
                 </ToggleButtonGroup>
-                {selectedTool === "connect" && (
+                {selectedTool === "connect" && isOwner && (
                   <Button
                     variant="outlined"
                     color="primary"

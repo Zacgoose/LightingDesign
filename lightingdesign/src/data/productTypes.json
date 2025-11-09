@@ -148,7 +148,7 @@
     "fill": "transparent",
     "stroke": "#424242",
     "strokeWidth": 3,
-    "letterPrefix": "B"
+    "letterPrefix": ""
   },
   "switch": {
     "shapeType": "rect",

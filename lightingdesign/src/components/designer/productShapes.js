@@ -246,14 +246,12 @@ export const ProductShapes = {
     const width = shape.width() || 50;
     const height = shape.height() || 50;
 
-    // Draw box outline (no fill)
-    context.save();
-    context.strokeStyle = shape.getAttr("stroke");
-    context.lineWidth = shape.getAttr("strokeWidth") || 2;
+    // Draw box outline with proper hit detection
+    // Use fillStrokeShape for Konva hit detection (fill is transparent but still clickable)
     context.beginPath();
     context.rect(-width / 2, -height / 2, width, height);
-    context.stroke();
-    context.restore();
+    context.closePath();
+    context.fillStrokeShape(shape);
   },
 };
 

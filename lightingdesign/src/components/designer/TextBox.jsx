@@ -83,6 +83,21 @@ export const TextBox = memo(
           scaleY={textBox.scaleY || 1}
           draggable={draggable}
           listening={listening}
+          hitFunc={(ctx, shape) => {
+            // Custom hit detection: only respond to clicks on the actual text area
+            // Define the clickable area as the text bounds plus padding
+            const padding = textBox.showBorder ? rectPadding : 5; // Smaller padding when no border
+            const hitX = -textWidth / 2 - padding;
+            const hitY = -textHeight / 2 - padding;
+            const hitWidth = textWidth + padding * 2;
+            const hitHeight = (textBox.height || textHeight) + padding * 2;
+            
+            // Draw a rectangle for the hit area
+            ctx.beginPath();
+            ctx.rect(hitX, hitY, hitWidth, hitHeight);
+            ctx.closePath();
+            ctx.fillStrokeShape(shape);
+          }}
           onMouseDown={(e) => {
             // Filter out middle mouse clicks (button === 1) to prevent selection during panning
             // Don't stop propagation - let it bubble to Stage for middle mouse panning

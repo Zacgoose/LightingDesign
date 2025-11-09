@@ -66,6 +66,15 @@ const LayerItem = memo(({ layer, isActive, canDelete, onSelect, onDelete, listIt
       </ListItemButton>
     </ListItem>
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if display-relevant properties changed
+  return (
+    prevProps.layer.id === nextProps.layer.id &&
+    prevProps.layer.name === nextProps.layer.name &&
+    prevProps.layer.products?.length === nextProps.layer.products?.length &&
+    prevProps.isActive === nextProps.isActive &&
+    prevProps.canDelete === nextProps.canDelete
+  );
 });
 
 LayerItem.displayName = "LayerItem";
@@ -199,7 +208,35 @@ export const LayerSwitcher = memo(forwardRef(({
       />
     </Paper>
   );
-}));
+}), (prevProps, nextProps) => {
+  // Custom comparison for LayerSwitcher props
+  // Only re-render if layers array, activeLayerId, or top position changes
+  
+  if (
+    prevProps.activeLayerId !== nextProps.activeLayerId ||
+    prevProps.top !== nextProps.top
+  ) {
+    return false; // Props changed, should re-render
+  }
+
+  // Check if layers array has same length
+  if (prevProps.layers.length !== nextProps.layers.length) {
+    return false; // Length changed, should re-render
+  }
+
+  // For performance, create a signature that only includes display-relevant properties
+  // This avoids deep comparison when only layer product positions/rotations change
+  const createLayerSignature = (layers) => {
+    return layers
+      .map((l) => `${l.id}:${l.name}:${l.products?.length || 0}`)
+      .join('|');
+  };
+
+  const prevSignature = createLayerSignature(prevProps.layers);
+  const nextSignature = createLayerSignature(nextProps.layers);
+
+  return prevSignature === nextSignature; // Skip re-render if signatures match
+});
 
 LayerSwitcher.displayName = "LayerSwitcher";
 

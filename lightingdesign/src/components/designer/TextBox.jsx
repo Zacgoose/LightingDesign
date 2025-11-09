@@ -159,6 +159,15 @@ export const TextBox = memo(
           }}
           onContextMenu={onContextMenu}
         >
+          {/* Invisible rectangle to make text area clickable */}
+          <Rect
+            x={-textWidth / 2}
+            y={-textHeight / 2}
+            width={textWidth}
+            height={textBox.height || textHeight}
+            fill="transparent"
+            listening={true}
+          />
           <Text
             ref={textRef}
             x={-textWidth / 2}

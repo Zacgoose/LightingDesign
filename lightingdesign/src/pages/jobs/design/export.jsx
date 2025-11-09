@@ -1340,11 +1340,9 @@ const Page = () => {
 
         // Add letter prefix text label (centered on the shape, always upright and fixed size)
         // Skip rendering for products with empty letterPrefix (visual helpers like boxoutline)
-        const productType = product.product_type?.toLowerCase() || "default";
-        const productConfig = productTypesConfig[productType] || productTypesConfig.default;
         const letterPrefix = getProductLetterPrefix(product, products);
         
-        if (productConfig.letterPrefix !== "") {
+        if (config.letterPrefix !== "") {
           // Fixed text size based on canvas scale factor for legibility
           const baseFontSize = 16; // Base font size at scaleFactor=100
           const fontSize = Math.max(12, (baseFontSize * productScaleFactor) / 100);

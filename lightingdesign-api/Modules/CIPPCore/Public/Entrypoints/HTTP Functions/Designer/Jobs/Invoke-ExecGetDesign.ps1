@@ -29,12 +29,12 @@ function Invoke-ExecGetDesign {
         # Check lock status
         $LockFilter = "PartitionKey eq '$JobId'"
         $LockRow = Get-CIPPAzDataTableEntity @LocksTable -Filter $LockFilter
-        
+
         $LockInfo = $null
         if ($LockRow) {
             $Now = (Get-Date).ToUniversalTime()
             $LockExpiry = [DateTime]::Parse($LockRow.ExpiresAt)
-            
+
             # Check if lock is still valid
             if ($LockExpiry -gt $Now) {
                 $IsOwner = $LockRow.LockedBy -eq $Username
@@ -48,7 +48,7 @@ function Invoke-ExecGetDesign {
             } else {
                 # Lock expired, remove it
                 try {
-                    Remove-CIPPAzDataTableEntity @LocksTable -Entity $LockRow
+                    Remove-AzDataTableEntity @LocksTable -Entity $LockRow
                 } catch {
                     Write-Warning "Failed to remove expired lock: $_"
                 }

@@ -186,12 +186,6 @@ export const DesignerToolbarRow = memo(
               minWidth={100}
               disabled={!isOwner}
             >
-              variant="outlined"
-              startIcon={<Straighten />}
-              size="small"
-              onClick={onMeasure}
-              minWidth={100}
-            >
               Measure
             </Button>
 

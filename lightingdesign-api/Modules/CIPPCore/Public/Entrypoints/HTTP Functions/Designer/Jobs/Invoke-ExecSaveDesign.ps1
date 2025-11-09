@@ -64,7 +64,7 @@ function Invoke-ExecSaveDesign {
                     return [HttpResponseContext]@{
                         StatusCode = [System.Net.HttpStatusCode]::Forbidden
                         Body       = @{
-                            error    = 'Design is locked by another user. You cannot save changes.'
+                            error    = "Design is locked by $($DesignLock.LockedBy). You cannot save changes."
                             LockedBy = $DesignLock.LockedBy
                         }
                     }

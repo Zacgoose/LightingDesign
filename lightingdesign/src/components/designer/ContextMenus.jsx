@@ -14,7 +14,6 @@ import {
   FormatItalic,
   FormatUnderlined,
   TextFields,
-  BorderColor,
   StraightenOutlined,
   VerticalAlignCenter,
   VerticalAlignTop,
@@ -46,7 +45,6 @@ export const ContextMenus = ({
   onTextFormatItalic,
   onTextFormatUnderline,
   onTextFontSize,
-  onTextToggleBorder,
   onResetConnectorToStraight,
   onAlignHorizontalCenter,
   onAlignVerticalCenter,
@@ -409,15 +407,6 @@ export const ContextMenus = ({
               </ListItemIcon>
               <ListItemText>Font Size</ListItemText>
               <ChevronRight fontSize="small" sx={{ ml: "auto" }} />
-            </MenuItem>
-            <MenuItem
-              onClick={handleMenuItemClick(onTextToggleBorder)}
-              onMouseEnter={handleMenuItemHover}
-            >
-              <ListItemIcon>
-                <BorderColor fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Toggle Border</ListItemText>
             </MenuItem>
             <MenuItem onClick={handleMenuItemClick(onDelete)} onMouseEnter={handleMenuItemHover}>
               <ListItemIcon>

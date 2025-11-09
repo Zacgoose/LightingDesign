@@ -156,37 +156,13 @@ export const ProductsLayer = memo(
   }) => {
     // Pre-calculate all letter prefixes efficiently to avoid O(n²) complexity during rendering
     // This optimization prevents recalculating letter prefixes for each product in the map loop
+    // Uses the same logic as export.jsx for consistent numbering
     const letterPrefixMap = useMemo(() => {
       const prefixMap = new Map();
 
-      // Build grouping key to prefix mapping in O(n) time
-      const groupingKeysByPrefix = new Map();
-
-      products.forEach((product) => {
-        const productType = product.product_type?.toLowerCase() || "default";
-        const config = productTypesConfig[productType] || productTypesConfig.default;
-        
-        // Skip products with empty letterPrefix (visual helpers like boxoutline)
-        if (config.letterPrefix === "") {
-          return;
-        }
-        
-        const letterPrefix = config.letterPrefix || "O";
-
-        if (!groupingKeysByPrefix.has(letterPrefix)) {
-          groupingKeysByPrefix.set(letterPrefix, []);
-        }
-
-        const groupingKey = getProductGroupingKey(product, productTypesConfig);
-        const groupingKeys = groupingKeysByPrefix.get(letterPrefix);
-
-        // Track order of first appearance for each grouping key
-        if (!groupingKeys.some((gk) => gk.key === groupingKey)) {
-          groupingKeys.push({ key: groupingKey, productId: product.id });
-        }
-      });
-
-      // Now assign letter prefixes based on grouping key order
+      // Build a map of letter prefixes to their filtered products
+      const productsByPrefix = new Map();
+      
       products.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || "default";
         const config = productTypesConfig[productType] || productTypesConfig.default;
@@ -198,10 +174,47 @@ export const ProductsLayer = memo(
         }
         
         const letterPrefix = config.letterPrefix || "O";
+        
+        if (!productsByPrefix.has(letterPrefix)) {
+          productsByPrefix.set(letterPrefix, []);
+        }
+        productsByPrefix.get(letterPrefix).push(product);
+      });
+
+      // For each letter prefix, build unique grouping keys in insertion order
+      const groupingKeysByPrefix = new Map();
+      
+      productsByPrefix.forEach((prefixProducts, letterPrefix) => {
+        const uniqueGroupingKeys = [];
+        const seenKeys = new Set();
+        
+        prefixProducts.forEach((product) => {
+          const groupingKey = getProductGroupingKey(product, productTypesConfig);
+          if (!seenKeys.has(groupingKey)) {
+            seenKeys.add(groupingKey);
+            uniqueGroupingKeys.push(groupingKey);
+          }
+        });
+        
+        groupingKeysByPrefix.set(letterPrefix, uniqueGroupingKeys);
+      });
+
+      // Assign letter prefixes based on grouping key position
+      products.forEach((product) => {
+        const productType = product.product_type?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
+        
+        // Skip products with empty letterPrefix (visual helpers like boxoutline)
+        if (config.letterPrefix === "") {
+          // Already set in the first loop
+          return;
+        }
+        
+        const letterPrefix = config.letterPrefix || "O";
         const groupingKey = getProductGroupingKey(product, productTypesConfig);
 
-        const groupingKeys = groupingKeysByPrefix.get(letterPrefix) || [];
-        const groupIndex = groupingKeys.findIndex((gk) => gk.key === groupingKey);
+        const uniqueGroupingKeys = groupingKeysByPrefix.get(letterPrefix) || [];
+        const groupIndex = uniqueGroupingKeys.indexOf(groupingKey);
 
         if (groupIndex !== -1) {
           prefixMap.set(product.id, `${letterPrefix}${groupIndex + 1}`);
@@ -437,9 +450,6 @@ export const ProductsLayer = memo(
               const textWidth = textBox.width || 100;
               const textHeight = renderedFontSize * 1.2;
 
-              // Rectangle padding
-              const rectPadding = 10;
-
               return (
                 <Group
                   key={textBox.id}
@@ -497,19 +507,6 @@ export const ProductsLayer = memo(
                     }
                   }}
                 >
-                  {/* Render rectangle border if enabled */}
-                  {textBox.showBorder && (
-                    <Rect
-                      x={-textWidth / 2 - rectPadding}
-                      y={-textHeight / 2 - rectPadding}
-                      width={textWidth + rectPadding * 2}
-                      height={(textBox.height || textHeight) + rectPadding * 2}
-                      stroke={textBox.borderColor || "#000000"}
-                      strokeWidth={8}
-                      fill="transparent"
-                      listening={false}
-                    />
-                  )}
                   <Text
                     x={-textWidth / 2}
                     y={-textHeight / 2}

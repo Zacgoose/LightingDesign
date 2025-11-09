@@ -190,24 +190,13 @@ export const ProductListPanel = memo(
     const productSummary = useMemo(() => {
       if (products.length === 0) return [];
 
-      // First pass: build unique SKU lists per product type for efficient letter prefix calculation
-      const skusByType = new Map();
+      // Build product map (group by SKU and product type)
       const productMap = new Map();
 
-      // Single pass to build both maps
       products.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || "default";
         const sku = product.sku?.trim() || "NO-SKU";
 
-        // Build SKU index maps
-        if (!skusByType.has(productType)) {
-          skusByType.set(productType, new Set());
-        }
-        if (sku && sku !== "NO-SKU") {
-          skusByType.get(productType).add(sku);
-        }
-
-        // Build product map simultaneously
         const key = `${sku}-${productType}`;
         if (!productMap.has(key)) {
           productMap.set(key, {
@@ -222,37 +211,69 @@ export const ProductListPanel = memo(
               product.color ||
               productTypesConfig[productType]?.fill ||
               "#1976d2",
-            rawSku: sku, // Store for later prefix calculation
+            product: product, // Store reference to calculate letter prefix
           });
         }
 
         productMap.get(key).quantity += product.quantity || 1;
       });
 
-      // Convert sets to sorted arrays and create SKU index lookup maps
-      const skuIndexMaps = new Map();
-      skusByType.forEach((skuSet, productType) => {
-        const sortedSkus = Array.from(skuSet).sort();
-        const indexMap = new Map();
-        sortedSkus.forEach((sku, index) => {
-          indexMap.set(sku, index);
-        });
-        skuIndexMaps.set(productType, indexMap);
-      });
+      // Helper function to get grouping key (matches export.jsx logic)
+      const getProductGroupingKey = (product) => {
+        const sku = product.sku?.trim();
+        const hasSku = sku && sku !== "";
 
-      // Add letter prefixes to products
+        if (hasSku) {
+          return `sku:${sku}`;
+        } else {
+          const productType = product.product_type?.toLowerCase() || "default";
+          const config = productTypesConfig[productType] || productTypesConfig.default;
+          const shapeType = product.shape || config.shapeType || productTypesConfig.default.shapeType;
+          return `shape:${shapeType}`;
+        }
+      };
+
+      // Add letter prefixes to products using same logic as export.jsx
       const result = Array.from(productMap.values());
-      result.forEach((product) => {
-        const config = productTypesConfig[product.productType] || productTypesConfig.default;
+      result.forEach((productSummaryItem) => {
+        const product = productSummaryItem.product;
+        const productType = product.product_type?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
         const letterPrefix = config.letterPrefix || "O";
 
-        const indexMap = skuIndexMaps.get(product.productType);
-        if (indexMap && indexMap.has(product.rawSku)) {
-          product.letterPrefix = `${letterPrefix}${indexMap.get(product.rawSku) + 1}`;
-        } else {
-          product.letterPrefix = letterPrefix;
+        // Filter all products with the same letter prefix
+        const samePrefixProducts = products.filter((p) => {
+          const pType = p.product_type?.toLowerCase() || "default";
+          const pConfig = productTypesConfig[pType] || productTypesConfig.default;
+          const pPrefix = pConfig.letterPrefix || "O";
+          return pPrefix === letterPrefix;
+        });
+
+        // Get the grouping key for this product
+        const groupingKey = getProductGroupingKey(product);
+
+        // Build a list of unique grouping keys in the order they first appear
+        const uniqueGroupingKeys = [];
+        const seenKeys = new Set();
+        for (const p of samePrefixProducts) {
+          const key = getProductGroupingKey(p);
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            uniqueGroupingKeys.push(key);
+          }
         }
-        delete product.rawSku; // Clean up temporary property
+
+        // Find the index of this product's grouping key
+        const groupIndex = uniqueGroupingKeys.indexOf(groupingKey);
+
+        if (groupIndex !== -1) {
+          productSummaryItem.letterPrefix = `${letterPrefix}${groupIndex + 1}`;
+        } else {
+          productSummaryItem.letterPrefix = letterPrefix;
+        }
+
+        // Clean up temporary reference
+        delete productSummaryItem.product;
       });
 
       // Sort by letter prefix

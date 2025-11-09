@@ -1339,33 +1339,87 @@ const Page = () => {
         }
 
         // Add letter prefix text label (centered on the shape, always upright and fixed size)
+        // Skip rendering for products with empty letterPrefix (visual helpers like boxoutline)
         const letterPrefix = getProductLetterPrefix(product, products);
-        // Fixed text size based on canvas scale factor for legibility
-        const baseFontSize = 16; // Base font size at scaleFactor=100
-        const fontSize = Math.max(12, (baseFontSize * productScaleFactor) / 100);
-        const textEl = document.createElementNS(SVG_NS, "text");
-        textEl.setAttribute("x", "0");
-        textEl.setAttribute("y", "0");
-        textEl.setAttribute("fill", "#000000");
-        textEl.setAttribute("font-family", "Arial");
-        textEl.setAttribute("font-size", String(fontSize));
-        textEl.setAttribute("font-weight", "bold");
-        textEl.setAttribute("text-anchor", "middle");
-        // Use dy to optically center the text - 0.1em is the standard offset for vertical centering
-        // This accounts for the fact that text baseline is not at the visual center
-        textEl.setAttribute("dy", "0.1em");
-        textEl.setAttribute("dominant-baseline", "auto");
-        // Counter-scale to neutralize parent group's scaling
-        // This ensures text maintains fixed size regardless of product scaling
-        const textScaleX = 1 / sx;
-        const textScaleY = 1 / sy;
-        const transforms = [`scale(${textScaleX} ${textScaleY})`];
-        if (rotation) {
-          transforms.push(`rotate(${-rotation})`);
+        
+        if (config.letterPrefix !== "") {
+          // Fixed text size based on canvas scale factor for legibility
+          const baseFontSize = 16; // Base font size at scaleFactor=100
+          const fontSize = Math.max(12, (baseFontSize * productScaleFactor) / 100);
+          const textEl = document.createElementNS(SVG_NS, "text");
+          textEl.setAttribute("x", "0");
+          textEl.setAttribute("y", "0");
+          textEl.setAttribute("fill", "#000000");
+          textEl.setAttribute("font-family", "Arial");
+          textEl.setAttribute("font-size", String(fontSize));
+          textEl.setAttribute("font-weight", "bold");
+          textEl.setAttribute("text-anchor", "middle");
+          // Use dy to optically center the text - 0.1em is the standard offset for vertical centering
+          // This accounts for the fact that text baseline is not at the visual center
+          textEl.setAttribute("dy", "0.1em");
+          textEl.setAttribute("dominant-baseline", "auto");
+          // Counter-scale to neutralize parent group's scaling
+          // This ensures text maintains fixed size regardless of product scaling
+          const textScaleX = 1 / sx;
+          const textScaleY = 1 / sy;
+          const transforms = [`scale(${textScaleX} ${textScaleY})`];
+          if (rotation) {
+            transforms.push(`rotate(${-rotation})`);
+          }
+          textEl.setAttribute("transform", transforms.join(" "));
+          textEl.textContent = letterPrefix;
+          productGroupEl.appendChild(textEl);
         }
-        textEl.setAttribute("transform", transforms.join(" "));
-        textEl.textContent = letterPrefix;
-        productGroupEl.appendChild(textEl);
+
+        // Add quantity badge (similar to ProductShape.jsx)
+        const quantity = product.quantity || 1;
+        const showQuantityBadge = quantity > 1;
+        if (showQuantityBadge) {
+          const baseBadgeSize = 20; // Base badge size at scaleFactor=100
+          const badgeSize = Math.max(12, (baseBadgeSize * productScaleFactor) / 100);
+          const badgeFontSize = Math.max(8, badgeSize * 0.6);
+          
+          // Position badge at top-right corner (matches ProductShape.jsx positioning)
+          const badgeX = width / 2 - badgeSize / 2;
+          const badgeY = -height / 2 - badgeSize / 2;
+          
+          // Create group for badge
+          const badgeGroupEl = document.createElementNS(SVG_NS, "g");
+          const badgeTransforms = [
+            `translate(${badgeX} ${badgeY})`,
+            `scale(${textScaleX} ${textScaleY})`,
+          ];
+          if (rotation) {
+            badgeTransforms.push(`rotate(${-rotation})`);
+          }
+          badgeGroupEl.setAttribute("transform", badgeTransforms.join(" "));
+          
+          // Badge circle
+          const badgeCircle = document.createElementNS(SVG_NS, "circle");
+          badgeCircle.setAttribute("cx", "0");
+          badgeCircle.setAttribute("cy", "0");
+          badgeCircle.setAttribute("r", String(badgeSize / 2));
+          badgeCircle.setAttribute("fill", "#FF5722");
+          badgeCircle.setAttribute("stroke", "#FFFFFF");
+          badgeCircle.setAttribute("stroke-width", "1");
+          badgeGroupEl.appendChild(badgeCircle);
+          
+          // Badge text
+          const badgeText = document.createElementNS(SVG_NS, "text");
+          badgeText.setAttribute("x", "0");
+          badgeText.setAttribute("y", "0");
+          badgeText.setAttribute("fill", "#FFFFFF");
+          badgeText.setAttribute("font-family", "Arial");
+          badgeText.setAttribute("font-size", String(badgeFontSize));
+          badgeText.setAttribute("font-weight", "bold");
+          badgeText.setAttribute("text-anchor", "middle");
+          badgeText.setAttribute("dy", "0.3em"); // Adjusted from 0.35em to move text up slightly
+          badgeText.setAttribute("dominant-baseline", "middle");
+          badgeText.textContent = quantity.toString();
+          badgeGroupEl.appendChild(badgeText);
+          
+          productGroupEl.appendChild(badgeGroupEl);
+        }
 
         productCount++;
       });
@@ -1407,22 +1461,6 @@ const Page = () => {
         } else {
           const lineCount = (tb.text || "").split(/\r?\n/).length;
           textBoxHeight = lineCount * lineHeight;
-        }
-
-        // Add border rectangle if showBorder is enabled
-        if (tb.showBorder) {
-          const rectPadding = 10; // Match TextBox.jsx padding
-          const rectEl = document.createElementNS(SVG_NS, "rect");
-          rectEl.setAttribute("x", String(-offsetX - rectPadding));
-          // Border positioned at offsetY with padding
-          rectEl.setAttribute("y", String(-offsetY - rectPadding));
-          rectEl.setAttribute("width", String(textWidth + rectPadding * 2));
-          // Add padding to height to create symmetric border
-          rectEl.setAttribute("height", String(textBoxHeight + rectPadding * 2));
-          rectEl.setAttribute("stroke", tb.borderColor || "#000000");
-          rectEl.setAttribute("stroke-width", "2");
-          rectEl.setAttribute("fill", "none");
-          groupEl.appendChild(rectEl);
         }
 
         const textEl = document.createElementNS(SVG_NS, "text");

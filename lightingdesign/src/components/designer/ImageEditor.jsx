@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import PropTypes from "prop-types";
 import {
   Box,
   Card,
@@ -55,24 +56,24 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
     img.crossOrigin = "Anonymous";
     img.onload = () => {
       setImage(img);
-      
+
       // Center the image
       const imgAspectRatio = img.width / img.height;
       const containerAspectRatio = width / height;
-      
+
       let initialScale;
       if (imgAspectRatio > containerAspectRatio) {
         initialScale = (width * 0.9) / img.width;
       } else {
         initialScale = (height * 0.9) / img.height;
       }
-      
+
       setScale(initialScale);
       setImagePosition({
         x: width / 2 - (img.width * initialScale) / 2,
         y: height / 2 - (img.height * initialScale) / 2,
       });
-      
+
       // Save initial state
       saveToHistory();
     };
@@ -96,7 +97,7 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
       imagePosition: { ...imagePosition },
       scale,
     };
-    
+
     const newHistory = history.slice(0, historyStep + 1);
     newHistory.push(state);
     setHistory(newHistory);
@@ -131,20 +132,20 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
 
   const handleWheel = (e) => {
     e.evt.preventDefault();
-    
+
     const scaleBy = 1.1;
     const stage = stageRef.current;
     const oldScale = stage.scaleX();
     const pointer = stage.getPointerPosition();
-    
+
     const mousePointTo = {
       x: (pointer.x - stage.x()) / oldScale,
       y: (pointer.y - stage.y()) / oldScale,
     };
-    
+
     const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
     const boundedScale = Math.max(0.1, Math.min(10, newScale));
-    
+
     setStagePosition({
       x: pointer.x - mousePointTo.x * boundedScale,
       y: pointer.y - mousePointTo.y * boundedScale,
@@ -169,11 +170,11 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
 
   const handleStartCrop = () => {
     if (!image) return;
-    
+
     setIsCropping(true);
     const cropWidth = image.width * 0.6;
     const cropHeight = image.height * 0.6;
-    
+
     setCropRect({
       x: image.width * 0.2,
       y: image.height * 0.2,
@@ -184,14 +185,14 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
 
   const handleApplyCrop = () => {
     if (!cropRect || !imageRef.current) return;
-    
+
     // Create a temporary canvas to crop the image
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    
+
     canvas.width = cropRect.width;
     canvas.height = cropRect.height;
-    
+
     // Draw the cropped portion
     ctx.drawImage(
       image,
@@ -202,9 +203,9 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
       0,
       0,
       cropRect.width,
-      cropRect.height
+      cropRect.height,
     );
-    
+
     // Load the cropped image
     const croppedImg = new window.Image();
     croppedImg.onload = () => {
@@ -226,10 +227,10 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
 
   const handleMouseDown = (e) => {
     if (tool !== "draw" || !image) return;
-    
+
     const stage = stageRef.current;
     const pos = stage.getPointerPosition();
-    
+
     setCurrentLine({
       points: [pos.x, pos.y],
       stroke: "red",
@@ -239,10 +240,10 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
 
   const handleMouseMove = (e) => {
     if (tool !== "draw" || !currentLine) return;
-    
+
     const stage = stageRef.current;
     const pos = stage.getPointerPosition();
-    
+
     setCurrentLine({
       ...currentLine,
       points: [...currentLine.points, pos.x, pos.y],
@@ -264,11 +265,11 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
 
   const handleSave = async () => {
     if (!stageRef.current) return;
-    
+
     const uri = stageRef.current.toDataURL({
       pixelRatio: 2,
     });
-    
+
     onSave(uri);
   };
 
@@ -378,7 +379,13 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
 
           <Box sx={{ flexGrow: 1 }} />
 
-          <Button size="small" variant="contained" color="primary" onClick={handleSave} startIcon={<Check />}>
+          <Button
+            size="small"
+            variant="contained"
+            color="primary"
+            onClick={handleSave}
+            startIcon={<Check />}
+          >
             Save
           </Button>
           <Button size="small" variant="outlined" onClick={onCancel} startIcon={<Close />}>
@@ -517,4 +524,12 @@ export const ImageEditor = ({ imageUrl, onSave, onCancel, width = 800, height = 
       </Box>
     </Box>
   );
+};
+
+ImageEditor.propTypes = {
+  imageUrl: PropTypes.string,
+  onSave: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  width: PropTypes.number,
+  height: PropTypes.number,
 };

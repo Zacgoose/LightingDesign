@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogTitle, Box, IconButton } from "@mui/materi
 import { Close } from "@mui/icons-material";
 import { ImageEditor } from "./ImageEditor";
 import { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 
 export const ImageEditorDialog = ({ open, onClose, imageUrl, onSave }) => {
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -57,4 +58,11 @@ export const ImageEditorDialog = ({ open, onClose, imageUrl, onSave }) => {
       </DialogContent>
     </Dialog>
   );
+};
+
+ImageEditorDialog.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  imageUrl: PropTypes.string,
+  onSave: PropTypes.func.isRequired,
 };

@@ -1352,7 +1352,7 @@ const Page = () => {
       const img = new window.Image();
       img.onload = () => {
         const naturalSize = { width: img.width, height: img.height };
-        
+
         // Update the layer with the edited image
         updateLayer(activeLayerIdRef.current, {
           backgroundImage: editedImageUrl,
@@ -1367,12 +1367,12 @@ const Page = () => {
         // Update sync refs to prevent redundant sync
         lastSyncedBackgroundImage.current = editedImageUrl;
         lastSyncedBackgroundImageNaturalSize.current = naturalSize;
-        
+
         setIsImageEditorOpen(false);
       };
       img.src = editedImageUrl;
     },
-    [updateLayer, setBackgroundImage, setBackgroundImageNaturalSize]
+    [updateLayer, setBackgroundImage, setBackgroundImageNaturalSize],
   );
 
   const handleImageEditorClose = useCallback(() => {

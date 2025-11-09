@@ -18,158 +18,161 @@ import productTypesConfig from "/src/data/productTypes.json";
  * Individual product list item - memoized to prevent unnecessary re-renders
  * when other products in the list change
  */
-const ProductListItem = memo(({ product, showDivider }) => {
-  return (
-    <>
-      <ListItem
-        sx={{
-          py: 0.75,
-          px: 1,
-          "&:hover": {
-            backgroundColor: "action.hover",
-          },
-        }}
-      >
-        <ListItemAvatar sx={{ minWidth: 48 }}>
-          {product.thumbnailUrl ? (
-            <Avatar
-              src={product.thumbnailUrl}
-              alt={product.name}
-              variant="rounded"
-              sx={{ width: 40, height: 40 }}
-            />
-          ) : (
-            <Avatar
-              variant="rounded"
-              sx={{
-                width: 40,
-                height: 40,
-                backgroundColor: "background.default",
-                border: "1px solid",
-                borderColor: "divider",
-              }}
-            >
-              <Box
-                sx={{
-                  width: 32,
-                  height: 32,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: product.color,
-                  borderRadius: "2px",
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontWeight: "bold",
-                    color: "#000",
-                    fontSize: "0.65rem",
-                  }}
-                >
-                  {product.letterPrefix}
-                </Typography>
-              </Box>
-            </Avatar>
-          )}
-        </ListItemAvatar>
-        <ListItemText
-          primary={
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.25 }}>
-              <Chip
-                label={product.letterPrefix}
-                size="small"
-                sx={{
-                  backgroundColor: product.color,
-                  color: "#000",
-                  fontWeight: "bold",
-                  minWidth: 32,
-                  height: 18,
-                  fontSize: "0.65rem",
-                  "& .MuiChip-label": {
-                    px: 0.5,
-                  },
-                }}
+const ProductListItem = memo(
+  ({ product, showDivider }) => {
+    return (
+      <>
+        <ListItem
+          sx={{
+            py: 0.75,
+            px: 1,
+            "&:hover": {
+              backgroundColor: "action.hover",
+            },
+          }}
+        >
+          <ListItemAvatar sx={{ minWidth: 48 }}>
+            {product.thumbnailUrl ? (
+              <Avatar
+                src={product.thumbnailUrl}
+                alt={product.name}
+                variant="rounded"
+                sx={{ width: 40, height: 40 }}
               />
-              <Typography
-                variant="body2"
+            ) : (
+              <Avatar
+                variant="rounded"
                 sx={{
-                  fontWeight: 600,
-                  lineHeight: 1.2,
-                  flex: 1,
-                  fontSize: "0.65rem",
+                  width: 40,
+                  height: 40,
+                  backgroundColor: "background.default",
+                  border: "1px solid",
+                  borderColor: "divider",
                 }}
               >
-                {product.name}
-              </Typography>
-            </Box>
-          }
-          secondary={
-            <Box sx={{ mt: 0.25 }}>
-              <Typography
-                variant="caption"
-                display="block"
-                sx={{
-                  fontFamily: "monospace",
-                  color: "text.secondary",
-                  fontSize: "0.65rem",
-                }}
-              >
-                SKU: {product.sku}
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  mt: 0.25,
-                }}
-              >
-                <Typography
-                  variant="caption"
+                <Box
                   sx={{
-                    fontWeight: 600,
-                    color: "primary.main",
-                    fontSize: "0.7rem",
+                    width: 32,
+                    height: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: product.color,
+                    borderRadius: "2px",
                   }}
                 >
-                  Qty: {product.quantity}
-                </Typography>
-                {product.price > 0 && (
                   <Typography
                     variant="caption"
                     sx={{
-                      color: "text.secondary",
+                      fontWeight: "bold",
+                      color: "#000",
+                      fontSize: "0.65rem",
+                    }}
+                  >
+                    {product.letterPrefix}
+                  </Typography>
+                </Box>
+              </Avatar>
+            )}
+          </ListItemAvatar>
+          <ListItemText
+            primary={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.25 }}>
+                <Chip
+                  label={product.letterPrefix}
+                  size="small"
+                  sx={{
+                    backgroundColor: product.color,
+                    color: "#000",
+                    fontWeight: "bold",
+                    minWidth: 32,
+                    height: 18,
+                    fontSize: "0.65rem",
+                    "& .MuiChip-label": {
+                      px: 0.5,
+                    },
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    lineHeight: 1.2,
+                    flex: 1,
+                    fontSize: "0.65rem",
+                  }}
+                >
+                  {product.name}
+                </Typography>
+              </Box>
+            }
+            secondary={
+              <Box sx={{ mt: 0.25 }}>
+                <Typography
+                  variant="caption"
+                  display="block"
+                  sx={{
+                    fontFamily: "monospace",
+                    color: "text.secondary",
+                    fontSize: "0.65rem",
+                  }}
+                >
+                  SKU: {product.sku}
+                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    mt: 0.25,
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 600,
+                      color: "primary.main",
                       fontSize: "0.7rem",
                     }}
                   >
-                    ${product.price.toFixed(2)}
+                    Qty: {product.quantity}
                   </Typography>
-                )}
+                  {product.price > 0 && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        fontSize: "0.7rem",
+                      }}
+                    >
+                      ${product.price.toFixed(2)}
+                    </Typography>
+                  )}
+                </Box>
               </Box>
-            </Box>
-          }
-          sx={{ ml: 2 }}
-        />
-      </ListItem>
-      {showDivider && <Divider variant="inset" component="li" />}
-    </>
-  );
-}, (prevProps, nextProps) => {
-  // Custom comparison: only re-render if the actual product data changed
-  return (
-    prevProps.product.sku === nextProps.product.sku &&
-    prevProps.product.name === nextProps.product.name &&
-    prevProps.product.quantity === nextProps.product.quantity &&
-    prevProps.product.price === nextProps.product.price &&
-    prevProps.product.letterPrefix === nextProps.product.letterPrefix &&
-    prevProps.product.color === nextProps.product.color &&
-    prevProps.product.thumbnailUrl === nextProps.product.thumbnailUrl &&
-    prevProps.product.productType === nextProps.product.productType &&
-    prevProps.showDivider === nextProps.showDivider
-  );
-});
+            }
+            sx={{ ml: 2 }}
+          />
+        </ListItem>
+        {showDivider && <Divider variant="inset" component="li" />}
+      </>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison: only re-render if the actual product data changed
+    return (
+      prevProps.product.sku === nextProps.product.sku &&
+      prevProps.product.name === nextProps.product.name &&
+      prevProps.product.quantity === nextProps.product.quantity &&
+      prevProps.product.price === nextProps.product.price &&
+      prevProps.product.letterPrefix === nextProps.product.letterPrefix &&
+      prevProps.product.color === nextProps.product.color &&
+      prevProps.product.thumbnailUrl === nextProps.product.thumbnailUrl &&
+      prevProps.product.productType === nextProps.product.productType &&
+      prevProps.showDivider === nextProps.showDivider
+    );
+  },
+);
 
 ProductListItem.displayName = "ProductListItem";
 
@@ -218,10 +221,7 @@ export const ProductListPanel = memo(
             price: product.price || 0,
             thumbnailUrl: product.thumbnailUrl || product.thumbnailImageUrl || null,
             quantity: 0,
-            color:
-              product.color ||
-              productTypesConfig[productType]?.fill ||
-              "#1976d2",
+            color: product.color || productTypesConfig[productType]?.fill || "#1976d2",
             rawSku: sku, // Store for later prefix calculation
           });
         }
@@ -303,48 +303,51 @@ export const ProductListPanel = memo(
         </List>
       </Paper>
     );
-}), (prevProps, nextProps) => {
-  // Custom comparison for ProductListPanel props
-  // Only re-render if visible status, activeLayerId, top position, or actual product data changes
-  
-  if (
-    prevProps.visible !== nextProps.visible ||
-    prevProps.activeLayerId !== nextProps.activeLayerId ||
-    prevProps.top !== nextProps.top ||
-    prevProps.products.length !== nextProps.products.length
-  ) {
-    return false; // Props changed, should re-render
-  }
+  }),
+  (prevProps, nextProps) => {
+    // Custom comparison for ProductListPanel props
+    // Only re-render if visible status, activeLayerId, top position, or actual product data changes
 
-  // Quick check: if arrays are the same reference, no need to re-render
-  if (prevProps.products === nextProps.products) {
-    return true;
-  }
-
-  // Efficient comparison: check only display-relevant properties
-  // Loop through products and compare key properties directly
-  for (let i = 0; i < prevProps.products.length; i++) {
-    const prev = prevProps.products[i];
-    const next = nextProps.products[i];
-    
-    // Compare only the properties that affect the ProductListPanel display
     if (
-      prev.id !== next.id ||
-      prev.sku !== next.sku ||
-      prev.name !== next.name ||
-      prev.product_type !== next.product_type ||
-      prev.quantity !== next.quantity ||
-      prev.price !== next.price ||
-      prev.brand !== next.brand ||
-      prev.color !== next.color ||
-      (prev.thumbnailUrl || prev.thumbnailImageUrl) !== (next.thumbnailUrl || next.thumbnailImageUrl)
+      prevProps.visible !== nextProps.visible ||
+      prevProps.activeLayerId !== nextProps.activeLayerId ||
+      prevProps.top !== nextProps.top ||
+      prevProps.products.length !== nextProps.products.length
     ) {
-      return false; // Found a difference, should re-render
+      return false; // Props changed, should re-render
     }
-  }
 
-  return true; // No differences found, skip re-render
-});
+    // Quick check: if arrays are the same reference, no need to re-render
+    if (prevProps.products === nextProps.products) {
+      return true;
+    }
+
+    // Efficient comparison: check only display-relevant properties
+    // Loop through products and compare key properties directly
+    for (let i = 0; i < prevProps.products.length; i++) {
+      const prev = prevProps.products[i];
+      const next = nextProps.products[i];
+
+      // Compare only the properties that affect the ProductListPanel display
+      if (
+        prev.id !== next.id ||
+        prev.sku !== next.sku ||
+        prev.name !== next.name ||
+        prev.product_type !== next.product_type ||
+        prev.quantity !== next.quantity ||
+        prev.price !== next.price ||
+        prev.brand !== next.brand ||
+        prev.color !== next.color ||
+        (prev.thumbnailUrl || prev.thumbnailImageUrl) !==
+          (next.thumbnailUrl || next.thumbnailImageUrl)
+      ) {
+        return false; // Found a difference, should re-render
+      }
+    }
+
+    return true; // No differences found, skip re-render
+  },
+);
 
 ProductListPanel.displayName = "ProductListPanel";
 

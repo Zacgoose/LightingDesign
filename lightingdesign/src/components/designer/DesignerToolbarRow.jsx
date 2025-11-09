@@ -155,12 +155,7 @@ export const DesignerToolbarRow = memo(
               Upload Floor Plan
             </Button>
             {hasBackgroundImage && (
-              <Button
-                variant="outlined"
-                startIcon={<Edit />}
-                size="small"
-                onClick={onEditImage}
-              >
+              <Button variant="outlined" startIcon={<Edit />} size="small" onClick={onEditImage}>
                 Edit Image
               </Button>
             )}

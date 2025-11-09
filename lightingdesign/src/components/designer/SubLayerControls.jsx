@@ -28,100 +28,99 @@ import { ConfirmDialog } from "/src/components/designer/ConfirmDialog";
 /**
  * Memoized sublayer item component to prevent unnecessary re-renders
  */
-const SublayerItem = memo(({ 
-  sublayer, 
-  defaultSublayerId,
-  editingSublayerId,
-  editingName,
-  onToggle,
-  onContextMenu,
-  onEditingNameChange,
-  onFinishRename,
-  onEditKeyDown
-}) => {
-  const handleToggle = useCallback(() => {
-    onToggle(sublayer.id);
-  }, [sublayer.id, onToggle]);
+const SublayerItem = memo(
+  ({
+    sublayer,
+    defaultSublayerId,
+    editingSublayerId,
+    editingName,
+    onToggle,
+    onContextMenu,
+    onEditingNameChange,
+    onFinishRename,
+    onEditKeyDown,
+  }) => {
+    const handleToggle = useCallback(() => {
+      onToggle(sublayer.id);
+    }, [sublayer.id, onToggle]);
 
-  const handleContextMenuClick = useCallback((e) => {
-    onContextMenu(e, sublayer);
-  }, [sublayer, onContextMenu]);
+    const handleContextMenuClick = useCallback(
+      (e) => {
+        onContextMenu(e, sublayer);
+      },
+      [sublayer, onContextMenu],
+    );
 
-  const handleNameChange = useCallback((e) => {
-    onEditingNameChange(e.target.value);
-  }, [onEditingNameChange]);
+    const handleNameChange = useCallback(
+      (e) => {
+        onEditingNameChange(e.target.value);
+      },
+      [onEditingNameChange],
+    );
 
-  const handleFinishRename = useCallback(() => {
-    onFinishRename(sublayer.id);
-  }, [sublayer.id, onFinishRename]);
+    const handleFinishRename = useCallback(() => {
+      onFinishRename(sublayer.id);
+    }, [sublayer.id, onFinishRename]);
 
-  const isEditing = editingSublayerId === sublayer.id;
-  const isDefault = defaultSublayerId === sublayer.id;
+    const isEditing = editingSublayerId === sublayer.id;
+    const isDefault = defaultSublayerId === sublayer.id;
 
-  return (
-    <Box
-      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-      onContextMenu={handleContextMenuClick}
-    >
-      {isEditing ? (
-        <TextField
-          size="small"
-          value={editingName}
-          onChange={handleNameChange}
-          onBlur={handleFinishRename}
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          onKeyDown={onEditKeyDown}
-          autoFocus
-          fullWidth
-          sx={{ my: 0.5 }}
-        />
-      ) : (
-        <>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={sublayer.visible}
-                onChange={handleToggle}
-                size="small"
-              />
-            }
-            label={
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Typography variant="h6" sx={{ fontWeight: 500, fontSize: "0.8rem" }}>
-                  {sublayer.name}
-                </Typography>
-                {isDefault && (
-                  <Tooltip title="Default sublayer for new objects">
-                    <StarIcon
-                      fontSize="small"
-                      color="primary"
-                      sx={{ fontSize: 14 }}
-                    />
-                  </Tooltip>
-                )}
-              </Box>
-            }
-            sx={{ flex: 1 }}
+    return (
+      <Box
+        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+        onContextMenu={handleContextMenuClick}
+      >
+        {isEditing ? (
+          <TextField
+            size="small"
+            value={editingName}
+            onChange={handleNameChange}
+            onBlur={handleFinishRename}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onKeyDown={onEditKeyDown}
+            autoFocus
+            fullWidth
+            sx={{ my: 0.5 }}
           />
-          <IconButton size="small" onClick={handleContextMenuClick}>
-            <MoreVertIcon fontSize="small" />
-          </IconButton>
-        </>
-      )}
-    </Box>
-  );
-}, (prevProps, nextProps) => {
-  // Only re-render if sublayer properties or editing state changes
-  return (
-    prevProps.sublayer.id === nextProps.sublayer.id &&
-    prevProps.sublayer.name === nextProps.sublayer.name &&
-    prevProps.sublayer.visible === nextProps.sublayer.visible &&
-    prevProps.defaultSublayerId === nextProps.defaultSublayerId &&
-    prevProps.editingSublayerId === nextProps.editingSublayerId &&
-    prevProps.editingName === nextProps.editingName
-  );
-});
+        ) : (
+          <>
+            <FormControlLabel
+              control={<Checkbox checked={sublayer.visible} onChange={handleToggle} size="small" />}
+              label={
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 500, fontSize: "0.8rem" }}>
+                    {sublayer.name}
+                  </Typography>
+                  {isDefault && (
+                    <Tooltip title="Default sublayer for new objects">
+                      <StarIcon fontSize="small" color="primary" sx={{ fontSize: 14 }} />
+                    </Tooltip>
+                  )}
+                </Box>
+              }
+              sx={{ flex: 1 }}
+            />
+            <IconButton size="small" onClick={handleContextMenuClick}>
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+          </>
+        )}
+      </Box>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Only re-render if sublayer properties or editing state changes
+    return (
+      prevProps.sublayer.id === nextProps.sublayer.id &&
+      prevProps.sublayer.name === nextProps.sublayer.name &&
+      prevProps.sublayer.visible === nextProps.sublayer.visible &&
+      prevProps.defaultSublayerId === nextProps.defaultSublayerId &&
+      prevProps.editingSublayerId === nextProps.editingSublayerId &&
+      prevProps.editingName === nextProps.editingName
+    );
+  },
+);
 
 SublayerItem.displayName = "SublayerItem";
 
@@ -180,14 +179,17 @@ export const SubLayerControls = memo(
         }, 0);
       };
 
-      const handleFinishRename = useCallback((sublayerId) => {
-        if (editingName.trim()) {
-          onSublayerRename(layerId, sublayerId, editingName.trim());
-        }
-        // Always reset editing state, even if name is empty
-        setEditingSublayerId(null);
-        setEditingName("");
-      }, [editingName, layerId, onSublayerRename]);
+      const handleFinishRename = useCallback(
+        (sublayerId) => {
+          if (editingName.trim()) {
+            onSublayerRename(layerId, sublayerId, editingName.trim());
+          }
+          // Always reset editing state, even if name is empty
+          setEditingSublayerId(null);
+          setEditingName("");
+        },
+        [editingName, layerId, onSublayerRename],
+      );
 
       const handleDelete = (sublayerId) => {
         setSublayerToDelete(sublayerId);
@@ -215,25 +217,31 @@ export const SubLayerControls = memo(
         onSublayerAdd(layerId, name);
       };
 
-      const handleSublayerToggle = useCallback((sublayerId) => {
-        onSublayerToggle(layerId, sublayerId);
-      }, [layerId, onSublayerToggle]);
+      const handleSublayerToggle = useCallback(
+        (sublayerId) => {
+          onSublayerToggle(layerId, sublayerId);
+        },
+        [layerId, onSublayerToggle],
+      );
 
       const handleEditingNameChange = useCallback((value) => {
         setEditingName(value);
       }, []);
 
-      const handleEditKeyDown = useCallback((e) => {
-        if (e.key === "Enter") {
-          const sublayerId = editingSublayerId;
-          if (sublayerId) {
-            handleFinishRename(sublayerId);
+      const handleEditKeyDown = useCallback(
+        (e) => {
+          if (e.key === "Enter") {
+            const sublayerId = editingSublayerId;
+            if (sublayerId) {
+              handleFinishRename(sublayerId);
+            }
+          } else if (e.key === "Escape") {
+            setEditingSublayerId(null);
+            setEditingName("");
           }
-        } else if (e.key === "Escape") {
-          setEditingSublayerId(null);
-          setEditingName("");
-        }
-      }, [editingSublayerId, handleFinishRename]);
+        },
+        [editingSublayerId, handleFinishRename],
+      );
 
       return (
         <>
@@ -353,7 +361,7 @@ export const SubLayerControls = memo(
   (prevProps, nextProps) => {
     // Custom comparison for SubLayerControls props
     // Only re-render if sublayers, layerId, defaultSublayerId, or top changes
-    
+
     if (
       prevProps.layerId !== nextProps.layerId ||
       prevProps.defaultSublayerId !== nextProps.defaultSublayerId ||
@@ -372,18 +380,14 @@ export const SubLayerControls = memo(
     for (let i = 0; i < prevProps.sublayers.length; i++) {
       const prev = prevProps.sublayers[i];
       const next = nextProps.sublayers[i];
-      
-      if (
-        prev.id !== next.id ||
-        prev.name !== next.name ||
-        prev.visible !== next.visible
-      ) {
+
+      if (prev.id !== next.id || prev.name !== next.name || prev.visible !== next.visible) {
         return false; // Found a difference, should re-render
       }
     }
 
     return true; // No differences found, skip re-render
-  }
+  },
 );
 
 SubLayerControls.displayName = "SubLayerControls";

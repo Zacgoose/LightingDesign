@@ -1,4 +1,4 @@
-import { Text, Transformer, Group, Rect } from "react-konva";
+import { Text, Transformer, Group } from "react-konva";
 import React, { useEffect, useRef, memo } from "react";
 
 export const TextBox = memo(
@@ -86,8 +86,8 @@ export const TextBox = memo(
             
             ctx.beginPath();
             
-            // Always include text area with small padding
-            const textPadding = 5;
+            // Always include text area with generous padding for easier clicking
+            const textPadding = 10;
             ctx.rect(
               -textWidth / 2 - textPadding,
               -textHeight / 2 - textPadding,

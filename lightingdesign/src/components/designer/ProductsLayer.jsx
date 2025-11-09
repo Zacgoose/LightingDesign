@@ -160,6 +160,36 @@ export const ProductsLayer = memo(
     const letterPrefixMap = useMemo(() => {
       const prefixMap = new Map();
 
+      // First pass: Group products by their letter prefix and build unique grouping keys per prefix
+      const groupingKeysByPrefix = new Map();
+
+      products.forEach((product) => {
+        const productType = product.product_type?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
+        
+        // Skip products with empty letterPrefix (visual helpers like boxoutline)
+        if (config.letterPrefix === "") {
+          return;
+        }
+        
+        const letterPrefix = config.letterPrefix || "O";
+
+        // Initialize the grouping keys array for this prefix if not exists
+        if (!groupingKeysByPrefix.has(letterPrefix)) {
+          groupingKeysByPrefix.set(letterPrefix, []);
+        }
+
+        // Get the grouping key for this product
+        const groupingKey = getProductGroupingKey(product, productTypesConfig);
+        
+        // Add to uniqueGroupingKeys if not already present (preserves insertion order)
+        const uniqueGroupingKeys = groupingKeysByPrefix.get(letterPrefix);
+        if (!uniqueGroupingKeys.includes(groupingKey)) {
+          uniqueGroupingKeys.push(groupingKey);
+        }
+      });
+
+      // Second pass: Assign letter prefixes based on grouping key position
       products.forEach((product) => {
         const productType = product.product_type?.toLowerCase() || "default";
         const config = productTypesConfig[productType] || productTypesConfig.default;
@@ -171,31 +201,9 @@ export const ProductsLayer = memo(
         }
         
         const letterPrefix = config.letterPrefix || "O";
-
-        // Filter to products with the same letter prefix
-        const samePrefixProducts = products.filter((p) => {
-          const pType = p.product_type?.toLowerCase() || "default";
-          const pConfig = productTypesConfig[pType] || productTypesConfig.default;
-          const pPrefix = pConfig.letterPrefix || "O";
-          return pPrefix === letterPrefix;
-        });
-
-        // Get the grouping key for this product
         const groupingKey = getProductGroupingKey(product, productTypesConfig);
 
-        // Build a list of unique grouping keys in the order they first appear
-        // This ensures O1 goes to the first unique type, O2 to the second, etc.
-        const uniqueGroupingKeys = [];
-        const seenKeys = new Set();
-        for (const p of samePrefixProducts) {
-          const key = getProductGroupingKey(p, productTypesConfig);
-          if (!seenKeys.has(key)) {
-            seenKeys.add(key);
-            uniqueGroupingKeys.push(key);
-          }
-        }
-
-        // Find the index of this product's grouping key
+        const uniqueGroupingKeys = groupingKeysByPrefix.get(letterPrefix) || [];
         const groupIndex = uniqueGroupingKeys.indexOf(groupingKey);
 
         if (groupIndex !== -1) {

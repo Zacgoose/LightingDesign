@@ -1,4 +1,4 @@
-import { Text, Transformer, Group, Rect, Shape } from "react-konva";
+import { Text, Transformer, Group, Rect } from "react-konva";
 import React, { useEffect, useRef, memo } from "react";
 
 export const TextBox = memo(
@@ -159,29 +159,6 @@ export const TextBox = memo(
           }}
           onContextMenu={onContextMenu}
         >
-          {/* Invisible shape for precise hit detection - only text area is clickable */}
-          <Shape
-            sceneFunc={(ctx, shape) => {
-              // Don't draw anything visible
-            }}
-            hitFunc={(ctx, shape) => {
-              // Custom hit detection - only make text area clickable (not extra space)
-              ctx.beginPath();
-              
-              // Only include text area with minimal padding
-              const textPadding = 2;
-              ctx.rect(
-                -textWidth / 2 - textPadding,
-                -textHeight / 2 - textPadding,
-                textWidth + textPadding * 2,
-                (textBox.height || textHeight) + textPadding * 2
-              );
-              
-              ctx.closePath();
-              ctx.fillShape(shape);
-            }}
-            listening={true}
-          />
           <Text
             ref={textRef}
             x={-textWidth / 2}
@@ -196,7 +173,7 @@ export const TextBox = memo(
             width={textBox.max}
             wrap="none"
             draggable={false}
-            listening={false}
+            listening={true}
           />
         </Group>
       </>

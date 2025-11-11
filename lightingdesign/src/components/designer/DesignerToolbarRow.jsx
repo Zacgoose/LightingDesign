@@ -6,6 +6,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import { useState, useEffect, useRef, memo, useCallback } from "react";
 import {
@@ -27,6 +28,7 @@ import {
   VerticalAlignCenter,
   VerticalAlignTop,
   MultipleStop,
+  Refresh,
 } from "@mui/icons-material";
 import { DesignLockButton } from "/src/components/designer/DesignLockButton";
 
@@ -34,6 +36,7 @@ export const DesignerToolbarRow = memo(
   ({ mainProps, toolsProps, viewProps, alignProps }) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const [showCollapseButton, setShowCollapseButton] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const containerRef = useRef(null);
 
     useEffect(() => {
@@ -133,6 +136,14 @@ export const DesignerToolbarRow = memo(
       },
       [onToolChange],
     );
+    
+    const handleRefreshClick = useCallback(async () => {
+      if (onRefreshLockStatus && !isRefreshing) {
+        setIsRefreshing(true);
+        await onRefreshLockStatus();
+        setIsRefreshing(false);
+      }
+    }, [onRefreshLockStatus, isRefreshing]);
 
     return (
       <Card sx={{ px: 1, py: 0, mb: 0 }}>
@@ -168,6 +179,15 @@ export const DesignerToolbarRow = memo(
               onRefresh={onRefreshLockStatus}
               disabled={false}
             />
+            <IconButton
+              size="small"
+              onClick={handleRefreshClick}
+              disabled={isRefreshing}
+              color="primary"
+              title="Check lock status"
+            >
+              {isRefreshing ? <CircularProgress size={20} /> : <Refresh />}
+            </IconButton>
             <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave} disabled={!isOwner}>
               Save Project
             </Button>

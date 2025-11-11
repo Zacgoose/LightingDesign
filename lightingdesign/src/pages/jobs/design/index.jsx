@@ -54,6 +54,9 @@ const Page = () => {
   const queryClient = useQueryClient();
   const settings = useSettings();
 
+  // State for forcing component re-renders after lock state changes
+  const [, forceUpdate] = useState(0);
+
   // State for tracking save status
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
@@ -68,13 +71,13 @@ const Page = () => {
     waiting: !!id,
   });
 
-  // Separate lightweight query for lock status polling (every 10 seconds)
+  // Separate lightweight query for lock status polling (every 1 minute)
   const lockStatusData = ApiGetCall({
     url: "/api/ExecGetDesignLockStatus",
     data: { jobId: id },
     queryKey: `DesignLockStatus-${id}`,
     waiting: !!id,
-    refetchInterval: 10000, // Poll every 10 seconds for lock status changes only
+    refetchInterval: 60000, // Poll every 1 minute for lock status changes only
   });
 
   // Load products catalog for enriching saved designs
@@ -529,6 +532,9 @@ const Page = () => {
         queryClient.refetchQueries({ queryKey: [`Design-${id}`], type: 'active' })
       ]);
       
+      // Force component re-render to update toolbar immediately
+      forceUpdate(n => n + 1);
+      
       console.log("Lock acquired and data refreshed");
       
       return { success: true, data: result };
@@ -551,7 +557,7 @@ const Page = () => {
         error: error.response?.data?.error || error.message || "Failed to lock design" 
       };
     }
-  }, [id, lockDesignMutation, queryClient]);
+  }, [id, lockDesignMutation, queryClient, forceUpdate]);
 
   const handleUnlockDesign = useCallback(async () => {
     if (!id) return { success: false, error: "No job ID" };
@@ -576,6 +582,9 @@ const Page = () => {
         queryClient.refetchQueries({ queryKey: [`Design-${id}`], type: 'active' })
       ]);
       
+      // Force component re-render to update toolbar immediately
+      forceUpdate(n => n + 1);
+      
       console.log("Lock released and data refreshed");
       
       return { success: true, data: result };
@@ -583,14 +592,16 @@ const Page = () => {
       console.error("Error unlocking design:", error);
       return { success: false, error: error.message || "Failed to unlock design" };
     }
-  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient]);
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate]);
 
   // Manual refresh handler to check lock status
   const handleRefreshLockStatus = useCallback(async () => {
     if (!id) return;
     console.log("Manually refreshing lock status...");
     await queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`] });
-  }, [id, queryClient]);
+    // Force component re-render to update UI immediately
+    forceUpdate(n => n + 1);
+  }, [id, queryClient, forceUpdate]);
 
   // Auto-refresh lock every 1 minute when user owns the lock (15 min timeout)
   useEffect(() => {

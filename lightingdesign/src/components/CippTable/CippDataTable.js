@@ -237,7 +237,7 @@ export const CippDataTable = (props) => {
     if (generatedColumns.columnKey) {
       setUsedColumns(generatedColumns.finalColumns);
     }
-  }, [generatedColumns.columnKey, generatedColumns.finalColumns]);
+  }, [generatedColumns.columnKey]);
   
   // Set initial column visibility only once
   useEffect(() => {
@@ -245,7 +245,7 @@ export const CippDataTable = (props) => {
       setColumnVisibility(generatedColumns.newVisibility);
       columnsInitializedRef.current = true;
     }
-  }, [generatedColumns.columnKey, generatedColumns.newVisibility]);
+  }, [generatedColumns.columnKey]);
   
   // Apply default sorting
   useEffect(() => {

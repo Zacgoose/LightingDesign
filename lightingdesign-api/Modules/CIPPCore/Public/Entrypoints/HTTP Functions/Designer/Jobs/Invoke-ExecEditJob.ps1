@@ -57,6 +57,8 @@ function Invoke-ExecEditJob {
 
     Add-CIPPAzDataTableEntity @Table -Entity $Entity -Force
 
+    Write-LogMessage -API 'EditJob' -message "Job updated successfully: JobId: $JobId, JobNumber: $($Entity.JobNumber)" -Sev 'Info' -headers $Request.Headers
+
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::OK
         Body       = @{ Results = 'Job updated successfully'; JobId = $JobId }

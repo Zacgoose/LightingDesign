@@ -49,6 +49,9 @@ function Invoke-ExecDeleteJob {
             Remove-AzDataTableEntity @DesignTable -Entity $DesignEntity -Force
         }
     }
+    
+    Write-LogMessage -API 'DeleteJob' -message "Job deleted successfully: JobId: $JobId, JobNumber: $($ExistingJob.JobNumber)" -Sev 'Info' -headers $Request.Headers
+    
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::OK
         Body       = @{ Results = 'Job deleted successfully' }

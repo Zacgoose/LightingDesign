@@ -42,6 +42,8 @@ function Invoke-ExecNewCustomer {
 
     Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $Entity -Force
 
+    Write-LogMessage -API 'NewCustomer' -message "Customer created successfully: CustomerId: $($Entity.RowKey), CustomerName: $CustomerName" -Sev 'Info' -headers $Request.Headers
+
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::Created
         Body       = $Entity

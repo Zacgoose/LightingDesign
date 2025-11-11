@@ -50,6 +50,8 @@ function Invoke-ExecEditCustomer {
 
     Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $Entity -Force
 
+    Write-LogMessage -API 'EditCustomer' -message "Customer updated successfully: CustomerId: $CustomerId, CustomerName: $($Entity.CustomerName)" -Sev 'Info' -headers $Request.Headers
+
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::OK
         Body       = @{ Results = 'Customer updated successfully'; CustomerId = $CustomerId }

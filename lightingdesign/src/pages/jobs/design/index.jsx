@@ -2862,8 +2862,7 @@ const Page = () => {
                 }}
               >
                 <Typography variant="body2" fontWeight="bold">
-                  🔒 Read-Only Mode: Design locked by {lockInfo.LockedBy}. Click "Enable Editing"
-                  to unlock and start making changes.
+                  🔒 Read-Only Mode: Design locked by {lockInfo.LockedBy}.
                 </Typography>
               </Box>
             )}

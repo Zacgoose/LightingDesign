@@ -583,6 +583,8 @@ const Page = () => {
     console.log("[UNLOCK] Current selectedIds:", selectedIds);
     console.log("[UNLOCK] Current selectedConnectorIds:", selectedConnectorIds);
     console.log("[UNLOCK] Current selectedTextId:", selectedTextId);
+    console.log("[UNLOCK] selectionGroupRef.current:", selectionGroupRef.current);
+    console.log("[UNLOCK] selectionSnapshot:", selectionSnapshot);
 
     // Apply any pending transformations before saving
     // This ensures all transformations are saved even if items are selected
@@ -597,6 +599,8 @@ const Page = () => {
       // This ensures the layer has the latest data before save, without waiting for useEffect
       updateLayer(activeLayerIdRef.current, { products: transformed });
       console.log("[UNLOCK] Updated layer directly with transformed products");
+    } else {
+      console.log("[UNLOCK] No transformations to apply - either no selection or no transform detected");
     }
     
     // Clear all selections (products, connectors, and text) after applying transformations
@@ -637,7 +641,7 @@ const Page = () => {
       console.error("[UNLOCK] Error unlocking design:", error);
       return { success: false, error: error.message || "Failed to unlock design" };
     }
-  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId, selectedIds, selectedConnectorIds, selectedTextId, updateLayer]);
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId, selectedIds, selectedConnectorIds, selectedTextId, updateLayer, selectionGroupRef, selectionSnapshot]);
 
   // Manual refresh handler to check lock status
   const handleRefreshLockStatus = useCallback(async () => {

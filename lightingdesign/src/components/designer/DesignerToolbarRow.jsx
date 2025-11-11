@@ -92,6 +92,7 @@ export const DesignerToolbarRow = memo(
       lockInfo = null,
       onLock,
       onUnlock,
+      onRefreshLockStatus,
     } = mainProps || {};
 
     const { selectedTool, onToolChange, placementMode, onStopPlacement, onDisconnectCable } =
@@ -164,6 +165,7 @@ export const DesignerToolbarRow = memo(
               lockInfo={lockInfo}
               onLock={onLock}
               onUnlock={onUnlock}
+              onRefresh={onRefreshLockStatus}
               disabled={false}
             />
             <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave} disabled={!isOwner}>

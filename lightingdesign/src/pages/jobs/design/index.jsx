@@ -66,6 +66,7 @@ const Page = () => {
     data: { jobId: id },
     queryKey: `Design-${id}`,
     waiting: !!id,
+    refetchInterval: 10000, // Poll every 10 seconds to check lock status changes
   });
 
   // Load products catalog for enriching saved designs
@@ -562,6 +563,13 @@ const Page = () => {
       return { success: false, error: error.message || "Failed to unlock design" };
     }
   }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient]);
+
+  // Manual refresh handler to check lock status
+  const handleRefreshLockStatus = useCallback(async () => {
+    if (!id) return;
+    console.log("Manually refreshing lock status...");
+    await queryClient.refetchQueries({ queryKey: [`Design-${id}`] });
+  }, [id, queryClient]);
 
   // Auto-refresh lock every 1 minute when user owns the lock (15 min timeout)
   useEffect(() => {
@@ -2609,6 +2617,7 @@ const Page = () => {
       lockInfo,
       onLock: handleLockDesign,
       onUnlock: handleUnlockDesign,
+      onRefreshLockStatus: handleRefreshLockStatus,
     }),
     [
       handleUploadFloorPlan,
@@ -2624,6 +2633,7 @@ const Page = () => {
       lockInfo,
       handleLockDesign,
       handleUnlockDesign,
+      handleRefreshLockStatus,
     ],
   );
 

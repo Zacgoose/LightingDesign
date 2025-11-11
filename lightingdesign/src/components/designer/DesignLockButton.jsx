@@ -12,12 +12,14 @@ import {
 } from "@mui/material";
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { format } from "date-fns";
 
-export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock, disabled }) => {
+export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock, onRefresh, disabled }) => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [isLocking, setIsLocking] = useState(false);
   const [errorDialog, setErrorDialog] = useState({ open: false, message: "", lockInfo: null });
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleLockClick = async () => {
     if (isOwner) {
@@ -55,6 +57,14 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
 
   const handleCloseErrorDialog = () => {
     setErrorDialog({ open: false, message: "", lockInfo: null });
+  };
+
+  const handleRefreshStatus = async () => {
+    if (onRefresh) {
+      setIsRefreshing(true);
+      await onRefresh();
+      setIsRefreshing(false);
+    }
   };
 
   const handleConfirmUnlock = async () => {
@@ -163,6 +173,17 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
           <DialogTitle>{dialogContent.title}</DialogTitle>
           <DialogContent>{dialogContent.content}</DialogContent>
           <DialogActions>
+            {/* Show "Check Status" button when locked by someone else */}
+            {isLocked && !isOwner && (
+              <Button 
+                onClick={handleRefreshStatus} 
+                color="primary"
+                startIcon={isRefreshing ? <CircularProgress size={16} /> : <RefreshIcon />}
+                disabled={isRefreshing}
+              >
+                {isRefreshing ? "Checking..." : "Check Status"}
+              </Button>
+            )}
             <Button onClick={handleCloseDialog} color="inherit">
               Close
             </Button>

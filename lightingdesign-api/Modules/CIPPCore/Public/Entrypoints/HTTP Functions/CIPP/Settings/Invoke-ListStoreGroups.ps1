@@ -12,7 +12,8 @@ function Invoke-ListStoreGroups {
 
     $groupFilter = $Request.Query.groupId ?? $Request.Body.groupId
     $StoreGroups = (Get-StoreGroups -GroupId $groupFilter) ?? @()
-    $Body = $StoreGroups
+    # Ensure we always return an array, even with a single result
+    $Body = @($StoreGroups)
 
     return ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK

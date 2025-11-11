@@ -24,6 +24,8 @@ function Invoke-ExecGetCustomer {
     $Row = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
     
     if ($Row) {
+        Write-LogMessage -API 'GetCustomer' -message "Retrieved customer: CustomerId: $CustomerId, CustomerName: $($Row.CustomerName)" -Sev 'Info' -headers $Request.Headers
+        
         $ReturnedCustomer = [PSCustomObject]@{
             id             = $Row.RowKey
             customerName   = $Row.CustomerName
@@ -41,6 +43,7 @@ function Invoke-ExecGetCustomer {
             createdDate    = $Row.Timestamp
         }
     } else {
+        Write-LogMessage -API 'GetCustomer' -message "Customer not found: CustomerId: $CustomerId" -Sev 'Warning' -headers $Request.Headers
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::NotFound
             Body       = @{ error = 'Customer not found' }

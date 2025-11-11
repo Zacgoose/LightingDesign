@@ -24,6 +24,8 @@ function Invoke-ExecGetJob {
     $Row = Get-CIPPAzDataTableEntity @Table -Filter $Filter
 
     if ($Row) {
+        Write-LogMessage -API 'GetJob' -message "Retrieved job: JobId: $JobId, JobNumber: $($Row.JobNumber)" -Sev 'Info' -headers $Request.Headers
+        
         $JobData = if ($Row.JobData -and (Test-Json -Json $Row.JobData -ErrorAction SilentlyContinue)) {
             $Row.JobData | ConvertFrom-Json
         } else { $Row.JobData }
@@ -52,6 +54,7 @@ function Invoke-ExecGetJob {
             jobData          = $JobData
         }
     } else {
+        Write-LogMessage -API 'GetJob' -message "Job not found: JobId: $JobId" -Sev 'Warning' -headers $Request.Headers
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::NotFound
             Body       = @{ error = 'Job not found' }

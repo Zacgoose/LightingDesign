@@ -88,6 +88,7 @@ function Invoke-ExecGetDesign {
 
         if ($Row) {
             Write-Host "Retrieved design: RowKey=$($Row.RowKey)"
+            Write-LogMessage -API 'GetDesign' -message "Retrieved design for JobId: $JobId (DesignId: $($Row.RowKey))" -Sev 'Info' -headers $Request.Headers
             # Get the compressed design data
             $CompressedData = $Row.DesignData
             if ([string]::IsNullOrWhiteSpace($CompressedData)) {
@@ -151,6 +152,7 @@ function Invoke-ExecGetDesign {
         } else {
             # Return empty design for new jobs
             Write-Host "No existing design found for JobId: $JobId"
+            Write-LogMessage -API 'GetDesign' -message "No existing design found for JobId: $JobId, returning empty design" -Sev 'Info' -headers $Request.Headers
             $ReturnedDesign = [PSCustomObject]@{
                 designId     = $null
                 jobId        = $JobId
@@ -171,6 +173,7 @@ function Invoke-ExecGetDesign {
 
     } catch {
         Write-Error "Error retrieving design: $_"
+        Write-LogMessage -API 'GetDesign' -message "Failed to retrieve design for JobId: $JobId - Error: $($_.Exception.Message)" -Sev 'Error' -headers $Request.Headers -LogData $_
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::InternalServerError
             Body       = @{

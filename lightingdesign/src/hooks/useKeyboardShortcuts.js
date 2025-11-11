@@ -13,6 +13,7 @@ export const useKeyboardShortcuts = ({
   onEscape,
   onUndo,
   onRedo,
+  isEditingDisabled = false,
 }) => {
   // Use refs to access latest values without re-registering event listeners
   const selectedIdsRef = useRef(selectedIds);
@@ -24,6 +25,7 @@ export const useKeyboardShortcuts = ({
   const onEscapeRef = useRef(onEscape);
   const onUndoRef = useRef(onUndo);
   const onRedoRef = useRef(onRedo);
+  const isEditingDisabledRef = useRef(isEditingDisabled);
 
   // Update refs when values change
   useEffect(() => {
@@ -36,41 +38,48 @@ export const useKeyboardShortcuts = ({
     onEscapeRef.current = onEscape;
     onUndoRef.current = onUndo;
     onRedoRef.current = onRedo;
+    isEditingDisabledRef.current = isEditingDisabled;
   });
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
 
-      // Copy
+      // Copy - allow even in read-only mode (viewing/copying should be allowed)
       if ((e.ctrlKey || e.metaKey) && e.key === "c" && selectedIdsRef.current.length > 0) {
         e.preventDefault();
         onCopyRef.current();
       }
 
-      // Paste
+      // Paste - block in read-only mode
       if (
         (e.ctrlKey || e.metaKey) &&
         e.key === "v" &&
         (clipboard.current.products?.length > 0 || clipboard.current.textBoxes?.length > 0)
       ) {
         e.preventDefault();
-        onPasteRef.current();
+        if (!isEditingDisabledRef.current) {
+          onPasteRef.current();
+        }
       }
 
-      // Delete
+      // Delete - block in read-only mode
       if (
         (e.key === "Delete" || e.key === "Backspace") &&
         (selectedIdsRef.current.length > 0 || selectedConnectorIdsRef.current.length > 0)
       ) {
         e.preventDefault();
-        onDeleteRef.current();
+        if (!isEditingDisabledRef.current) {
+          onDeleteRef.current();
+        }
       }
 
-      // Select all
+      // Select all - block in read-only mode
       if ((e.ctrlKey || e.metaKey) && e.key === "a") {
         e.preventDefault();
-        onSelectAllRef.current();
+        if (!isEditingDisabledRef.current) {
+          onSelectAllRef.current();
+        }
       }
 
       // Escape
@@ -78,19 +87,23 @@ export const useKeyboardShortcuts = ({
         onEscapeRef.current();
       }
 
-      // Undo
+      // Undo - block in read-only mode
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
-        onUndoRef.current();
+        if (!isEditingDisabledRef.current) {
+          onUndoRef.current();
+        }
       }
 
-      // Redo (Ctrl+Shift+Z or Ctrl+Y)
+      // Redo (Ctrl+Shift+Z or Ctrl+Y) - block in read-only mode
       if (
         ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z") ||
         ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y" && !e.shiftKey)
       ) {
         e.preventDefault();
-        onRedoRef.current();
+        if (!isEditingDisabledRef.current) {
+          onRedoRef.current();
+        }
       }
     };
 

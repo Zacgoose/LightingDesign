@@ -3,7 +3,7 @@ using namespace System.Net
 Function Invoke-ExecStoreBeaconProducts {
     <#
     .FUNCTIONALITY
-        Entrypoint
+        Internal
     .ROLE
         LightingDesigner.Products.ReadWrite
     #>

@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 export const useKeyboardShortcuts = ({
   products,
   selectedIds,
-  selectedConnectorId,
+  selectedConnectorIds,
   connectors,
   clipboard,
   onCopy,
@@ -16,7 +16,7 @@ export const useKeyboardShortcuts = ({
 }) => {
   // Use refs to access latest values without re-registering event listeners
   const selectedIdsRef = useRef(selectedIds);
-  const selectedConnectorIdRef = useRef(selectedConnectorId);
+  const selectedConnectorIdsRef = useRef(selectedConnectorIds);
   const onCopyRef = useRef(onCopy);
   const onPasteRef = useRef(onPaste);
   const onDeleteRef = useRef(onDelete);
@@ -28,7 +28,7 @@ export const useKeyboardShortcuts = ({
   // Update refs when values change
   useEffect(() => {
     selectedIdsRef.current = selectedIds;
-    selectedConnectorIdRef.current = selectedConnectorId;
+    selectedConnectorIdsRef.current = selectedConnectorIds;
     onCopyRef.current = onCopy;
     onPasteRef.current = onPaste;
     onDeleteRef.current = onDelete;
@@ -40,51 +40,61 @@ export const useKeyboardShortcuts = ({
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
 
       // Copy
-      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && selectedIdsRef.current.length > 0) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "c" && selectedIdsRef.current.length > 0) {
         e.preventDefault();
         onCopyRef.current();
       }
-      
+
       // Paste
-      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboard.current.products?.length > 0) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === "v" &&
+        (clipboard.current.products?.length > 0 || clipboard.current.textBoxes?.length > 0)
+      ) {
         e.preventDefault();
         onPasteRef.current();
       }
 
       // Delete
-      if ((e.key === 'Delete' || e.key === 'Backspace') && (selectedIdsRef.current.length > 0 || selectedConnectorIdRef.current)) {
+      if (
+        (e.key === "Delete" || e.key === "Backspace") &&
+        (selectedIdsRef.current.length > 0 || selectedConnectorIdsRef.current.length > 0)
+      ) {
         e.preventDefault();
         onDeleteRef.current();
       }
 
       // Select all
-      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
         e.preventDefault();
         onSelectAllRef.current();
       }
 
       // Escape
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         onEscapeRef.current();
       }
 
       // Undo
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
         onUndoRef.current();
       }
 
-      // Redo
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') {
+      // Redo (Ctrl+Shift+Z or Ctrl+Y)
+      if (
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z") ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y" && !e.shiftKey)
+      ) {
         e.preventDefault();
         onRedoRef.current();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []); // Empty dependency array - only register once
 };

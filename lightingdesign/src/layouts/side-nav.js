@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { usePathname } from "next/navigation";
 import PropTypes from "prop-types";
 import { Box, Divider, Drawer, Stack, IconButton, Tooltip } from "@mui/material";
@@ -77,7 +77,7 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname }) => {
             pathname,
           })}
         </Stack>
-      </SideNavItem>
+      </SideNavItem>,
     );
   } else {
     acc.push(
@@ -90,24 +90,24 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname }) => {
         key={item.title}
         path={item.path}
         title={item.title}
-      />
+      />,
     );
   }
 
   return acc;
 };
 
-export const SideNav = (props) => {
+const SideNavComponent = (props) => {
   const { items, onPin, pinned = false } = props;
   const pathname = usePathname();
   const [hovered, setHovered] = useState(false);
   const [localPinned, setLocalPinned] = useState(pinned);
-  
+
   // Update local state when prop changes
   useEffect(() => {
     setLocalPinned(pinned);
   }, [pinned]);
-  
+
   // Simple collapse logic: collapse only when NOT pinned AND NOT hovered
   const collapse = !localPinned && !hovered;
   const { data: profile } = ApiGetCall({ url: "/api/me", queryKey: "authmecipp" });
@@ -118,12 +118,12 @@ export const SideNav = (props) => {
   const handleTogglePin = () => {
     const newPinned = !localPinned;
     setLocalPinned(newPinned);
-    
+
     if (onPin) {
       onPin();
     }
   };
-  
+
   const handleMouseLeave = () => {
     setHovered(false);
   };
@@ -181,7 +181,11 @@ export const SideNav = (props) => {
                   px: "16px", // Match icon positioning - always 16px
                 }}
               >
-                <Tooltip title={localPinned ? "Unpin sidebar" : "Pin sidebar"} placement="right" arrow>
+                <Tooltip
+                  title={localPinned ? "Unpin sidebar" : "Pin sidebar"}
+                  placement="right"
+                  arrow
+                >
                   <IconButton
                     onClick={handleTogglePin}
                     size="small"
@@ -227,7 +231,12 @@ export const SideNav = (props) => {
   );
 };
 
-SideNav.propTypes = {
+SideNavComponent.propTypes = {
   onPin: PropTypes.func,
   pinned: PropTypes.bool,
 };
+
+// Memoize SideNav to prevent unnecessary re-renders when parent components update
+// This is especially important for pages like the designer where frequent state changes
+// (e.g., canvas panning) should not trigger navigation re-renders
+export const SideNav = memo(SideNavComponent);

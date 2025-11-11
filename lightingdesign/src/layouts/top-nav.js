@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, memo } from "react";
 import NextLink from "next/link";
 import PropTypes from "prop-types";
 import Bars3Icon from "@heroicons/react/24/outline/Bars3Icon";
@@ -34,7 +34,7 @@ import { applySort } from "../utils/apply-sort";
 
 const TOP_NAV_HEIGHT = 64;
 
-export const TopNav = (props) => {
+const TopNavComponent = (props) => {
   const searchDialog = useDialog();
   const { onNavOpen } = props;
   const settings = useSettings();
@@ -285,7 +285,12 @@ export const TopNav = (props) => {
   );
 };
 
-TopNav.propTypes = {
+TopNavComponent.propTypes = {
   onNavOpen: PropTypes.func,
   openNav: PropTypes.bool,
 };
+
+// Memoize TopNav to prevent unnecessary re-renders when parent components update
+// This is especially important for pages like the designer where frequent state changes
+// (e.g., canvas panning) should not trigger navigation re-renders
+export const TopNav = memo(TopNavComponent);

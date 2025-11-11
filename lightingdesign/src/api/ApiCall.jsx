@@ -25,7 +25,7 @@ export function ApiGetCall(props) {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const MAX_RETRIES = retry;
-  const HTTP_STATUS_TO_NOT_RETRY = [302, 401, 403, 404, 500];
+  const HTTP_STATUS_TO_NOT_RETRY = [302, 401, 403, 404, 409, 500];
   const retryFn = (failureCount, error) => {
     let returnRetry = true;
     if (failureCount >= MAX_RETRIES) {
@@ -47,7 +47,7 @@ export function ApiGetCall(props) {
           title: `${
             error.config?.params?.tenantFilter ? error.config?.params?.tenantFilter : ""
           } Error`,
-        })
+        }),
       );
     }
     return returnRetry;
@@ -177,8 +177,6 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
       }
     },
     onSuccess: () => {
-      console.log("ApiPostCall onSuccess triggered with relatedQueryKeys:", relatedQueryKeys);
-
       if (relatedQueryKeys) {
         const clearKeys = Array.isArray(relatedQueryKeys) ? relatedQueryKeys : [relatedQueryKeys];
         setTimeout(() => {
@@ -206,7 +204,7 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
                   if (!query.queryKey || !query.queryKey[0]) return false;
                   const queryKeyStr = String(query.queryKey[0]);
                   const matches = wildcardPatterns.some((pattern) =>
-                    queryKeyStr.startsWith(pattern)
+                    queryKeyStr.startsWith(pattern),
                   );
 
                   // Debug logging for each query check
@@ -215,7 +213,7 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
                       queryKey: query.queryKey,
                       queryKeyStr,
                       matchedPattern: wildcardPatterns.find((pattern) =>
-                        queryKeyStr.startsWith(pattern)
+                        queryKeyStr.startsWith(pattern),
                       ),
                     });
                   }
@@ -233,7 +231,6 @@ export function ApiPostCall({ relatedQueryKeys, onResult }) {
           }
         }, 1000);
       } else {
-        console.log("No relatedQueryKeys provided to ApiPostCall");
       }
     },
   });
@@ -251,7 +248,7 @@ export function ApiGetCallWithPagination({
 }) {
   const dispatch = useDispatch();
   const MAX_RETRIES = retry;
-  const HTTP_STATUS_TO_NOT_RETRY = [401, 403, 404];
+  const HTTP_STATUS_TO_NOT_RETRY = [401, 403, 404, 409];
 
   const retryFn = (failureCount, error) => {
     let returnRetry = true;
@@ -268,7 +265,7 @@ export function ApiGetCallWithPagination({
           message: getCippError(error),
           title: "Error",
           toastError: error,
-        })
+        }),
       );
     }
     return returnRetry;

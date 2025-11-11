@@ -48,8 +48,8 @@ export const CippPolicyImportDrawer = ({
       mode === "ConditionalAccess"
         ? `/api/ListCATemplates?TenantFilter=${tenantFilter?.value || ""}`
         : mode === "Standards"
-        ? `/api/listStandardTemplates?TenantFilter=${tenantFilter?.value || ""}`
-        : `/api/ListIntunePolicy?type=ESP&TenantFilter=${tenantFilter?.value || ""}`,
+          ? `/api/listStandardTemplates?TenantFilter=${tenantFilter?.value || ""}`
+          : `/api/ListIntunePolicy?type=ESP&TenantFilter=${tenantFilter?.value || ""}`,
     queryKey: `TenantPolicies-${mode}-${tenantFilter?.value || "none"}`,
   });
 
@@ -75,8 +75,8 @@ export const CippPolicyImportDrawer = ({
       mode === "ConditionalAccess"
         ? ["ListCATemplates-table"]
         : mode === "Standards"
-        ? ["listStandardTemplates"]
-        : ["ListIntuneTemplates-table", "ListIntuneTemplates-autcomplete"],
+          ? ["listStandardTemplates"]
+          : ["ListIntuneTemplates-table", "ListIntuneTemplates-autcomplete"],
   });
 
   const viewPolicyQuery = ApiPostCall({
@@ -84,7 +84,7 @@ export const CippPolicyImportDrawer = ({
       let content = resp?.Results?.content?.trim() || "{}";
       content = content.replace(
         /^[\u0000-\u001F\u007F-\u009F]+|[\u0000-\u001F\u007F-\u009F]+$/g,
-        ""
+        "",
       );
       try {
         setViewingPolicy(JSON.parse(content));
@@ -500,7 +500,13 @@ export const CippPolicyImportDrawer = ({
           ) : (
             <CippJsonView
               object={viewingPolicy || {}}
-              type={mode === "ConditionalAccess" ? "conditionalaccess" : mode === "Standards" ? "standards" : "intune"}
+              type={
+                mode === "ConditionalAccess"
+                  ? "conditionalaccess"
+                  : mode === "Standards"
+                    ? "standards"
+                    : "intune"
+              }
               defaultOpen={true}
             />
           )}

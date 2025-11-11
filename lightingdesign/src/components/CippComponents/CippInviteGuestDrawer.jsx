@@ -85,8 +85,8 @@ export const CippInviteGuestDrawer = ({
               {inviteGuest.isLoading
                 ? "Sending Invite..."
                 : inviteGuest.isSuccess
-                ? "Send Another Invite"
-                : "Send Invite"}
+                  ? "Send Another Invite"
+                  : "Send Invite"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

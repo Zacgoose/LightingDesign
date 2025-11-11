@@ -86,9 +86,9 @@ export const CippWizardAppApproval = (props) => {
                       "GalleryTemplate"
                         ? "Gallery Template"
                         : (selectedTemplate.addedFields.AppType || "EnterpriseApp") ===
-                          "ApplicationManifest"
-                        ? "Application Manifest"
-                        : "Enterprise App",
+                            "ApplicationManifest"
+                          ? "Application Manifest"
+                          : "Enterprise App",
                   },
                   {
                     label: "Permission Set",
@@ -97,9 +97,9 @@ export const CippWizardAppApproval = (props) => {
                       "GalleryTemplate"
                         ? "Auto-Consent"
                         : (selectedTemplate.addedFields.AppType || "EnterpriseApp") ===
-                          "ApplicationManifest"
-                        ? "Defined in Manifest"
-                        : selectedTemplate.addedFields.PermissionSetName,
+                            "ApplicationManifest"
+                          ? "Defined in Manifest"
+                          : selectedTemplate.addedFields.PermissionSetName,
                   },
                 ]}
                 title="Template Details"

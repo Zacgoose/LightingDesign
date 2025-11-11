@@ -48,7 +48,7 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
   const validateRoleName = (value) => {
     if (
       customRoleList?.pages?.[0]?.some(
-        (role) => role?.RowKey?.toLowerCase() === value?.toLowerCase()
+        (role) => role?.RowKey?.toLowerCase() === value?.toLowerCase(),
       )
     ) {
       return `Role '${value}' already exists`;
@@ -100,16 +100,16 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
     Object.keys(apiPermissions).forEach((cat) => {
       Object.keys(apiPermissions[cat]).forEach((obj) => {
         const includeRead = roleConfig.include.some((pattern) =>
-          matchPattern(pattern, `${cat}.${obj}.Read`)
+          matchPattern(pattern, `${cat}.${obj}.Read`),
         );
         const includeReadWrite = roleConfig.include.some((pattern) =>
-          matchPattern(pattern, `${cat}.${obj}.ReadWrite`)
+          matchPattern(pattern, `${cat}.${obj}.ReadWrite`),
         );
         const excludeRead = roleConfig.exclude.some((pattern) =>
-          matchPattern(pattern, `${cat}.${obj}.Read`)
+          matchPattern(pattern, `${cat}.${obj}.Read`),
         );
         const excludeReadWrite = roleConfig.exclude.some((pattern) =>
-          matchPattern(pattern, `${cat}.${obj}.ReadWrite`)
+          matchPattern(pattern, `${cat}.${obj}.ReadWrite`),
         );
 
         if ((includeRead || includeReadWrite) && !(excludeRead || excludeReadWrite)) {
@@ -148,7 +148,7 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
       setCippApiRoleSelected(isApiRole);
 
       const currentPermissions = customRoleList?.pages?.[0]?.find(
-        (role) => role.RowKey === selectedRole
+        (role) => role.RowKey === selectedRole,
       );
 
       // Process allowed tenants - handle both groups and tenant IDs
@@ -478,11 +478,13 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
                 required={true}
               />
             )}
-            {selectedRole && isBaseRole && ["admin", "superadmin", "lightingdesigner"].includes(selectedRole) && (
-              <Alert color="warning" icon={<WarningOutlined />}>
-                This is a highly privileged role and overrides any custom role restrictions.
-              </Alert>
-            )}
+            {selectedRole &&
+              isBaseRole &&
+              ["admin", "superadmin", "lightingdesigner"].includes(selectedRole) && (
+                <Alert color="warning" icon={<WarningOutlined />}>
+                  This is a highly privileged role and overrides any custom role restrictions.
+                </Alert>
+              )}
             {cippApiRoleSelected && (
               <Alert color="info">
                 This is the default role for all API clients in the CIPP-API integration. If you
@@ -575,7 +577,7 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
                                           value: apiFunction.Name,
                                           category: `${cat}.${obj}.${type}`,
                                         });
-                                      }
+                                      },
                                     );
                                   });
                                 });

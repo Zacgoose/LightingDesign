@@ -21,6 +21,16 @@ const Page = () => {
       contactEmail: "",
       estimatedValue: "",
       notes: "",
+      assignedDesigner: null,
+      builders: [],
+      relatedTrades: [],
+      pricingMatrix: {
+        customerPrice: "",
+        tradePrice: "",
+        builderPrice: "",
+        costBasis: "",
+        markupPercentage: "",
+      },
     },
   });
 
@@ -31,27 +41,10 @@ const Page = () => {
       </Head>
       <CippFormPage
         formControl={formControl}
-        queryKey="AddJob"
+        queryKey="Jobs"
         title="New Job"
         backButtonTitle="Jobs"
         postUrl="/api/ExecNewJob"
-        customDataformatter={(values) => {
-          return {
-            jobNumber: values.jobNumber,
-            customerId: values.customerName?.value,
-            status: values.status?.value,
-            description: values.description,
-            address: values.address,
-            city: values.city,
-            state: values.state,
-            postalCode: values.postalCode,
-            contactName: values.contactName,
-            contactPhone: values.contactPhone,
-            contactEmail: values.contactEmail,
-            estimatedValue: values.estimatedValue,
-            notes: values.notes,
-          };
-        }}
       >
         <JobForm formControl={formControl} mode="new" />
       </CippFormPage>

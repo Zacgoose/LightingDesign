@@ -15,10 +15,10 @@ const Defender = (props) => (
         y2="1.205"
         gradientUnits="userSpaceOnUse"
       >
-        <stop offset="0" stop-color="#5e9624" />
-        <stop offset="0.321" stop-color="#639d26" />
-        <stop offset="0.794" stop-color="#6fb12a" />
-        <stop offset="0.999" stop-color="#76bc2d" />
+        <stop offset="0" stopColor="#5e9624" />
+        <stop offset="0.321" stopColor="#639d26" />
+        <stop offset="0.794" stopColor="#6fb12a" />
+        <stop offset="0.999" stopColor="#76bc2d" />
       </linearGradient>
     </defs>
     <g>

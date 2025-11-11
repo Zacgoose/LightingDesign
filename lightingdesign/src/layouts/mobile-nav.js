@@ -18,7 +18,7 @@ const renderItems = ({ depth = 0, items, pathname }) =>
         item,
         pathname,
       }),
-    []
+    [],
   );
 
 const reduceChildRoutes = ({ acc, depth, item, pathname }) => {
@@ -53,7 +53,7 @@ const reduceChildRoutes = ({ acc, depth, item, pathname }) => {
             pathname,
           })}
         </Stack>
-      </MobileNavItem>
+      </MobileNavItem>,
     );
   } else {
     acc.push(
@@ -65,7 +65,7 @@ const reduceChildRoutes = ({ acc, depth, item, pathname }) => {
         key={item.title}
         path={item.path}
         title={item.title}
-      />
+      />,
     );
   }
 

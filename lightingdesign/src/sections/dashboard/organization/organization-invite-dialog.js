@@ -1,7 +1,7 @@
-import { Fragment } from 'react';
-import PropTypes from 'prop-types';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
+import { Fragment } from "react";
+import PropTypes from "prop-types";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import {
   Button,
   Card,
@@ -16,43 +16,34 @@ import {
   RadioGroup,
   Stack,
   TextField,
-  Typography
-} from '@mui/material';
-import { wait } from '../../../utils/wait';
+  Typography,
+} from "@mui/material";
+import { wait } from "../../../utils/wait";
 
 const roleOptions = [
   {
-    description: 'Edit access',
-    label: 'Editor',
-    value: 'editor'
+    description: "Edit access",
+    label: "Editor",
+    value: "editor",
   },
   {
-    description: 'Full access & billing',
-    label: 'Administrator',
-    value: 'administrator'
-  }
+    description: "Full access & billing",
+    label: "Administrator",
+    value: "administrator",
+  },
 ];
 
 const initialValues = {
-  email: '',
-  name: '',
-  role: 'editor',
-  submit: null
+  email: "",
+  name: "",
+  role: "editor",
+  submit: null,
 };
 
 const validationSchema = Yup.object({
-  email: Yup
-    .string()
-    .max(255)
-    .email('Must be a valid email')
-    .required('Email is required'),
-  name: Yup
-    .string()
-    .max(255)
-    .required('Name is required'),
-  role: Yup
-    .mixed()
-    .oneOf(roleOptions.map((option) => option.value))
+  email: Yup.string().max(255).email("Must be a valid email").required("Email is required"),
+  name: Yup.string().max(255).required("Name is required"),
+  role: Yup.mixed().oneOf(roleOptions.map((option) => option.value)),
 });
 
 export const OrganizationInviteDialog = (props) => {
@@ -72,7 +63,7 @@ export const OrganizationInviteDialog = (props) => {
         helpers.setErrors({ submit: err.message });
         helpers.setSubmitting(false);
       }
-    }
+    },
   });
 
   return (
@@ -82,13 +73,12 @@ export const OrganizationInviteDialog = (props) => {
       onClose={onClose}
       open={open}
       TransitionProps={{
-        onExited: () => formik.resetForm()
+        onExited: () => formik.resetForm(),
       }}
-      {...other}>
+      {...other}
+    >
       <form onSubmit={formik.handleSubmit}>
-        <DialogTitle>
-          Invite a member
-        </DialogTitle>
+        <DialogTitle>Invite a member</DialogTitle>
         <DialogContent>
           <Stack spacing={3}>
             <TextField
@@ -113,9 +103,7 @@ export const OrganizationInviteDialog = (props) => {
               value={formik.values.email}
             />
             <Stack spacing={2}>
-              <Typography variant="subtitle2">
-                Role
-              </Typography>
+              <Typography variant="subtitle2">Role</Typography>
               <Card variant="outlined">
                 <RadioGroup
                   name="role"
@@ -131,19 +119,14 @@ export const OrganizationInviteDialog = (props) => {
                         <FormControlLabel
                           disableTypography
                           control={<Radio />}
-                          label={(
+                          label={
                             <div>
-                              <Typography>
-                                {option.label}
-                              </Typography>
-                              <Typography
-                                color="text.secondary"
-                                variant="caption"
-                              >
+                              <Typography>{option.label}</Typography>
+                              <Typography color="text.secondary" variant="caption">
                                 {option.description}
                               </Typography>
                             </div>
-                          )}
+                          }
                           sx={{ p: 1.5 }}
                           value={option.value}
                         />
@@ -154,34 +137,21 @@ export const OrganizationInviteDialog = (props) => {
                 </RadioGroup>
               </Card>
               {formik.touched.role && formik.errors.role && (
-                <FormHelperText error>
-                  {formik.errors.role}
-                </FormHelperText>
+                <FormHelperText error>{formik.errors.role}</FormHelperText>
               )}
             </Stack>
           </Stack>
           {formik.errors.submit && (
-            <FormHelperText
-              error
-              sx={{ mt: 2 }}
-            >
+            <FormHelperText error sx={{ mt: 2 }}>
               {formik.errors.submit}
             </FormHelperText>
           )}
         </DialogContent>
         <DialogActions>
-          <Button
-            color="inherit"
-            onClick={onClose}
-            type="button"
-          >
+          <Button color="inherit" onClick={onClose} type="button">
             Cancel
           </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={formik.isSubmitting}
-          >
+          <Button type="submit" variant="contained" disabled={formik.isSubmitting}>
             Send Invite
           </Button>
         </DialogActions>
@@ -192,5 +162,5 @@ export const OrganizationInviteDialog = (props) => {
 
 OrganizationInviteDialog.propTypes = {
   onClose: PropTypes.func,
-  open: PropTypes.bool
+  open: PropTypes.bool,
 };

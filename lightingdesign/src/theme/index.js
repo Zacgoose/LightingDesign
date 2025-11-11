@@ -51,7 +51,7 @@ export const createTheme = (config) => {
           },
         },
       },
-    }
+    },
   );
 
   if (config.responsiveFontSizes) {

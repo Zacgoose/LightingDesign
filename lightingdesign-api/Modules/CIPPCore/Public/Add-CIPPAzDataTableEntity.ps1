@@ -27,12 +27,18 @@ function Add-CIPPAzDataTableEntity {
     $MaxSize = 30kb
 
     foreach ($SingleEnt in @($Entity)) {
+        # Track RowKeys we're about to create for cleanup later
+        $newRowKeysCreated = [System.Collections.Generic.List[string]]::new()
+        $originalPartitionKey = if ($SingleEnt -is [hashtable]) { $SingleEnt.PartitionKey } else { $SingleEnt.PartitionKey }
+        $originalRowKey = if ($SingleEnt -is [hashtable]) { $SingleEnt.RowKey } else { $SingleEnt.RowKey }
+
         try {
             if ($null -eq $SingleEnt.PartitionKey -or $null -eq $SingleEnt.RowKey) {
                 throw 'PartitionKey or RowKey is null'
             }
 
             Add-AzDataTableEntity @Parameters -Entity $SingleEnt -ErrorAction Stop
+            $newRowKeysCreated.Add($originalRowKey)
 
         } catch [System.Exception] {
             if ($_.Exception.ErrorCode -in @('PropertyValueTooLarge', 'EntityTooLarge', 'RequestBodyTooLarge')) {
@@ -87,8 +93,6 @@ function Add-CIPPAzDataTableEntity {
                     $entitySize = [System.Text.Encoding]::UTF8.GetByteCount($($SingleEnt | ConvertTo-Json -Compress))
                     if ($entitySize -gt $MaxRowSize) {
                         $rows = [System.Collections.Generic.List[object]]::new()
-                        $originalPartitionKey = $SingleEnt.PartitionKey
-                        $originalRowKey = $SingleEnt.RowKey
                         $entityIndex = 0
 
                         while ($entitySize -gt $MaxRowSize) {
@@ -150,24 +154,13 @@ function Add-CIPPAzDataTableEntity {
                             Write-Information "current entity is $($row.RowKey) with $($row.PartitionKey). Our size is $([System.Text.Encoding]::UTF8.GetByteCount($($row | ConvertTo-Json -Compress)))"
                             $NewRow = ([PSCustomObject]$row) | Select-Object * -ExcludeProperty Timestamp
                             Add-AzDataTableEntity @Parameters -Entity $NewRow
+                            $newRowKeysCreated.Add($row.RowKey)
                         }
 
                     } else {
                         $NewEnt = ([PSCustomObject]$SingleEnt) | Select-Object * -ExcludeProperty Timestamp
                         Add-AzDataTableEntity @Parameters -Entity $NewEnt
-                        if ($NewEnt.PSObject.Properties['OriginalEntityId'] -eq $null -and $NewEnt.PSObject.Properties['PartIndex'] -eq $null) {
-                            $partIndex = 1
-                            while ($true) {
-                                $partRowKey = "$($NewEnt.RowKey)-part$partIndex"
-                                try {
-                                    Remove-AzDataTableEntity -Context $Context -PartitionKey $NewEnt.PartitionKey -RowKey $partRowKey -ErrorAction Stop
-                                    Write-Information "Deleted obsolete part: $partRowKey"
-                                    $partIndex++
-                                } catch {
-                                    break
-                                }
-                            }
-                        }
+                        $newRowKeysCreated.Add($originalRowKey)
                     }
 
                 } catch {
@@ -179,6 +172,45 @@ function Add-CIPPAzDataTableEntity {
             } else {
                 Write-Information "THE ERROR IS $($_.Exception.message). The size of the entity is $entitySize."
                 throw $_
+            }
+        }
+
+        # CLEANUP: After successful save, delete orphaned rows
+        if (($PSCmdlet.ParameterSetName -eq 'Force' -or $OperationType -in @('UpsertMerge', 'UpsertReplace')) -and ($newRowKeysCreated.Count -gt 0)) {
+            # Write-Information "Cleaning up orphaned rows for PartitionKey: $originalPartitionKey, RowKey pattern: $originalRowKey"
+
+            # Filter by both PartitionKey and RowKey to ensure we only clean up related entities
+            # We look for entities that have the exact RowKey OR have OriginalEntityId matching the original RowKey
+            $Filter = "PartitionKey eq '$originalPartitionKey' and (RowKey eq '$originalRowKey' or OriginalEntityId eq '$originalRowKey')"
+            try {
+                $ExistingEntities = Get-AzDataTableEntity -Context $Context -Filter $Filter
+
+                if ($ExistingEntities) {
+                    $deleteCount = 0
+                    foreach ($existing in $ExistingEntities) {
+                        # Check if this row is one we just created
+                        $isNewRow = $newRowKeysCreated -contains $existing.RowKey
+
+                        if (-not $isNewRow) {
+                            try {
+                                $EntityToDelete = @{
+                                    PartitionKey = $existing.PartitionKey
+                                    RowKey       = $existing.RowKey
+                                }
+                                Remove-AzDataTableEntity -Context $Context -Entity $EntityToDelete -Force
+                                Write-Information "Deleted orphaned entity: RowKey=$($existing.RowKey)"
+                                $deleteCount++
+                            } catch {
+                                Write-Warning "Failed to delete orphaned entity: RowKey=$($existing.RowKey). Error: $_"
+                            }
+                        }
+                    }
+                    if ($deleteCount -gt 0) {
+                        Write-Information "Cleaned up $deleteCount orphaned row(s)"
+                    }
+                }
+            } catch {
+                Write-Warning "Failed to clean up orphaned rows: $_"
             }
         }
     }

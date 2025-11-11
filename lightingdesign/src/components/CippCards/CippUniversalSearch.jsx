@@ -57,7 +57,7 @@ export const CippUniversalSearch = React.forwardRef(
         )}
       </Box>
     );
-  }
+  },
 );
 
 CippUniversalSearch.displayName = "CippUniversalSearch";
@@ -98,18 +98,10 @@ const Results = ({ items = [], searchValue }) => {
         ))}
       </Grid>
       <Box display="flex" justifyContent="space-between" mt={2}>
-        <Button
-          variant="outlined"
-          disabled={currentPage === 1}
-          onClick={handlePreviousPage}
-        >
+        <Button variant="outlined" disabled={currentPage === 1} onClick={handlePreviousPage}>
           Previous
         </Button>
-        <Button
-          variant="outlined"
-          disabled={currentPage === totalPages}
-          onClick={handleNextPage}
-        >
+        <Button variant="outlined" disabled={currentPage === totalPages} onClick={handleNextPage}>
           Next
         </Button>
       </Box>
@@ -127,7 +119,7 @@ const ResultsRow = ({ match, searchValue }) => {
         </Typography>
       ) : (
         part
-      )
+      ),
     );
   };
   const currentTenantInfo = ApiGetCall({

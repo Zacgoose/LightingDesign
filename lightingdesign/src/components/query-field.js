@@ -1,45 +1,47 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import PropTypes from 'prop-types';
-import MagnifyingGlassIcon from '@heroicons/react/24/outline/MagnifyingGlassIcon';
-import { InputBase, SvgIcon } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { useCallback, useEffect, useRef, useState } from "react";
+import PropTypes from "prop-types";
+import MagnifyingGlassIcon from "@heroicons/react/24/outline/MagnifyingGlassIcon";
+import { InputBase, SvgIcon } from "@mui/material";
+import { styled } from "@mui/material/styles";
 
-const QueryFieldRoot = styled('div')((({ theme }) => ({
-  alignItems: 'center',
-  backgroundColor: 'background.paper',
+const QueryFieldRoot = styled("div")(({ theme }) => ({
+  alignItems: "center",
+  backgroundColor: "background.paper",
   border: `1px solid ${theme.palette.divider}`,
   borderRadius: theme.shape.borderRadius,
-  display: 'flex',
+  display: "flex",
   height: 42,
-  padding: '0 16px'
-})));
+  padding: "0 16px",
+}));
 
 export const QueryField = (props) => {
-  const { disabled, onChange, placeholder, value: initialValue = '', ...other } = props;
+  const { disabled, onChange, placeholder, value: initialValue = "", ...other } = props;
   const [autoFocus, setAutoFocus] = useState(false);
   const inputRef = useRef(null);
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState("");
 
   useEffect(() => {
     setValue(initialValue);
   }, [initialValue]);
 
   useEffect(() => {
-      if (!disabled && autoFocus && inputRef?.current) {
-        inputRef.current.focus();
-      }
-    },
-    [disabled]);
+    if (!disabled && autoFocus && inputRef?.current) {
+      inputRef.current.focus();
+    }
+  }, [disabled]);
 
   const handleChange = useCallback((event) => {
     setValue(event.target.value);
   }, []);
 
-  const handleKeyup = useCallback((event) => {
-    if (event.code === 'Enter') {
-      onChange?.(value);
-    }
-  }, [value, onChange]);
+  const handleKeyup = useCallback(
+    (event) => {
+      if (event.code === "Enter") {
+        onChange?.(value);
+      }
+    },
+    [value, onChange],
+  );
 
   const handleFocus = useCallback(() => {
     setAutoFocus(true);
@@ -61,10 +63,7 @@ export const QueryField = (props) => {
 
   return (
     <QueryFieldRoot {...other}>
-      <SvgIcon
-        fontSize="small"
-        sx={{ mr: 1 }}
-      >
+      <SvgIcon fontSize="small" sx={{ mr: 1 }}>
         <MagnifyingGlassIcon />
       </SvgIcon>
       <InputBase
@@ -86,5 +85,5 @@ QueryField.propTypes = {
   disabled: PropTypes.bool,
   onChange: PropTypes.func,
   placeholder: PropTypes.string,
-  value: PropTypes.string
+  value: PropTypes.string,
 };

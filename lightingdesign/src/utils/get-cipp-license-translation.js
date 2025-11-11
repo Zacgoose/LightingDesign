@@ -25,7 +25,7 @@ export const getCippLicenseTranslation = (licenseArray) => {
         licenses.push(
           M365Licenses[x].Product_Display_Name
             ? M365Licenses[x].Product_Display_Name
-            : licenseAssignment.skuPartNumber
+            : licenseAssignment.skuPartNumber,
         );
         found = true;
         break;

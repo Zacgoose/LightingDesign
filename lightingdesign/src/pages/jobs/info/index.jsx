@@ -6,6 +6,9 @@ import CippFormPage from "/src/components/CippFormPages/CippFormPage";
 import { JobForm } from "/src/components/designer/JobForm";
 import { ApiGetCall } from "/src/api/ApiCall";
 import { useEffect } from "react";
+import { Button } from "@mui/material";
+import { DesignServices } from "@mui/icons-material";
+import Link from "next/link";
 
 const Page = () => {
   const router = useRouter();
@@ -13,7 +16,7 @@ const Page = () => {
 
   // Fetch job details
   const jobDetails = ApiGetCall({
-    url: "/api/GetJob",
+    url: "/api/ExecGetJob",
     data: { jobId: id },
     queryKey: `Job-${id}`,
     enabled: !!id,
@@ -35,6 +38,16 @@ const Page = () => {
       contactEmail: "",
       estimatedValue: "",
       notes: "",
+      assignedDesigner: null,
+      builders: [],
+      relatedTrades: [],
+      pricingMatrix: {
+        customerPrice: "",
+        tradePrice: "",
+        builderPrice: "",
+        costBasis: "",
+        markupPercentage: "",
+      },
     },
   });
 
@@ -72,8 +85,26 @@ const Page = () => {
             contactEmail: values.contactEmail,
             estimatedValue: values.estimatedValue,
             notes: values.notes,
+            assignedDesigner: values.assignedDesigner?.value
+              ? { value: values.assignedDesigner.value, label: values.assignedDesigner.label }
+              : null,
+            builders: values.builders?.map((b) => ({ value: b.value, label: b.label })) || [],
+            relatedTrades:
+              values.relatedTrades?.map((t) => ({ value: t.value, label: t.label })) || [],
+            pricingMatrix: values.pricingMatrix || {},
           };
         }}
+        addedButtons={
+          <Button
+            component={Link}
+            href={`/jobs/design?id=${id}`}
+            variant="outlined"
+            startIcon={<DesignServices />}
+            disabled={!id}
+          >
+            Open Design
+          </Button>
+        }
       >
         <JobForm formControl={formControl} mode="edit" />
       </CippFormPage>

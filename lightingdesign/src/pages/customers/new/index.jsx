@@ -17,6 +17,9 @@ const Page = () => {
       postalCode: "",
       status: { value: "active", label: "Active" },
       notes: "",
+      customerType: null,
+      relatedBuilders: [],
+      tradeAssociations: [],
     },
   });
 
@@ -42,6 +45,9 @@ const Page = () => {
             postalCode: values.postalCode,
             status: values.status?.value,
             notes: values.notes,
+            customerType: values.customerType?.value,
+            relatedBuilders: values.relatedBuilders?.map((b) => b.value) || [],
+            tradeAssociations: values.tradeAssociations?.map((t) => t.value) || [],
           };
         }}
       >

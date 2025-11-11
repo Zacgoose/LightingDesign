@@ -1,5 +1,5 @@
-import { Box, Skeleton, Table, TableCell, TableHead, TableRow } from '@mui/material';
-import { Scrollbar } from '../../../../components/scrollbar';
+import { Box, Skeleton, Table, TableCell, TableHead, TableRow } from "@mui/material";
+import { Scrollbar } from "../../../../components/scrollbar";
 
 export const DataState1 = () => (
   <Box sx={{ p: 3 }}>
@@ -7,10 +7,8 @@ export const DataState1 = () => (
       <Table sx={{ minWidth: 600 }}>
         <TableHead>
           <TableRow>
-            {['Name', 'Phone', 'Email', 'Create at', 'Actions'].map((column) => (
-              <TableCell key={column}>
-                {column}
-              </TableCell>
+            {["Name", "Phone", "Email", "Create at", "Actions"].map((column) => (
+              <TableCell key={column}>{column}</TableCell>
             ))}
           </TableRow>
         </TableHead>

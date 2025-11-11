@@ -51,7 +51,7 @@ export const BackupValidator = {
             result.warnings.push("Backup file was repaired during validation");
           } catch (secondParseError) {
             result.errors.push(
-              `JSON parsing failed even after repair: ${secondParseError.message}`
+              `JSON parsing failed even after repair: ${secondParseError.message}`,
             );
             return result;
           }
@@ -73,7 +73,7 @@ export const BackupValidator = {
         result.isValid = true;
         if (dataValidation.skippedRows > 0) {
           result.warnings.push(
-            `${dataValidation.skippedRows} corrupted rows will be skipped during import`
+            `${dataValidation.skippedRows} corrupted rows will be skipped during import`,
           );
         }
       } else {

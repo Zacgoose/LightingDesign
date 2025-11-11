@@ -39,7 +39,7 @@ export const CippCADeployDrawer = ({
         }
       }
     },
-    [CATemplates.isSuccess, CATemplates.data, formControl.setValue]
+    [CATemplates.isSuccess, CATemplates.data, formControl.setValue],
   );
 
   // Effect to set template when templateId prop is provided
@@ -110,8 +110,8 @@ export const CippCADeployDrawer = ({
               {deployPolicy.isLoading
                 ? "Deploying..."
                 : deployPolicy.isSuccess
-                ? "Redeploy Policy"
-                : "Deploy Policy"}
+                  ? "Redeploy Policy"
+                  : "Deploy Policy"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

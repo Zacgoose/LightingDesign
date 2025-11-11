@@ -2,7 +2,7 @@ import { Layout as DashboardLayout } from "/src/layouts/index";
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage";
 import { Button } from "@mui/material";
 import Link from "next/link";
-import { Add, Edit, Delete, Visibility } from "@mui/icons-material";
+import { Add, Feed, Delete, DesignServices } from "@mui/icons-material";
 
 const Page = () => {
   const pageTitle = "Jobs";
@@ -10,25 +10,25 @@ const Page = () => {
   // Define actions for each job row
   const actions = [
     {
-      label: "View Job Details",
-      link: "/jobs/info?id=[id]",
-      icon: <Visibility />,
+      label: "Job Details",
+      link: "/jobs/info?id=[RowKey]",
+      icon: <Feed />,
       color: "primary",
       target: "_self",
     },
     {
-      label: "Edit Job",
-      link: "/jobs/info?id=[id]",
-      icon: <Edit />,
+      label: "Design",
+      link: "/jobs/design?id=[RowKey]",
+      icon: <DesignServices />,
       color: "success",
       target: "_self",
     },
     {
       label: "Delete Job",
       type: "POST",
-      url: "/api/DeleteJob",
+      url: "/api/ExecDeleteJob",
       data: {
-        jobId: "id",
+        jobId: "RowKey",
       },
       confirmText: "Are you sure you want to delete this job? This action cannot be undone.",
       icon: <Delete />,
@@ -75,31 +75,18 @@ const Page = () => {
   ];
 
   // Columns to display in the table
-  const simpleColumns = [
-    "jobNumber",
-    "customerName",
-    "status",
-    "createdDate",
-    "dueDate",
-    "assignedTo",
-    "totalValue",
-  ];
+  const simpleColumns = ["JobNumber", "CustomerName", "Status", "User", "createdDate"];
 
   return (
     <CippTablePage
       title={pageTitle}
-      apiUrl="/api/ListJobs"
+      apiUrl="/api/ListJobs?ListJobs=true"
       actions={actions}
       offCanvas={offCanvas}
       simpleColumns={simpleColumns}
       filters={filterList}
       cardButton={
-        <Button
-          component={Link}
-          href="/jobs/new"
-          startIcon={<Add />}
-          variant="contained"
-        >
+        <Button component={Link} href="/jobs/new" startIcon={<Add />} variant="contained">
           New Job
         </Button>
       }

@@ -113,12 +113,7 @@ const ContactFormLayout = ({ formControl, formType = "add" }) => {
         />
       </Grid>
       <Grid size={{ md: 3, xs: 12 }}>
-        <CippFormComponent 
-          type="textField" 
-          label="City" 
-          name="city" 
-          formControl={formControl} 
-        />
+        <CippFormComponent type="textField" label="City" name="city" formControl={formControl} />
       </Grid>
       <Grid size={{ md: 3, xs: 12 }}>
         <CippFormComponent

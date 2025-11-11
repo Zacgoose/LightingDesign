@@ -1,6 +1,6 @@
-import PropTypes from 'prop-types';
-import NextLink from 'next/link';
-import { format } from 'date-fns';
+import PropTypes from "prop-types";
+import NextLink from "next/link";
+import { format } from "date-fns";
 import {
   Avatar,
   Box,
@@ -15,54 +15,54 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
-  Typography
-} from '@mui/material';
-import { Pagination } from '../../../components/pagination';
-import { ResourceError } from '../../../components/resource-error';
-import { ResourceUnavailable } from '../../../components/resource-unavailable';
-import { Scrollbar } from '../../../components/scrollbar';
-import { paths } from '../../../paths';
-import { ProductsTableMenu } from './products-table-menu';
+  Typography,
+} from "@mui/material";
+import { Pagination } from "../../../components/pagination";
+import { ResourceError } from "../../../components/resource-error";
+import { ResourceUnavailable } from "../../../components/resource-unavailable";
+import { Scrollbar } from "../../../components/scrollbar";
+import { paths } from "../../../paths";
+import { ProductsTableMenu } from "./products-table-menu";
 
 const statusMap = {
   draft: {
-    color: 'info.main',
-    label: 'Draft'
+    color: "info.main",
+    label: "Draft",
   },
   published: {
-    color: 'success.main',
-    label: 'Published'
-  }
+    color: "success.main",
+    label: "Published",
+  },
 };
 
 const columns = [
   {
-    id: 'name',
-    label: 'Name',
-    sortable: true
+    id: "name",
+    label: "Name",
+    sortable: true,
   },
   {
-    id: 'createdAt',
-    label: 'Created',
-    sortable: true
+    id: "createdAt",
+    label: "Created",
+    sortable: true,
   },
   {
-    id: 'status',
-    label: 'Status',
-    sortable: true
-  }
+    id: "status",
+    label: "Status",
+    sortable: true,
+  },
 ];
 
 const getResourcesState = (params) => {
   if (params.isLoading) {
-    return 'loading';
+    return "loading";
   }
 
   if (params.error) {
-    return 'error';
+    return "error";
   }
 
-  return params.items.length > 0 ? 'available' : 'unavailable';
+  return params.items.length > 0 ? "available" : "unavailable";
 };
 
 export const ProductsTable = (props) => {
@@ -80,25 +80,25 @@ export const ProductsTable = (props) => {
     page = 0,
     rowsPerPage = 0,
     selected = [],
-    sortBy = 'createdAt',
-    sortDir = 'desc'
+    sortBy = "createdAt",
+    sortDir = "desc",
   } = props;
 
   const resourcesState = getResourcesState({
     isLoading,
     error,
-    items
+    items,
   });
 
-  const selectedSome = (selected.length > 0) && (selected.length < items.length);
-  const selectedAll = (items.length > 0) && (selected.length === items.length);
+  const selectedSome = selected.length > 0 && selected.length < items.length;
+  const selectedAll = items.length > 0 && selected.length === items.length;
 
   return (
     <Box
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        flexGrow: 1
+        display: "flex",
+        flexDirection: "column",
+        flexGrow: 1,
       }}
     >
       <Scrollbar>
@@ -108,7 +108,7 @@ export const ProductsTable = (props) => {
               <TableCell padding="checkbox">
                 <Checkbox
                   checked={selectedAll}
-                  disabled={resourcesState !== 'available'}
+                  disabled={resourcesState !== "available"}
                   indeterminate={selectedSome}
                   onChange={(event) => {
                     if (event.target.checked) {
@@ -121,37 +121,33 @@ export const ProductsTable = (props) => {
               </TableCell>
               {columns.map((column) => (
                 <TableCell key={column.id}>
-                  {column.sortable
-                    ? (
-                      <TableSortLabel
-                        active={sortBy === column.id}
-                        direction={sortBy === column.id ? sortDir : 'asc'}
-                        disabled={resourcesState !== 'available'}
-                        onClick={() => onSortChange?.(column.id)}
-                      >
-                        {column.label}
-                      </TableSortLabel>
-                    )
-                    : column.label}
+                  {column.sortable ? (
+                    <TableSortLabel
+                      active={sortBy === column.id}
+                      direction={sortBy === column.id ? sortDir : "asc"}
+                      disabled={resourcesState !== "available"}
+                      onClick={() => onSortChange?.(column.id)}
+                    >
+                      {column.label}
+                    </TableSortLabel>
+                  ) : (
+                    column.label
+                  )}
                 </TableCell>
               ))}
               <TableCell />
             </TableRow>
           </TableHead>
-          {resourcesState === 'available' && (
+          {resourcesState === "available" && (
             <TableBody>
               {items.map((product) => {
                 const isSelected = !!selected.find((productId) => productId === product.id);
                 const status = statusMap[product.status];
-                const createdDate = format(product.createdAt, 'dd MMM yyyy');
-                const createdTime = format(product.createdAt, 'HH:mm');
+                const createdDate = format(product.createdAt, "dd MMM yyyy");
+                const createdTime = format(product.createdAt, "HH:mm");
 
                 return (
-                  <TableRow
-                    hover
-                    key={product.id}
-                    selected={isSelected}
-                  >
+                  <TableRow hover key={product.id} selected={isSelected}>
                     <TableCell padding="checkbox">
                       <Checkbox
                         checked={isSelected}
@@ -165,16 +161,12 @@ export const ProductsTable = (props) => {
                       />
                     </TableCell>
                     <TableCell>
-                      <Stack
-                        alignItems="center"
-                        direction="row"
-                        spacing={2}
-                      >
+                      <Stack alignItems="center" direction="row" spacing={2}>
                         <Avatar
                           src={product.image}
                           sx={{
                             width: 64,
-                            height: 64
+                            height: 64,
                           }}
                           variant="rounded"
                         />
@@ -188,10 +180,7 @@ export const ProductsTable = (props) => {
                           >
                             {product.name}
                           </Link>
-                          <Typography
-                            color="text.secondary"
-                            variant="body2"
-                          >
+                          <Typography color="text.secondary" variant="body2">
                             12 in stock for 1 variant
                           </Typography>
                         </div>
@@ -199,37 +188,25 @@ export const ProductsTable = (props) => {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <Typography
-                          color="inherit"
-                          variant="body2"
-                        >
+                        <Typography color="inherit" variant="body2">
                           {createdDate}
                         </Typography>
-                        <Typography
-                          color="text.secondary"
-                          variant="body2"
-                        >
+                        <Typography color="text.secondary" variant="body2">
                           {createdTime}
                         </Typography>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Stack
-                        alignItems="center"
-                        direction="row"
-                        spacing={1}
-                      >
+                      <Stack alignItems="center" direction="row" spacing={1}>
                         <Box
                           sx={{
                             backgroundColor: status.color,
-                            borderRadius: '50%',
+                            borderRadius: "50%",
                             height: 8,
-                            width: 8
+                            width: 8,
                           }}
                         />
-                        <Typography variant="body2">
-                          {status.label}
-                        </Typography>
+                        <Typography variant="body2">{status.label}</Typography>
                       </Stack>
                     </TableCell>
                     <TableCell align="right">
@@ -242,9 +219,9 @@ export const ProductsTable = (props) => {
           )}
         </Table>
       </Scrollbar>
-      {resourcesState === 'available' && (
+      {resourcesState === "available" && (
         <>
-          <Divider sx={{ mt: 'auto' }} />
+          <Divider sx={{ mt: "auto" }} />
           <Pagination
             onPageChange={onPageChange}
             page={page}
@@ -253,28 +230,28 @@ export const ProductsTable = (props) => {
           />
         </>
       )}
-      {resourcesState === 'loading' && (
+      {resourcesState === "loading" && (
         <Box sx={{ p: 2 }}>
           <Skeleton height={42} />
           <Skeleton height={42} />
           <Skeleton height={42} />
         </Box>
       )}
-      {resourcesState === 'error' && (
+      {resourcesState === "error" && (
         <ResourceError
           message="Something went wrong"
           sx={{
             flexGrow: 1,
-            m: 2
+            m: 2,
           }}
         />
       )}
-      {resourcesState === 'unavailable' && (
+      {resourcesState === "unavailable" && (
         <ResourceUnavailable
           message="Resources are not available"
           sx={{
             flexGrow: 1,
-            m: 2
+            m: 2,
           }}
         />
       )}
@@ -297,5 +274,5 @@ ProductsTable.propTypes = {
   rowsPerPage: PropTypes.number,
   selected: PropTypes.array,
   sortBy: PropTypes.string,
-  sortDir: PropTypes.oneOf(['asc', 'desc'])
+  sortDir: PropTypes.oneOf(["asc", "desc"]),
 };

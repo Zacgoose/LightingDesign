@@ -10,7 +10,7 @@ export const LinearProgressWithLabel = (props) => {
     }
 
     // Check if flipped mode is enabled
-    const isFlipped = colourLevels === 'flipped' || colourLevels.flipped === true;
+    const isFlipped = colourLevels === "flipped" || colourLevels.flipped === true;
 
     if (isFlipped) {
       // Flipped color order: green -> yellow -> orange -> red

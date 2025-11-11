@@ -1,8 +1,8 @@
 import Head from "next/head";
-import { 
-  Box, 
-  Container, 
-  Stack, 
+import {
+  Box,
+  Container,
+  Stack,
   Alert,
   Button,
   Card,
@@ -37,17 +37,15 @@ const Page = () => {
 
   // Default values for all settings
   const defaultSettings = {
-    measurementUnits: { value: "metric", label: "Metric (Meters/Centimeters/Millimeters)" },
     tablePageSize: { value: "25", label: "25" },
-    persistFilters: false,
-    gridSize: { value: "20", label: "20 units" },
+    persistFilters: true,
     showGrid: true,
-    snapToGrid: true,
-    showMeasurements: true,
     exportFormat: { value: "pdf", label: "PDF" },
     exportQuality: { value: "medium", label: "Medium" },
     exportIncludeGrid: false,
-    exportIncludeScale: true,
+    autoSaveInterval: { value: "2", label: "2 minutes" },
+    gridOpacity: 80,
+    backgroundOpacity: 60,
   };
 
   // Merge user settings with defaults
@@ -67,17 +65,15 @@ const Page = () => {
     const formValues = formcontrol.getValues();
 
     const currentSettings = {
-      measurementUnits: formValues.measurementUnits,
       tablePageSize: formValues.tablePageSize,
       persistFilters: formValues.persistFilters,
-      gridSize: formValues.gridSize,
       showGrid: formValues.showGrid,
-      snapToGrid: formValues.snapToGrid,
-      showMeasurements: formValues.showMeasurements,
       exportFormat: formValues.exportFormat,
       exportQuality: formValues.exportQuality,
       exportIncludeGrid: formValues.exportIncludeGrid,
-      exportIncludeScale: formValues.exportIncludeScale,
+      autoSaveInterval: formValues.autoSaveInterval,
+      gridOpacity: formValues.gridOpacity,
+      backgroundOpacity: formValues.backgroundOpacity,
     };
 
     const shippedValues = {
@@ -89,18 +85,6 @@ const Page = () => {
   };
 
   // Options
-  const unitOptions = [
-    { value: "metric", label: "Metric (Meters/Centimeters/Millimeters)" },
-    { value: "imperial", label: "Imperial (Feet/Inches)" },
-  ];
-
-  const gridSizeOptions = [
-    { value: "10", label: "10 units" },
-    { value: "20", label: "20 units" },
-    { value: "50", label: "50 units" },
-    { value: "100", label: "100 units" },
-  ];
-
   const exportFormatOptions = [
     { value: "pdf", label: "PDF" },
     { value: "png", label: "PNG" },
@@ -118,6 +102,17 @@ const Page = () => {
     { value: "50", label: "50" },
     { value: "100", label: "100" },
     { value: "250", label: "250" },
+    { value: "500", label: "500" },
+  ];
+
+  const autoSaveIntervalOptions = [
+    { value: "2", label: "2 minutes" },
+    { value: "3", label: "3 minutes" },
+    { value: "4", label: "4 minutes" },
+    { value: "5", label: "5 minutes" },
+    { value: "6", label: "6 minutes" },
+    { value: "7", label: "7 minutes" },
+    { value: "8", label: "8 minutes" },
   ];
 
   return (
@@ -137,16 +132,12 @@ const Page = () => {
                     title="General Settings"
                     propertyItems={[
                       {
-                        label: "Default Measurement Units",
+                        label: "Save last used table filter",
                         value: (
                           <CippFormComponent
-                            type="autoComplete"
-                            creatable={false}
-                            disableClearable={true}
-                            name="measurementUnits"
+                            type="switch"
+                            name="persistFilters"
                             formControl={formcontrol}
-                            multiple={false}
-                            options={unitOptions}
                           />
                         ),
                       },
@@ -164,16 +155,6 @@ const Page = () => {
                           />
                         ),
                       },
-                      {
-                        label: "Save last used table filter",
-                        value: (
-                          <CippFormComponent
-                            type="switch"
-                            name="persistFilters"
-                            formControl={formcontrol}
-                          />
-                        ),
-                      },
                     ]}
                   />
 
@@ -182,20 +163,6 @@ const Page = () => {
                     showDivider={false}
                     title="Canvas Settings"
                     propertyItems={[
-                      {
-                        label: "Grid Size",
-                        value: (
-                          <CippFormComponent
-                            type="autoComplete"
-                            creatable={false}
-                            disableClearable={true}
-                            name="gridSize"
-                            formControl={formcontrol}
-                            multiple={false}
-                            options={gridSizeOptions}
-                          />
-                        ),
-                      },
                       {
                         label: "Show Grid by Default",
                         value: (
@@ -206,23 +173,55 @@ const Page = () => {
                           />
                         ),
                       },
+                    ]}
+                  />
+
+                  {/* Designer Settings */}
+                  <CippPropertyListCard
+                    showDivider={false}
+                    title="Designer Settings"
+                    propertyItems={[
                       {
-                        label: "Snap to Grid",
+                        label: "Auto-Save Interval",
                         value: (
                           <CippFormComponent
-                            type="switch"
-                            name="snapToGrid"
+                            type="autoComplete"
+                            creatable={false}
+                            disableClearable={true}
+                            name="autoSaveInterval"
                             formControl={formcontrol}
+                            multiple={false}
+                            options={autoSaveIntervalOptions}
                           />
                         ),
                       },
                       {
-                        label: "Show Measurements on Canvas",
+                        label: "Grid Opacity (%)",
                         value: (
                           <CippFormComponent
-                            type="switch"
-                            name="showMeasurements"
+                            type="number"
+                            name="gridOpacity"
                             formControl={formcontrol}
+                            validators={{
+                              min: { value: 0, message: "Minimum is 0%" },
+                              max: { value: 100, message: "Maximum is 100%" },
+                            }}
+                            helperText="0-100%"
+                          />
+                        ),
+                      },
+                      {
+                        label: "Background Opacity (%)",
+                        value: (
+                          <CippFormComponent
+                            type="number"
+                            name="backgroundOpacity"
+                            formControl={formcontrol}
+                            validators={{
+                              min: { value: 0, message: "Minimum is 0%" },
+                              max: { value: 100, message: "Maximum is 100%" },
+                            }}
+                            helperText="0-100%"
                           />
                         ),
                       },
@@ -272,16 +271,6 @@ const Page = () => {
                           />
                         ),
                       },
-                      {
-                        label: "Include Scale Bar in Exports",
-                        value: (
-                          <CippFormComponent
-                            type="switch"
-                            name="exportIncludeScale"
-                            formControl={formcontrol}
-                          />
-                        ),
-                      },
                     ]}
                   />
                 </Stack>
@@ -305,9 +294,9 @@ const Page = () => {
                       </Stack>
                     </CardContent>
                     <CardActions>
-                      <Button 
-                        variant="contained" 
-                        disabled={!isValid || !isDirty} 
+                      <Button
+                        variant="contained"
+                        disabled={!isValid || !isDirty}
                         onClick={handleSaveChanges}
                       >
                         Save Preferences

@@ -15,35 +15,55 @@ function Invoke-ListJobs {
     if ($Request.Query.jobentryid) {
         # Lookup a single job by RowKey
         $Filter = "RowKey eq '{0}'" -f $Request.Query.jobentryid
-        $Row = Get-AzDataTableEntity @Table -Filter $Filter
+        $Row = Get-CIPPAzDataTableEntity @Table -Filter $Filter
         if ($Row) {
             $JobData = if ($Row.JobData -and (Test-Json -Json $Row.JobData -ErrorAction SilentlyContinue)) {
                 $Row.JobData | ConvertFrom-Json
             } else { $Row.JobData }
             $ReturnedJob = [PSCustomObject]@{
-                DateTime = $Row.Timestamp
-                JobName  = $Row.JobName
-                Status   = $Row.Status
-                User     = $Row.Username
-                Severity = $Row.Severity
-                JobData  = $JobData
-                AppId    = $Row.AppId
-                IP       = $Row.IP
-                RowKey   = $Row.RowKey
+                DateTime       = $Row.Timestamp
+                JobName        = $Row.JobName
+                JobNumber      = $Row.JobNumber
+                CustomerName   = $Row.CustomerName
+                CustomerId     = $Row.CustomerId
+                Status         = $Row.Status
+                Description    = $Row.Description
+                Address        = $Row.Address
+                City           = $Row.City
+                State          = $Row.State
+                PostalCode     = $Row.PostalCode
+                ContactName    = $Row.ContactName
+                ContactPhone   = $Row.ContactPhone
+                ContactEmail   = $Row.ContactEmail
+                EstimatedValue = $Row.EstimatedValue
+                Notes          = $Row.Notes
+                User           = $Row.Username
+                Severity       = $Row.Severity
+                JobData        = $JobData
+                AppId          = $Row.AppId
+                IP             = $Row.IP
+                RowKey         = $Row.RowKey
+                id             = $Row.RowKey
             }
         } else {
             $ReturnedJob = $null
         }
     } elseif ($Request.Query.ListJobs) {
         # List all jobs (summary)
-        $ReturnedJob = Get-AzDataTableEntity @Table | ForEach-Object {
+        $ReturnedJob = Get-CIPPAzDataTableEntity @Table | ForEach-Object {
             [PSCustomObject]@{
-                DateTime = $_.Timestamp
-                JobName  = $_.JobName
-                Status   = $_.Status
-                User     = $_.Username
-                Severity = $_.Severity
-                RowKey   = $_.RowKey
+                DateTime       = $_.Timestamp
+                JobName        = $_.JobName
+                JobNumber      = $_.JobNumber
+                CustomerName   = $_.CustomerName
+                Status         = $_.Status
+                User           = $_.Username
+                Severity       = $_.Severity
+                RowKey         = $_.RowKey
+                id             = $_.RowKey
+                createdDate    = $_.Timestamp
+                assignedTo     = $_.Username
+                totalValue     = $_.EstimatedValue
             }
         }
     } else {
@@ -52,7 +72,7 @@ function Invoke-ListJobs {
         $UserFilter = $Request.Query.User
         $DateFilter = $Request.Query.DateFilter
 
-        $Rows = Get-AzDataTableEntity @Table
+        $Rows = Get-CIPPAzDataTableEntity @Table
         if ($StatusFilter) {
             $Rows = $Rows | Where-Object { $_.Status -in $StatusFilter }
         }
@@ -65,12 +85,18 @@ function Invoke-ListJobs {
 
         $ReturnedJob = $Rows | ForEach-Object {
             [PSCustomObject]@{
-                DateTime = $_.Timestamp
-                JobName  = $_.JobName
-                Status   = $_.Status
-                User     = $_.Username
-                Severity = $_.Severity
-                RowKey   = $_.RowKey
+                DateTime       = $_.Timestamp
+                JobName        = $_.JobName
+                JobNumber      = $_.JobNumber
+                CustomerName   = $_.CustomerName
+                Status         = $_.Status
+                User           = $_.Username
+                Severity       = $_.Severity
+                RowKey         = $_.RowKey
+                id             = $_.RowKey
+                createdDate    = $_.Timestamp
+                assignedTo     = $_.Username
+                totalValue     = $_.EstimatedValue
             }
         }
     }

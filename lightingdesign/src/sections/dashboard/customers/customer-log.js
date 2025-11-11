@@ -1,6 +1,6 @@
-import PropTypes from 'prop-types';
-import { formatDistanceToNowStrict } from 'date-fns';
-import { Avatar, ListItem, Stack, Typography } from '@mui/material';
+import PropTypes from "prop-types";
+import { formatDistanceToNowStrict } from "date-fns";
+import { Avatar, ListItem, Stack, Typography } from "@mui/material";
 
 export const CustomerLog = (props) => {
   const { createdAt, message, subjectAvatar, subjectId, subjectName, type, ...other } = props;
@@ -11,34 +11,20 @@ export const CustomerLog = (props) => {
     <ListItem
       sx={{
         px: 3,
-        py: 2.5
+        py: 2.5,
       }}
-      {...other}>
-      <Stack
-        alignItems="center"
-        direction="row"
-        spacing={2}
-      >
+      {...other}
+    >
+      <Stack alignItems="center" direction="row" spacing={2}>
         <Avatar src={subjectAvatar} />
         <div>
-          <Typography
-            color="text.secondary"
-            variant="body2"
-          >
-            <Typography
-              component="span"
-              variant="subtitle2"
-            >
+          <Typography color="text.secondary" variant="body2">
+            <Typography component="span" variant="subtitle2">
               {subjectName}
-            </Typography>
-            {' '}
+            </Typography>{" "}
             {message}
           </Typography>
-          <Typography
-            color="text.secondary"
-            variant="caption"
-            sx={{ fontWeight: 400 }}
-          >
+          <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 400 }}>
             {ago} ago
           </Typography>
         </div>
@@ -53,5 +39,5 @@ CustomerLog.propTypes = {
   subjectAvatar: PropTypes.string,
   subjectId: PropTypes.string.isRequired,
   subjectName: PropTypes.string,
-  type: PropTypes.string.isRequired
+  type: PropTypes.string.isRequired,
 };

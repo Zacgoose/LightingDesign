@@ -1,11 +1,12 @@
 import { Drawer, Box, IconButton, Typography, Divider } from "@mui/material";
+import { memo } from "react";
 import { CippPropertyListCard } from "../CippCards/CippPropertyListCard";
 import { getCippTranslation } from "../../utils/get-cipp-translation";
 import { getCippFormatting } from "../../utils/get-cipp-formatting";
 import { useMediaQuery, Grid } from "@mui/system";
 import CloseIcon from "@mui/icons-material/Close";
 
-export const CippOffCanvas = (props) => {
+export const CippOffCanvas = memo((props) => {
   const {
     title = "Extended Info",
     visible,
@@ -17,6 +18,8 @@ export const CippOffCanvas = (props) => {
     children,
     size = "sm",
     footer,
+    hideTitle = false,
+    contentPadding = 2,
   } = props;
 
   const mdDown = useMediaQuery((theme) => theme.breakpoints.down("md"));
@@ -80,20 +83,24 @@ export const CippOffCanvas = (props) => {
         open={visible}
         onClose={onClose}
       >
-        <Box
-          sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1.5 }}
-        >
-          <Typography variant="h5">{title}</Typography>
-          <IconButton onClick={onClose}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <Divider />
+        {!hideTitle ? (
+          <Box sx={{ p: 1.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Typography variant="h5" sx={{ flexGrow: 1 }}>
+                {title}
+              </Typography>
+              <IconButton onClick={onClose} sx={{ ml: 2 }}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+            <Divider />
+          </Box>
+        ) : null}
         <Box
           sx={{
             display: "flex",
             flexDirection: "column",
-            height: "calc(100vh - 73px)", // Account for header + divider
+            height: hideTitle ? "100vh" : "calc(100vh - 73px)", // Account for header + divider
             minHeight: 0,
           }}
         >
@@ -124,7 +131,13 @@ export const CippOffCanvas = (props) => {
                 sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
               >
                 <Box
-                  sx={{ display: "flex", flexDirection: "column", flexGrow: 1, minHeight: 0, p: 2 }}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    flexGrow: 1,
+                    minHeight: 0,
+                    p: contentPadding,
+                  }}
                 >
                   {/* Render children if provided, otherwise render default content */}
                   {typeof children === "function" ? children(extendedData) : children}
@@ -151,4 +164,4 @@ export const CippOffCanvas = (props) => {
       </Drawer>
     </>
   );
-};
+});

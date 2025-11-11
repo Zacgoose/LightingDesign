@@ -1,42 +1,32 @@
-import PropTypes from 'prop-types';
-import { Avatar, Card, CardActions, Divider, Stack, Typography } from '@mui/material';
+import PropTypes from "prop-types";
+import { Avatar, Card, CardActions, Divider, Stack, Typography } from "@mui/material";
 
 export const OverviewSummary = (props) => {
   const { action, value, icon, label, ...other } = props;
 
   return (
     <Card {...other}>
-      <Stack
-        alignItems="center"
-        direction="row"
-        spacing={2}
-        sx={{ p: 2 }}
-      >
+      <Stack alignItems="center" direction="row" spacing={2} sx={{ p: 2 }}>
         <Avatar
           sx={{
-            backgroundColor: 'primary.alpha12',
-            color: 'primary.main'
+            backgroundColor: "primary.alpha12",
+            color: "primary.main",
           }}
         >
           {icon}
         </Avatar>
         <div>
-          <Typography
-            color="text.secondary"
-            variant="overline"
-          >
+          <Typography color="text.secondary" variant="overline">
             {label}
           </Typography>
-          <Typography variant="h6">
-            {value}
-          </Typography>
+          <Typography variant="h6">{value}</Typography>
         </div>
       </Stack>
       <Divider />
       <CardActions
         sx={{
           px: 3,
-          py: 1
+          py: 1,
         }}
       >
         {action}
@@ -49,5 +39,5 @@ OverviewSummary.propTypes = {
   action: PropTypes.node,
   icon: PropTypes.node,
   label: PropTypes.string.isRequired,
-  value: PropTypes.number.isRequired
+  value: PropTypes.number.isRequired,
 };

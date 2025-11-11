@@ -141,7 +141,7 @@ const ScheduledTaskDetails = ({ data, showActions = true }) => {
                           label: key,
                           value: getCippFormatting(value, key),
                         };
-                      }
+                      },
                     )}
                     isFetching={taskDetailResults.isFetching}
                   />

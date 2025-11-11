@@ -10,7 +10,7 @@ import {
   PrecisionManufacturing,
   BarChart,
 } from "@mui/icons-material";
-import { Chip, Link, SvgIcon } from "@mui/material";
+import { Chip, Link, SvgIcon, Popover } from "@mui/material";
 import { Box } from "@mui/system";
 import { CippCopyToClipBoard } from "../components/CippComponents/CippCopyToClipboard";
 import { getCippLicenseTranslation } from "./get-cipp-license-translation";
@@ -31,10 +31,124 @@ import { getCippTranslation } from "./get-cipp-translation";
 import DOMPurify from "dompurify";
 import { getSignInErrorCodeTranslation } from "./get-cipp-signin-errorcode-translation";
 import { CollapsibleChipList } from "../components/CippComponents/CollapsibleChipList";
+import { useState } from "react";
 
-export const getCippFormatting = (data, cellName, type, canReceive, flatten = true) => {
+// Image component with hover preview
+const ImageWithHoverPreview = ({ src, alt, style }) => {
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleMouseEnter = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMouseLeave = () => {
+    setAnchorEl(null);
+  };
+
+  const open = Boolean(anchorEl);
+
+  return (
+    <>
+      <img
+        src={src}
+        alt={alt}
+        style={{ ...style, cursor: "pointer" }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      />
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={handleMouseLeave}
+        anchorOrigin={{
+          vertical: "center",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "center",
+          horizontal: "left",
+        }}
+        disableRestoreFocus
+        sx={{
+          pointerEvents: "none",
+        }}
+      >
+        <Box sx={{ p: 1, maxWidth: "400px", maxHeight: "400px" }}>
+          <img
+            src={src}
+            alt={alt}
+            style={{
+              maxWidth: "400px",
+              maxHeight: "400px",
+              objectFit: "contain",
+              display: "block",
+            }}
+          />
+        </Box>
+      </Popover>
+    </>
+  );
+};
+
+export const getCippFormatting = (
+  data,
+  cellName,
+  type,
+  canReceive,
+  flatten = true,
+  imageColumn = null,
+) => {
   const isText = type === "text";
   const cellNameLower = cellName.toLowerCase();
+
+  // Check if this column should render images based on imageColumn prop
+  if (
+    imageColumn &&
+    (cellName === imageColumn || (Array.isArray(imageColumn) && imageColumn.includes(cellName)))
+  ) {
+    // Handle null or undefined data
+    if (data === null || data === undefined || data === "") {
+      return isText ? (
+        "No data"
+      ) : (
+        <Chip variant="outlined" label="No data" size="small" color="info" />
+      );
+    }
+
+    // Handle array of image URLs
+    if (Array.isArray(data)) {
+      return isText ? (
+        data.join(", ")
+      ) : (
+        <Box component="span" sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+          {data.map((url, index) =>
+            url ? (
+              <ImageWithHoverPreview
+                key={index}
+                src={url}
+                alt={`Image ${index + 1}`}
+                style={{ width: "60px", height: "60px", objectFit: "contain" }}
+              />
+            ) : null,
+          )}
+        </Box>
+      );
+    }
+
+    // Handle single image URL
+    if (typeof data === "string") {
+      return isText ? (
+        data
+      ) : (
+        <ImageWithHoverPreview
+          src={data}
+          alt="Image"
+          style={{ width: "60px", height: "60px", objectFit: "contain" }}
+        />
+      );
+    }
+  }
+
   // if data is a data object, return a fFormatted date
   if (cellName === "addrow") {
     return isText ? (
@@ -235,14 +349,14 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
         unit === "d"
           ? "day"
           : unit === "h"
-          ? "hour"
-          : unit === "w"
-          ? "week"
-          : unit === "m"
-          ? "minutes"
-          : unit === "y"
-          ? "year"
-          : unit;
+            ? "hour"
+            : unit === "w"
+              ? "week"
+              : unit === "m"
+                ? "minutes"
+                : unit === "y"
+                  ? "year"
+                  : unit;
       return isText ? `Every ${value} ${unitText}` : `Every ${value} ${unitText}`;
     }
   }
@@ -338,7 +452,7 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
                 icon: icon,
                 key: key,
               };
-            })
+            }),
           );
     } else {
       // Handle null/undefined single element
@@ -432,7 +546,7 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
         : renderChipList(
             data
               .filter((item) => item)
-              .map((item) => (typeof item === "object" && item?.label ? item.label : item))
+              .map((item) => (typeof item === "object" && item?.label ? item.label : item)),
           );
     }
   }
@@ -468,8 +582,8 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
       data === "enabled"
         ? "Enabled"
         : data === "enabledForReportingButNotEnforced"
-        ? "Report Only"
-        : data;
+          ? "Report Only"
+          : data;
     return isText ? data : <Chip variant="outlined" label={data} size="small" color="info" />;
   }
 
@@ -491,8 +605,8 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
     const accessRights = Array.isArray(data)
       ? data.flatMap((item) => (typeof item === "string" ? item.split(", ") : []))
       : typeof data === "string"
-      ? data.split(", ")
-      : [];
+        ? data.split(", ")
+        : [];
     return isText ? accessRights.join(", ") : renderChipList(accessRights);
   }
 
@@ -573,8 +687,8 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
         ? translatedLicenses.join(", ")
         : translatedLicenses
       : Array.isArray(translatedLicenses)
-      ? renderChipList(translatedLicenses)
-      : translatedLicenses;
+        ? renderChipList(translatedLicenses)
+        : translatedLicenses;
   }
 
   if (cellName === "unifiedRoles") {
@@ -747,7 +861,7 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
       },
       {
         fallbackLocale: "en",
-      }
+      },
     );
     const duration = isoDuration(data);
     return duration.humanize("en");
@@ -802,7 +916,7 @@ export const getCippFormatting = (data, cellName, type, canReceive, flatten = tr
             return {
               label: item.label,
             };
-          })
+          }),
         );
   }
 

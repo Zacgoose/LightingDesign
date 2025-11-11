@@ -1,271 +1,1067 @@
 import { useRouter } from "next/router";
-import { useState, useRef, useEffect, useMemo } from "react";
-import { Box, Container, Card, CardContent, useTheme } from "@mui/material";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import {
+  Box,
+  Container,
+  Card,
+  CardContent,
+  useTheme,
+  CircularProgress,
+  Typography,
+  TextField,
+} from "@mui/material";
+import { Line } from "react-konva";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import { useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { DesignerToolbarRow } from "/src/components/designer/DesignerToolbarRow";
 import { DesignerCanvas } from "/src/components/designer/DesignerCanvas";
 import { ProductSelectionDrawer } from "/src/components/designer/ProductSelectionDrawer";
+import { ProductDetailsDrawer } from "/src/components/designer/ProductDetailsDrawer";
+import { ProductListPanel } from "/src/components/designer/ProductListPanel";
 import { ContextMenus } from "/src/components/designer/ContextMenus";
 import { ColorPickerPopover } from "/src/components/designer/ColorPickerPopover";
-import { ProductsLayer } from "/src/components/designer/ProductsLayer";
+import { ProductsLayer, COLOR_PALETTE } from "/src/components/designer/ProductsLayer";
 import { ConnectorsLayer } from "/src/components/designer/ConnectorsLayer";
 import { ProductShape } from "/src/components/designer/ProductShape";
 import { MeasurementLayer } from "/src/components/designer/MeasurementLayer";
 import { MeasurementConfirmation } from "/src/components/designer/MeasurementConfirmation";
+import { LayerSwitcher } from "/src/components/designer/LayerSwitcher";
+import { SubLayerControls } from "/src/components/designer/SubLayerControls";
+import { ObjectPreviewPanel } from "/src/components/designer/ObjectPreviewPanel";
 import { CippComponentDialog } from "/src/components/CippComponents/CippComponentDialog";
-import { TextField } from "@mui/material";
+import { TextLayer } from "/src/components/designer/TextLayer";
+import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
+import { TextEntryDialog } from "/src/components/designer/TextEntryDialog";
+import { ConfirmDialog } from "/src/components/designer/ConfirmDialog";
 import { useHistory } from "/src/hooks/useHistory";
+import { useUnifiedHistory } from "/src/hooks/useUnifiedHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
+import { useLayerManager } from "/src/hooks/useLayerManager";
+import { useCanvasState } from "/src/hooks/useCanvasState";
+import { useSelectionState } from "/src/hooks/useSelectionState";
+import { useDesignLoader } from "/src/hooks/useDesignLoader";
+import { useProductInteraction } from "/src/hooks/useProductInteraction";
+import { useContextMenus } from "/src/hooks/useContextMenus";
+import { useSettings } from "/src/hooks/use-settings";
 import productTypesConfig from "/src/data/productTypes.json";
+import { ApiGetCall, ApiPostCall } from "/src/api/ApiCall";
+import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
 
 const Page = () => {
-  // Middle mouse pan handler
-  const handleCanvasPan = (dx, dy) => {
-    setStagePosition(pos => ({ x: pos.x + dx, y: pos.y + dy }));
-  };
   const router = useRouter();
   const { id } = router.query;
   const theme = useTheme();
+  const queryClient = useQueryClient();
+  const settings = useSettings();
 
-  // Canvas state
-  const [stageScale, setStageScale] = useState(1);
-  const [canvasWidth, setCanvasWidth] = useState(4200);
-  const [canvasHeight, setCanvasHeight] = useState(2970);
-  const [stagePosition, setStagePosition] = useState({ 
-    x: canvasWidth / 2, 
-    y: canvasHeight / 2 
+  // State for forcing component re-renders after lock state changes
+  const [, forceUpdate] = useState(0);
+
+  // State for tracking save status
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [pendingExportNavigation, setPendingExportNavigation] = useState(false);
+
+  // State for deselection confirmation dialog
+  const [deselectDialog, setDeselectDialog] = useState({ open: false, action: null });
+
+  // Load design data
+  const designData = ApiGetCall({
+    url: "/api/ExecGetDesign",
+    data: { jobId: id },
+    queryKey: `Design-${id}`,
+    waiting: !!id,
   });
 
-  // View options
-  const [showGrid, setShowGrid] = useState(true);
-  const [showMeasurements, setShowMeasurements] = useState(false);
-  const [selectedTool, setSelectedTool] = useState("select");
-  const [rotationSnaps, setRotationSnaps] = useState(8);
-  
+  // Separate lightweight query for lock status polling (every 1 minute)
+  const lockStatusData = ApiGetCall({
+    url: "/api/ExecGetDesignLockStatus",
+    data: { jobId: id },
+    queryKey: `DesignLockStatus-${id}`,
+    waiting: !!id,
+    refetchInterval: 60000, // Poll every 1 minute for lock status changes only
+  });
+
+  // Load products catalog for enriching saved designs
+  const productsData = ApiGetCall({
+    url: "/api/ExecListBeaconProducts",
+    queryKey: "Products",
+  });
+
+  // Save design mutation
+  const saveDesignMutation = ApiPostCall({});
+
+  // Lock design mutation (for enabling/disabling editing)
+  const lockDesignMutation = ApiPostCall({});
+  const unlockDesignMutation = ApiPostCall({});
+
+  // Extract lock info - prefer from lockStatusData (frequently updated)
+  // If lock status query fails or has no data, default to locked state (safe fallback)
+  const lockInfo = lockStatusData?.data || { IsLocked: true, IsOwner: false };
+  const isLocked = lockInfo.IsLocked || false;
+  const isOwner = lockInfo.IsOwner || false;
+  const isEditingDisabled = isLocked && !isOwner;
+
+  // Canvas state management using custom hook
+  const canvasState = useCanvasState();
+  const {
+    stageScale,
+    canvasWidth,
+    canvasHeight,
+    viewportWidth,
+    viewportHeight,
+    stagePosition,
+    showGrid,
+    showLayers,
+    showPreview,
+    selectedTool,
+    rotationSnaps,
+    canvasContainerRef,
+    setStageScale,
+    setShowGrid,
+    setShowLayers,
+    setShowPreview,
+    setSelectedTool,
+    setRotationSnaps,
+    handleWheel,
+    handleStageDragEnd,
+    handleCanvasPan,
+    handleZoomIn,
+    handleZoomOut,
+    handleResetView,
+  } = canvasState;
+
+  // Use refs for frequently changing canvas state to avoid re-renders in callbacks
+  // These refs are kept in sync with state but don't trigger re-renders when accessed
+  const stageScaleRef = useRef(stageScale);
+  const stagePositionRef = useRef(stagePosition);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    stageScaleRef.current = stageScale;
+  }, [stageScale]);
+
+  useEffect(() => {
+    stagePositionRef.current = stagePosition;
+  }, [stagePosition]);
+
+  // Layer management
+  const layerManager = useLayerManager();
+  const {
+    layers,
+    activeLayerId,
+    activeLayer,
+    layersVersion,
+    setActiveLayerId,
+    addLayer,
+    deleteLayer,
+    updateLayer,
+    toggleSublayerVisibility,
+    filterProductsBySublayers,
+    filterConnectorsBySublayers,
+    loadLayers,
+    addSublayer,
+    removeSublayer,
+    renameSublayer,
+    setDefaultSublayer,
+  } = layerManager;
+
   // Placement mode
   const [placementMode, setPlacementMode] = useState(null);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+
+  // Create unified history timeline tracker
+  const timelineTracker = useUnifiedHistory();
 
   // Products and connectors with history
   const {
     state: products,
     updateHistory,
+    resetHistoryBaseline,
     undo: handleUndo,
     redo: handleRedo,
     canUndo,
     canRedo,
-  } = useHistory([]);
+  } = useHistory(activeLayer?.products || [], timelineTracker, "products");
 
-  // Form hooks
-  const scaleForm = useForm({
-    mode: "onChange",
-    defaultValues: {
-      scale: 1
-    }
-  });
-  
-  const [connectors, setConnectors] = useState([]);
+  // Text boxes with history - similar to products and connectors
+  const {
+    state: textBoxes,
+    updateHistory: updateTextBoxHistory,
+    resetHistoryBaseline: resetTextBoxHistoryBaseline,
+    undo: handleUndoTextBoxes,
+    redo: handleRedoTextBoxes,
+    canUndo: canUndoTextBoxes,
+    canRedo: canRedoTextBoxes,
+  } = useHistory([], timelineTracker, "textBoxes");
+  const [selectedTextId, setSelectedTextId] = useState(null);
 
-  // Selection state
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [selectedConnectorId, setSelectedConnectorId] = useState(null);
-  const [groupKey, setGroupKey] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  // Collect all products from all layers for consistent numbering across the design
+  // This ensures product prefixes (O1, O2, etc.) are numbered globally, not per-layer
+  const allProductsFromAllLayers = useMemo(() => {
+    const allProducts = [];
+    layers.forEach((layer) => {
+      if (layer.products) {
+        allProducts.push(...layer.products);
+      }
+    });
+    return allProducts;
+  }, [layers]);
+
+  const isLoadingLayerData = useRef(false);
+  const lastLoadedLayerId = useRef(null); // Initialize to null so first layer loads properly
+  const lastLoadedLayersVersion = useRef(0); // Track when layer data changes
+  // Initialize sync refs to match the initial active layer values
+  // This prevents false positives in sync effects on initial load
+  const lastSyncedBackgroundImage = useRef(activeLayer?.backgroundImage || null);
+  const lastSyncedBackgroundImageNaturalSize = useRef(
+    activeLayer?.backgroundImageNaturalSize || null,
+  );
+  const lastSyncedScaleFactor = useRef(activeLayer?.scaleFactor || 100);
+
+  // Ref to always have current activeLayerId for sync effects
+  // We use a ref instead of putting activeLayerId in dependencies to avoid
+  // the sync effects running when switching layers (which would cause race conditions)
+  const activeLayerIdRef = useRef(activeLayerId);
+
+  // Connectors with history - similar to products
+  const {
+    state: connectors,
+    updateHistory: updateConnectorHistory,
+    resetHistoryBaseline: resetConnectorHistoryBaseline,
+    undo: handleUndoConnectors,
+    redo: handleRedoConnectors,
+    canUndo: canUndoConnectors,
+    canRedo: canRedoConnectors,
+  } = useHistory(activeLayer?.connectors || [], timelineTracker, "connectors");
+
+  // Keep activeLayerIdRef in sync with activeLayerId
+  useEffect(() => {
+    activeLayerIdRef.current = activeLayerId;
+  }, [activeLayerId]);
+
+  // Background and Scale - now derived from active layer
+  const [backgroundImage, setBackgroundImage] = useState(activeLayer?.backgroundImage || null);
+  const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(
+    activeLayer?.backgroundImageNaturalSize || null,
+  );
+  const [scaleFactor, setScaleFactor] = useState(activeLayer?.scaleFactor || 100);
+
+  // Text boxes state (managed above with useHistory hook)
+  const [textDialogOpen, setTextDialogOpen] = useState(false);
+  const [textDialogValue, setTextDialogValue] = useState("");
+  const [textDialogFormatting, setTextDialogFormatting] = useState({});
+  const [pendingTextBoxId, setPendingTextBoxId] = useState(null);
+
+  // Selection state management using custom hook
+  const selectionState = useSelectionState(products, textBoxes);
+  const {
+    selectedIds,
+    selectedConnectorIds,
+    groupKey,
+    isDragging,
+    selectionSnapshot,
+    transformerRef,
+    selectionGroupRef,
+    setSelectedIds,
+    setSelectedConnectorIds,
+    setGroupKey,
+    setIsDragging,
+    applyGroupTransform,
+    clearSelection,
+    forceGroupUpdate,
+  } = selectionState;
+
+  // Connection sequence for connect tool
+  const [connectSequence, setConnectSequence] = useState([]);
+
+  // Drag-to-select state
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionRect, setSelectionRect] = useState(null);
+  const selectionStartRef = useRef(null);
+  const hasDraggedRef = useRef(false);
+  const DRAG_THRESHOLD = 5; // pixels - minimum movement to consider it a drag
+
+  // UI state
+  const [productDrawerVisible, setProductDrawerVisible] = useState(false);
+  const [productDetailsDrawerVisible, setProductDetailsDrawerVisible] = useState(false);
+  const [selectedProductForDetails, setSelectedProductForDetails] = useState(null);
+  const [swapMode, setSwapMode] = useState(false);
+  const [swapAllSameMode, setSwapAllSameMode] = useState(false);
+
+  // Refs
+  const clipboard = useRef({ products: [], connectors: [] });
+  const pendingInsertPosition = useRef(null);
+  const subLayerControlsRef = useRef();
+  const layerSwitcherRef = useRef();
+  const productListPanelRef = useRef();
+  const stageRef = useRef();
+
+  // State for dynamic panel positions
+  const [layerSwitcherTop, setLayerSwitcherTop] = useState(16);
+  const [subLayerControlsTop, setSubLayerControlsTop] = useState(200);
+  const [productListPanelTop, setProductListPanelTop] = useState(380);
+
+  // Measurement state
+  const [measureMode, setMeasureMode] = useState(false);
+  const [measurePoints, setMeasurePoints] = useState([]);
+  const [measureDialogOpen, setMeasureDialogOpen] = useState(false);
+  const [measureValue, setMeasureValue] = useState(0);
 
   // Scale dialog state
   const [scaleDialogOpen, setScaleDialogOpen] = useState(false);
   const [scaleValue, setScaleValue] = useState(1);
 
-  // Handler for context menu 'Scale...'
-  const handleOpenScaleDialog = () => {
-    setScaleDialogOpen(true);
-    handleCloseContextMenu();
-  };
+  // Quantity dialog state
+  const [quantityDialogOpen, setQuantityDialogOpen] = useState(false);
+  const [quantityValue, setQuantityValue] = useState(1);
 
-  // Handler for applying scale to selected products
-  const handleScaleConfirm = (scaleValue) => {
-    scaleValue = Number(scaleValue);
-    if (isNaN(scaleValue) || scaleValue <= 0) return;
+  // Middle mouse panning state
+  const [isMiddlePanning, setIsMiddlePanning] = useState(false);
 
-    // For each selected product, set only the correct real-world size property based on config
-    const newProducts = products.map(product => {
-      if (!selectedIds.includes(product.id)) return product;
-      
-      let updated = { ...product };
-      // Ensure base scales exist
-      const baseScaleX = product.baseScaleX || 1;
-      const baseScaleY = product.baseScaleY || 1;
-      
-      // Store current scale as base if not set
-      if (!product.baseScaleX) {
-        updated.baseScaleX = product.scaleX || 1;
-        updated.baseScaleY = product.scaleY || 1;
-      }
-      
-      // Apply scale relative to base scale
-      updated.scaleX = baseScaleX * scaleValue;
-      updated.scaleY = baseScaleY * scaleValue;
-      
-      return updated;
+  // Stage dragging state (for canvas panning performance)
+  const [isStageDragging, setIsStageDragging] = useState(false);
+
+  // Upload state for better UX
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Calculate the product for the preview line in connect mode
+  const previewLineProduct = useMemo(() => {
+    if (selectedTool === "connect" && connectSequence.length > 0) {
+      const lastProductId = connectSequence[connectSequence.length - 1];
+      return products.find((p) => p.id === lastProductId);
+    }
+    return null;
+  }, [selectedTool, connectSequence, products]);
+
+  // Form hooks
+  const scaleForm = useForm({
+    mode: "onChange",
+    defaultValues: {
+      scale: 1,
+    },
+  });
+
+  const quantityForm = useForm({
+    mode: "onChange",
+    defaultValues: {
+      quantity: 1,
+    },
+  });
+
+  // Keep products in sync with active layer (save to layer when products change)
+  // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
+  // The isLoadingLayerData guard prevents syncing during layer load
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
+  useEffect(() => {
+    if (isLoadingLayerData.current) return;
+    updateLayer(activeLayerIdRef.current, { products });
+  }, [products, updateLayer]);
+
+  // Keep connectors in sync with active layer
+  // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
+  useEffect(() => {
+    if (isLoadingLayerData.current) return;
+    updateLayer(activeLayerIdRef.current, { connectors });
+  }, [connectors, updateLayer]);
+
+  // Keep text boxes in sync with active layer
+  // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
+  useEffect(() => {
+    if (isLoadingLayerData.current) return;
+    updateLayer(activeLayerIdRef.current, { textBoxes });
+  }, [textBoxes, updateLayer]);
+
+  // Background sync removed - we now only update layers explicitly during uploads
+  // This prevents race conditions where the sync effect runs at the wrong time
+  // and applies backgrounds to the wrong layers
+
+  // Keep scale factor in sync with active layer
+  // Note: activeLayerId is intentionally NOT in dependencies to prevent sync on layer switch
+  // We use activeLayerIdRef.current to always get the current layer, avoiding stale closures
+  useEffect(() => {
+    if (isLoadingLayerData.current) return;
+    if (scaleFactor !== lastSyncedScaleFactor.current) {
+      updateLayer(activeLayerIdRef.current, { scaleFactor });
+      lastSyncedScaleFactor.current = scaleFactor;
+    }
+  }, [scaleFactor, updateLayer]);
+
+  // Design loader hook - optimized for performance
+  const designLoader = useDesignLoader({
+    designData,
+    productsData,
+    onLoadComplete: () => {
+      // Reset the last loaded layer ID after design loads
+      lastLoadedLayerId.current = null;
+    },
+    updateHistory,
+    setStageScale,
+    loadLayers,
+    setLastSaved,
+    setHasUnsavedChanges,
+    setBackgroundImage,
+    setBackgroundImageNaturalSize,
+    setScaleFactor,
+  });
+
+  const { stripProductMetadata, stripLayersForSave, resetLoadedDesign } = designLoader;
+
+  // Track changes to mark as unsaved
+  useEffect(() => {
+    if (products.length > 0 || connectors.length > 0) {
+      setHasUnsavedChanges(true);
+    }
+  }, [products, connectors]);
+
+  // Handle save mutation success
+  useEffect(() => {
+    if (saveDesignMutation.isSuccess) {
+      setLastSaved(new Date().toISOString());
+      setHasUnsavedChanges(false);
+      setIsSaving(false);
+      queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
+
+      // Note: If pendingExportNavigation is true, we wait for the design data
+      // to reload before navigating (see separate effect below)
+    }
+  }, [saveDesignMutation.isSuccess, queryClient, id]);
+
+  // Handle navigation to export page after save completes and data reloads
+  useEffect(() => {
+    // Only navigate when:
+    // 1. We're pending export navigation
+    // 2. Save is complete (not pending)
+    // 3. Design data has finished loading (ensuring we have the latest saved data)
+    if (pendingExportNavigation && !saveDesignMutation.isPending && designData.isSuccess) {
+      setPendingExportNavigation(false);
+      router.push(`/jobs/design/export?id=${id}`);
+    }
+  }, [pendingExportNavigation, saveDesignMutation.isPending, designData.isSuccess, router, id]);
+
+  // Handle save mutation end
+  useEffect(() => {
+    if (!saveDesignMutation.isPending) {
+      setIsSaving(false);
+    }
+  }, [saveDesignMutation.isPending]);
+
+  const handleSave = useCallback(() => {
+    if (!id) {
+      console.error("No job ID found. Cannot save design.");
+      return;
+    }
+
+    // Only allow save if user owns the lock
+    if (!isOwner) {
+      console.error("Cannot save: design is not locked by current user.");
+      return;
+    }
+
+    // Prevent saving if items are selected to avoid losing transformations
+    if (selectedIds.length > 0 || selectedConnectorIds.length > 0 || selectedTextId) {
+      console.warn("Cannot save: Please deselect all items before saving.");
+      setDeselectDialog({ 
+        open: true, 
+        action: 'save',
+        message: "Please deselect all items before saving. Click on an empty area of the canvas to deselect."
+      });
+      return;
+    }
+
+    const transformed = applyGroupTransform();
+    if (transformed) updateHistory(transformed);
+    setIsSaving(true);
+
+    // Force sync of background image if it hasn't been synced yet
+    if (
+      backgroundImage !== lastSyncedBackgroundImage.current ||
+      backgroundImageNaturalSize !== lastSyncedBackgroundImageNaturalSize.current
+    ) {
+      console.log("Forcing background sync before save");
+      updateLayer(activeLayerIdRef.current, { backgroundImage, backgroundImageNaturalSize });
+      lastSyncedBackgroundImage.current = backgroundImage;
+      lastSyncedBackgroundImageNaturalSize.current = backgroundImageNaturalSize;
+    }
+
+    // Strip metadata from all layers (products and connectors are already in layers)
+    const strippedLayers = stripLayersForSave(layers);
+
+    // Use new format: only save layers (not root products/connectors)
+    // Products and connectors are stored within their respective layers
+    saveDesignMutation.mutate({
+      url: "/api/ExecSaveDesign",
+      data: {
+        jobId: id,
+        designData: {
+          layers: strippedLayers,
+          canvasSettings: {
+            width: canvasWidth,
+            height: canvasHeight,
+            scale: stageScale,
+            position: stagePosition,
+          },
+        },
+      },
     });
+  }, [
+    id,
+    isOwner,
+    layers,
+    canvasWidth,
+    canvasHeight,
+    stageScale,
+    stagePosition,
+    applyGroupTransform,
+    updateHistory,
+    stripLayersForSave,
+    saveDesignMutation,
+    backgroundImage,
+    backgroundImageNaturalSize,
+    updateLayer,
+    selectedIds,
+    selectedConnectorIds,
+    selectedTextId,
+  ]);
 
-    updateHistory(newProducts);
-    
-    // Force transformer update
-    setGroupKey(k => k + 1);
-    if (transformerRef.current && selectionGroupRef.current) {
-      selectionGroupRef.current.scaleX(1);
-      selectionGroupRef.current.scaleY(1);
-      transformerRef.current.nodes([selectionGroupRef.current]);
-      transformerRef.current.getLayer()?.batchDraw();
-    }
-    setScaleDialogOpen(false);
-  };
+  // Auto-save functionality - only when user owns the lock
+  useEffect(() => {
+    if (!id || !hasUnsavedChanges || isSaving || !isOwner) return;
 
-  // Connection sequence for connect tool
-  const [connectSequence, setConnectSequence] = useState([]);
+    // Get auto-save interval from user settings (in minutes), default to 2 minutes
+    const autoSaveMinutes = parseInt(settings.autoSaveInterval?.value || "2", 10);
+    const autoSaveMs = autoSaveMinutes * 60 * 1000;
 
-  // UI state
-  const [contextMenu, setContextMenu] = useState(null);
-  const [productDrawerVisible, setProductDrawerVisible] = useState(false);
-  const [colorPickerAnchor, setColorPickerAnchor] = useState(null);
-  const [colorPickerTarget, setColorPickerTarget] = useState(null);
-
-  // Refs
-  const clipboard = useRef({ products: [], connectors: [] });
-  const transformerRef = useRef();
-  const selectionGroupRef = useRef();
-  const pendingInsertPosition = useRef(null);
-  const canvasContainerRef = useRef();
-
-  // Background and Scale
-  const [backgroundImage, setBackgroundImage] = useState(null);
-  const [scaleFactor, setScaleFactor] = useState(100); // 100px per meter
-  const [measureMode, setMeasureMode] = useState(false);
-  const [measurePoints, setMeasurePoints] = useState([]);
-  const [measureDialogOpen, setMeasureDialogOpen] = useState(false);
-  const [measureValue, setMeasureValue] = useState(0);
-  const [backgroundImageNaturalSize, setBackgroundImageNaturalSize] = useState(null);
-
-  // Selection snapshot for group transformations
-  const selectionSnapshot = useMemo(() => {
-    if (selectedIds.length === 0) {
-      return { centerX: 0, centerY: 0, products: [], rotation: 0 };
-    }
-
-    const snapshot = products
-      .filter(p => selectedIds.includes(p.id))
-      .map(p => ({ ...p }));
-    
-    if (snapshot.length === 0) {
-      return { centerX: 0, centerY: 0, products: [], rotation: 0 };
-    }
-
-    // Calculate average rotation of selected products first
-    const totalRotation = snapshot.reduce((sum, p) => sum + (p.rotation || 0), 0);
-    const avgRotation = totalRotation / snapshot.length;
-    
-    // Calculate center considering rotation
-    let sumX = 0;
-    let sumY = 0;
-    
-    snapshot.forEach(p => {
-      // If the product is rotated, we need to adjust its position relative to the average rotation
-      if (p.rotation) {
-        const angle = ((p.rotation - avgRotation) * Math.PI) / 180;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        sumX += p.x * cos - p.y * sin;
-        sumY += p.x * sin + p.y * cos;
-      } else {
-        sumX += p.x;
-        sumY += p.y;
+    const autoSaveInterval = setInterval(() => {
+      if (hasUnsavedChanges && !isSaving) {
+        console.log("Auto-saving design...");
+        handleSave();
       }
-    });
-    
-    const centerX = sumX / snapshot.length;
-    const centerY = sumY / snapshot.length;
-    
-    return {
-      centerX,
-      centerY,
-      rotation: avgRotation,
-      products: snapshot.map(p => {
-        // Calculate relative position accounting for rotation
-        const angle = (avgRotation * Math.PI) / 180;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        const relX = (p.x - centerX) * cos + (p.y - centerY) * sin;
-        const relY = -(p.x - centerX) * sin + (p.y - centerY) * cos;
-        
-        return {
-          ...p,
-          relativeX: relX,
-          relativeY: relY,
-          rotation: (p.rotation || 0) - avgRotation // Store relative rotation
+    }, autoSaveMs);
+
+    return () => clearInterval(autoSaveInterval);
+  }, [id, hasUnsavedChanges, isSaving, isOwner, handleSave, settings.autoSaveInterval]);
+
+  // Lock/Unlock handlers
+  const handleLockDesign = useCallback(async () => {
+    if (!id) return { success: false, error: "No job ID" };
+
+    try {
+      const result = await lockDesignMutation.mutateAsync({
+        url: "/api/ExecLockDesign",
+        data: { jobId: id },
+      });
+
+      // First refetch lock status and design data from server
+      // Wait for both to complete to ensure we have latest data
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: [`Design-${id}`], type: 'active' })
+      ]);
+      
+      // Then reset design loader to trigger canvas refresh with the fresh data
+      resetLoadedDesign();
+      
+      // Force component re-render to update toolbar immediately
+      forceUpdate(n => n + 1);
+      
+      console.log("Lock acquired and data refreshed");
+      
+      return { success: true, data: result };
+    } catch (error) {
+      console.error("Error locking design:", error);
+      
+      // Handle 409 Conflict - design is locked by another user
+      if (error.response?.status === 409) {
+        const lockData = error.response?.data;
+        return { 
+          success: false, 
+          error: lockData?.error || "Design is locked by another user",
+          isConflict: true,
+          lockInfo: lockData
         };
-      })
-    };
-  }, [products, selectedIds]);
-
-  // Store the initial rotation when selection changes
-  const [initialRotation, setInitialRotation] = useState(0);
-
-  // Attach transformer to selection group
-  useEffect(() => {
-    if (selectedIds.length && selectionGroupRef.current && transformerRef.current) {
-      // Get current or initial rotation
-      const currentRotation = selectionSnapshot.rotation || 0;
-      
-      // Set the group's rotation first
-      selectionGroupRef.current.rotation(currentRotation);
-      
-      // Store as initial rotation
-      setInitialRotation(currentRotation);
-      
-      // Set up the transformer
-      transformerRef.current.nodes([selectionGroupRef.current]);
-      
-      // Ensure the transformer's rotation matches
-      transformerRef.current.rotation(currentRotation);
-      
-      // Only cache if there are multiple selected items (caching is expensive)
-      // and skip caching during dragging operations
-      if (selectedIds.length > 1 && !isDragging) {
-        selectionGroupRef.current.cache();
       }
       
-      // Force update
-      transformerRef.current.getLayer()?.batchDraw();
-    } else if (transformerRef.current) {
-      transformerRef.current.nodes([]);
-      if (selectionGroupRef.current) {
-        selectionGroupRef.current.clearCache();
-      }
+      return { 
+        success: false, 
+        error: error.response?.data?.error || error.message || "Failed to lock design" 
+      };
     }
-  }, [selectedIds, groupKey, isDragging, selectionSnapshot.rotation]);
+  }, [id, lockDesignMutation, queryClient, forceUpdate, resetLoadedDesign]);
 
+  const handleUnlockDesign = useCallback(async () => {
+    if (!id) return { success: false, error: "No job ID" };
+
+    // Prevent unlocking if items are selected to avoid losing transformations
+    if (selectedIds.length > 0 || selectedConnectorIds.length > 0 || selectedTextId) {
+      console.warn("Cannot finish editing: Please deselect all items first.");
+      setDeselectDialog({ 
+        open: true, 
+        action: 'unlock',
+        message: "Please deselect all items before finishing editing. Click on an empty area of the canvas to deselect."
+      });
+      return { success: false, error: "Items are selected" };
+    }
+
+    // Save before unlocking if there are changes
+    if (hasUnsavedChanges && !isSaving) {
+      handleSave();
+      // Wait for save to complete
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    try {
+      const result = await unlockDesignMutation.mutateAsync({
+        url: "/api/ExecUnlockDesign",
+        data: { jobId: id },
+      });
+
+      // Refetch lock status to update toolbar state
+      // No need to reload design data when finishing editing - we're going to read-only mode
+      await queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' });
+      
+      // Force component re-render to update toolbar immediately
+      forceUpdate(n => n + 1);
+      
+      console.log("Lock released and toolbar updated");
+      
+      return { success: true, data: result };
+    } catch (error) {
+      console.error("Error unlocking design:", error);
+      return { success: false, error: error.message || "Failed to unlock design" };
+    }
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, selectedIds, selectedConnectorIds, selectedTextId]);
+
+  // Manual refresh handler to check lock status
+  const handleRefreshLockStatus = useCallback(async () => {
+    if (!id) return;
+    console.log("Manually refreshing lock status...");
+    await queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`] });
+    // Force component re-render to update UI immediately
+    forceUpdate(n => n + 1);
+  }, [id, queryClient, forceUpdate]);
+
+  // Auto-refresh lock every 1 minute when user owns the lock (15 min timeout)
   useEffect(() => {
-    const handleResize = () => {
-      if (canvasContainerRef.current) {
-        const rect = canvasContainerRef.current.getBoundingClientRect();
-        setCanvasWidth(rect.width);
-        setCanvasHeight(rect.height);
-        setStagePosition({
-          x: rect.width / 2,
-          y: rect.height / 2,
-        });
+    if (!id || !isOwner) return;
+
+    const refreshInterval = setInterval(async () => {
+      if (isOwner) {
+        console.log("Auto-refreshing design lock...");
+        try {
+          await lockDesignMutation.mutateAsync({
+            url: "/api/ExecLockDesign",
+            data: { jobId: id },
+          });
+          // Invalidate lock status query to pick up the refreshed lock
+          queryClient.invalidateQueries({ queryKey: [`DesignLockStatus-${id}`] });
+        } catch (error) {
+          console.error("Failed to refresh lock:", error);
+        }
       }
-    };
-    window.addEventListener("resize", handleResize);
-    handleResize();
-    return () => window.removeEventListener("resize", handleResize);
+    }, 1 * 60 * 1000); // 1 minute
+
+    return () => clearInterval(refreshInterval);
+  }, [id, isOwner, lockDesignMutation, queryClient]);
+
+  // Switch to pan mode when user doesn't own lock
+  useEffect(() => {
+    if (!isOwner && selectedTool !== "pan") {
+      setSelectedTool("pan");
+      // Clear any selections when switching out of edit mode
+      setSelectedIds([]);
+      setSelectedConnectorIds([]);
+      setSelectedTextId(null);
+    }
+  }, [isOwner, selectedTool, setSelectedTool, setSelectedIds, setSelectedConnectorIds, setSelectedTextId]);
+
+  // Context menus hook
+  const contextMenus = useContextMenus({
+    products,
+    connectors,
+    selectedIds,
+    selectedConnectorIds,
+    selectedTool,
+    placementMode,
+    stagePosition,
+    stageScale,
+    updateHistory,
+    updateConnectorHistory,
+    setSelectedIds,
+    setSelectedConnectorIds,
+    setGroupKey,
+    setProductDrawerVisible,
+    setConnectSequence,
+    applyGroupTransform,
+    pendingInsertPosition,
+    selectedTextId,
+    textBoxes,
+    updateTextBoxHistory,
+  });
+
+  // Handler for context menu 'Scale...'
+  const handleOpenScaleDialog = useCallback(() => {
+    setScaleDialogOpen(true);
+    contextMenus.handleCloseContextMenu();
   }, []);
 
-  // Apply group transform to actual product data
-  const applyGroupTransform = () => {
-    if (!selectedIds.length || !selectionGroupRef.current || !selectionSnapshot.products?.length) return;
+  // Handler for context menu 'Change Quantity...'
+  const handleOpenQuantityDialog = useCallback(() => {
+    // Get the quantity of the first selected product
+    const firstSelectedProduct = products.find((p) => selectedIds.includes(p.id));
+    const currentQuantity = firstSelectedProduct?.quantity || 1;
+    setQuantityValue(currentQuantity);
+    quantityForm.setValue("quantity", currentQuantity);
+    setQuantityDialogOpen(true);
+    contextMenus.handleCloseContextMenu();
+  }, [products, selectedIds, quantityForm, contextMenus]);
+
+  // Reset view when design loads
+  useEffect(() => {
+    if (designData.isSuccess) {
+      handleResetView();
+    }
+  }, [designData.isSuccess, handleResetView]);
+
+  // Handler for applying scale to selected products
+  const handleScaleConfirm = useCallback(
+    (scaleValue) => {
+      scaleValue = Number(scaleValue);
+      if (isNaN(scaleValue) || scaleValue <= 0) return;
+
+      const newProducts = products.map((product) => {
+        if (!selectedIds.includes(product.id)) return product;
+
+        let updated = { ...product };
+        const baseScaleX = product.baseScaleX || 1;
+        const baseScaleY = product.baseScaleY || 1;
+
+        if (!product.baseScaleX) {
+          updated.baseScaleX = product.scaleX || 1;
+          updated.baseScaleY = product.scaleY || 1;
+        }
+
+        updated.scaleX = baseScaleX * scaleValue;
+        updated.scaleY = baseScaleY * scaleValue;
+
+        return updated;
+      });
+
+      updateHistory(newProducts);
+      forceGroupUpdate();
+
+      if (transformerRef.current && selectionGroupRef.current) {
+        selectionGroupRef.current.scaleX(1);
+        selectionGroupRef.current.scaleY(1);
+        transformerRef.current.nodes([selectionGroupRef.current]);
+        transformerRef.current.getLayer()?.batchDraw();
+      }
+      setScaleDialogOpen(false);
+    },
+    [products, selectedIds, updateHistory, forceGroupUpdate, transformerRef, selectionGroupRef],
+  );
+
+  // Handler for applying quantity to selected products
+  const handleQuantityConfirm = useCallback(
+    (quantityValue) => {
+      quantityValue = Number(quantityValue);
+      if (isNaN(quantityValue) || quantityValue < 1) return;
+
+      const newProducts = products.map((product) => {
+        if (!selectedIds.includes(product.id)) return product;
+        return { ...product, quantity: quantityValue };
+      });
+
+      updateHistory(newProducts);
+      forceGroupUpdate();
+      setQuantityDialogOpen(false);
+    },
+    [products, selectedIds, updateHistory, forceGroupUpdate],
+  );
+
+  // Memoized onChange handlers for form inputs
+  const handleScaleChange = useCallback((e) => {
+    setScaleValue(Number(e.target.value));
+  }, []);
+
+  const handleQuantityChange = useCallback((e) => {
+    setQuantityValue(Number(e.target.value));
+  }, []);
+
+  // Helper function to convert PDF data URL to raster image
+  // Helper function to convert PDF to high-quality raster image (returns data URL)
+  const convertPdfToRasterImage = useCallback(async (pdfDataUrl, pdfWidth, pdfHeight) => {
+    try {
+      // Extract base64 data from data URL
+      const base64Data = pdfDataUrl.split(",")[1];
+      const pdfBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+
+      // Dynamically import pdfjs-dist
+      const pdfjsLib = await import("pdfjs-dist");
+
+      // Set worker source to local file (copied during build)
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
+
+      // Load PDF document
+      const loadingTask = pdfjsLib.getDocument({
+        data: pdfBytes,
+      });
+      const pdf = await loadingTask.promise;
+      const page = await pdf.getPage(1);
+
+      // set image PDF scale (scale = 3) - balanced quality and performance
+      // Lower scale reduces conversion time and memory usage significantly
+      const scale = 3;
+      const viewport = page.getViewport({ scale: scale });
+
+      // Create canvas
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+
+      // Render PDF page to canvas
+      await page.render({
+        canvasContext: ctx,
+        viewport: viewport,
+      }).promise;
+
+      // Convert canvas to data URL and return it
+      const imageDataUrl = canvas.toDataURL("image/jpeg");
+
+      console.log("PDF converted to raster image", {
+        resolution: `${canvas.width}x${canvas.height}`,
+        scale,
+        estimatedSizeMB: (imageDataUrl.length / 1024 / 1024).toFixed(2),
+      });
+      return imageDataUrl;
+    } catch (error) {
+      console.error("Error converting PDF to raster:", error);
+
+      // Fallback: create a placeholder
+      const canvas = document.createElement("canvas");
+      const scale = 3;
+      canvas.width = pdfWidth * scale;
+      canvas.height = pdfHeight * scale;
+      const ctx = canvas.getContext("2d");
+
+      // White background
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw error message
+      ctx.fillStyle = "#666666";
+      ctx.font = `${20 * scale}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("PDF Rendering Failed", canvas.width / 2, canvas.height / 2 - 20 * scale);
+      ctx.font = `${14 * scale}px Arial`;
+      ctx.fillText("See console for details", canvas.width / 2, canvas.height / 2 + 20 * scale);
+
+      return canvas.toDataURL("image/jpeg");
+    }
+  }, []);
+
+  // Force transformer update when text boxes change dimensions
+  useEffect(() => {
+    if (transformerRef.current && selectionGroupRef.current) {
+      // Force transformer to recalculate its bounding box
+      transformerRef.current.forceUpdate();
+      transformerRef.current.getLayer()?.batchDraw();
+    }
+  }, [textBoxes, transformerRef, selectionGroupRef]);
+
+  // Update local state when switching layers OR when layers are loaded
+  useEffect(() => {
+    // Skip if router query is not ready yet - this prevents loading empty layer data
+    // when we're on a page that has an ID in the URL but router.query.id is not yet populated
+    if (!router.isReady) {
+      return;
+    }
+
+    // Skip initial render if design data is still loading
+    // This prevents loading the default empty layer before the actual design data arrives
+    if (designData.isLoading) {
+      return;
+    }
+
+    // CRITICAL BUG FIX: Removed the layersVersion === 0 check!
+    // That check was blocking layer switches on NEW jobs that haven't saved yet.
+    // layersVersion only increments when loadLayers() is called (loading saved design),
+    // so new jobs would have layersVersion === 0 forever, blocking all layer switches.
+    // The router.isReady and designData.isLoading checks above are sufficient.
+
+    // Get the current layer data
+    const currentLayer = layers.find((l) => l.id === activeLayerId);
+    if (!currentLayer) {
+      return;
+    }
+
+    // Only reload if we're switching to a different layer OR if layer data has been updated
+    // This prevents clearing selections during transform operations while allowing
+    // the canvas to populate when design data is loaded for the first time
+    const isSameLayer = activeLayerId === lastLoadedLayerId.current;
+    const hasNewLayerData = layersVersion !== lastLoadedLayersVersion.current;
+
+    if (isSameLayer && !hasNewLayerData) {
+      return;
+    }
+
+    lastLoadedLayerId.current = activeLayerId;
+    lastLoadedLayersVersion.current = layersVersion;
+    isLoadingLayerData.current = true;
+
+    // Update activeLayerIdRef immediately to ensure sync effects use correct layer
+    activeLayerIdRef.current = activeLayerId;
+
+    // Clear selections when switching floors to prevent ghost transformer
+    setSelectedIds([]);
+    setSelectedTextId(null);
+
+    // Load the new layer's data - use resetHistoryBaseline to prevent undo past loaded state
+    resetHistoryBaseline(currentLayer.products || []);
+    resetConnectorHistoryBaseline(currentLayer.connectors || []);
+    resetTextBoxHistoryBaseline(currentLayer.textBoxes || []);
+
+    // Set background image directly (no conversion needed - PDFs are already rasterized)
+    setBackgroundImage(currentLayer.backgroundImage || null);
+    setBackgroundImageNaturalSize(currentLayer.backgroundImageNaturalSize || null);
+
+    setScaleFactor(currentLayer.scaleFactor || 100);
+
+    // Update sync refs to match the new layer's data
+    lastSyncedBackgroundImage.current = currentLayer.backgroundImage || null;
+    lastSyncedBackgroundImageNaturalSize.current = currentLayer.backgroundImageNaturalSize || null;
+    lastSyncedScaleFactor.current = currentLayer.scaleFactor || 100;
+
+    // CRITICAL FIX: Enable sync AFTER React has processed all state updates
+    // This prevents the sync effect from running during layer switching
+    // setTimeout with 0 delay ensures this runs after the current event loop
+    setTimeout(() => {
+      isLoadingLayerData.current = false;
+    }, 0);
+  }, [
+    router.isReady,
+    id,
+    activeLayerId,
+    layers,
+    layersVersion,
+    designData.isLoading,
+    designData.isSuccess,
+    designData.data,
+    // Note: updateHistory is not memoized in useHistory hook, so it changes every render
+    // We don't include it here to prevent infinite re-runs
+    // Note: setConnectors, setBackgroundImage, setBackgroundImageNaturalSize, setScaleFactor
+    // are stable setState functions and don't need to be in dependencies
+  ]);
+
+  // Product interaction hook
+  const productInteraction = useProductInteraction({
+    products,
+    selectedIds,
+    selectedConnectorIds,
+    selectedTool,
+    isDragging,
+    setIsDragging,
+    setSelectedIds,
+    setSelectedConnectorIds,
+    setSelectedTextId,
+    setGroupKey,
+    updateConnectorHistory,
+    setConnectSequence,
+    updateHistory,
+    applyGroupTransform,
+    activeLayer,
+    connectors,
+  });
+
+  const {
+    handleProductClick: rawHandleProductClick,
+    handleProductDragStart: rawHandleProductDragStart,
+    handleProductDragEnd: rawHandleProductDragEnd,
+    handleGroupTransformEnd: rawHandleGroupTransformEnd,
+  } = productInteraction;
+
+  // Wrap interaction handlers to check lock state
+  const handleProductClick = useCallback(
+    (...args) => {
+      if (isEditingDisabled) return;
+      return rawHandleProductClick(...args);
+    },
+    [isEditingDisabled, rawHandleProductClick],
+  );
+
+  const handleProductDragStart = useCallback(
+    (...args) => {
+      if (isEditingDisabled) return;
+      return rawHandleProductDragStart(...args);
+    },
+    [isEditingDisabled, rawHandleProductDragStart],
+  );
+
+  const handleProductDragEnd = useCallback(
+    (...args) => {
+      if (isEditingDisabled) return;
+      return rawHandleProductDragEnd(...args);
+    },
+    [isEditingDisabled, rawHandleProductDragEnd],
+  );
+
+  const handleGroupTransformEnd = useCallback(
+    (...args) => {
+      if (isEditingDisabled) return;
+      return rawHandleGroupTransformEnd(...args);
+    },
+    [isEditingDisabled, rawHandleGroupTransformEnd],
+  );
+
+  // Connector selection handler with multi-select support
+  const handleConnectorSelect = useCallback(
+    (e, connectorId) => {
+      // Prevent editing when locked by someone else
+      if (isEditingDisabled) return;
+
+      // Ignore right-clicks (button 2) - those are handled by context menu
+      if (e.evt?.button === 2) {
+        return;
+      }
+
+      e.cancelBubble = true;
+
+      // Handle multi-select with Shift/Ctrl
+      const shiftKey = e.evt?.shiftKey;
+      const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
+
+      if (shiftKey || ctrlKey) {
+        // Ignore connector clicks when products/text are already selected
+        if (selectedIds.length > 0) {
+          return;
+        }
+        // Toggle selection
+        if (selectedConnectorIds.includes(connectorId)) {
+          setSelectedConnectorIds(selectedConnectorIds.filter((id) => id !== connectorId));
+        } else {
+          setSelectedConnectorIds([...selectedConnectorIds, connectorId]);
+        }
+      } else {
+        // Single selection
+        setSelectedConnectorIds([connectorId]);
+        // Only clear product/text selections when not holding modifier keys
+        setSelectedIds([]);
+      }
+
+      forceGroupUpdate();
+    },
+    [selectedIds, selectedConnectorIds, setSelectedIds, setSelectedConnectorIds, forceGroupUpdate, isEditingDisabled],
+  );
+
+  // Unified group transform handler that handles both products and text boxes
+  const handleUnifiedGroupTransformEnd = useCallback(() => {
+    if (!selectedIds.length || !selectionGroupRef.current || !selectionSnapshot) return;
 
     const group = selectionGroupRef.current;
     const groupX = group.x();
@@ -273,607 +1069,52 @@ const Page = () => {
     const groupScaleX = group.scaleX();
     const groupScaleY = group.scaleY();
     const groupRotation = group.rotation();
-    
-    // Check if the group has actually been transformed
-    // If all values are at their defaults, skip the update
-    if (groupX === selectionSnapshot.centerX && 
-        groupY === selectionSnapshot.centerY && 
-        groupScaleX === 1 && 
-        groupScaleY === 1 && 
-        groupRotation === 0) {
-      return;
-    }
-    
-    const { products: snapshotProducts } = selectionSnapshot;
-    
-    const newProducts = products.map((product) => {
-      if (!selectedIds.includes(product.id)) return product;
-      
-      const original = snapshotProducts.find(p => p.id === product.id);
-      if (!original) return product;
-      
-      let relX = original.relativeX;
-      let relY = original.relativeY;
-      
-      if (groupRotation !== 0) {
-        const angle = (groupRotation * Math.PI) / 180;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        const rotatedX = relX * cos - relY * sin;
-        const rotatedY = relX * sin + relY * cos;
-        relX = rotatedX;
-        relY = rotatedY;
-      }
-      
-      relX *= groupScaleX;
-      relY *= groupScaleY;
-      
-      const newX = groupX + relX;
-      const newY = groupY + relY;
-      
-      return {
-        ...product,
-        x: newX,
-        y: newY,
-        rotation: original.rotation + groupRotation,
-        scaleX: original.scaleX * groupScaleX,
-        scaleY: original.scaleY * groupScaleY,
-      };
-    });
-    
-    updateHistory(newProducts);
-  };
 
-  // Keyboard shortcuts
-  useKeyboardShortcuts({
-    products,
-    selectedIds,
-    selectedConnectorId,
-    connectors,
-    clipboard,
-    onCopy: () => {
-      const selectedProducts = products.filter(p => selectedIds.includes(p.id));
-      const selectedConnectors = connectors.filter(c => 
-        selectedIds.includes(c.from) && selectedIds.includes(c.to)
-      );
-      clipboard.current = {
-        products: selectedProducts.map(p => ({ ...p })),
-        connectors: selectedConnectors.map(c => ({ ...c })),
-      };
-    },
-    onPaste: () => {
-      applyGroupTransform();
-      const idMap = {};
-      const newProducts = clipboard.current.products.map((p, index) => {
-        const newId = `product-${Date.now()}-${index}`;
-        idMap[p.id] = newId;
-        return { ...p, id: newId, x: p.x + 20, y: p.y + 20 };
-      });
-      
-      const newConnectors = (clipboard.current.connectors || []).map((c, index) => ({
-        ...c,
-        id: `connector-${Date.now()}-${index}`,
-        from: idMap[c.from],
-        to: idMap[c.to],
-      }));
-      
-      updateHistory([...products, ...newProducts]);
-      setConnectors([...connectors, ...newConnectors]);
-      setSelectedIds(newProducts.map(p => p.id));
-      setGroupKey(k => k + 1);
-    },
-    onDelete: () => handleDeleteSelected(),
-    onSelectAll: () => {
-      applyGroupTransform();
-      setSelectedIds(products.map(p => p.id));
-      setGroupKey(k => k + 1);
-    },
-    onEscape: () => {
-      if (placementMode) {
-        setPlacementMode(null);
-        setSelectedTool("select");
-        return;
-      }
-      applyGroupTransform();
-      setSelectedIds([]);
-      setSelectedConnectorId(null);
-      setGroupKey(k => k + 1);
-    },
-    onUndo: () => {
-      applyGroupTransform();
-      handleUndo();
-      setSelectedIds([]);
-      setGroupKey(k => k + 1);
-    },
-    onRedo: () => {
-      applyGroupTransform();
-      handleRedo();
-      setSelectedIds([]);
-      setGroupKey(k => k + 1);
-    },
-  });
+    // Extract product IDs and text IDs
+    const productIds = selectedIds.filter((id) => !id.startsWith("text-"));
+    const textIds = selectedIds.filter((id) => id.startsWith("text-")).map((id) => id.substring(5)); // Remove 'text-' prefix
 
-  const handleUploadFloorPlan = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const img = new window.Image();
-          img.onload = () => {
-            setBackgroundImage(ev.target.result);
-            setBackgroundImageNaturalSize({ width: img.width, height: img.height });
-          };
-          img.src = ev.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-    input.click();
-  };
+    // Helper function for floating-point comparison with tolerance
+    const isClose = (a, b, tolerance = 0.0001) => Math.abs(a - b) < tolerance;
 
-  const handleMeasure = () => {
-    setMeasureMode(true);
-    setMeasurePoints([]);
-  };
-
-  const handleCanvasMeasureClick = (e) => {
-    if (!measureMode) return;
-    const stage = e.target.getStage();
-    const pointerPosition = stage.getPointerPosition();
-    const canvasPos = {
-      x: (pointerPosition.x - stagePosition.x) / stageScale,
-      y: (pointerPosition.y - stagePosition.y) / stageScale,
-    };
-    setMeasurePoints(points => {
-      if (points.length >= 2) return points;
-      const newPoints = [...points, canvasPos];
-      if (newPoints.length === 2) {
-        setMeasureDialogOpen(true);
-      }
-      return newPoints;
-    });
-  };
-
-  const calculateDistance = (point1, point2) => {
-    if (!point1 || !point2) return 0;
-    return Math.sqrt(
-      Math.pow(point2.x - point1.x, 2) +
-      Math.pow(point2.y - point1.y, 2)
-    );
-  };
-
-  const handleMeasureConfirm = (distance) => {
-    const realDistance = Number(distance);
-    const pixelDistance = calculateDistance(measurePoints[0], measurePoints[1]);
-    if (realDistance > 0 && pixelDistance > 0) {
-      setScaleFactor(pixelDistance / realDistance);
-    }
-    setMeasureMode(false);
-    setMeasurePoints([]);
-    setMeasureDialogOpen(false);
-    setMeasureValue(0);
-  };
-
-  const handleMeasureCancel = () => {
-    setMeasureMode(false);
-    setMeasurePoints([]);
-    setMeasureDialogOpen(false);
-    setMeasureValue(0);
-  };
-
-  // Context menu handlers
-  const handleOpenColorPicker = (e) => {
-    setColorPickerAnchor(e.currentTarget);
-    if (selectedIds.length > 0) {
-      setColorPickerTarget({ type: 'products', ids: selectedIds });
-    } else if (selectedConnectorId) {
-      setColorPickerTarget({ type: 'connector', id: selectedConnectorId });
-    }
-    handleCloseContextMenu();
-  };
-
-  const handleColorChange = (color) => {
-    if (!colorPickerTarget) return;
-    
-    if (colorPickerTarget.type === 'products') {
-      applyGroupTransform();
-      const newProducts = products.map(p => {
-        if (colorPickerTarget.ids.includes(p.id)) {
-          return { ...p, color };
-        }
-        return p;
-      });
-      updateHistory(newProducts);
-      setGroupKey(k => k + 1);
-    } else if (colorPickerTarget.type === 'connector') {
-      const newConnectors = connectors.map(c => {
-        if (c.id === colorPickerTarget.id) {
-          return { ...c, color };
-        }
-        return c;
-      });
-      setConnectors(newConnectors);
-    }
-    
-    setColorPickerAnchor(null);
-    setColorPickerTarget(null);
-  };
-
-  const handleStageContextMenu = (e) => {
-    // Always prevent default system context menu
-    e.evt.preventDefault();
-
-    // Handle right-click in connect mode to break the connection sequence
-    if (selectedTool === 'connect') {
-      setConnectSequence([]);
-      return;
-    }
-
-    // Disable context menus in pan mode
-    if (selectedTool === 'pan') return;
-
-    // Always move our context menu to the new location
-    let menuType = null;
-    let menuProps = {};
-    if (placementMode) {
-      menuType = 'placement';
-    } else if (selectedIds.length > 0) {
-      menuType = 'product';
-    } else if (selectedConnectorId) {
-      menuType = 'connector';
-    } else if (e.target === e.target.getStage()) {
-      menuType = 'canvas';
-      const stage = e.target.getStage();
-      const pointerPosition = stage.getPointerPosition();
-      menuProps.canvasX = (pointerPosition.x - stagePosition.x) / stageScale;
-      menuProps.canvasY = (pointerPosition.y - stagePosition.y) / stageScale;
-    }
-    if (menuType) {
-      setContextMenu({
-        x: e.evt.clientX,
-        y: e.evt.clientY,
-        type: menuType,
-        ...menuProps
-      });
-    }
-  };
-
-  const handleInsertProductAtPosition = () => {
-    if (contextMenu?.canvasX !== undefined) {
-      pendingInsertPosition.current = {
-        x: contextMenu.canvasX,
-        y: contextMenu.canvasY,
-      };
-      setProductDrawerVisible(true);
-    }
-    handleCloseContextMenu();
-  };
-
-  const handleContextMenu = (e, productId) => {
-    e.evt.preventDefault();
-    
-    // In connect mode, don't show context menu
-    if (selectedTool === 'connect') {
-      return;
-    }
-    
-    if (!selectedIds.includes(productId)) {
-      applyGroupTransform();
-      setSelectedIds([productId]);
-      setSelectedConnectorId(null);
-      setGroupKey(k => k + 1);
-    }
-    setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, type: 'product' });
-  };
-
-  const handleConnectorContextMenu = (e, connectorId) => {
-    e.evt.preventDefault();
-    setSelectedConnectorId(connectorId);
-    applyGroupTransform();
-    setSelectedIds([]);
-    setGroupKey(k => k + 1);
-    setContextMenu({ x: e.evt.clientX, y: e.evt.clientY, type: 'connector' });
-  };
-
-  const handleCloseContextMenu = () => {
-    setContextMenu(null);
-  };
-
-  const handleSwapPlacementProduct = () => {
-    setProductDrawerVisible(true);
-    handleCloseContextMenu();
-  };
-
-  const handleDeleteSelected = () => {
-    if (selectedConnectorId) {
-      const newConnectors = connectors.filter(c => c.id !== selectedConnectorId);
-      setConnectors(newConnectors);
-      setSelectedConnectorId(null);
-    }
-    
-    if (selectedIds.length > 0) {
-      applyGroupTransform();
-      const newProducts = products.filter(p => !selectedIds.includes(p.id));
-      const newConnectors = connectors.filter(
-        c => !selectedIds.includes(c.from) && !selectedIds.includes(c.to)
-      );
-      updateHistory(newProducts);
-      setConnectors(newConnectors);
-      setSelectedIds([]);
-      setGroupKey(k => k + 1);
-    }
-    
-    handleCloseContextMenu();
-  };
-
-  const handleDuplicateSelected = () => {
-    applyGroupTransform();
-    const selectedProducts = products.filter(p => selectedIds.includes(p.id));
-    const idMap = {};
-    const newProducts = selectedProducts.map((p, index) => {
-      const newId = `product-${Date.now()}-${index}`;
-      idMap[p.id] = newId;
-      return { ...p, id: newId, x: p.x + 30, y: p.y + 30 };
-    });
-    
-    const selectedConnectors = connectors.filter(c => 
-      selectedIds.includes(c.from) && selectedIds.includes(c.to)
-    );
-    
-    const newConnectors = selectedConnectors.map((c, index) => ({
-      ...c,
-      id: `connector-${Date.now()}-${index}`,
-      from: idMap[c.from],
-      to: idMap[c.to],
-    }));
-    
-    updateHistory([...products, ...newProducts]);
-    setConnectors([...connectors, ...newConnectors]);
-    setSelectedIds(newProducts.map(p => p.id));
-    setGroupKey(k => k + 1);
-    handleCloseContextMenu();
-  };
-
-  const handleResetScale = () => {
-    applyGroupTransform();
-    const newProducts = products.map(product => {
-      if (!selectedIds.includes(product.id)) return product;
-      return { ...product, scaleX: 1, scaleY: 1 };
-    });
-    updateHistory(newProducts);
-    setGroupKey(k => k + 1);
-    handleCloseContextMenu();
-  };
-
-  const handleProductAdd = (product) => {
-    // Enter placement mode with the selected product
-    setPlacementMode({
-      template: product,
-    });
-    setSelectedTool("placement");
-    setProductDrawerVisible(false); // Close the drawer
-    pendingInsertPosition.current = null;
-  };
-
-  const createProductFromTemplate = (template, x, y) => {
-    return {
-      id: `product-${Date.now()}-${Math.random()}`,
-      x,
-      y,
-      rotation: 0,
-      scaleX: 1,
-      scaleY: 1,
-      baseScaleX: 1,
-      baseScaleY: 1,
-      color: null,
-      name: template.name,
-      sku: template.sku,
-      brand: template.brand,
-      product_type: template.product_type_unigram,
-      price: parseFloat(template.price) || 0,
-      msrp: parseFloat(template.msrp) || 0,
-      imageUrl: template.imageUrl,
-      thumbnailUrl: template.thumbnailImageUrl,
-      category: template.top_web_category,
-      categories: template.category_hierarchy || [],
-      description: template.short_description,
-      colors: template.item_colours || [],
-      inStock: template.ss_in_stock === "1",
-      stockQty: parseInt(template.stock_qty) || 0,
-      metadata: template,
-      quantity: 1,
-      notes: "",
-      customLabel: "",
-    };
-  };
-
-  const handleCanvasClick = (e) => {
-    if (placementMode && e.target === e.target.getStage()) {
-      const stage = e.target.getStage();
-      const pointerPosition = stage.getPointerPosition();
-      const canvasPos = {
-        x: (pointerPosition.x - stagePosition.x) / stageScale,
-        y: (pointerPosition.y - stagePosition.y) / stageScale,
-      };
-      
-      const newProduct = createProductFromTemplate(placementMode.template, canvasPos.x, canvasPos.y);
-      updateHistory([...products, newProduct]);
-      // Stay in placement mode so user can place more
-    }
-  };
-
-  const handleCanvasMouseMove = (e) => {
-    if (!placementMode && !measureMode) return;
-    
-    const stage = e.target.getStage();
-    const pointerPosition = stage.getPointerPosition();
-    if (pointerPosition) {
-      // Convert screen position to canvas position
-      const canvasPos = {
-        x: (pointerPosition.x - stagePosition.x) / stageScale,
-        y: (pointerPosition.y - stagePosition.y) / stageScale,
-      };
-      setCursorPosition(canvasPos);
-    }
-  };
-
-  const handleStopPlacement = () => {
-    setPlacementMode(null);
-    setSelectedTool("select");
-  };
-
-  const handleProductClick = (e, productId) => {
-    if (isDragging) return;
-    setSelectedConnectorId(null);
-
-    // Connect mode logic
-    if (selectedTool === 'connect') {
-      // Right-click splits the sequence
-      if (e.evt?.button === 2) {
-        setConnectSequence([]);
-        return;
-      }
-      // Add to sequence if not already last
-      setConnectSequence(seq => {
-        if (seq.length > 0 && seq[seq.length - 1] === productId) return seq;
-        const newSeq = [...seq, productId];
-        // If at least two, create connector
-        if (newSeq.length >= 2) {
-          const prevId = newSeq[newSeq.length - 2];
-          setConnectors(conns => [
-            ...conns,
-            {
-              id: `connector-${Date.now()}-${Math.random()}`,
-              from: prevId,
-              to: productId,
-              controlX: null,
-              controlY: null,
-              color: null,
-            }
-          ]);
-        }
-        return newSeq;
-      });
-      return;
-    }
-
-    // Normal selection logic
-    const shiftKey = e.evt?.shiftKey;
-    const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
-    if (shiftKey || ctrlKey) {
-      if (selectedIds.includes(productId)) {
-        applyGroupTransform();
-        setSelectedIds(selectedIds.filter(id => id !== productId));
-        setGroupKey(k => k + 1);
-      } else {
-        applyGroupTransform();
-        setSelectedIds([...selectedIds, productId]);
-        setGroupKey(k => k + 1);
-      }
-    } else {
-      if (!selectedIds.includes(productId)) {
-        applyGroupTransform();
-        setSelectedIds([productId]);
-        setGroupKey(k => k + 1);
-      }
-    }
-  };
-
-  const handleProductDragStart = (e, productId) => {
-    setIsDragging(true);
-    if (!selectedIds.includes(productId)) {
-      const shiftKey = e.evt?.shiftKey;
-      const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
-      
-      if (shiftKey || ctrlKey) {
-        setSelectedIds([...selectedIds, productId]);
-      } else {
-        applyGroupTransform();
-        setSelectedIds([productId]);
-      }
-      setGroupKey(k => k + 1);
-    }
-  };
-
-  const handleProductDragEnd = (e, productId) => {
-    setIsDragging(false);
-    const newX = e.target.x();
-    const newY = e.target.y();
-    
-    if (selectedIds.includes(productId) && selectedIds.length > 1) {
-      const draggedProduct = products.find(p => p.id === productId);
-      const deltaX = newX - draggedProduct.x;
-      const deltaY = newY - draggedProduct.y;
-      
-      const newProducts = products.map(p => {
-        if (selectedIds.includes(p.id)) {
-          return { ...p, x: p.x + deltaX, y: p.y + deltaY };
-        }
-        return p;
-      });
-      updateHistory(newProducts);
-    } else {
-      const newProducts = products.map(p => {
-        if (p.id === productId) {
-          return { ...p, x: newX, y: newY };
-        }
-        return p;
-      });
-      updateHistory(newProducts);
-    }
-  };
-
-  const handleGroupTransformEnd = () => {
-    // Apply transforms to products
-    if (!selectedIds.length || !selectionGroupRef.current) return;
-
-    applyGroupTransform();
-
-    // Find any connectors connected to transformed products
-    const connectedConnectors = connectors.filter(connector =>
-      selectedIds.includes(connector.from) || selectedIds.includes(connector.to)
+    // Check if group has been transformed
+    // Use tolerance for floating-point comparisons to avoid precision issues
+    const hasTransform = !(
+      isClose(groupX, selectionSnapshot.centerX) &&
+      isClose(groupY, selectionSnapshot.centerY) &&
+      isClose(groupScaleX, 1) &&
+      isClose(groupScaleY, 1) &&
+      isClose(groupRotation, selectionSnapshot.rotation || 0)
     );
 
-    // Update connected connectors control points to maintain their relative positions
-    if (connectedConnectors.length > 0) {
-      const newConnectors = connectors.map(connector => {
-        if (!selectedIds.includes(connector.from) && !selectedIds.includes(connector.to)) {
-          return connector;
-        }
+    if (!hasTransform) {
+      setGroupKey((k) => k + 1);
+      return;
+    }
 
-        // If control points are set to the default, let them auto-update
-        if (connector.controlX === null || connector.controlY === null) {
-          return connector;
-        }
+    // Calculate the rotation delta (how much we've rotated from the snapshot)
+    const rotationDelta = groupRotation - (selectionSnapshot.rotation || 0);
 
-        // Otherwise, apply the same transform to the control point
-        const group = selectionGroupRef.current;
-        const fromProduct = products.find(p => p.id === connector.from);
-        const toProduct = products.find(p => p.id === connector.to);
+    // Calculate center movement delta
+    const centerDeltaX = groupX - selectionSnapshot.centerX;
+    const centerDeltaY = groupY - selectionSnapshot.centerY;
 
-        // Calculate center of affected products for transform origin
-        let centerX, centerY;
-        if (selectedIds.includes(connector.from) && selectedIds.includes(connector.to)) {
-          centerX = (fromProduct.x + toProduct.x) / 2;
-          centerY = (fromProduct.y + toProduct.y) / 2;
-        } else if (selectedIds.includes(connector.from)) {
-          centerX = fromProduct.x;
-          centerY = fromProduct.y;
-        } else {
-          centerX = toProduct.x;
-          centerY = toProduct.y;
-        }
+    // Transform products
+    if (productIds.length > 0) {
+      const transformedProducts = products.map((product) => {
+        if (!productIds.includes(product.id)) return product;
 
-        let relX = connector.controlX - centerX;
-        let relY = connector.controlY - centerY;
+        // Get the original product from the snapshot
+        const original = selectionSnapshot.products?.find((p) => p.id === product.id);
+        if (!original) return product;
 
-        // Apply rotation
-        if (group.rotation() !== 0) {
-          const angle = (group.rotation() * Math.PI) / 180;
+        // Start with relative position from snapshot (relative to original center)
+        let relX = original.relativeX || 0;
+        let relY = original.relativeY || 0;
+
+        // Apply rotation delta to relative positions
+        if (rotationDelta !== 0) {
+          const angle = (rotationDelta * Math.PI) / 180;
           const cos = Math.cos(angle);
           const sin = Math.sin(angle);
           const rotatedX = relX * cos - relY * sin;
@@ -883,340 +1124,2345 @@ const Page = () => {
         }
 
         // Apply scale
-        relX *= group.scaleX();
-        relY *= group.scaleY();
+        relX *= groupScaleX;
+        relY *= groupScaleY;
+
+        // Add back to ORIGINAL center + any center movement (drag)
+        const newX = selectionSnapshot.centerX + relX + centerDeltaX;
+        const newY = selectionSnapshot.centerY + relY + centerDeltaY;
 
         return {
-          ...connector,
-          controlX: centerX + relX,
-          controlY: centerY + relY,
+          ...product,
+          x: newX,
+          y: newY,
+          rotation: (original.rotation || 0) + (selectionSnapshot.rotation || 0) + rotationDelta,
+          scaleX: (original.scaleX || 1) * groupScaleX,
+          scaleY: (original.scaleY || 1) * groupScaleY,
         };
       });
 
-      setConnectors(newConnectors);
+      updateHistory(transformedProducts);
     }
-    
-    // Force transformer and connections to update
-    setGroupKey(k => k + 1);
-  };
 
-  // Canvas handlers
-  const handleWheel = (e) => {
-    e.evt.preventDefault();
-    const scaleBy = 1.1;
-    const stage = e.target.getStage();
-    const oldScale = stage.scaleX();
-    const pointer = stage.getPointerPosition();
+    // Transform text boxes
+    if (textIds.length > 0) {
+      const transformedTextBoxes = textBoxes.map((textBox) => {
+        if (!textIds.includes(textBox.id)) return textBox;
 
-    const mousePointTo = {
-      x: (pointer.x - stage.x()) / oldScale,
-      y: (pointer.y - stage.y()) / oldScale,
+        // Get the original text box from the snapshot
+        const original = selectionSnapshot.textBoxes?.find((t) => t.id === textBox.id);
+        if (!original) return textBox;
+
+        // Start with relative position from snapshot (relative to original center)
+        let relX = original.relativeX || 0;
+        let relY = original.relativeY || 0;
+
+        // Apply rotation delta to relative positions
+        if (rotationDelta !== 0) {
+          const angle = (rotationDelta * Math.PI) / 180;
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+          const rotatedX = relX * cos - relY * sin;
+          const rotatedY = relX * sin + relY * cos;
+          relX = rotatedX;
+          relY = rotatedY;
+        }
+
+        // Apply scale
+        relX *= groupScaleX;
+        relY *= groupScaleY;
+
+        // Add back to ORIGINAL center + any center movement (drag)
+        const newX = selectionSnapshot.centerX + relX + centerDeltaX;
+        const newY = selectionSnapshot.centerY + relY + centerDeltaY;
+
+        // Detect if this is a corner resize (proportional) or side/top resize
+        const scaleDiff = Math.abs(groupScaleX - groupScaleY);
+        const isCornerResize = scaleDiff < 0.1; // Small difference means corner anchor (proportional)
+
+        let newFontSize = original.fontSize || 24;
+        let newWidth = original.width || 200;
+        let newHeight = original.height || 100;
+
+        if (isCornerResize) {
+          // Corner resize: scale font size proportionally (keep ratio)
+          const averageScale = (groupScaleX + groupScaleY) / 2;
+          newFontSize = Math.max(8, Math.round(newFontSize * averageScale));
+          newWidth = Math.max(20, newWidth * averageScale);
+          newHeight = Math.max(10, newHeight * averageScale);
+        } else {
+          // Side/top resize: adjust width only, keep font size constant for text wrapping
+          newWidth = Math.max(20, newWidth * groupScaleX);
+          // Font size stays the same, text will wrap
+          // Height scales with scaleY for side/top resizes
+          newHeight = Math.max(10, newHeight * groupScaleY);
+        }
+
+        return {
+          ...textBox,
+          x: newX,
+          y: newY,
+          rotation: (original.rotation || 0) + (selectionSnapshot.rotation || 0) + rotationDelta,
+          fontSize: newFontSize,
+          width: newWidth,
+          height: newHeight,
+          scaleX: 1, // Reset scale after applying to fontSize and width
+          scaleY: 1,
+        };
+      });
+
+      updateTextBoxHistory(transformedTextBoxes);
+    }
+
+    // Force update transformer
+    if (transformerRef.current) {
+      transformerRef.current.forceUpdate();
+    }
+
+    // Force update
+    setGroupKey((k) => k + 1);
+  }, [
+    selectedIds,
+    selectionSnapshot,
+    selectionGroupRef,
+    transformerRef,
+    products,
+    textBoxes,
+    updateHistory,
+    updateTextBoxHistory,
+    setGroupKey,
+  ]);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    products,
+    selectedIds,
+    selectedConnectorIds,
+    connectors,
+    clipboard,
+    onCopy: () => {
+      const selectedProducts = products.filter((p) => selectedIds.includes(p.id));
+      const selectedConnectors = connectors.filter(
+        (c) => selectedIds.includes(c.from) && selectedIds.includes(c.to),
+      );
+      // Include selected text boxes in copy (extract text IDs from text- prefixed IDs)
+      const textIds = selectedIds
+        .filter((id) => id.startsWith("text-"))
+        .map((id) => id.substring(5)); // Remove 'text-' prefix
+      const selectedTextBoxes = textBoxes.filter((t) => textIds.includes(t.id));
+      clipboard.current = {
+        products: selectedProducts.map((p) => ({ ...p })),
+        connectors: selectedConnectors.map((c) => ({ ...c })),
+        textBoxes: selectedTextBoxes.map((t) => ({ ...t })),
+      };
+    },
+    onPaste: () => {
+      // Calculate the center of the copied items
+      const allCopiedItems = [
+        ...(clipboard.current.products || []),
+        ...(clipboard.current.textBoxes || []),
+      ];
+
+      if (allCopiedItems.length === 0) return;
+
+      // Find the bounding box center of copied items
+      const centerX = allCopiedItems.reduce((sum, item) => sum + item.x, 0) / allCopiedItems.length;
+      const centerY = allCopiedItems.reduce((sum, item) => sum + item.y, 0) / allCopiedItems.length;
+
+      // Calculate offset to position at cursor
+      const offsetX = cursorPosition.x - centerX;
+      const offsetY = cursorPosition.y - centerY;
+
+      const idMap = {};
+      const newProducts = clipboard.current.products.map((p, index) => {
+        const newId = `product-${Date.now()}-${index}`;
+        idMap[p.id] = newId;
+        return {
+          ...p,
+          id: newId,
+          x: p.x + offsetX,
+          y: p.y + offsetY,
+          sublayerId: activeLayer?.defaultSublayerId || null,
+        };
+      });
+
+      const newConnectors = (clipboard.current.connectors || []).map((c, index) => ({
+        ...c,
+        id: `connector-${Date.now()}-${index}`,
+        from: idMap[c.from],
+        to: idMap[c.to],
+        sublayerId: activeLayer?.defaultSublayerId || null,
+      }));
+
+      // Paste text boxes at cursor position
+      const newTextBoxes = (clipboard.current.textBoxes || []).map((t, index) => ({
+        ...t,
+        id: crypto.randomUUID(),
+        x: t.x + offsetX,
+        y: t.y + offsetY,
+        sublayerId: activeLayer?.defaultSublayerId || null,
+      }));
+
+      updateHistory([...products, ...newProducts]);
+      updateConnectorHistory([...connectors, ...newConnectors]);
+      updateTextBoxHistory([...textBoxes, ...newTextBoxes]);
+
+      // Select pasted products and text boxes
+      const allNewIds = [
+        ...newProducts.map((p) => p.id),
+        ...newTextBoxes.map((t) => `text-${t.id}`),
+      ];
+      setSelectedIds(allNewIds);
+
+      // Set selectedTextId for single text box operations
+      if (newTextBoxes.length === 1 && newProducts.length === 0) {
+        setSelectedTextId(newTextBoxes[0].id);
+      } else if (newTextBoxes.length === 0) {
+        setSelectedTextId(null);
+      }
+      forceGroupUpdate();
+    },
+    onDelete: () => {
+      // Delete selected text boxes (from text- prefixed IDs in selectedIds)
+      const textIds = selectedIds
+        .filter((id) => id.startsWith("text-"))
+        .map((id) => id.substring(5));
+      if (textIds.length > 0) {
+        updateTextBoxHistory(textBoxes.filter((t) => !textIds.includes(t.id)));
+        setSelectedTextId(null);
+      }
+      // Also delete selected products/connectors
+      if (selectedIds.length > 0 || selectedConnectorIds.length > 0) {
+        contextMenus.handleDeleteSelected();
+      }
+    },
+    onSelectAll: () => {
+      // Select all products and text boxes
+      const allIds = [...products.map((p) => p.id), ...textBoxes.map((t) => `text-${t.id}`)];
+      setSelectedIds(allIds);
+      forceGroupUpdate();
+    },
+    onEscape: () => {
+      if (placementMode) {
+        setPlacementMode(null);
+        setSelectedTool("select");
+        return;
+      }
+      clearSelection();
+      setSelectedTextId(null);
+    },
+    onUndo: () => {
+      // Use unified timeline to undo the most recent action
+      if (timelineTracker.timelineStep.current === -1) return;
+
+      const historyKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current];
+      let didUndo = false;
+
+      if (historyKey === "products") {
+        didUndo = handleUndo();
+      } else if (historyKey === "textBoxes") {
+        didUndo = handleUndoTextBoxes();
+      } else if (historyKey === "connectors") {
+        didUndo = handleUndoConnectors();
+      }
+
+      if (didUndo) {
+        timelineTracker.timelineStep.current -= 1;
+        clearSelection();
+      }
+    },
+    onRedo: () => {
+      // Use unified timeline to redo the next action
+      if (timelineTracker.timelineStep.current >= timelineTracker.timeline.current.length - 1)
+        return;
+
+      const nextHistoryKey =
+        timelineTracker.timeline.current[timelineTracker.timelineStep.current + 1];
+      let didRedo = false;
+
+      if (nextHistoryKey === "products") {
+        didRedo = handleRedo();
+      } else if (nextHistoryKey === "textBoxes") {
+        didRedo = handleRedoTextBoxes();
+      } else if (nextHistoryKey === "connectors") {
+        didRedo = handleRedoConnectors();
+      }
+
+      if (didRedo) {
+        timelineTracker.timelineStep.current += 1;
+        clearSelection();
+      }
+    },
+  });
+
+  const handleUploadFloorPlan = useCallback(async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*,application/pdf";
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const isPdf = file.type === "application/pdf";
+
+        if (isPdf) {
+          // Handle PDF file - store only the PDF data, convert to raster on load
+          setIsUploadingImage(true);
+          try {
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+              try {
+                // Get PDF dimensions using pdf-lib
+                const { PDFDocument } = await import("pdf-lib");
+                const pdfBytes = new Uint8Array(ev.target.result);
+                const pdfDoc = await PDFDocument.load(pdfBytes);
+                const pages = pdfDoc.getPages();
+
+                if (pages.length === 0) {
+                  console.error("PDF has no pages");
+                  return;
+                }
+
+                const firstPage = pages[0];
+                const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
+
+                // Convert PDF to high-quality raster image immediately
+                const base64Data = btoa(
+                  new Uint8Array(ev.target.result).reduce(
+                    (data, byte) => data + String.fromCharCode(byte),
+                    "",
+                  ),
+                );
+                const pdfDataUrl = `data:application/pdf;base64,${base64Data}`;
+
+                // Convert to raster for storage and display
+                const rasterImageDataUrl = await convertPdfToRasterImage(
+                  pdfDataUrl,
+                  pdfWidth,
+                  pdfHeight,
+                );
+
+                // The rasterized image is scaled 3x for quality while maintaining performance
+                const scale = 3; // Must match the scale factor in convertPdfToRasterImage
+                const rasterWidth = pdfWidth * scale;
+                const rasterHeight = pdfHeight * scale;
+
+                // CRITICAL: Create object once to maintain identity for sync effect
+                const naturalSize = { width: rasterWidth, height: rasterHeight };
+
+                // Store the rasterized image (not the PDF)
+                updateLayer(activeLayerIdRef.current, {
+                  backgroundImage: rasterImageDataUrl, // Store rasterized image
+                  backgroundImageNaturalSize: naturalSize,
+                  backgroundFileType: "image", // It's now an image, not a PDF
+                });
+
+                // Set for immediate display - use same object to prevent sync effect
+                setBackgroundImage(rasterImageDataUrl);
+                setBackgroundImageNaturalSize(naturalSize);
+
+                // Update sync refs to prevent redundant sync - use same object instance
+                lastSyncedBackgroundImage.current = rasterImageDataUrl;
+                lastSyncedBackgroundImageNaturalSize.current = naturalSize;
+
+                // Auto-zoom to fit the background in the viewport (use raster dimensions)
+                const imageScaleX = canvasWidth / rasterWidth;
+                const imageScaleY = canvasHeight / rasterHeight;
+                const imageScale = Math.min(imageScaleX, imageScaleY);
+
+                const scaledImageWidth = rasterWidth * imageScale;
+                const scaledImageHeight = rasterHeight * imageScale;
+
+                const padding = 0.9;
+                const zoomX = (viewportWidth * padding) / scaledImageWidth;
+                const zoomY = (viewportHeight * padding) / scaledImageHeight;
+
+                const autoZoom = Math.min(zoomX, zoomY);
+                const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
+                setStageScale(constrainedZoom);
+
+                handleResetView();
+
+                setIsUploadingImage(false);
+              } catch (error) {
+                console.error("Error processing PDF:", error);
+                setIsUploadingImage(false);
+              }
+            };
+            reader.onerror = () => {
+              console.error("Error reading PDF file");
+              setIsUploadingImage(false);
+            };
+            reader.readAsArrayBuffer(file);
+          } catch (error) {
+            console.error("Error loading PDF:", error);
+            setIsUploadingImage(false);
+          }
+        } else {
+          // Handle image file (existing logic)
+          setIsUploadingImage(true);
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const img = new window.Image();
+            img.onload = () => {
+              // CRITICAL: Create object once to maintain identity for sync effect
+              const naturalSize = { width: img.width, height: img.height };
+
+              // Store image data URL directly
+              updateLayer(activeLayerIdRef.current, {
+                backgroundImage: ev.target.result,
+                backgroundImageNaturalSize: naturalSize,
+                backgroundFileType: "image",
+              });
+
+              setBackgroundImage(ev.target.result);
+              setBackgroundImageNaturalSize(naturalSize);
+
+              // Update sync refs to prevent redundant sync - use same object instance
+              lastSyncedBackgroundImage.current = ev.target.result;
+              lastSyncedBackgroundImageNaturalSize.current = naturalSize;
+
+              // Auto-zoom to fit the background image in the viewport
+              const imageScaleX = canvasWidth / img.width;
+              const imageScaleY = canvasHeight / img.height;
+              const imageScale = Math.min(imageScaleX, imageScaleY);
+
+              const scaledImageWidth = img.width * imageScale;
+              const scaledImageHeight = img.height * imageScale;
+
+              const padding = 0.9;
+              const zoomX = (viewportWidth * padding) / scaledImageWidth;
+              const zoomY = (viewportHeight * padding) / scaledImageHeight;
+
+              const autoZoom = Math.min(zoomX, zoomY);
+              const constrainedZoom = Math.min(Math.max(autoZoom, 0.01), 100);
+              setStageScale(constrainedZoom);
+
+              handleResetView();
+
+              setIsUploadingImage(false);
+            };
+            img.onerror = () => {
+              console.error("Error loading image file");
+              setIsUploadingImage(false);
+            };
+            img.src = ev.target.result;
+          };
+          reader.onerror = () => {
+            console.error("Error reading image file");
+            setIsUploadingImage(false);
+          };
+          reader.readAsDataURL(file);
+        }
+      }
     };
+    input.click();
+  }, [
+    canvasWidth,
+    canvasHeight,
+    viewportWidth,
+    viewportHeight,
+    setStageScale,
+    handleResetView,
+    updateLayer,
+  ]);
 
-    // Ensure scale stays within reasonable bounds (0.01 to 100)
-    let newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
-    newScale = Math.min(Math.max(newScale, 0.01), 100);
+  const handleMeasure = useCallback(() => {
+    setMeasureMode(true);
+    setMeasurePoints([]);
+  }, []);
 
-    setStageScale(newScale);
-    setStagePosition({
-      x: pointer.x - mousePointTo.x * newScale,
-      y: pointer.y - mousePointTo.y * newScale,
+  const handleCanvasMeasureClick = useCallback(
+    (e) => {
+      if (!measureMode) return;
+      const stage = e.target.getStage();
+      const pointerPosition = stage.getPointerPosition();
+      const canvasPos = {
+        x: (pointerPosition.x - stagePositionRef.current.x) / stageScaleRef.current,
+        y: (pointerPosition.y - stagePositionRef.current.y) / stageScaleRef.current,
+      };
+      setMeasurePoints((points) => {
+        if (points.length >= 2) return points;
+        const newPoints = [...points, canvasPos];
+        if (newPoints.length === 2) {
+          setMeasureDialogOpen(true);
+        }
+        return newPoints;
+      });
+    },
+    [measureMode],
+  );
+
+  const calculateDistance = useCallback((point1, point2) => {
+    if (!point1 || !point2) return 0;
+    return Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+  }, []);
+
+  const handleMeasureConfirm = useCallback(
+    (distance) => {
+      const realDistance = Number(distance);
+      const pixelDistance = calculateDistance(measurePoints[0], measurePoints[1]);
+      if (realDistance > 0 && pixelDistance > 0) {
+        setScaleFactor(pixelDistance / realDistance);
+      }
+      setMeasureMode(false);
+      setMeasurePoints([]);
+      setMeasureDialogOpen(false);
+      setMeasureValue(0);
+    },
+    [measurePoints, calculateDistance, setScaleFactor],
+  );
+
+  const handleMeasureCancel = useCallback(() => {
+    setMeasureMode(false);
+    setMeasurePoints([]);
+    setMeasureDialogOpen(false);
+    setMeasureValue(0);
+  }, []);
+
+  const handleResetScale = useCallback(() => {
+    const transformed = applyGroupTransform();
+    const baseProducts = transformed || products;
+    const newProducts = baseProducts.map((product) => {
+      if (!selectedIds.includes(product.id)) return product;
+      return { ...product, scaleX: 1, scaleY: 1 };
     });
-  };
+    updateHistory(newProducts);
+    forceGroupUpdate();
+    contextMenus.handleCloseContextMenu();
+  }, [products, selectedIds, applyGroupTransform, updateHistory, forceGroupUpdate, contextMenus]);
 
-  const handleStageDragEnd = (e) => {
-    if (e.target === e.target.getStage()) {
-      setStagePosition({ x: e.target.x(), y: e.target.y() });
+  const handleAssignToSublayer = useCallback(
+    (sublayerId) => {
+      // Handle connector assignment
+      if (selectedConnectorIds.length > 0) {
+        const newConnectors = connectors.map((connector) =>
+          selectedConnectorIds.includes(connector.id) ? { ...connector, sublayerId } : connector,
+        );
+        updateConnectorHistory(newConnectors);
+        contextMenus.handleCloseContextMenu();
+        return;
+      }
+
+      // Handle product assignment
+      const transformed = applyGroupTransform();
+      const baseProducts = transformed || products;
+      const newProducts = baseProducts.map((product) =>
+        selectedIds.includes(product.id) ? { ...product, sublayerId } : product,
+      );
+      updateHistory(newProducts);
+      contextMenus.handleCloseContextMenu();
+    },
+    [
+      products,
+      selectedIds,
+      selectedConnectorIds,
+      connectors,
+      applyGroupTransform,
+      updateHistory,
+      contextMenus,
+      updateConnectorHistory,
+    ],
+  );
+
+  const determineStrokeColorForSku = useCallback(
+    (sku) => {
+      if (!sku) return null;
+
+      const existingProductsWithSku = products.filter((p) => p.sku === sku);
+
+      if (existingProductsWithSku.length > 0) {
+        const existingWithColor = existingProductsWithSku.find((p) => p.strokeColor);
+        if (existingWithColor) {
+          return existingWithColor.strokeColor;
+        }
+      }
+
+      const currentSkuList = [...new Set(products.map((p) => p.sku).filter(Boolean))];
+      let skuIndex = currentSkuList.indexOf(sku);
+
+      if (skuIndex === -1) {
+        skuIndex = currentSkuList.length;
+      }
+
+      return COLOR_PALETTE[skuIndex % COLOR_PALETTE.length];
+    },
+    [products],
+  );
+
+  const handleSwapPlacementProduct = useCallback(() => {
+    setProductDrawerVisible(true);
+    contextMenus.handleCloseContextMenu();
+  }, [contextMenus]);
+
+  const handleSwapSelectedProducts = useCallback(() => {
+    setSwapMode(true);
+    setSwapAllSameMode(false);
+    setProductDrawerVisible(true);
+    contextMenus.handleCloseContextMenu();
+  }, [contextMenus]);
+
+  const handleSwapAllSameProducts = useCallback(() => {
+    setSwapMode(true);
+    setSwapAllSameMode(true);
+    setProductDrawerVisible(true);
+    contextMenus.handleCloseContextMenu();
+  }, [contextMenus]);
+
+  const handleProductAdd = useCallback(
+    (product) => {
+      // Handle swap all same mode - replace all products with matching SKU
+      if (swapMode && swapAllSameMode && selectedIds.length > 0) {
+        const transformed = applyGroupTransform();
+        const baseProducts = transformed || products;
+
+        // Get the SKU of the first selected product
+        const firstSelectedProduct = baseProducts.find((p) => selectedIds.includes(p.id));
+
+        if (firstSelectedProduct && firstSelectedProduct.sku) {
+          const targetSku = firstSelectedProduct.sku;
+
+          // Get product type configuration for real-world dimensions
+          const productType = product.product_type_unigram?.toLowerCase() || "default";
+          const config = productTypesConfig[productType] || productTypesConfig.default;
+
+          // Replace all products with matching SKU
+          const newProducts = baseProducts.map((p) => {
+            if (p.sku === targetSku) {
+              // Create new product from template but preserve position, rotation, scale, etc.
+              const strokeColor = determineStrokeColorForSku(product.sku);
+              return {
+                ...p,
+                name: product.name,
+                sku: product.sku,
+                brand: product.brand,
+                product_type: product.product_type_unigram,
+                product_type_unigram: product.product_type_unigram,
+                price: parseFloat(product.price) || 0,
+                msrp: parseFloat(product.msrp) || 0,
+                imageUrl: product.imageUrl,
+                thumbnailUrl: product.thumbnailImageUrl,
+                thumbnailImageUrl: product.thumbnailImageUrl,
+                url: product.url, // Website link
+                category: product.top_web_category,
+                categories: product.category_hierarchy || [],
+                description: product.short_description,
+                colors: product.item_colours || [],
+                inStock: product.ss_in_stock === "1",
+                stockQty: parseInt(product.stock_qty) || 0,
+                metadata: product,
+                strokeColor: strokeColor,
+                // Update real-world dimensions for the new product type
+                realWorldSize: config.realWorldSize,
+                realWorldWidth: config.realWorldWidth,
+                realWorldHeight: config.realWorldHeight,
+                // Preserve the scaleFactor from the original product (or use current layer scale)
+                scaleFactor: p.scaleFactor || scaleFactor,
+              };
+            }
+            return p;
+          });
+
+          updateHistory(newProducts);
+          setSwapMode(false);
+          setSwapAllSameMode(false);
+          setProductDrawerVisible(false);
+          setGroupKey((k) => k + 1);
+          return;
+        }
+        // If no SKU found, fall through to regular swap mode below
+      }
+
+      // Handle swap mode - replace selected products with new product
+      if (swapMode && selectedIds.length > 0) {
+        const transformed = applyGroupTransform();
+        const baseProducts = transformed || products;
+
+        // Get product type configuration for real-world dimensions
+        const productType = product.product_type_unigram?.toLowerCase() || "default";
+        const config = productTypesConfig[productType] || productTypesConfig.default;
+
+        // Replace each selected product with the new product template
+        const newProducts = baseProducts.map((p) => {
+          if (selectedIds.includes(p.id)) {
+            // Create new product from template but preserve position, rotation, scale, etc.
+            const strokeColor = determineStrokeColorForSku(product.sku);
+            return {
+              ...p,
+              name: product.name,
+              sku: product.sku,
+              brand: product.brand,
+              product_type: product.product_type_unigram,
+              product_type_unigram: product.product_type_unigram,
+              price: parseFloat(product.price) || 0,
+              msrp: parseFloat(product.msrp) || 0,
+              imageUrl: product.imageUrl,
+              thumbnailUrl: product.thumbnailImageUrl,
+              thumbnailImageUrl: product.thumbnailImageUrl,
+              url: product.url, // Website link
+              category: product.top_web_category,
+              categories: product.category_hierarchy || [],
+              description: product.short_description,
+              colors: product.item_colours || [],
+              inStock: product.ss_in_stock === "1",
+              stockQty: parseInt(product.stock_qty) || 0,
+              metadata: product,
+              strokeColor: strokeColor,
+              // Update real-world dimensions for the new product type
+              realWorldSize: config.realWorldSize,
+              realWorldWidth: config.realWorldWidth,
+              realWorldHeight: config.realWorldHeight,
+              // Preserve the scaleFactor from the original product (or use current layer scale)
+              scaleFactor: p.scaleFactor || scaleFactor,
+            };
+          }
+          return p;
+        });
+
+        updateHistory(newProducts);
+        setSwapMode(false);
+        setSwapAllSameMode(false);
+        setProductDrawerVisible(false);
+        setGroupKey((k) => k + 1);
+        return;
+      }
+
+      // Normal add mode - enter placement mode with the selected product
+      setPlacementMode({
+        template: product,
+      });
+      setSelectedTool("placement");
+      setProductDrawerVisible(false);
+      pendingInsertPosition.current = null;
+      setSwapMode(false);
+      setSwapAllSameMode(false);
+    },
+    [
+      swapMode,
+      swapAllSameMode,
+      selectedIds,
+      products,
+      applyGroupTransform,
+      updateHistory,
+      determineStrokeColorForSku,
+      setGroupKey,
+      scaleFactor,
+    ],
+  );
+
+  const createProductFromTemplate = useCallback(
+    (template, x, y) => {
+      const strokeColor = determineStrokeColorForSku(template.sku);
+
+      // Get product type configuration for real-world dimensions
+      const productType = template.product_type_unigram?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+
+      return {
+        id: `product-${Date.now()}-${Math.random()}`,
+        x,
+        y,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+        baseScaleX: 1,
+        baseScaleY: 1,
+        color: null,
+        strokeColor: strokeColor,
+        name: template.name,
+        sku: template.sku,
+        brand: template.brand,
+        product_type: template.product_type_unigram,
+        product_type_unigram: template.product_type_unigram,
+        price: parseFloat(template.price) || 0,
+        msrp: parseFloat(template.msrp) || 0,
+        imageUrl: template.imageUrl,
+        thumbnailUrl: template.thumbnailImageUrl,
+        thumbnailImageUrl: template.thumbnailImageUrl,
+        url: template.url, // Website link
+        category: template.top_web_category,
+        categories: template.category_hierarchy || [],
+        description: template.short_description,
+        colors: template.item_colours || [],
+        inStock: template.ss_in_stock === "1",
+        stockQty: parseInt(template.stock_qty) || 0,
+        metadata: template,
+        quantity: 1,
+        notes: "",
+        customLabel: "",
+        sublayerId: activeLayer?.defaultSublayerId || null,
+        // Store scaleFactor and real-world dimensions at creation time
+        // This ensures products maintain their size even if layer scale changes
+        scaleFactor: scaleFactor,
+        realWorldSize: config.realWorldSize,
+        realWorldWidth: config.realWorldWidth,
+        realWorldHeight: config.realWorldHeight,
+      };
+    },
+    [determineStrokeColorForSku, activeLayer, scaleFactor],
+  );
+
+  const handleCanvasClick = useCallback(
+    (e) => {
+      if (placementMode && e.target === e.target.getStage()) {
+        const stage = e.target.getStage();
+        const pointerPosition = stage.getPointerPosition();
+        const canvasPos = {
+          x: (pointerPosition.x - stagePositionRef.current.x) / stageScaleRef.current,
+          y: (pointerPosition.y - stagePositionRef.current.y) / stageScaleRef.current,
+        };
+
+        const newProduct = createProductFromTemplate(
+          placementMode.template,
+          canvasPos.x,
+          canvasPos.y,
+        );
+        updateHistory([...products, newProduct]);
+      }
+    },
+    [placementMode, createProductFromTemplate, products, updateHistory],
+  );
+
+  // Use ref to track last mouse move time for throttling
+  const lastMouseMoveTimeRef = useRef(0);
+  const mouseMoveThrottleMs = 16; // ~60fps
+
+  const handleSelectionMove = useCallback(
+    (e) => {
+      if (!selectionStartRef.current) return;
+
+      const stage = e.target.getStage();
+      const pointerPosition = stage.getPointerPosition();
+      const canvasPos = {
+        x: (pointerPosition.x - stagePositionRef.current.x) / stageScaleRef.current,
+        y: (pointerPosition.y - stagePositionRef.current.y) / stageScaleRef.current,
+      };
+
+      // Check if we've moved beyond the threshold
+      const dx = Math.abs(canvasPos.x - selectionStartRef.current.x);
+      const dy = Math.abs(canvasPos.y - selectionStartRef.current.y);
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (!hasDraggedRef.current && distance > DRAG_THRESHOLD / stageScaleRef.current) {
+        // Start selection - we've moved beyond threshold
+        hasDraggedRef.current = true;
+        setIsSelecting(true);
+      }
+
+      if (hasDraggedRef.current) {
+        setSelectionRect({
+          x1: selectionStartRef.current.x,
+          y1: selectionStartRef.current.y,
+          x2: canvasPos.x,
+          y2: canvasPos.y,
+        });
+      }
+    },
+    [DRAG_THRESHOLD],
+  );
+
+  const handleCanvasMouseMove = useCallback(
+    (e) => {
+      // Throttle mouse move events to reduce re-renders
+      const now = Date.now();
+      if (now - lastMouseMoveTimeRef.current < mouseMoveThrottleMs) {
+        return;
+      }
+      lastMouseMoveTimeRef.current = now;
+
+      // Handle drag-to-select - call handleSelectionMove if we have a selection start point
+      if (selectionStartRef.current) {
+        handleSelectionMove(e);
+        return;
+      }
+
+      // Always update cursor position for paste-at-cursor functionality
+      const stage = e.target.getStage();
+      const pointerPosition = stage.getPointerPosition();
+      if (pointerPosition) {
+        const canvasPos = {
+          x: (pointerPosition.x - stagePositionRef.current.x) / stageScaleRef.current,
+          y: (pointerPosition.y - stagePositionRef.current.y) / stageScaleRef.current,
+        };
+        setCursorPosition(canvasPos);
+      }
+    },
+    [handleSelectionMove],
+  );
+
+  const handleStopPlacement = useCallback(() => {
+    setPlacementMode(null);
+    setSelectedTool("select");
+  }, []);
+
+  // Text box handlers
+  const handleTextClick = useCallback(
+    (e) => {
+      if (selectedTool === "text" && e.target === e.target.getStage()) {
+        const stage = e.target.getStage();
+        const pointerPosition = stage.getPointerPosition();
+        const canvasPos = {
+          x: (pointerPosition.x - stagePositionRef.current.x) / stageScaleRef.current,
+          y: (pointerPosition.y - stagePositionRef.current.y) / stageScaleRef.current,
+        };
+
+        const newTextBox = {
+          id: crypto.randomUUID(),
+          x: canvasPos.x,
+          y: canvasPos.y,
+          text: "",
+          fontSize: 32,
+          fontFamily: "Arial",
+          fontStyle: "normal", // Can be "normal", "bold", "italic", "bold italic"
+          textDecoration: "", // Can be "", "underline", "line-through", or "underline line-through"
+          color: theme.palette.mode === "dark" ? "#ffffff" : "#000000",
+          width: 100, // Initial placeholder width, will be auto-sized when text is entered
+          sublayerId: activeLayer?.defaultSublayerId || null,
+          scaleFactor: scaleFactor, // Store scaleFactor at creation time, similar to products
+        };
+
+        // Add the text box and open the dialog immediately
+        updateTextBoxHistory([...textBoxes, newTextBox]);
+        setPendingTextBoxId(newTextBox.id);
+        setSelectedTextId(newTextBox.id);
+        setTextDialogValue("");
+        setTextDialogFormatting({
+          fontSize: newTextBox.fontSize,
+          fontFamily: newTextBox.fontFamily,
+          fontStyle: newTextBox.fontStyle,
+          textDecoration: newTextBox.textDecoration,
+          color: newTextBox.color,
+        });
+        setTextDialogOpen(true);
+        setSelectedIds([]);
+        setSelectedConnectorIds([]);
+      }
+    },
+    [selectedTool, textBoxes, theme, setSelectedIds, setSelectedConnectorIds],
+  );
+
+  const handleTextDoubleClick = useCallback(
+    (e, textId) => {
+      // Don't open text editor when connectors are selected
+      if (selectedConnectorIds.length > 0) {
+        return;
+      }
+      const textBox = textBoxes.find((t) => t.id === textId);
+      if (textBox) {
+        setPendingTextBoxId(textId);
+        setTextDialogValue(textBox.text);
+        setTextDialogFormatting({
+          fontSize: textBox.fontSize || 24,
+          fontFamily: textBox.fontFamily || "Arial",
+          fontStyle: textBox.fontStyle || "normal",
+          textDecoration: textBox.textDecoration || "",
+          color: textBox.color || "#000000",
+        });
+        setTextDialogOpen(true);
+      }
+    },
+    [textBoxes, selectedConnectorIds],
+  );
+
+  const handleTextDialogConfirm = useCallback(
+    (formattingData) => {
+      if (pendingTextBoxId) {
+        const newText = formattingData.text || "";
+        if (newText.trim()) {
+          // Use canvas measureText API to calculate exact text dimensions
+          // as recommended by Konva documentation for accurate sizing
+          const fontSize = formattingData.fontSize;
+          const fontFamily = formattingData.fontFamily;
+          const isBold = formattingData.fontStyle?.includes("bold");
+          const isItalic = formattingData.fontStyle?.includes("italic");
+          const fontStyle = isItalic ? "italic" : "normal";
+          const fontWeight = isBold ? "bold" : "normal";
+
+          // Create an offscreen canvas for measuring
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
+          // Match the Konva.Text style exactly
+          ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+
+          // Split into lines and measure each to get the widest line
+          const lines = newText.split("\n");
+          const maxWidth = lines.reduce((max, line) => {
+            const w = ctx.measureText(line).width;
+            return w > max ? w : max;
+          }, 0);
+
+          // Measure height using the full text metrics
+          const metrics = ctx.measureText(newText);
+          const lineHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+          // Add padding to prevent text cutoff
+          const padding = 10;
+          const width = maxWidth + padding;
+          const height = lineHeight * lines.length + padding;
+
+          // User confirmed with text - update the text box with text, formatting, and auto-sized dimensions
+          const updatedTextBoxes = textBoxes.map((box) =>
+            box.id === pendingTextBoxId
+              ? {
+                  ...box,
+                  text: newText,
+                  fontSize: formattingData.fontSize,
+                  fontFamily: formattingData.fontFamily,
+                  fontStyle: formattingData.fontStyle,
+                  textDecoration: formattingData.textDecoration,
+                  color: formattingData.color,
+                  width: width, // Use canvas measureText width
+                  height: height, // Use canvas measureText height,
+                }
+              : box,
+          );
+          updateTextBoxHistory(updatedTextBoxes);
+        } else {
+          // User confirmed with empty text - remove the text box
+          updateTextBoxHistory(textBoxes.filter((box) => box.id !== pendingTextBoxId));
+          setSelectedTextId(null);
+        }
+        setPendingTextBoxId(null);
+      }
+      setTextDialogOpen(false);
+    },
+    [pendingTextBoxId, textBoxes, updateTextBoxHistory],
+  );
+
+  const handleTextDialogClose = useCallback(() => {
+    setTextDialogOpen(false);
+    // If we were creating a new text box and dialog was cancelled, remove it
+    if (pendingTextBoxId) {
+      const textBox = textBoxes.find((t) => t.id === pendingTextBoxId);
+      if (textBox && !textBox.text) {
+        updateTextBoxHistory(textBoxes.filter((box) => box.id !== pendingTextBoxId));
+        setSelectedTextId(null);
+      }
     }
-  };
+    setPendingTextBoxId(null);
+  }, [pendingTextBoxId, textBoxes, updateTextBoxHistory]);
 
-  const checkDeselect = (e) => {
-    if (e.evt.button !== 0) return;
-    
-    // Don't handle clicks in pan mode
-    if (selectedTool === "pan") return;
-    
-    // Handle placement mode clicks
-    if (placementMode) {
-      handleCanvasClick(e);
+  const handleTextChange = useCallback(
+    (updatedTextBox) => {
+      updateTextBoxHistory((boxes) =>
+        boxes.map((box) => (box.id === updatedTextBox.id ? updatedTextBox : box)),
+      );
+    },
+    [updateTextBoxHistory],
+  );
+
+  const handleTextSelect = useCallback(
+    (e, textId) => {
+      // Prevent editing when locked by someone else
+      if (isEditingDisabled) return;
+
+      // Filter out middle mouse clicks (button === 1) to prevent selection during panning
+      if (e.evt?.button === 1) {
+        return;
+      }
+
+      // Multi-selection logic similar to handleProductClick
+      const shiftKey = e.evt?.shiftKey;
+      const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
+      const textIdWithPrefix = `text-${textId}`;
+
+      if (shiftKey || ctrlKey) {
+        // Ignore text clicks when connectors are already selected
+        if (selectedConnectorIds.length > 0) {
+          return;
+        }
+        // Multi-select mode: add or remove from selection
+        if (selectedIds.includes(textIdWithPrefix)) {
+          // Deselect this text box
+          const newSelectedIds = selectedIds.filter((id) => id !== textIdWithPrefix);
+          setSelectedIds(newSelectedIds);
+          // Clear selectedTextId if this text is being deselected
+          if (selectedTextId === textId) {
+            setSelectedTextId(null);
+          }
+          forceGroupUpdate();
+        } else {
+          // Add this text box to selection
+          setSelectedIds([...selectedIds, textIdWithPrefix]);
+          setSelectedTextId(textId);
+          forceGroupUpdate();
+        }
+      } else {
+        // Single selection mode: replace selection with just this text
+        // Only clear connector selections when not holding modifier keys
+        setSelectedConnectorIds([]);
+        if (!selectedIds.includes(textIdWithPrefix)) {
+          setSelectedTextId(textId);
+          setSelectedIds([textIdWithPrefix]);
+          forceGroupUpdate();
+        }
+      }
+    },
+    [
+      selectedIds,
+      selectedConnectorIds,
+      selectedTextId,
+      setSelectedIds,
+      setSelectedConnectorIds,
+      setSelectedTextId,
+      forceGroupUpdate,
+      isEditingDisabled,
+    ],
+  );
+
+  const handleTextContextMenu = useCallback(
+    (e, textId) => {
+      e.evt.preventDefault();
+      e.cancelBubble = true;
+
+      setSelectedTextId(textId);
+      setSelectedIds([`text-${textId}`]); // Keep text in selection for visual feedback
+      setSelectedConnectorIds([]);
+
+      // Use screen coordinates (clientX/Y) like product context menu
+      contextMenus.setContextMenu({
+        type: "text",
+        x: e.evt.clientX,
+        y: e.evt.clientY,
+        textId: textId,
+      });
+    },
+    [setSelectedIds, setSelectedConnectorIds, contextMenus],
+  );
+
+  const handleTextEdit = useCallback(() => {
+    if (selectedTextId) {
+      const textBox = textBoxes.find((t) => t.id === selectedTextId);
+      if (textBox) {
+        setPendingTextBoxId(selectedTextId);
+        setTextDialogValue(textBox.text);
+        setTextDialogFormatting({
+          fontSize: textBox.fontSize || 32,
+          fontFamily: textBox.fontFamily || "Arial",
+          fontStyle: textBox.fontStyle || "normal",
+          textDecoration: textBox.textDecoration || "",
+          color: textBox.color || "#000000",
+        });
+        setTextDialogOpen(true);
+      }
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedTextId, textBoxes, contextMenus]);
+
+  const handleTextFormatBold = useCallback(() => {
+    if (selectedTextId) {
+      const updatedTextBoxes = textBoxes.map((box) => {
+        if (box.id !== selectedTextId) return box;
+        const currentStyle = box.fontStyle || "normal";
+        const isBold = currentStyle.includes("bold");
+        const isItalic = currentStyle.includes("italic");
+
+        let newStyle;
+        if (isBold && isItalic) {
+          newStyle = "italic";
+        } else if (isBold) {
+          newStyle = "normal";
+        } else if (isItalic) {
+          newStyle = "bold italic";
+        } else {
+          newStyle = "bold";
+        }
+
+        return { ...box, fontStyle: newStyle };
+      });
+      updateTextBoxHistory(updatedTextBoxes);
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedTextId, textBoxes, updateTextBoxHistory, contextMenus]);
+
+  const handleTextFormatItalic = useCallback(() => {
+    if (selectedTextId) {
+      const updatedTextBoxes = textBoxes.map((box) => {
+        if (box.id !== selectedTextId) return box;
+        const currentStyle = box.fontStyle || "normal";
+        const isBold = currentStyle.includes("bold");
+        const isItalic = currentStyle.includes("italic");
+
+        let newStyle;
+        if (isBold && isItalic) {
+          newStyle = "bold";
+        } else if (isItalic) {
+          newStyle = "normal";
+        } else if (isBold) {
+          newStyle = "bold italic";
+        } else {
+          newStyle = "italic";
+        }
+
+        return { ...box, fontStyle: newStyle };
+      });
+      updateTextBoxHistory(updatedTextBoxes);
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedTextId, textBoxes, updateTextBoxHistory, contextMenus]);
+
+  const handleTextFormatUnderline = useCallback(() => {
+    if (selectedTextId) {
+      const updatedTextBoxes = textBoxes.map((box) => {
+        if (box.id !== selectedTextId) return box;
+        const currentDecoration = box.textDecoration || "";
+        const hasUnderline = currentDecoration.includes("underline");
+
+        let newDecoration;
+        if (hasUnderline) {
+          // Remove underline
+          newDecoration = currentDecoration.replace("underline", "").trim();
+        } else {
+          // Add underline
+          newDecoration = currentDecoration ? `${currentDecoration} underline` : "underline";
+        }
+
+        return { ...box, textDecoration: newDecoration };
+      });
+      updateTextBoxHistory(updatedTextBoxes);
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedTextId, textBoxes, updateTextBoxHistory, contextMenus]);
+
+  const handleTextFontSize = useCallback(
+    (fontSize) => {
+      if (selectedTextId) {
+        const updatedTextBoxes = textBoxes.map((box) =>
+          box.id === selectedTextId ? { ...box, fontSize } : box,
+        );
+        updateTextBoxHistory(updatedTextBoxes);
+      }
+      contextMenus.handleCloseContextMenu();
+    },
+    [selectedTextId, textBoxes, updateTextBoxHistory, contextMenus],
+  );
+
+  const handleTextColorChange = useCallback(
+    (color) => {
+      if (selectedTextId) {
+        const updatedTextBoxes = textBoxes.map((box) =>
+          box.id === selectedTextId ? { ...box, color } : box,
+        );
+        updateTextBoxHistory(updatedTextBoxes);
+      }
+    },
+    [selectedTextId, textBoxes, updateTextBoxHistory],
+  );
+
+  // Drag-to-select handlers
+  const handleSelectionStart = useCallback(
+    (e) => {
+      if (selectedTool !== "select" || e.evt.button !== 0) return;
+
+      const clickedOnEmpty = e.target === e.target.getStage();
+      if (!clickedOnEmpty) return;
+
+      const stage = e.target.getStage();
+      const pointerPosition = stage.getPointerPosition();
+      const canvasPos = {
+        x: (pointerPosition.x - stagePositionRef.current.x) / stageScaleRef.current,
+        y: (pointerPosition.y - stagePositionRef.current.y) / stageScaleRef.current,
+      };
+
+      selectionStartRef.current = canvasPos;
+      hasDraggedRef.current = false;
+      // Don't set isSelecting yet - wait for actual movement
+    },
+    [selectedTool],
+  );
+
+  const handleSelectionEnd = useCallback(() => {
+    // If we didn't actually drag (just clicked), don't do selection
+    if (!hasDraggedRef.current || !selectionRect) {
+      setIsSelecting(false);
+      setSelectionRect(null);
+      selectionStartRef.current = null;
+      hasDraggedRef.current = false;
       return;
     }
-    
-    const clickedOnEmpty = e.target === e.target.getStage();
-    if (clickedOnEmpty) {
+
+    // Calculate selection bounds
+    const x1 = Math.min(selectionRect.x1, selectionRect.x2);
+    const y1 = Math.min(selectionRect.y1, selectionRect.y2);
+    const x2 = Math.max(selectionRect.x1, selectionRect.x2);
+    const y2 = Math.max(selectionRect.y1, selectionRect.y2);
+
+    // Find products within or partially overlapping the selection rectangle
+    const selectedProducts = products.filter((product) => {
+      const productType = product.product_type?.toLowerCase() || "default";
+      const config = productTypesConfig[productType] || productTypesConfig.default;
+
+      // Calculate product bounds using its real-world size
+      const productScaleFactor = product.scaleFactor || scaleFactor;
+      const pixelWidth =
+        ((config.realWorldWidth || config.realWorldSize) / productScaleFactor) *
+        (product.scaleX || 1);
+      const pixelHeight =
+        ((config.realWorldHeight || config.realWorldSize) / productScaleFactor) *
+        (product.scaleY || 1);
+
+      // Calculate product bounding box (considering it's centered)
+      const productX1 = product.x - pixelWidth / 2;
+      const productY1 = product.y - pixelHeight / 2;
+      const productX2 = product.x + pixelWidth / 2;
+      const productY2 = product.y + pixelHeight / 2;
+
+      // Check if rectangles overlap (partial or full)
+      return !(productX2 < x1 || productX1 > x2 || productY2 < y1 || productY1 > y2);
+    });
+
+    // Find text boxes within or partially overlapping the selection rectangle
+    const selectedTexts = textBoxes.filter((textBox) => {
+      // Calculate actual rendered dimensions
+      const textScaleFactor = textBox.scaleFactor || scaleFactor;
+      const baseFontSize = textBox.fontSize || 24;
+      const renderedFontSize = baseFontSize * (textScaleFactor / 100);
+
+      // Account for text box scale transforms
+      const textWidth = (textBox.width || 200) * (textBox.scaleX || 1);
+      const textHeight = renderedFontSize * 1.2 * (textBox.scaleY || 1); // Approximate height with line height multiplier
+
+      // Text boxes are centered at (x, y), so calculate bounds from center
+      const textX1 = textBox.x - textWidth / 2;
+      const textY1 = textBox.y - textHeight / 2;
+      const textX2 = textBox.x + textWidth / 2;
+      const textY2 = textBox.y + textHeight / 2;
+
+      return !(textX2 < x1 || textX1 > x2 || textY2 < y1 || textY1 > y2);
+    });
+
+    // Select both products and text boxes (support mixed selection)
+    if (selectedProducts.length > 0 || selectedTexts.length > 0) {
+      // Combine product IDs and text box IDs (with text- prefix)
+      const allSelectedIds = [
+        ...selectedProducts.map((p) => p.id),
+        ...selectedTexts.map((t) => `text-${t.id}`),
+      ];
+      setSelectedIds(allSelectedIds);
+      // Also set selectedTextId for single text box operations
+      if (selectedTexts.length === 1) {
+        setSelectedTextId(selectedTexts[0].id);
+      } else if (selectedTexts.length === 0) {
+        setSelectedTextId(null);
+      }
+      setGroupKey((k) => k + 1);
+    }
+
+    setIsSelecting(false);
+    setSelectionRect(null);
+    selectionStartRef.current = null;
+    hasDraggedRef.current = false;
+  }, [selectionRect, products, textBoxes, scaleFactor, setSelectedIds, setGroupKey]);
+
+  const handleStageMouseUp = useCallback(
+    (e) => {
+      // Store drag state before handleSelectionEnd clears it
+      const wasDragging = hasDraggedRef.current;
+      const hadSelectionStart = selectionStartRef.current !== null;
+
+      // Handle selection end (this will clear the refs)
+      handleSelectionEnd();
+
+      // If we're in select mode and clicked on empty canvas without dragging, clear selection
+      // ONLY if modifier keys are not pressed (to preserve multi-selection)
+      if (selectedTool === "select" && !wasDragging && hadSelectionStart) {
+        const clickedOnEmpty = e.target === e.target.getStage();
+        const shiftKey = e.evt?.shiftKey;
+        const ctrlKey = e.evt?.ctrlKey || e.evt?.metaKey;
+
+        // Only clear selection if no modifier keys are pressed
+        if (clickedOnEmpty && !shiftKey && !ctrlKey) {
+          clearSelection();
+          setSelectedTextId(null);
+        }
+      }
+
+      // Clean up refs (redundant but safe)
+      selectionStartRef.current = null;
+      hasDraggedRef.current = false;
+    },
+    [selectedTool, handleSelectionEnd, clearSelection, setSelectedTextId],
+  );
+
+  const checkDeselect = useCallback(
+    (e) => {
+      if (e.evt.button !== 0) return;
+
+      if (selectedTool === "pan") return;
+
+      // Handle text tool
+      if (selectedTool === "text") {
+        handleTextClick(e);
+        return;
+      }
+
+      // Handle drag-to-select (just record start position)
+      if (selectedTool === "select") {
+        handleSelectionStart(e);
+        // Don't clear selection yet - wait to see if it's a drag or click
+        return;
+      }
+
+      if (placementMode) {
+        handleCanvasClick(e);
+        return;
+      }
+
+      const clickedOnEmpty = e.target === e.target.getStage();
+      if (clickedOnEmpty) {
+        clearSelection();
+        setSelectedTextId(null);
+      }
+    },
+    [
+      selectedTool,
+      placementMode,
+      clearSelection,
+      handleCanvasClick,
+      handleTextClick,
+      handleSelectionStart,
+    ],
+  );
+
+  const handleDisconnectCable = useCallback(() => setConnectSequence([]), []);
+
+  const handleShowProperties = useCallback(() => {
+    if (selectedIds.length === 1) {
+      const product = products.find((p) => p.id === selectedIds[0]);
+      if (product) {
+        setSelectedProductForDetails(product);
+        setProductDetailsDrawerVisible(true);
+      }
+    }
+    contextMenus.handleCloseContextMenu();
+  }, [selectedIds, products, contextMenus]);
+
+  const handleInsertCustomObject = useCallback(
+    (shapeName) => {
+      if (contextMenus.contextMenu?.canvasX !== undefined) {
+        const x = contextMenus.contextMenu.canvasX;
+        const y = contextMenus.contextMenu.canvasY;
+
+        // Get configuration from productTypes.json
+        const shapeConfig = productTypesConfig[shapeName] || productTypesConfig.default;
+
+        const newProduct = {
+          id: `custom-${crypto.randomUUID()}`,
+          x,
+          y,
+          rotation: 0,
+          scaleX: 1,
+          scaleY: 1,
+          baseScaleX: 1,
+          baseScaleY: 1,
+          color: shapeConfig.fill || "#666666",
+          stroke: shapeConfig.stroke || "#424242",
+          strokeWidth: shapeConfig.strokeWidth || 2,
+          shape: shapeConfig.shapeType || shapeName,
+          name: `Custom ${shapeName.charAt(0).toUpperCase() + shapeName.slice(1)}`,
+          product_type: shapeName,
+          product_type_unigram: shapeName,
+          isCustomObject: true,
+          quantity: 1,
+          scaleFactor: scaleFactor || 100,
+          // Copy all size properties from config, same as regular products
+          realWorldSize: shapeConfig.realWorldSize,
+          realWorldWidth: shapeConfig.realWorldWidth,
+          realWorldHeight: shapeConfig.realWorldHeight,
+        };
+
+        const transformed = applyGroupTransform();
+        const baseProducts = transformed || products;
+        updateHistory([...baseProducts, newProduct]);
+        setSelectedIds([newProduct.id]);
+        setGroupKey((k) => k + 1);
+      }
+      contextMenus.handleCloseContextMenu();
+    },
+    [
+      contextMenus,
+      products,
+      applyGroupTransform,
+      updateHistory,
+      setSelectedIds,
+      setGroupKey,
+      scaleFactor,
+    ],
+  );
+
+  const handleExport = useCallback(() => {
+    // Save if there are pending changes before navigating to export page
+    if (hasUnsavedChanges && !isSaving) {
+      console.log("Saving design before export...");
+      setPendingExportNavigation(true);
+      handleSave();
+    } else {
+      // No unsaved changes, navigate immediately
+      router.push(`/jobs/design/export?id=${id}`);
+    }
+  }, [router, id, hasUnsavedChanges, isSaving, handleSave]);
+
+  // Memoize callback functions for toolbar to prevent re-renders
+  const handleToggleGrid = useCallback(() => setShowGrid(!showGrid), [showGrid]);
+  const handleToggleLayers = useCallback(() => setShowLayers(!showLayers), [showLayers]);
+  const handleTogglePreview = useCallback(() => setShowPreview(!showPreview), [showPreview]);
+
+  const handleToolbarUndo = useCallback(() => {
+    // Use unified timeline to undo the most recent action
+    if (timelineTracker.timelineStep.current === -1) return;
+
+    const historyKey = timelineTracker.timeline.current[timelineTracker.timelineStep.current];
+    let didUndo = false;
+
+    if (historyKey === "products") {
+      didUndo = handleUndo();
+    } else if (historyKey === "textBoxes") {
+      didUndo = handleUndoTextBoxes();
+    } else if (historyKey === "connectors") {
+      didUndo = handleUndoConnectors();
+    }
+
+    if (didUndo) {
+      timelineTracker.timelineStep.current -= 1;
+      clearSelection();
+    }
+  }, [handleUndo, handleUndoTextBoxes, handleUndoConnectors, clearSelection, timelineTracker]);
+
+  const handleToolbarRedo = useCallback(() => {
+    // Use unified timeline to redo the next action
+    if (timelineTracker.timelineStep.current >= timelineTracker.timeline.current.length - 1) return;
+
+    const nextHistoryKey =
+      timelineTracker.timeline.current[timelineTracker.timelineStep.current + 1];
+    let didRedo = false;
+
+    if (nextHistoryKey === "products") {
+      didRedo = handleRedo();
+    } else if (nextHistoryKey === "textBoxes") {
+      didRedo = handleRedoTextBoxes();
+    } else if (nextHistoryKey === "connectors") {
+      didRedo = handleRedoConnectors();
+    }
+
+    if (didRedo) {
+      timelineTracker.timelineStep.current += 1;
+      clearSelection();
+    }
+  }, [handleRedo, handleRedoTextBoxes, handleRedoConnectors, clearSelection, timelineTracker]);
+
+  const handleToolChange = useCallback(
+    (tool) => {
+      // If leaving connect mode, clear connectSequence
+      if (selectedTool === "connect" && tool !== "connect") {
+        setConnectSequence([]);
+      }
+      // Clear selections when changing tools
       applyGroupTransform();
       setSelectedIds([]);
-      setSelectedConnectorId(null);
-      setGroupKey(k => k + 1);
+      setSelectedConnectorIds([]);
+      setSelectedTextId(null);
+      setGroupKey((k) => k + 1);
+      setSelectedTool(tool);
+    },
+    [
+      selectedTool,
+      applyGroupTransform,
+      setSelectedIds,
+      setSelectedConnectorIds,
+      setSelectedTextId,
+      setGroupKey,
+      setSelectedTool,
+    ],
+  );
+
+  // Memoize prop objects for toolbar to prevent re-renders
+  const toolbarMainProps = useMemo(
+    () => ({
+      onUploadFloorPlan: handleUploadFloorPlan,
+      onSave: handleSave,
+      onExport: handleExport,
+      onUndo: handleToolbarUndo,
+      onRedo: handleToolbarRedo,
+      canUndo: timelineTracker.timelineStep.current > -1,
+      canRedo: timelineTracker.timelineStep.current < timelineTracker.timeline.current.length - 1,
+      onMeasure: handleMeasure,
+      // Lock props
+      isLocked,
+      isOwner,
+      lockInfo,
+      onLock: handleLockDesign,
+      onUnlock: handleUnlockDesign,
+      onRefreshLockStatus: handleRefreshLockStatus,
+    }),
+    [
+      handleUploadFloorPlan,
+      handleSave,
+      handleExport,
+      handleToolbarUndo,
+      handleToolbarRedo,
+      handleMeasure,
+      timelineTracker.timelineStep.current,
+      timelineTracker.timeline.current.length,
+      isLocked,
+      isOwner,
+      lockInfo,
+      handleLockDesign,
+      handleUnlockDesign,
+      handleRefreshLockStatus,
+    ],
+  );
+
+  const toolbarViewProps = useMemo(
+    () => ({
+      showGrid: showGrid,
+      onToggleGrid: handleToggleGrid,
+      showLayers: showLayers,
+      onToggleLayers: handleToggleLayers,
+      showPreview: showPreview,
+      onTogglePreview: handleTogglePreview,
+      onZoomIn: handleZoomIn,
+      onZoomOut: handleZoomOut,
+      onResetView: handleResetView,
+      zoomLevel: stageScale,
+      rotationSnaps: rotationSnaps,
+      onRotationSnapsChange: setRotationSnaps,
+    }),
+    [
+      showGrid,
+      handleToggleGrid,
+      showLayers,
+      handleToggleLayers,
+      showPreview,
+      handleTogglePreview,
+      handleZoomIn,
+      handleZoomOut,
+      handleResetView,
+      stageScale,
+      rotationSnaps,
+      setRotationSnaps,
+    ],
+  );
+
+  const toolbarToolsProps = useMemo(
+    () => ({
+      selectedTool: selectedTool,
+      onToolChange: handleToolChange,
+      placementMode: placementMode,
+      onStopPlacement: handleStopPlacement,
+      onDisconnectCable: handleDisconnectCable,
+    }),
+    [selectedTool, handleToolChange, placementMode, handleStopPlacement, handleDisconnectCable],
+  );
+
+  const toolbarAlignProps = useMemo(
+    () => ({
+      selectedCount: selectedIds.length,
+      onAlignHorizontalCenter: contextMenus.handleAlignHorizontalCenter,
+      onAlignVerticalCenter: contextMenus.handleAlignVerticalCenter,
+      onAlignLeft: contextMenus.handleAlignLeft,
+      onAlignRight: contextMenus.handleAlignRight,
+      onAlignTop: contextMenus.handleAlignTop,
+      onAlignBottom: contextMenus.handleAlignBottom,
+      onEvenSpacingHorizontal: contextMenus.handleEvenSpacingHorizontal,
+      onEvenSpacingVertical: contextMenus.handleEvenSpacingVertical,
+    }),
+    [
+      selectedIds.length,
+      contextMenus.handleAlignHorizontalCenter,
+      contextMenus.handleAlignVerticalCenter,
+      contextMenus.handleAlignLeft,
+      contextMenus.handleAlignRight,
+      contextMenus.handleAlignTop,
+      contextMenus.handleAlignBottom,
+      contextMenus.handleEvenSpacingHorizontal,
+      contextMenus.handleEvenSpacingVertical,
+    ],
+  );
+
+  // Memoize callbacks for layer components
+  const handleLayerClose = useCallback(() => setShowLayers(false), []);
+
+  // Memoize layer sublayers array to prevent re-renders
+  const activeSublayers = useMemo(() => activeLayer?.sublayers || [], [activeLayer?.sublayers]);
+
+  // Calculate dynamic positions for panels based on actual heights
+  useEffect(() => {
+    if (!showLayers) {
+      // Reset to default positions when layers panel is hidden
+      setLayerSwitcherTop(16);
+      setSubLayerControlsTop(200);
+      setProductListPanelTop(380);
+      return;
     }
-  };
 
-  // Toolbar handlers
-  const handleZoomIn = () => {
-    const newScale = Math.min(stageScale * 1.5, 100);
-    setStageScale(newScale);
-  };
-  
-  const handleZoomOut = () => {
-    const newScale = Math.max(stageScale / 1.5, 0.01);
-    setStageScale(newScale);
-  };
-  
-  const handleResetView = () => {
-    setStageScale(1);
-    setStagePosition({ 
-      x: canvasWidth / 2, 
-      y: canvasHeight / 2 
+    const updatePanelPositions = () => {
+      const gap = 8; // Gap between panels
+      let currentTop = 16;
+
+      // LayerSwitcher is always first
+      setLayerSwitcherTop(currentTop);
+
+      // Get LayerSwitcher height
+      const layerSwitcherHeight = layerSwitcherRef.current?.offsetHeight || 0;
+      currentTop += layerSwitcherHeight + gap;
+
+      // SubLayerControls comes next (only if sublayers exist)
+      if (activeSublayers.length > 0) {
+        setSubLayerControlsTop(currentTop);
+        const subLayerControlsHeight = subLayerControlsRef.current?.offsetHeight || 0;
+        currentTop += subLayerControlsHeight + gap;
+      }
+
+      // ProductListPanel comes last
+      setProductListPanelTop(currentTop);
+    };
+
+    // Use ResizeObserver to detect panel size changes
+    const resizeObserver = new ResizeObserver(() => {
+      updatePanelPositions();
     });
-  };
 
-  // Disconnect cable handler for connect mode
-  const handleDisconnectCable = () => setConnectSequence([]);
+    if (layerSwitcherRef.current) {
+      resizeObserver.observe(layerSwitcherRef.current);
+    }
+    if (subLayerControlsRef.current) {
+      resizeObserver.observe(subLayerControlsRef.current);
+    }
 
-  const handleSave = () => {
-    applyGroupTransform();
-    console.log("Save project", { products, connectors });
-  };
+    // Initial calculation
+    updatePanelPositions();
 
-  const handleExport = () => {
-    applyGroupTransform();
-    console.log("Export project", { products, connectors });
-  };
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [showLayers, activeSublayers.length]);
+
+  // Ref to store the last selected product preview data
+  const lastSelectedProductRef = useRef(null);
+
+  // Memoize selected product for preview panel
+  // Only extract properties that ObjectPreviewPanel actually uses to prevent
+  // re-renders when transform properties (x, y, rotation, scale) change
+  const selectedProduct = useMemo(() => {
+    if (selectedIds.length === 1 && !selectedIds[0].startsWith("text-")) {
+      const product = products.find((p) => p.id === selectedIds[0]);
+      if (!product) {
+        lastSelectedProductRef.current = null;
+        return null;
+      }
+
+      // Extract only the properties that ObjectPreviewPanel needs
+      const previewData = {
+        id: product.id,
+        name: product.name,
+        customLabel: product.customLabel,
+        sku: product.sku,
+        brand: product.brand,
+        quantity: product.quantity,
+        thumbnailUrl: product.thumbnailUrl,
+        thumbnailImageUrl: product.thumbnailImageUrl,
+      };
+
+      // Check if the preview-relevant properties have actually changed
+      // This prevents re-renders when only transform properties change
+      const lastData = lastSelectedProductRef.current;
+      if (
+        lastData &&
+        lastData.id === previewData.id &&
+        lastData.name === previewData.name &&
+        lastData.customLabel === previewData.customLabel &&
+        lastData.sku === previewData.sku &&
+        lastData.brand === previewData.brand &&
+        lastData.quantity === previewData.quantity &&
+        lastData.thumbnailUrl === previewData.thumbnailUrl &&
+        lastData.thumbnailImageUrl === previewData.thumbnailImageUrl
+      ) {
+        // Return the same reference to prevent re-render
+        return lastData;
+      }
+
+      // Properties have changed, update ref and return new data
+      lastSelectedProductRef.current = previewData;
+      return previewData;
+    }
+
+    lastSelectedProductRef.current = null;
+    return null;
+  }, [selectedIds, products]);
+
+  const showObjectPreview = useMemo(() => {
+    return showPreview && selectedIds.length === 1 && !selectedIds[0].startsWith("text-");
+  }, [showPreview, selectedIds]);
 
   return (
     <>
-      <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 80px)", minHeight: 0 }}>
-        <Container maxWidth={false} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+      {/* Loading indicator */}
+      {(designData.isLoading || productsData.isLoading) && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "calc(100vh - 80px)",
+          }}
+        >
+          <Box sx={{ textAlign: "center" }}>
+            <CircularProgress />
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              {designData.isLoading ? "Loading design..." : "Loading product catalog..."}
+            </Typography>
+          </Box>
+        </Box>
+      )}
 
-          <div style={{ height: 4 }} />
+      {/* Main design interface */}
+      {!designData.isLoading && !productsData.isLoading && (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            height: "calc(100vh - 80px)",
+            minHeight: 0,
+          }}
+        >
+          <Container
+            maxWidth={false}
+            sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}
+          >
+            <div style={{ height: 4 }} />
 
-          <DesignerToolbarRow
-            mainProps={{
-              onUploadFloorPlan: handleUploadFloorPlan,
-              onSave: handleSave,
-              onExport: handleExport,
-              onUndo: handleUndo,
-              onRedo: handleRedo,
-              canUndo: canUndo,
-              canRedo: canRedo,
-              onMeasure: handleMeasure,
-            }}
-            viewProps={{
-              showGrid: showGrid,
-              onToggleGrid: () => setShowGrid(!showGrid),
-              showMeasurements: showMeasurements,
-              onToggleMeasurements: () => setShowMeasurements(!showMeasurements),
-              onZoomIn: handleZoomIn,
-              onZoomOut: handleZoomOut,
-              onResetView: handleResetView,
-              zoomLevel: stageScale,
-              rotationSnaps: rotationSnaps,
-              onRotationSnapsChange: setRotationSnaps,
-            }}
-            toolsProps={{
-              selectedTool: selectedTool,
-              onToolChange: (tool) => {
-                // If leaving connect mode, clear connectSequence
-                if (selectedTool === 'connect' && tool !== 'connect') {
-                  setConnectSequence([]);
-                }
-                // Clear selections when changing tools
-                applyGroupTransform();
-                setSelectedIds([]);
-                setSelectedConnectorId(null);
-                setGroupKey(k => k + 1);
-                setSelectedTool(tool);
-              },
-              placementMode: placementMode,
-              onStopPlacement: handleStopPlacement,
-              onDisconnectCable: handleDisconnectCable,
-            }}
-          />
+            {/* Read-only mode indicator */}
+            {isLocked && !isOwner && lockInfo && (
+              <Box
+                sx={{
+                  backgroundColor: "error.main",
+                  color: "white",
+                  px: 2,
+                  py: 1,
+                  mb: 1,
+                  borderRadius: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography variant="body2" fontWeight="bold">
+                  🔒 Read-Only Mode: Design locked by {lockInfo.LockedBy}.
+                </Typography>
+              </Box>
+            )}
 
-          <Box sx={{ mb: 0.75 }}>
-            <ProductSelectionDrawer 
+            <DesignerToolbarRow
+              mainProps={toolbarMainProps}
+              viewProps={toolbarViewProps}
+              toolsProps={toolbarToolsProps}
+              alignProps={toolbarAlignProps}
+            />
+
+            {/* Display API response messages - only render when mutation is active */}
+            {(saveDesignMutation.isPending ||
+              saveDesignMutation.isFetching ||
+              saveDesignMutation.isSuccess ||
+              saveDesignMutation.isError) && (
+              <CippApiResults
+                apiObject={saveDesignMutation}
+                floating={true}
+                autoCloseSeconds={5}
+                hideResultsButtons={true}
+              />
+            )}
+
+            <ProductSelectionDrawer
               onProductSelect={handleProductAdd}
               visible={productDrawerVisible}
               onOpen={() => setProductDrawerVisible(true)}
               onClose={() => {
                 setProductDrawerVisible(false);
+                setSwapMode(false);
+                setSwapAllSameMode(false);
                 pendingInsertPosition.current = null;
               }}
             />
-          </Box>
 
-          <Card sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-            <CardContent sx={{ p: 0, "&:last-child": { pb: 0 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-              <Box
-                ref={canvasContainerRef}
+            {productDetailsDrawerVisible && (
+              <ProductDetailsDrawer
+                product={selectedProductForDetails}
+                visible={productDetailsDrawerVisible}
+                onClose={() => {
+                  setProductDetailsDrawerVisible(false);
+                  setSelectedProductForDetails(null);
+                }}
+              />
+            )}
+
+            <Card sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+              <CardContent
                 sx={{
+                  p: 0,
+                  "&:last-child": { pb: 0 },
                   flex: 1,
-                  width: "100%",
-                  height: "100%",
-                  position: "relative",
-                  overflow: "hidden", // prevents scrollbars
+                  display: "flex",
+                  flexDirection: "column",
                   minHeight: 0,
                 }}
               >
-                <DesignerCanvas
-                  width={canvasWidth}
-                  height={canvasHeight}
-                  stageScale={stageScale}
-                  stagePosition={stagePosition}
-                  showGrid={showGrid}
-                  onWheel={handleWheel}
-                  onDragEnd={handleStageDragEnd}
-                  draggable={selectedTool === "pan" && !placementMode}
-                  onMouseDown={measureMode ? handleCanvasMeasureClick : checkDeselect}
-                  onTouchStart={checkDeselect}
-                  onMouseMove={handleCanvasMouseMove}
-                  onContextMenu={handleStageContextMenu}
-                  selectedCount={selectedIds.length}
-                  backgroundImage={backgroundImage}
-                  backgroundImageNaturalSize={backgroundImageNaturalSize}
-                  scaleFactor={scaleFactor}
-                  onPan={handleCanvasPan}
+                <Box
+                  ref={canvasContainerRef}
+                  sx={{
+                    flex: 1,
+                    width: "100%",
+                    height: "100%",
+                    position: "relative",
+                    overflow: "hidden", // prevents scrollbars
+                    minHeight: 0,
+                  }}
                 >
-                  <ConnectorsLayer
-                    connectors={connectors}
-                    products={products}
-                    selectedConnectorId={selectedConnectorId}
-                    selectedTool={selectedTool}
-                    theme={theme}
-                    onConnectorSelect={(e) => {
-                      e.cancelBubble = true;
-                      applyGroupTransform();
-                      setSelectedConnectorId(e.target.id());
-                      setSelectedIds([]);
-                      setGroupKey(k => k + 1);
-                    }}
-                    onConnectorChange={setConnectors}
-                    onConnectorContextMenu={handleConnectorContextMenu}
+                  <DesignerCanvas
+                    ref={stageRef}
+                    width={canvasWidth}
+                    height={canvasHeight}
+                    viewportWidth={viewportWidth}
+                    viewportHeight={viewportHeight}
+                    stageScale={stageScale}
+                    stagePosition={stagePosition}
+                    showGrid={showGrid}
+                    onWheel={handleWheel}
+                    onDragEnd={handleStageDragEnd}
+                    draggable={selectedTool === "pan" && !placementMode}
+                    onMouseDown={measureMode ? handleCanvasMeasureClick : checkDeselect}
+                    onMouseUp={handleStageMouseUp}
+                    onTouchStart={checkDeselect}
+                    onMouseMove={handleCanvasMouseMove}
+                    onContextMenu={contextMenus.handleStageContextMenu}
+                    selectedCount={selectedIds.length}
+                    backgroundImage={backgroundImage}
+                    backgroundImageNaturalSize={backgroundImageNaturalSize}
+                    scaleFactor={scaleFactor}
+                    onPan={handleCanvasPan}
+                    onMiddlePanningChange={setIsMiddlePanning}
+                    onStageDraggingChange={setIsStageDragging}
+                    gridOpacity={settings.gridOpacity}
+                    backgroundOpacity={settings.backgroundOpacity}
+                    objectsChildren={
+                      <>
+                        {/* Unselected connectors only */}
+                        <ConnectorsLayer
+                          connectors={filterConnectorsBySublayers(connectors, activeLayerId).filter(
+                            (c) => !selectedConnectorIds.includes(c.id),
+                          )}
+                          products={products}
+                          selectedConnectorIds={[]}
+                          selectedTool={selectedTool}
+                          theme={theme}
+                          isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
+                          onConnectorSelect={handleConnectorSelect}
+                          onConnectorChange={(updatedConnector) => {
+                            // Merge the updated connector with the full connector list
+                            const newConnectors = connectors.map((c) =>
+                              c.id === updatedConnector.id ? updatedConnector : c,
+                            );
+                            updateConnectorHistory(newConnectors);
+                          }}
+                          onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
+                        />
+
+                        {/* Unselected products only */}
+                        <ProductsLayer
+                          products={filterProductsBySublayers(products, activeLayerId)}
+                          allProducts={allProductsFromAllLayers}
+                          textBoxes={textBoxes}
+                          selectedIds={selectedIds}
+                          selectedTool={selectedTool}
+                          selectionSnapshot={selectionSnapshot}
+                          selectionGroupRef={selectionGroupRef}
+                          transformerRef={transformerRef}
+                          rotationSnaps={rotationSnaps}
+                          theme={theme}
+                          groupKey={groupKey}
+                          placementMode={placementMode}
+                          isDragging={isDragging}
+                          isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
+                          onProductClick={handleProductClick}
+                          onProductDragStart={handleProductDragStart}
+                          onProductDragEnd={handleProductDragEnd}
+                          onContextMenu={contextMenus.handleContextMenu}
+                          onTextSelect={handleTextSelect}
+                          onTextContextMenu={handleTextContextMenu}
+                          onTextDoubleClick={handleTextDoubleClick}
+                          onGroupTransformEnd={handleUnifiedGroupTransformEnd}
+                          renderUnselected={true}
+                          renderSelection={false}
+                          renderTransformer={false}
+                        />
+
+                        {/* Ghost product preview in placement mode */}
+                        {placementMode && (
+                          <ProductShape
+                            product={{
+                              ...createProductFromTemplate(
+                                placementMode.template,
+                                cursorPosition.x,
+                                cursorPosition.y,
+                              ),
+                              x: cursorPosition.x,
+                              y: cursorPosition.y,
+                            }}
+                            config={(() => {
+                              const productType =
+                                placementMode.template.product_type_unigram?.toLowerCase() ||
+                                "default";
+                              return productTypesConfig[productType] || productTypesConfig.default;
+                            })()}
+                            isSelected={false}
+                            draggable={false}
+                            customStroke="#2196f3"
+                            theme={theme}
+                            opacity={0.6}
+                            listening={false}
+                            onMouseDown={() => {}}
+                            onContextMenu={() => {}}
+                          />
+                        )}
+
+                        <MeasurementLayer
+                          measureMode={measureMode}
+                          measurePoints={measurePoints}
+                          cursorPosition={cursorPosition}
+                          theme={theme}
+                          stagePosition={stagePosition}
+                          stageScale={stageScale}
+                          onMeasurePointAdd={(point) => {
+                            setMeasurePoints((points) => {
+                              if (points.length >= 2) return points;
+                              const newPoints = [...points, point];
+                              if (newPoints.length === 2) {
+                                setMeasureDialogOpen(true);
+                              }
+                              return newPoints;
+                            });
+                          }}
+                        />
+                      </>
+                    }
+                    textAndSelectionChildren={
+                      <>
+                        {/* Text boxes layer */}
+                        <TextLayer
+                          textBoxes={textBoxes}
+                          selectedTextId={selectedTextId}
+                          selectedIds={selectedIds}
+                          selectedTool={selectedTool}
+                          isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
+                          onTextSelect={handleTextSelect}
+                          onTextChange={handleTextChange}
+                          onTextDoubleClick={handleTextDoubleClick}
+                          onTextContextMenu={handleTextContextMenu}
+                          draggable={selectedTool === "select" || selectedTool === "text"}
+                        />
+
+                        {/* Selected connectors (rendered on top of everything) */}
+                        {selectedConnectorIds.length > 0 && (
+                          <ConnectorsLayer
+                            connectors={filterConnectorsBySublayers(
+                              connectors,
+                              activeLayerId,
+                            ).filter((c) => selectedConnectorIds.includes(c.id))}
+                            products={products}
+                            selectedConnectorIds={selectedConnectorIds}
+                            selectedTool={selectedTool}
+                            theme={theme}
+                            isMiddlePanning={isMiddlePanning}
+                            isStageDragging={isStageDragging}
+                            onConnectorSelect={handleConnectorSelect}
+                            onConnectorChange={(updatedConnector) => {
+                              // Merge the updated connector with the full connector list
+                              const newConnectors = connectors.map((c) =>
+                                c.id === updatedConnector.id ? updatedConnector : c,
+                              );
+                              updateConnectorHistory(newConnectors);
+                            }}
+                            onConnectorContextMenu={contextMenus.handleConnectorContextMenu}
+                          />
+                        )}
+
+                        {/* Preview line in connect mode */}
+                        {previewLineProduct && (
+                          <Line
+                            points={[
+                              previewLineProduct.x,
+                              previewLineProduct.y,
+                              cursorPosition.x,
+                              cursorPosition.y,
+                            ]}
+                            stroke={theme.palette.info.main}
+                            strokeWidth={3}
+                            dash={[10, 5]}
+                            opacity={0.6}
+                            listening={false}
+                          />
+                        )}
+
+                        {/* Selection group only (selected products and text) */}
+                        <ProductsLayer
+                          products={filterProductsBySublayers(products, activeLayerId)}
+                          allProducts={allProductsFromAllLayers}
+                          textBoxes={textBoxes}
+                          selectedIds={selectedIds}
+                          selectedTool={selectedTool}
+                          selectionSnapshot={selectionSnapshot}
+                          selectionGroupRef={selectionGroupRef}
+                          transformerRef={transformerRef}
+                          rotationSnaps={rotationSnaps}
+                          theme={theme}
+                          groupKey={groupKey}
+                          placementMode={placementMode}
+                          isDragging={isDragging}
+                          isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
+                          onProductClick={handleProductClick}
+                          onProductDragStart={handleProductDragStart}
+                          onProductDragEnd={handleProductDragEnd}
+                          onContextMenu={contextMenus.handleContextMenu}
+                          onTextSelect={handleTextSelect}
+                          onTextContextMenu={handleTextContextMenu}
+                          onTextDoubleClick={handleTextDoubleClick}
+                          onGroupTransformEnd={handleUnifiedGroupTransformEnd}
+                          renderUnselected={false}
+                          renderSelection={true}
+                          renderTransformer={false}
+                        />
+                      </>
+                    }
+                    transformerChildren={
+                      <>
+                        {/* Transformer only (always on top) */}
+                        <ProductsLayer
+                          products={filterProductsBySublayers(products, activeLayerId)}
+                          allProducts={allProductsFromAllLayers}
+                          textBoxes={textBoxes}
+                          selectedIds={selectedIds}
+                          selectedTool={selectedTool}
+                          selectionSnapshot={selectionSnapshot}
+                          selectionGroupRef={selectionGroupRef}
+                          transformerRef={transformerRef}
+                          rotationSnaps={rotationSnaps}
+                          theme={theme}
+                          groupKey={groupKey}
+                          placementMode={placementMode}
+                          isDragging={isDragging}
+                          isMiddlePanning={isMiddlePanning}
+                          isStageDragging={isStageDragging}
+                          onProductClick={handleProductClick}
+                          onProductDragStart={handleProductDragStart}
+                          onProductDragEnd={handleProductDragEnd}
+                          onContextMenu={contextMenus.handleContextMenu}
+                          onTextSelect={handleTextSelect}
+                          onTextContextMenu={handleTextContextMenu}
+                          onTextDoubleClick={handleTextDoubleClick}
+                          onGroupTransformEnd={handleUnifiedGroupTransformEnd}
+                          renderUnselected={false}
+                          renderSelection={false}
+                          renderTransformer={true}
+                        />
+
+                        {/* Selection rectangle for drag-to-select */}
+                        <SelectionRectangle selectionRect={selectionRect} />
+                      </>
+                    }
                   />
 
-                  <ProductsLayer
-                    products={products}
-                    selectedIds={selectedIds}
-                    selectedTool={selectedTool}
-                    selectionSnapshot={selectionSnapshot}
-                    selectionGroupRef={selectionGroupRef}
-                    transformerRef={transformerRef}
-                    rotationSnaps={rotationSnaps}
-                    theme={theme}
-                    groupKey={groupKey}
-                    placementMode={placementMode}
-                    onProductClick={handleProductClick}
-                    onProductDragStart={handleProductDragStart}
-                    onProductDragEnd={handleProductDragEnd}
-                    onContextMenu={handleContextMenu}
-                    onGroupTransformEnd={handleGroupTransformEnd}
-                  />
-
-                  {/* Ghost product preview in placement mode */}
-                  {placementMode && (
-                    <ProductShape
-                      product={{
-                        ...createProductFromTemplate(placementMode.template, cursorPosition.x, cursorPosition.y),
-                        x: cursorPosition.x,
-                        y: cursorPosition.y,
-                      }}
-                      config={(() => {
-                        const productType = placementMode.template.product_type_unigram?.toLowerCase() || "default";
-                        return productTypesConfig[productType] || productTypesConfig.default;
-                      })()}
-                      isSelected={false}
-                      draggable={false}
-                      customStroke="#2196f3"
-                      theme={theme}
-                      opacity={0.6}
-                      listening={false}
-                      onMouseDown={() => {}}
-                      onContextMenu={() => {}}
+                  {/* Text entry dialog - only render when open */}
+                  {textDialogOpen && (
+                    <TextEntryDialog
+                      open={textDialogOpen}
+                      onClose={handleTextDialogClose}
+                      onConfirm={handleTextDialogConfirm}
+                      title="Enter Text"
+                      defaultValue={textDialogValue}
+                      defaultFormatting={textDialogFormatting}
                     />
                   )}
 
-                  <MeasurementLayer
-                    measureMode={measureMode}
+                  {/* Inline measurement confirmation */}
+                  <MeasurementConfirmation
+                    open={measureDialogOpen}
                     measurePoints={measurePoints}
-                    cursorPosition={cursorPosition}
-                    theme={theme}
                     stagePosition={stagePosition}
                     stageScale={stageScale}
-                    onMeasurePointAdd={(point) => {
-                      setMeasurePoints(points => {
-                        if (points.length >= 2) return points;
-                        const newPoints = [...points, point];
-                        if (newPoints.length === 2) {
-                          setMeasureDialogOpen(true);
-                        }
-                        return newPoints;
-                      });
-                    }}
+                    onConfirm={handleMeasureConfirm}
+                    onCancel={handleMeasureCancel}
+                    calculateDistance={calculateDistance}
+                    scaleFactor={scaleFactor}
                   />
-                </DesignerCanvas>
-                
-                {/* Inline measurement confirmation */}
-                <MeasurementConfirmation
-                  open={measureDialogOpen}
-                  measurePoints={measurePoints}
-                  stagePosition={stagePosition}
-                  stageScale={stageScale}
-                  onConfirm={handleMeasureConfirm}
-                  onCancel={handleMeasureCancel}
-                  calculateDistance={calculateDistance}
-                  scaleFactor={scaleFactor}
-                />
-              </Box>
-            </CardContent>
-          </Card>
-        </Container>
-      </Box>
 
-      <ContextMenus
-        contextMenu={contextMenu}
-        onClose={handleCloseContextMenu}
-        onDuplicate={handleDuplicateSelected}
-        onOpenColorPicker={handleOpenColorPicker}
-        onResetScale={handleResetScale}
-        onDelete={handleDeleteSelected}
-        onInsertProduct={handleInsertProductAtPosition}
-        onSwapPlacementProduct={handleSwapPlacementProduct}
-        onScale={handleOpenScaleDialog}
-      />
+                  {/* Layer management panels */}
+                  {showLayers && (
+                    <>
+                      <LayerSwitcher
+                        ref={layerSwitcherRef}
+                        layers={layers}
+                        activeLayerId={activeLayerId}
+                        onLayerSelect={setActiveLayerId}
+                        onLayerAdd={addLayer}
+                        onLayerDelete={deleteLayer}
+                        onClose={handleLayerClose}
+                        subLayerControlsRef={subLayerControlsRef}
+                        top={layerSwitcherTop}
+                        editingEnabled={isOwner}
+                      />
+                      <SubLayerControls
+                        ref={subLayerControlsRef}
+                        sublayers={activeSublayers}
+                        layerId={activeLayerId}
+                        defaultSublayerId={activeLayer?.defaultSublayerId}
+                        onSublayerToggle={toggleSublayerVisibility}
+                        onSublayerAdd={addSublayer}
+                        onSublayerRemove={removeSublayer}
+                        onSublayerRename={renameSublayer}
+                        onSetDefaultSublayer={setDefaultSublayer}
+                        onClose={handleLayerClose}
+                        top={subLayerControlsTop}
+                        editingEnabled={isOwner}
+                      />
+                    </>
+                  )}
 
-      <CippComponentDialog
-        open={scaleDialogOpen}
-        title="Set Scale"
-        createDialog={{
-          open: scaleDialogOpen,
-          handleClose: () => setScaleDialogOpen(false),
-          handleSubmit: (data) => {
-            handleScaleConfirm(data.scale);
-            setScaleValue(data.scale);
-          },
-          form: scaleForm
-        }}
-      >
-        <TextField
-          {...scaleForm.register('scale', {
-            onChange: (e) => setScaleValue(Number(e.target.value))
-          })}
-          label="Scale"
-          type="number"
-          defaultValue={scaleValue}
-          fullWidth
-          inputProps={{ min: 0.001, step: 0.001 }}
-          autoFocus
+                  {/* Object Preview Panel */}
+                  <ObjectPreviewPanel product={selectedProduct} visible={showObjectPreview} />
+
+                  {/* Product List Panel */}
+                  <ProductListPanel
+                    ref={productListPanelRef}
+                    products={products}
+                    visible={showLayers}
+                    activeLayerId={activeLayerId}
+                    top={productListPanelTop}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+          </Container>
+        </Box>
+      )}
+
+      {contextMenus.contextMenu && (
+        <ContextMenus
+          contextMenu={contextMenus.contextMenu}
+          onClose={contextMenus.handleCloseContextMenu}
+          onDuplicate={contextMenus.handleDuplicateSelected}
+          onOpenColorPicker={contextMenus.handleOpenColorPicker}
+          onResetScale={handleResetScale}
+          onDelete={contextMenus.handleDeleteSelected}
+          onInsertProduct={contextMenus.handleInsertProductAtPosition}
+          onSwapPlacementProduct={handleSwapPlacementProduct}
+          onSwapProduct={handleSwapSelectedProducts}
+          onSwapAllSameProducts={handleSwapAllSameProducts}
+          onScale={handleOpenScaleDialog}
+          onChangeQuantity={handleOpenQuantityDialog}
+          onAssignToSublayer={handleAssignToSublayer}
+          onShowProperties={handleShowProperties}
+          onInsertCustomObject={handleInsertCustomObject}
+          sublayers={activeLayer?.sublayers || []}
+          selectedProductsCount={selectedIds.length}
+          selectedConnectorsCount={selectedConnectorIds.length}
+          onTextEdit={handleTextEdit}
+          onTextFormatBold={handleTextFormatBold}
+          onTextFormatItalic={handleTextFormatItalic}
+          onTextFormatUnderline={handleTextFormatUnderline}
+          onTextFontSize={handleTextFontSize}
+          onResetConnectorToStraight={contextMenus.handleResetConnectorToStraight}
+          onAlignHorizontalCenter={contextMenus.handleAlignHorizontalCenter}
+          onAlignVerticalCenter={contextMenus.handleAlignVerticalCenter}
+          onAlignLeft={contextMenus.handleAlignLeft}
+          onAlignRight={contextMenus.handleAlignRight}
+          onAlignTop={contextMenus.handleAlignTop}
+          onAlignBottom={contextMenus.handleAlignBottom}
+          onEvenSpacingHorizontal={contextMenus.handleEvenSpacingHorizontal}
+          onEvenSpacingVertical={contextMenus.handleEvenSpacingVertical}
         />
-      </CippComponentDialog>
+      )}
 
-      <ColorPickerPopover
-        anchorEl={colorPickerAnchor}
-        onClose={() => {
-          setColorPickerAnchor(null);
-          setColorPickerTarget(null);
-        }}
-        onColorChange={handleColorChange}
+      {/* Scale dialog - only render when open */}
+      {scaleDialogOpen && (
+        <CippComponentDialog
+          open={scaleDialogOpen}
+          title="Set Scale"
+          createDialog={{
+            open: scaleDialogOpen,
+            handleClose: () => setScaleDialogOpen(false),
+            handleSubmit: (data) => {
+              handleScaleConfirm(data.scale);
+              setScaleValue(data.scale);
+            },
+            form: scaleForm,
+          }}
+        >
+          <TextField
+            {...scaleForm.register("scale", {
+              onChange: handleScaleChange,
+            })}
+            label="Scale"
+            type="number"
+            defaultValue={scaleValue}
+            fullWidth
+            inputProps={{ min: 0.001, step: 0.001 }}
+            autoFocus
+          />
+        </CippComponentDialog>
+      )}
+
+      {/* Quantity dialog - only render when open */}
+      {quantityDialogOpen && (
+        <CippComponentDialog
+          open={quantityDialogOpen}
+          title="Set Quantity"
+          createDialog={{
+            open: quantityDialogOpen,
+            handleClose: () => setQuantityDialogOpen(false),
+            handleSubmit: (data) => {
+              handleQuantityConfirm(data.quantity);
+              setQuantityValue(data.quantity);
+            },
+            form: quantityForm,
+          }}
+        >
+          <TextField
+            {...quantityForm.register("quantity", {
+              onChange: handleQuantityChange,
+            })}
+            label="Quantity"
+            type="number"
+            defaultValue={quantityValue}
+            fullWidth
+            inputProps={{ min: 1, step: 1 }}
+            autoFocus
+            helperText="Set the quantity for the selected product(s). This allows you to place multiple items without rendering them all."
+          />
+        </CippComponentDialog>
+      )}
+
+      {/* Color picker popover - only render when open */}
+      {contextMenus.colorPickerAnchor && (
+        <ColorPickerPopover
+          anchorEl={contextMenus.colorPickerAnchor}
+          onClose={() => {
+            contextMenus.setColorPickerAnchor(null);
+            contextMenus.setColorPickerTarget(null);
+          }}
+          onColorChange={contextMenus.handleColorChange}
+        />
+      )}
+
+      {/* Deselection confirmation dialog */}
+      <ConfirmDialog
+        open={deselectDialog.open}
+        onClose={() => setDeselectDialog({ open: false, action: null })}
+        onConfirm={() => setDeselectDialog({ open: false, action: null })}
+        title="Items Selected"
+        message={deselectDialog.message || "Please deselect all items before continuing."}
       />
     </>
   );

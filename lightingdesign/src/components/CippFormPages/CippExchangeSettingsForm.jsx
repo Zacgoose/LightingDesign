@@ -74,13 +74,19 @@ const CippExchangeSettingsForm = (props) => {
       // If this was an OOO submission, preserve the submitted values
       if (relatedQueryKeys.includes(`ooo-${userId}`)) {
         const submittedValues = formControl.getValues();
-        const oooFields = ['AutoReplyState', 'InternalMessage', 'ExternalMessage', 'StartTime', 'EndTime'];
-        
+        const oooFields = [
+          "AutoReplyState",
+          "InternalMessage",
+          "ExternalMessage",
+          "StartTime",
+          "EndTime",
+        ];
+
         // Reset the form
         formControl.reset();
-        
+
         // Restore the submitted OOO values
-        oooFields.forEach(field => {
+        oooFields.forEach((field) => {
           const value = submittedValues.ooo?.[field];
           if (value !== undefined) {
             formControl.setValue(`ooo.${field}`, value);
@@ -144,14 +150,14 @@ const CippExchangeSettingsForm = (props) => {
       cardLabelBox: {
         cardLabelBoxHeader: isFetching ? (
           <CircularProgress size="25px" color="inherit" />
-        ) : (currentSettings?.ForwardingAddress) ? (
-          <Check/>
+        ) : currentSettings?.ForwardingAddress ? (
+          <Check />
         ) : (
-          <Error/>
+          <Error />
         ),
       },
       text: "Mailbox Forwarding",
-      subtext: (currentSettings?.ForwardingAddress)
+      subtext: currentSettings?.ForwardingAddress
         ? "Email forwarding is configured for this mailbox"
         : "No email forwarding configured for this mailbox",
       formContent: (
@@ -190,8 +196,12 @@ const CippExchangeSettingsForm = (props) => {
               />
             </Grid>
             <Grid size={6}>
-              <Tooltip 
-                title={areDateFieldsDisabled ? "Scheduling is only available when Auto Reply State is set to Scheduled" : ""}
+              <Tooltip
+                title={
+                  areDateFieldsDisabled
+                    ? "Scheduling is only available when Auto Reply State is set to Scheduled"
+                    : ""
+                }
                 placement="bottom"
               >
                 <Box>
@@ -206,8 +216,12 @@ const CippExchangeSettingsForm = (props) => {
               </Tooltip>
             </Grid>
             <Grid size={6}>
-              <Tooltip 
-                title={areDateFieldsDisabled ? "Scheduling is only available when Auto Reply State is set to Scheduled" : ""}
+              <Tooltip
+                title={
+                  areDateFieldsDisabled
+                    ? "Scheduling is only available when Auto Reply State is set to Scheduled"
+                    : ""
+                }
                 placement="bottom"
               >
                 <Box>
@@ -277,7 +291,7 @@ const CippExchangeSettingsForm = (props) => {
                 validators={{
                   required: "Please enter a number",
                   min: { value: 1, message: "The minimum is 1" },
-                  max: { value: 1000, message: "The maximum is 1000" }, 
+                  max: { value: 1000, message: "The maximum is 1000" },
                 }}
               />
             </Grid>

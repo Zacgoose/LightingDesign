@@ -12,12 +12,11 @@ import {
   Button,
   keyframes,
 } from "@mui/material";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { getCippError } from "../../utils/get-cipp-error";
 import { CippCopyToClipBoard } from "./CippCopyToClipboard";
 import { CippDocsLookup } from "./CippDocsLookup";
 import { CippCodeBlock } from "./CippCodeBlock";
-import React from "react";
 import { CippTableDialog } from "./CippTableDialog";
 import { EyeIcon } from "@heroicons/react/24/outline";
 import { useDialog } from "../../hooks/use-dialog";
@@ -121,7 +120,16 @@ const extractAllResults = (data) => {
 };
 
 export const CippApiResults = (props) => {
-  const { apiObject, errorsOnly = false, alertSx = {} } = props;
+  const {
+    apiObject,
+    errorsOnly = false,
+    alertSx = {},
+    floating = false,
+    floatingTop = 106,
+    floatingRight = 24,
+    autoCloseSeconds = null,
+    hideResultsButtons = false,
+  } = props;
 
   const [errorVisible, setErrorVisible] = useState(false);
   const [fetchingVisible, setFetchingVisible] = useState(false);
@@ -179,7 +187,7 @@ export const CippApiResults = (props) => {
             severity: res.severity,
             visible: true,
             ...res,
-          }))
+          })),
         );
       } else {
         setFinalResults([]);
@@ -210,7 +218,7 @@ export const CippApiResults = (props) => {
 
     const headers = Object.keys(finalResults[0]);
     const rows = finalResults.map((item) =>
-      headers.map((header) => `"${item[header] || ""}"`).join(",")
+      headers.map((header) => `"${item[header] || ""}"`).join(","),
     );
     const csvContent = [headers.join(","), ...rows].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -224,8 +232,34 @@ export const CippApiResults = (props) => {
   }, [finalResults, apiObject]);
 
   const hasVisibleResults = finalResults.some((r) => r.visible);
+
+  // Auto-close functionality
+  useEffect(() => {
+    if (autoCloseSeconds && finalResults.length > 0 && hasVisibleResults) {
+      const timer = setTimeout(() => {
+        setFinalResults((prev) => prev.map((r) => ({ ...r, visible: false })));
+        setFetchingVisible(false);
+        setErrorVisible(false);
+      }, autoCloseSeconds * 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [autoCloseSeconds, finalResults.length, hasVisibleResults]);
+
+  // Floating container styles
+  const containerSx = floating
+    ? {
+        position: "fixed",
+        top: floatingTop,
+        right: floatingRight,
+        maxWidth: 500,
+        zIndex: (theme) => theme.zIndex.snackbar,
+        pointerEvents: "auto",
+      }
+    : {};
+
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2} sx={containerSx}>
       {/* Loading alert */}
       {!errorsOnly && (
         <Collapse in={fetchingVisible} unmountOnExit>
@@ -307,7 +341,7 @@ export const CippApiResults = (props) => {
                           startIcon={<Help />}
                           onClick={() => {
                             const searchUrl = `https://docs.cipp.app/?q=Help+with:+${encodeURIComponent(
-                              resultObj.copyField || resultObj.text
+                              resultObj.copyField || resultObj.text,
                             )}&ask=true`;
                             window.open(searchUrl, "_blank");
                           }}
@@ -389,7 +423,8 @@ export const CippApiResults = (props) => {
           ))}
         </>
       )}
-      {(apiObject.isSuccess || apiObject.isError) &&
+      {!hideResultsButtons &&
+      (apiObject.isSuccess || apiObject.isError) &&
       finalResults?.length > 0 &&
       hasVisibleResults ? (
         <Box display="flex" flexDirection="row">

@@ -41,7 +41,7 @@ const mergeKeys = (dataArray) => {
   return dataArray.reduce((acc, item) => {
     const mergeRecursive = (obj, base = {}) => {
       // Add null/undefined check before calling Object.keys
-      if (!obj || typeof obj !== 'object') {
+      if (!obj || typeof obj !== "object") {
         return base;
       }
       Object.keys(obj).forEach((key) => {
@@ -67,19 +67,19 @@ const mergeKeys = (dataArray) => {
     };
 
     // Add null/undefined check before calling mergeRecursive
-    if (!item || typeof item !== 'object') {
+    if (!item || typeof item !== "object") {
       return acc;
     }
     return mergeRecursive(item, acc);
   }, {});
 };
 
-export const utilColumnsFromAPI = (dataArray) => {
+export const utilColumnsFromAPI = (dataArray, imageColumn = null) => {
   // Add safety check for dataArray
   if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) {
     return [];
   }
-  
+
   const dataSample = mergeKeys(dataArray);
 
   const generateColumns = (obj, parentKey = "") => {
@@ -112,7 +112,7 @@ export const utilColumnsFromAPI = (dataArray) => {
           id: accessorKey,
           accessorFn: (row) => {
             const value = resolveValue(row);
-            return getCippFormatting(value, accessorKey, "text");
+            return getCippFormatting(value, accessorKey, "text", false, true, imageColumn);
           },
           ...getCippFilterVariant(accessorKey, {
             sampleValue,
@@ -122,7 +122,7 @@ export const utilColumnsFromAPI = (dataArray) => {
           }),
           Cell: ({ row }) => {
             const value = resolveValue(row.original);
-            return getCippFormatting(value, accessorKey);
+            return getCippFormatting(value, accessorKey, undefined, undefined, true, imageColumn);
           },
         };
 

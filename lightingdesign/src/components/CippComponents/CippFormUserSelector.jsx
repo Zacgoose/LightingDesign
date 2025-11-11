@@ -47,7 +47,7 @@ export const CippFormUserSelector = ({
             return options.filter(dataFilter);
           }
           return options;
-        }
+        },
       }}
       creatable={false}
       {...other}

@@ -1,5 +1,5 @@
 import { Group, Shape, Circle, Line } from "react-konva";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 export const ConnectorLine = ({
   connector,
@@ -11,92 +11,193 @@ export const ConnectorLine = ({
   onContextMenu,
   theme,
   selectedTool,
+  isMiddlePanning = false,
+  isStageDragging = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const control1Ref = useRef(null);
+  const control3Ref = useRef(null);
+  const shapeRef = useRef(null);
 
-  // Default control point if not set
-  const defaultControlX = (fromProduct.x + toProduct.x) / 2;
-  const defaultControlY = Math.min(fromProduct.y, toProduct.y) - 80;
-  
-  const controlX = connector.controlX ?? defaultControlX;
-  const controlY = connector.controlY ?? defaultControlY;
+  // Initialize 3 control points for cubic Bézier curve
+  // Default: control points positioned exactly along the line at 1/3 and 2/3
+  const deltaX = toProduct.x - fromProduct.x;
+  const deltaY = toProduct.y - fromProduct.y;
 
-  const handleControlDrag = (e) => {
+  // Default control points are positioned exactly on the straight line
+  // at 1/3 and 2/3 of the distance from start to end
+  const defaultControl1X = fromProduct.x + deltaX * 0.33;
+  const defaultControl1Y = fromProduct.y + deltaY * 0.33;
+  const defaultControl3X = fromProduct.x + deltaX * 0.67;
+  const defaultControl3Y = fromProduct.y + deltaY * 0.67;
+
+  const control1 = connector.control1 ?? { x: defaultControl1X, y: defaultControl1Y };
+  const control3 = connector.control3 ?? { x: defaultControl3X, y: defaultControl3Y };
+
+  // Control2 (center point) is always positioned in a straight line between control1 and control3
+  // Not user-adjustable - ensures smooth flow from one end to the other
+  const control2 = {
+    x: (control1.x + control3.x) / 2,
+    y: (control1.y + control3.y) / 2,
+  };
+
+  // Handle control point drag
+  const handleControlDrag = (controlName, e) => {
     onChange({
       ...connector,
-      controlX: e.target.x(),
-      controlY: e.target.y(),
+      [controlName]: { x: e.target.x(), y: e.target.y() },
     });
   };
 
   // Calculate if mouse is near the curve
   const handleLineClick = (e) => {
     e.cancelBubble = true;
-    onSelect(e);
+    onSelect(e, connector.id);
+  };
+
+  // Helper function to draw the Bézier curve path
+  const drawCurvePath = (ctx) => {
+    ctx.beginPath();
+    ctx.moveTo(fromProduct.x, fromProduct.y);
+
+    // Get current control point positions (may be mid-drag)
+    const c1 = control1Ref.current
+      ? { x: control1Ref.current.x(), y: control1Ref.current.y() }
+      : control1;
+    const c3 = control3Ref.current
+      ? { x: control3Ref.current.x(), y: control3Ref.current.y() }
+      : control3;
+
+    // Control2 (center point) is always positioned in a straight line between control1 and control3
+    const c2 = {
+      x: (c1.x + c3.x) / 2,
+      y: (c1.y + c3.y) / 2,
+    };
+
+    // Draw smooth curve through 3 control points
+    // Use two cubic Bézier curves to pass through all 3 control points
+    const midX = (c1.x + c2.x) / 2;
+    const midY = (c1.y + c2.y) / 2;
+    const mid2X = (c2.x + c3.x) / 2;
+    const mid2Y = (c2.y + c3.y) / 2;
+
+    ctx.bezierCurveTo(c1.x, c1.y, midX, midY, c2.x, c2.y);
+    ctx.bezierCurveTo(mid2X, mid2Y, c3.x, c3.y, toProduct.x, toProduct.y);
   };
 
   return (
     <Group>
-      {/* The curved line */}
+      {/* The curved line using cubic Bézier with control points */}
       <Shape
+        ref={shapeRef}
+        id={connector.id}
         sceneFunc={(ctx, shape) => {
-          ctx.beginPath();
-          ctx.moveTo(fromProduct.x, fromProduct.y);
-          ctx.quadraticCurveTo(
-            controlX,
-            controlY,
-            toProduct.x,
-            toProduct.y
-          );
+          drawCurvePath(ctx);
           ctx.fillStrokeShape(shape);
         }}
-        stroke={connector.color || (isSelected ? theme.palette.secondary.main : theme.palette.primary.main)}
-        strokeWidth={isSelected ? 3 : 2}
+        hitFunc={(ctx, shape) => {
+          // Custom hit detection function - only stroke the path for hit detection
+          // This ensures clicks are only detected on the stroke area, not the filled area
+          drawCurvePath(ctx);
+          // Only stroke for hit detection - no fill
+          ctx.strokeShape(shape);
+        }}
+        stroke={
+          connector.color ||
+          (isSelected ? theme.palette.secondary.main : theme.palette.primary.main)
+        }
+        strokeWidth={isSelected ? 6 : 6}
         lineCap="round"
-        hitStrokeWidth={20} // Makes it easier to click
+        dash={[30, 15]} // Dashed line pattern: 30px dash, 15px gap (more spacing)
+        hitStrokeWidth={40} // Makes it easier to click
+        listening={
+          (selectedTool === "select" || selectedTool === "connect") &&
+          !isMiddlePanning &&
+          !isStageDragging
+        } // Disable listening during panning for performance
         onClick={handleLineClick}
         onTap={handleLineClick}
         onContextMenu={onContextMenu}
       />
 
-      {/* Show control point and guide lines when selected */}
-      {isSelected && selectedTool === "select" && (
+      {/* Show control points and guide lines when selected */}
+      {isSelected && (selectedTool === "select" || selectedTool === "connect") && (
         <>
-          {/* Guide line from start to control point */}
+          {/* Guide lines to control points */}
           <Line
-            points={[fromProduct.x, fromProduct.y, controlX, controlY]}
+            points={[fromProduct.x, fromProduct.y, control1.x, control1.y]}
             stroke={theme.palette.action.disabled}
             strokeWidth={1}
-            dash={[5, 5]}
+            dash={[3, 3]}
             listening={false}
           />
-          
-          {/* Guide line from control point to end */}
           <Line
-            points={[controlX, controlY, toProduct.x, toProduct.y]}
+            points={[control1.x, control1.y, control2.x, control2.y]}
             stroke={theme.palette.action.disabled}
             strokeWidth={1}
-            dash={[5, 5]}
+            dash={[3, 3]}
             listening={false}
           />
-          
-          {/* Draggable control point */}
+          <Line
+            points={[control2.x, control2.y, control3.x, control3.y]}
+            stroke={theme.palette.action.disabled}
+            strokeWidth={1}
+            dash={[3, 3]}
+            listening={false}
+          />
+          <Line
+            points={[control3.x, control3.y, toProduct.x, toProduct.y]}
+            stroke={theme.palette.action.disabled}
+            strokeWidth={1}
+            dash={[3, 3]}
+            listening={false}
+          />
+
+          {/* Draggable control points (only outer two) */}
           <Circle
-            x={controlX}
-            y={controlY}
-            radius={8}
-            fill={theme.palette.secondary.main}
+            ref={control1Ref}
+            x={control1.x}
+            y={control1.y}
+            radius={15}
+            fill={theme.palette.info.main}
             stroke={theme.palette.background.paper}
             strokeWidth={2}
             draggable
             onDragStart={() => setIsDragging(true)}
+            onDragMove={() => {
+              // Redraw the curve during drag without updating state
+              if (shapeRef.current) {
+                shapeRef.current.getLayer()?.batchDraw();
+              }
+            }}
             onDragEnd={(e) => {
               setIsDragging(false);
-              handleControlDrag(e);
+              handleControlDrag("control1", e);
             }}
-            onDragMove={handleControlDrag}
           />
-          
+          {/* Center control point (control2) is not visible or draggable - auto-positioned */}
+          <Circle
+            ref={control3Ref}
+            x={control3.x}
+            y={control3.y}
+            radius={15}
+            fill={theme.palette.info.main}
+            stroke={theme.palette.background.paper}
+            strokeWidth={2}
+            draggable
+            onDragStart={() => setIsDragging(true)}
+            onDragMove={() => {
+              // Redraw the curve during drag without updating state
+              if (shapeRef.current) {
+                shapeRef.current.getLayer()?.batchDraw();
+              }
+            }}
+            onDragEnd={(e) => {
+              setIsDragging(false);
+              handleControlDrag("control3", e);
+            }}
+          />
+
           {/* Start point indicator */}
           <Circle
             x={fromProduct.x}
@@ -105,7 +206,7 @@ export const ConnectorLine = ({
             fill={theme.palette.success.main}
             listening={false}
           />
-          
+
           {/* End point indicator */}
           <Circle
             x={toProduct.x}

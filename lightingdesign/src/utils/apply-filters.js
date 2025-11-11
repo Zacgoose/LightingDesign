@@ -43,7 +43,7 @@ const isAfter = (rowValue, filterValue) => {
 };
 
 const isBlank = (rowValue) => {
-  if (rowValue === null || typeof rowValue === 'undefined') {
+  if (rowValue === null || typeof rowValue === "undefined") {
     return true;
   }
 
@@ -51,7 +51,7 @@ const isBlank = (rowValue) => {
 };
 
 const isPresent = (rowValue) => {
-  if (rowValue === null || typeof rowValue === 'undefined') {
+  if (rowValue === null || typeof rowValue === "undefined") {
     return false;
   }
 
@@ -100,44 +100,44 @@ const startsWith = (rowValue, filterValue) => {
 
 const checkFilter = (rowValue, filter) => {
   switch (filter.operator) {
-    case 'contains':
+    case "contains":
       return contains(rowValue, filter.value);
 
-    case 'endsWith':
+    case "endsWith":
       return endsWith(rowValue, filter.value);
 
-    case 'equals':
+    case "equals":
       return equals(rowValue, filter.value);
 
-    case 'greaterThan':
+    case "greaterThan":
       return greaterThan(rowValue, filter.value);
 
-    case 'isAfter':
+    case "isAfter":
       return isAfter(rowValue, filter.value);
 
-    case 'isBefore':
+    case "isBefore":
       return isBefore(rowValue, filter.value);
 
-    case 'isBlank':
+    case "isBlank":
       return isBlank(rowValue);
 
-    case 'isPresent':
+    case "isPresent":
       return isPresent(rowValue);
 
-    case 'lessThan':
+    case "lessThan":
       return lessThan(rowValue, filter.value);
 
-    case 'notContains':
+    case "notContains":
       return notContains(rowValue, filter.value);
 
-    case 'notEqual':
+    case "notEqual":
       return notEqual(rowValue, filter.value);
 
-    case 'startsWith':
+    case "startsWith":
       return startsWith(rowValue, filter.value);
 
     default:
-      throw new Error('Provided an unknown filter operator');
+      throw new Error("Provided an unknown filter operator");
   }
 };
 
@@ -157,7 +157,7 @@ export const applyFilters = (rows, filters = []) => {
       try {
         passed = checkFilter(rowValue, filter);
       } catch (err) {
-        console.warn('[Apply Filters] Skipped filter due to error', err);
+        console.warn("[Apply Filters] Skipped filter due to error", err);
       }
 
       if (!passed) {

@@ -101,8 +101,8 @@ export const CippAddEquipmentDrawer = ({
               {addEquipment.isLoading
                 ? "Creating..."
                 : addEquipment.isSuccess
-                ? "Create Another"
-                : "Create Equipment Mailbox"}
+                  ? "Create Another"
+                  : "Create Equipment Mailbox"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

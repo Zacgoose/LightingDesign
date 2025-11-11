@@ -14,6 +14,7 @@ import {
   Paper,
   Checkbox,
   SvgIcon,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -38,7 +39,6 @@ import { MRT_ToggleFullScreenButton } from "material-react-table";
 import { PDFExportButton } from "../pdfExportButton";
 import { CSVExportButton } from "../csvExportButton";
 import { getCippTranslation } from "../../utils/get-cipp-translation";
-import { useMediaQuery } from "@mui/material";
 import { CippQueueTracker } from "./CippQueueTracker";
 import { usePopover } from "../../hooks/use-popover";
 import { useDialog } from "../../hooks/use-dialog";
@@ -582,8 +582,8 @@ export const CIPPTableToptoolbar = ({
               getRequestData?.isFetchNextPageError
                 ? "Could not retrieve all data. Click to try again."
                 : getRequestData?.isFetching
-                ? "Retrieving more data..."
-                : "Refresh data"
+                  ? "Retrieving more data..."
+                  : "Refresh data"
             }
           >
             <RefreshButton

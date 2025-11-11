@@ -188,7 +188,7 @@ function CippJsonView({
     const guidsArray = Array.from(guidsSet);
     // Filter out GUIDs that are already resolved or known to not be resolvable
     const notResolvedGuids = guidsArray.filter(
-      (guid) => !guidMapping[guid] && !notFoundGuids.has(guid)
+      (guid) => !guidMapping[guid] && !notFoundGuids.has(guid),
     );
 
     if (notResolvedGuids.length === 0) return;
@@ -229,7 +229,7 @@ function CippJsonView({
     const policyNameKey = ["Name", "DisplayName", "displayName", "name"].find((key) => key in data);
     if (policyNameKey) {
       items.push(
-        <PropertyListItem key="policyName" label="Policy Name" value={data[policyNameKey]} />
+        <PropertyListItem key="policyName" label="Policy Name" value={data[policyNameKey]} />,
       );
     }
 
@@ -260,14 +260,14 @@ function CippJsonView({
             key={`omaSetting-${index}`}
             label={`${omaSetting.displayName} (${omaSetting.omaUri})`}
             value={value}
-          />
+          />,
         );
       });
     } else if (data.settings) {
       data.settings.forEach((setting, index) => {
         const settingInstance = setting.settingInstance;
         const intuneObj = intuneCollection.find(
-          (item) => item.id === settingInstance.settingDefinitionId
+          (item) => item.id === settingInstance.settingDefinitionId,
         );
 
         // Handle groupSettingCollectionInstance
@@ -280,14 +280,14 @@ function CippJsonView({
             if (groupValue.children && Array.isArray(groupValue.children)) {
               groupValue.children.forEach((child, cIndex) => {
                 const childIntuneObj = intuneCollection.find(
-                  (item) => item.id === child.settingDefinitionId
+                  (item) => item.id === child.settingDefinitionId,
                 );
                 const label = childIntuneObj?.displayName || child.settingDefinitionId;
                 let value;
                 if (child.choiceSettingValue && child.choiceSettingValue.value) {
                   value =
                     childIntuneObj?.options?.find(
-                      (option) => option.id === child.choiceSettingValue.value
+                      (option) => option.id === child.choiceSettingValue.value,
                     )?.displayName || child.choiceSettingValue.value;
                 }
                 items.push(
@@ -295,7 +295,7 @@ function CippJsonView({
                     key={`setting-${index}-group-${gIndex}-child-${cIndex}`}
                     label={label}
                     value={value}
-                  />
+                  />,
                 );
               });
             }
@@ -322,7 +322,7 @@ function CippJsonView({
             );
 
           items.push(
-            <PropertyListItem key={`setting-${index}`} label={label} value={displayValue} />
+            <PropertyListItem key={`setting-${index}`} label={label} value={displayValue} />,
           );
         } else if (settingInstance?.choiceSettingValue?.value) {
           const label = intuneObj?.displayName || settingInstance.settingDefinitionId;
@@ -348,7 +348,7 @@ function CippJsonView({
           }
 
           items.push(
-            <PropertyListItem key={`setting-${index}`} label={label} value={optionValue} />
+            <PropertyListItem key={`setting-${index}`} label={label} value={optionValue} />,
           );
         } else {
           const label = intuneObj?.displayName || settingInstance.settingDefinitionId;
@@ -357,7 +357,7 @@ function CippJsonView({
               key={`setting-${index}`}
               label={label}
               value="This setting could not be resolved"
-            />
+            />,
           );
         }
       });
@@ -367,7 +367,7 @@ function CippJsonView({
           key="legacyPolicy"
           label="Legacy Policy"
           value="This is a legacy policy and the settings can only be shown in JSON format. Press the eye icon to view the JSON."
-        />
+        />,
       );
     } else {
       Object.entries(data).forEach(([key, value]) => {
@@ -390,7 +390,7 @@ function CippJsonView({
                   </div>
                 </Tooltip>
               }
-            />
+            />,
           );
         } else if (typeof value === "string" && isGuid(value) && isLoadingGuids) {
           items.push(
@@ -403,7 +403,7 @@ function CippJsonView({
                   <span>{getCippFormatting(value, key)}</span>
                 </div>
               }
-            />
+            />,
           );
         } else {
           items.push(
@@ -411,7 +411,7 @@ function CippJsonView({
               key={key}
               label={getCippTranslation(key)}
               value={getCippFormatting(value, key)}
-            />
+            />,
           );
         }
       });
@@ -435,7 +435,7 @@ function CippJsonView({
     ];
     const cleanedObj = cleanObject(object) || {};
     const filteredObj = Object.fromEntries(
-      Object.entries(cleanedObj).filter(([key]) => !blacklist.includes(key))
+      Object.entries(cleanedObj).filter(([key]) => !blacklist.includes(key)),
     );
     setDrilldownData([filteredObj]);
 
@@ -537,7 +537,7 @@ function CippJsonView({
                         data,
                         (itemData) => handleItemClick(itemData, index),
                         guidMapping,
-                        isLoadingGuids
+                        isLoadingGuids,
                       )}
                     </PropertyList>
                   )}

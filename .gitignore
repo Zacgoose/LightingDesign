@@ -37,3 +37,6 @@ AzuriteConfig
 __azurite*
 __blobstorage__
 __queuestorage__
+
+# Temporary documentation
+ROTATION_FIXES.md

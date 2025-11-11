@@ -58,23 +58,6 @@ export const AccountPopover = (props) => {
     }
   }, [router, popover]);
 
-  const defaultAvatar = (
-    <Avatar
-      sx={{
-        height: 40,
-        width: 40,
-      }}
-      variant="rounded"
-      src={
-        orgData.data?.clientPrincipal?.userDetails
-          ? `/api/ListUserPhoto?UserID=${orgData.data?.clientPrincipal?.userDetails}`
-          : ""
-      }
-    >
-      {orgData.data?.userDetails?.[0] || ""}
-    </Avatar>
-  );
-
   return (
     <>
       <Stack
@@ -86,7 +69,6 @@ export const AccountPopover = (props) => {
         sx={{ cursor: "pointer" }}
         {...other}
       >
-        {defaultAvatar}
         <>
           {!mdDown && (
             <>

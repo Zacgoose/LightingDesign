@@ -43,8 +43,9 @@ export const BreachSearchDialog = ({ createDialog }) => {
           <DialogContent>
             <div className="mb-3">
               <p>
-                This will run a breach search to check for potentially compromised passwords and information
-                for the current tenant: <strong>{tenantFilter?.displayName || tenantFilter}</strong>
+                This will run a breach search to check for potentially compromised passwords and
+                information for the current tenant:{" "}
+                <strong>{tenantFilter?.displayName || tenantFilter}</strong>
               </p>
             </div>
             <CippApiResults apiObject={breachSearchResults} alertSx={{ mt: 2 }} />

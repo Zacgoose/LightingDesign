@@ -62,7 +62,7 @@ const CippVersionProperties = () => {
           value: CippVersionComponent(
             version?.data?.version,
             cippVersion?.data?.RemoteCIPPVersion,
-            cippVersion?.data?.OutOfDateCIPP
+            cippVersion?.data?.OutOfDateCIPP,
           ),
         },
         {
@@ -70,7 +70,7 @@ const CippVersionProperties = () => {
           value: CippVersionComponent(
             cippVersion?.data?.LocalCIPPAPIVersion,
             cippVersion?.data?.RemoteCIPPAPIVersion,
-            cippVersion?.data?.OutOfDateCIPPAPI
+            cippVersion?.data?.OutOfDateCIPPAPI,
           ),
         },
       ]}

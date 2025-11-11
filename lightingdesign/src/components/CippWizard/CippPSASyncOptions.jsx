@@ -68,7 +68,7 @@ export const CippPSASyncOptions = (props) => {
 
       onNextStep?.(newValues);
     },
-    [values, onNextStep]
+    [values, onNextStep],
   );
 
   return (

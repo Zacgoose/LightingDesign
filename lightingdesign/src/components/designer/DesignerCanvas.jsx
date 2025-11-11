@@ -1,217 +1,265 @@
 import { Box, useTheme } from "@mui/material";
-import { Stage, Layer, Line, Image as KonvaImage } from "react-konva";
-import { useState, useEffect } from "react";
+import { Stage, Layer, Image as KonvaImage } from "react-konva";
+import { useState, useEffect, memo, forwardRef } from "react";
+import { GridLayer } from "./GridLayer";
 
-export const DesignerCanvas = ({
-  width = 4200,
-  height = 2970,
-  stageScale = 1,
-  stagePosition,
-  showGrid,
-  gridSize = 100,
-  scaleFactor = 100,
-  onWheel,
-  onDragEnd,
-  onMouseDown,
-  onTouchStart,
-  onContextMenu,
-  draggable = true,
-  stageRef,
-  backgroundImage = null,
-  backgroundImageNaturalSize = null,
-  children,
-  onMouseMove,
-  onPan
-}) => {
-  const theme = useTheme();
-  const [bgImage, setBgImage] = useState(null);
+export const DesignerCanvas = memo(
+  forwardRef(
+    (
+      {
+        width = 4200,
+        height = 2970,
+        viewportWidth, // Optional: actual visible viewport width (overrides width for Stage)
+        viewportHeight, // Optional: actual visible viewport height (overrides height for Stage)
+        stageScale = 1,
+        stagePosition,
+        showGrid,
+        gridSize = 100,
+        scaleFactor = 100,
+        onWheel,
+        onDragStart,
+        onDragEnd,
+        onMouseDown,
+        onMouseUp,
+        onTouchStart,
+        onContextMenu,
+        draggable = true,
+        backgroundImage = null,
+        backgroundImageNaturalSize = null,
+        children, // Kept for backward compatibility, but prefer layer-specific props
+        objectsChildren, // Layer 1: Connectors and unselected products
+        textAndSelectionChildren, // Layer 2: Text boxes and selection group
+        transformerChildren, // Layer 3: Transformer (always on top)
+        onMouseMove,
+        onPan,
+        gridOpacity,
+        backgroundOpacity,
+        onMiddlePanningChange, // Callback to notify parent of middle mouse panning state
+        onStageDraggingChange, // Callback to notify parent of stage dragging state
+      },
+      ref,
+    ) => {
+      const theme = useTheme();
+      const [bgImage, setBgImage] = useState(null);
 
-  // Load background image
-  useEffect(() => {
-    if (!backgroundImage) {
-      setBgImage(null);
-      return;
-    }
+      // Use viewport dimensions for Stage if provided, otherwise use virtual canvas dimensions
+      const stageWidth = viewportWidth || width;
+      const stageHeight = viewportHeight || height;
 
-    const img = new window.Image();
-    img.onload = () => {
-      setBgImage(img);
-    };
+      // Load background image
+      useEffect(() => {
+        if (!backgroundImage) {
+          setBgImage(null);
+          return;
+        }
 
-    if (typeof backgroundImage === 'string') {
-      img.src = backgroundImage;
-    } else if (backgroundImage instanceof window.Image) {
-      setBgImage(backgroundImage);
-    }
-  }, [backgroundImage]);
+        const img = new window.Image();
+        img.onload = () => {
+          setBgImage(img);
+        };
 
-  // Theme-aware colors
-  const backgroundColor = theme.palette.mode === 'dark'
-    ? theme.palette.background.default
-    : '#f5f5f5';
+        img.onerror = (err) => {
+          console.error("Failed to load background image:", err);
+          setBgImage(null);
+        };
 
-  const gridColor = theme.palette.mode === 'dark'
-    ? 'rgba(255, 255, 255, 0.5)'
-    : 'rgba(0, 0, 0, 0.5)';
+        if (typeof backgroundImage === "string") {
+          img.src = backgroundImage;
+        } else if (backgroundImage instanceof window.Image) {
+          setBgImage(backgroundImage);
+        }
+      }, [backgroundImage]);
 
-  // Calculate image scale to fit canvas
-  const getImageScale = () => {
-    if (!bgImage || !backgroundImageNaturalSize) return 1;
-    const scaleX = width / backgroundImageNaturalSize.width;
-    const scaleY = height / backgroundImageNaturalSize.height;
-    return Math.min(scaleX, scaleY);
-  };
+      // Theme-aware colors
+      const backgroundColor =
+        theme.palette.mode === "dark" ? theme.palette.background.default : "#f5f5f5";
 
-  const imageScale = getImageScale();
+      const gridColor =
+        theme.palette.mode === "dark" ? "rgba(255, 255, 255, 1)" : "rgba(0, 0, 0, 1)";
 
-  // Generate grid lines to match scaled image bounds if image is present
-  const generateGrid = () => {
-    const lines = [];
-    let gridWidth = width;
-    let gridHeight = height;
-    let offsetX = -width / 2;
-    let offsetY = -height / 2;
+      // Calculate image scale to fit canvas
+      const getImageScale = () => {
+        if (!bgImage || !backgroundImageNaturalSize) return 1;
+        const scaleX = width / backgroundImageNaturalSize.width;
+        const scaleY = height / backgroundImageNaturalSize.height;
+        return Math.min(scaleX, scaleY);
+      };
 
-    if (bgImage && backgroundImageNaturalSize) {
-      gridWidth = backgroundImageNaturalSize.width * imageScale;
-      gridHeight = backgroundImageNaturalSize.height * imageScale;
-      offsetX = -gridWidth / 2;
-      offsetY = -gridHeight / 2;
-    }
+      const imageScale = getImageScale();
 
-    const scaledGridSize = scaleFactor > 0 ? scaleFactor : gridSize;
-    
-    // Safeguard: Prevent creating too many grid lines (max 200 lines in each direction)
-    const maxLines = 200;
-    const verticalLineCount = Math.ceil(gridWidth / scaledGridSize);
-    const horizontalLineCount = Math.ceil(gridHeight / scaledGridSize);
-    
-    if (verticalLineCount > maxLines || horizontalLineCount > maxLines) {
-      // Grid is too dense, skip rendering to prevent performance issues
-      console.warn('Grid density too high, skipping grid render to prevent performance issues');
-      return lines;
-    }
+      // Middle mouse panning state
+      const [isMiddlePanning, setIsMiddlePanning] = useState(false);
+      const [lastPanPos, setLastPanPos] = useState(null);
+      const panStartPosRef = useState({ x: 0, y: 0 })[0];
 
-    // Vertical lines
-    for (let x = offsetX; x <= offsetX + gridWidth; x += scaledGridSize) {
-      lines.push(
-        <Line
-          key={`v-${x}`}
-          points={[x, offsetY, x, offsetY + gridHeight]}
-          stroke={gridColor}
-          strokeWidth={0.5}
-          listening={false}
-        />
-      );
-    }
+      // Stage dragging handlers
+      const handleStageDragStart = (e) => {
+        if (onStageDraggingChange) onStageDraggingChange(true);
+        if (onDragStart) onDragStart(e);
+      };
 
-    // Horizontal lines
-    for (let y = offsetY; y <= offsetY + gridHeight; y += scaledGridSize) {
-      lines.push(
-        <Line
-          key={`h-${y}`}
-          points={[offsetX, y, offsetX + gridWidth, y]}
-          stroke={gridColor}
-          strokeWidth={0.5}
-          listening={false}
-        />
-      );
-    }
+      const handleStageDragEnd = (e) => {
+        if (onStageDraggingChange) onStageDraggingChange(false);
+        if (onDragEnd) onDragEnd(e);
+      };
 
-    return lines;
-  };
+      // Middle mouse down handler
+      const handleStageMouseDown = (e) => {
+        if (e.evt.button === 1) {
+          // Middle mouse
+          setIsMiddlePanning(true);
+          if (onMiddlePanningChange) onMiddlePanningChange(true);
+          setLastPanPos({ x: e.evt.clientX, y: e.evt.clientY });
+          // Store initial stage position
+          const stage = e.target.getStage();
+          panStartPosRef.x = stage.x();
+          panStartPosRef.y = stage.y();
+          e.evt.preventDefault();
+        }
+        if (onMouseDown) onMouseDown(e);
+      };
 
-  // Middle mouse panning state
-  const [isMiddlePanning, setIsMiddlePanning] = useState(false);
-  const [lastPanPos, setLastPanPos] = useState(null);
+      // Middle mouse up handler
+      const handleStageMouseUp = (e) => {
+        if (isMiddlePanning) {
+          setIsMiddlePanning(false);
+          if (onMiddlePanningChange) onMiddlePanningChange(false);
+          setLastPanPos(null);
+          // Update state with final position when pan ends
+          const stage = e.target.getStage();
+          if (typeof onPan === "function") {
+            const finalDx = stage.x() - panStartPosRef.x;
+            const finalDy = stage.y() - panStartPosRef.y;
+            onPan(finalDx, finalDy);
+          }
+          e.evt.preventDefault();
+        }
+        if (onMouseUp) onMouseUp(e);
+      };
 
-  // Middle mouse down handler
-  const handleStageMouseDown = (e) => {
-    if (e.evt.button === 1) { // Middle mouse
-      setIsMiddlePanning(true);
-      setLastPanPos({ x: e.evt.clientX, y: e.evt.clientY });
-      e.evt.preventDefault();
-    }
-    if (onMouseDown) onMouseDown(e);
-  };
+      // Middle mouse move handler
+      const handleStageMouseMove = (e) => {
+        if (isMiddlePanning && lastPanPos) {
+          const dx = e.evt.clientX - lastPanPos.x;
+          const dy = e.evt.clientY - lastPanPos.y;
 
-  // Middle mouse up handler
-  const handleStageMouseUp = (e) => {
-    if (isMiddlePanning) {
-      setIsMiddlePanning(false);
-      setLastPanPos(null);
-      e.evt.preventDefault();
-    }
-  };
+          // Apply pan directly to stage for immediate visual feedback
+          const stage = e.target.getStage();
+          const currentPos = stage.position();
+          stage.position({
+            x: currentPos.x + dx,
+            y: currentPos.y + dy,
+          });
+          stage.batchDraw();
 
-  // Middle mouse move handler
-  const handleStageMouseMove = (e) => {
-    if (isMiddlePanning && lastPanPos) {
-      const dx = e.evt.clientX - lastPanPos.x;
-      const dy = e.evt.clientY - lastPanPos.y;
-      if (typeof onPan === 'function') {
-        onPan(dx, dy);
-      }
-      setLastPanPos({ x: e.evt.clientX, y: e.evt.clientY });
-      e.evt.preventDefault();
-    }
-    if (onMouseMove) onMouseMove(e);
-  };
+          setLastPanPos({ x: e.evt.clientX, y: e.evt.clientY });
+          e.evt.preventDefault();
+        }
+        if (onMouseMove) onMouseMove(e);
+      };
 
-  return (
-    <Box
-      sx={{
-        width: "100%",
-        height: height,
-        overflow: "hidden",
-        position: "relative",
-        backgroundColor: backgroundColor,
-      }}
-    >
-      <Stage
-        ref={stageRef}
-        width={width}
-        height={height}
-        scaleX={stageScale}
-        scaleY={stageScale}
-        x={stagePosition.x}
-        y={stagePosition.y}
-        draggable={draggable}
-        onWheel={onWheel}
-        onDragEnd={onDragEnd}
-        onMouseDown={handleStageMouseDown}
-        onMouseUp={handleStageMouseUp}
-        onTouchStart={onTouchStart}
-        onContextMenu={onContextMenu}
-        onMouseMove={handleStageMouseMove}
-      >
-        {/* Grid Layer */}
-        {showGrid && (
-          <Layer>
-            {generateGrid()}
-          </Layer>
-        )}
-
-        {/* Background Image Layer */}
-        {bgImage && backgroundImageNaturalSize && (
-          <Layer>
-            <KonvaImage
-              image={bgImage}
-              x={-backgroundImageNaturalSize.width * imageScale / 2}
-              y={-backgroundImageNaturalSize.height * imageScale / 2}
-              width={backgroundImageNaturalSize.width * imageScale}
-              height={backgroundImageNaturalSize.height * imageScale}
-              opacity={0.7}
-              listening={false}
+      return (
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+            overflow: "hidden",
+            position: "relative",
+            backgroundColor: backgroundColor,
+          }}
+        >
+          <Stage
+            ref={ref}
+            width={stageWidth}
+            height={stageHeight}
+            scaleX={stageScale}
+            scaleY={stageScale}
+            x={stagePosition.x}
+            y={stagePosition.y}
+            draggable={draggable}
+            onWheel={onWheel}
+            onDragStart={handleStageDragStart}
+            onDragEnd={handleStageDragEnd}
+            onMouseDown={handleStageMouseDown}
+            onMouseUp={handleStageMouseUp}
+            onTouchStart={onTouchStart}
+            onContextMenu={onContextMenu}
+            onMouseMove={handleStageMouseMove}
+          >
+            {/* Grid Layer - Optimized with memoization */}
+            <GridLayer
+              visible={showGrid}
+              width={width}
+              height={height}
+              gridSize={gridSize}
+              scaleFactor={scaleFactor}
+              backgroundImageNaturalSize={backgroundImageNaturalSize}
+              imageScale={imageScale}
+              gridColor={gridColor}
+              opacity={gridOpacity !== undefined ? gridOpacity / 100 : 0.5}
             />
-          </Layer>
-        )}
 
-        {/* Products and Connectors Layer */}
-        <Layer>
-          {children}
-        </Layer>
-      </Stage>
-    </Box>
-  );
-};
+            {/* Background Image Layer */}
+            {bgImage && backgroundImageNaturalSize && (
+              <Layer>
+                <KonvaImage
+                  image={bgImage}
+                  x={(-backgroundImageNaturalSize.width * imageScale) / 2}
+                  y={(-backgroundImageNaturalSize.height * imageScale) / 2}
+                  width={backgroundImageNaturalSize.width * imageScale}
+                  height={backgroundImageNaturalSize.height * imageScale}
+                  opacity={backgroundOpacity !== undefined ? backgroundOpacity / 100 : 0.7}
+                  listening={false}
+                />
+              </Layer>
+            )}
+
+            {/* Layer 1: Objects (Connectors and unselected products) */}
+            {objectsChildren && <Layer>{objectsChildren}</Layer>}
+
+            {/* Layer 2: Text and Selection (Text boxes and selection group) */}
+            {textAndSelectionChildren && <Layer>{textAndSelectionChildren}</Layer>}
+
+            {/* Layer 3: Transformer (Always on top) */}
+            {transformerChildren && <Layer>{transformerChildren}</Layer>}
+
+            {/* Fallback: Legacy single layer support for backward compatibility */}
+            {!objectsChildren && !textAndSelectionChildren && !transformerChildren && children && (
+              <Layer>{children}</Layer>
+            )}
+          </Stage>
+        </Box>
+      );
+    },
+  ),
+  (prevProps, nextProps) => {
+    // Custom comparison - only re-render if these props actually change
+    // Note: We don't compare callbacks (onWheel, onDragEnd, etc.) because they may have
+    // new references due to useCallback dependencies, but Konva handles them correctly.
+    // IMPORTANT: We ignore stagePosition changes to prevent re-renders during panning
+    // The Stage component will update its internal position through the x/y props,
+    // but we don't need to re-render the entire component tree for pan operations
+    return (
+      prevProps.width === nextProps.width &&
+      prevProps.height === nextProps.height &&
+      prevProps.viewportWidth === nextProps.viewportWidth &&
+      prevProps.viewportHeight === nextProps.viewportHeight &&
+      prevProps.stageScale === nextProps.stageScale &&
+      // Removed stagePosition comparison - panning updates Stage directly without re-render
+      prevProps.showGrid === nextProps.showGrid &&
+      prevProps.gridSize === nextProps.gridSize &&
+      prevProps.scaleFactor === nextProps.scaleFactor &&
+      prevProps.draggable === nextProps.draggable &&
+      prevProps.backgroundImage === nextProps.backgroundImage &&
+      prevProps.backgroundImageNaturalSize === nextProps.backgroundImageNaturalSize &&
+      prevProps.children === nextProps.children &&
+      prevProps.objectsChildren === nextProps.objectsChildren &&
+      prevProps.textAndSelectionChildren === nextProps.textAndSelectionChildren &&
+      prevProps.transformerChildren === nextProps.transformerChildren &&
+      prevProps.gridOpacity === nextProps.gridOpacity &&
+      prevProps.backgroundOpacity === nextProps.backgroundOpacity
+    );
+  },
+);
+
+DesignerCanvas.displayName = "DesignerCanvas";

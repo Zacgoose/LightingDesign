@@ -44,7 +44,7 @@ export const createComponents = ({ palette }) => {
           [`&.${paperClasses.elevation1}`]: {
             boxShadow: `0px 0px 1px ${alpha(palette.neutral[400], 0.3)}, 0px 1px 4px ${alpha(
               palette.neutral[800],
-              0.08
+              0.08,
             )}`,
           },
         },

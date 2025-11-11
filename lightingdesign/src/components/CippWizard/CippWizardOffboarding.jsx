@@ -35,11 +35,11 @@ export const CippWizardOffboarding = (props) => {
   useEffect(() => {
     const currentTenantId = currentTenant?.value;
     const appliedDefaultsForTenant = formControl.getValues("HIDDEN_appliedDefaultsForTenant");
-    
+
     // Only apply defaults if we haven't applied them for this tenant yet
     if (currentTenantId && appliedDefaultsForTenant !== currentTenantId) {
       const tenantDefaults = currentTenant?.addedFields?.offboardingDefaults;
-      
+
       if (tenantDefaults) {
         // Apply tenant defaults
         Object.entries(tenantDefaults).forEach(([key, value]) => {
@@ -55,7 +55,7 @@ export const CippWizardOffboarding = (props) => {
         // Set the source indicator
         formControl.setValue("HIDDEN_defaultsSource", "user");
       }
-      
+
       // Mark that we've applied defaults for this tenant
       formControl.setValue("HIDDEN_appliedDefaultsForTenant", currentTenantId);
     }
@@ -80,10 +80,14 @@ export const CippWizardOffboarding = (props) => {
             <CardHeader title="Offboarding Settings" />
             <Divider />
             <CardContent>
-              <Typography variant="body2" sx={{ mb: 2, color: 
-                getDefaultsSource() === "tenant" ? "primary.main" : "warning.main", 
-                fontStyle: "italic" 
-              }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 2,
+                  color: getDefaultsSource() === "tenant" ? "primary.main" : "warning.main",
+                  fontStyle: "italic",
+                }}
+              >
                 {getDefaultsSource() === "tenant" ? "Using Tenant Defaults" : "Using User Defaults"}
               </Typography>
               <CippFormComponent

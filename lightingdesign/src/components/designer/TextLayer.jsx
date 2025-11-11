@@ -1,0 +1,69 @@
+import { TextBox } from "./TextBox";
+import { memo } from "react";
+
+export const TextLayer = memo(
+  ({
+    textBoxes,
+    selectedTextId,
+    selectedIds = [],
+    selectedTool,
+    isMiddlePanning = false, // Add isMiddlePanning prop to disable dragging during middle mouse panning
+    isStageDragging = false, // Add isStageDragging prop to disable listening during canvas panning
+    onTextSelect,
+    onTextChange,
+    onTextDragStart,
+    onTextDragEnd,
+    onTextDoubleClick,
+    onTextContextMenu,
+    draggable = true,
+  }) => {
+    // Check if text is in a multi-selection (mixed with products or multiple texts)
+    const isInGroup = selectedIds.length > 1;
+
+    // Extract text IDs that are in the selection group
+    const selectedTextIds = selectedIds
+      .filter((id) => id.startsWith("text-"))
+      .map((id) => id.substring(5)); // Remove 'text-' prefix
+
+    // Determine if text boxes should listen to events
+    const shouldListen =
+      (selectedTool === "select" || selectedTool === "text") &&
+      !isMiddlePanning &&
+      !isStageDragging;
+    // Text boxes are only draggable when they are in the selection group (with transformer)
+    // Unselected text boxes are NOT draggable - they can only be selected by clicking
+    const shouldBeDraggable = false;
+
+    return (
+      <>
+        {/* Only render text boxes that are NOT in the selection group */}
+        {textBoxes
+          .filter((textBox) => !selectedTextIds.includes(textBox.id))
+          .map((textBox) => (
+            <TextBox
+              key={textBox.id}
+              textBox={textBox}
+              isSelected={textBox.id === selectedTextId}
+              isInGroup={isInGroup}
+              listening={shouldListen}
+              onSelect={(e) => {
+                // Don't cancel bubble for middle mouse - let it propagate to Stage for panning
+                if (e.evt.button !== 1) {
+                  e.cancelBubble = true;
+                }
+                onTextSelect(e, textBox.id);
+              }}
+              onChange={onTextChange}
+              onDragStart={(e) => onTextDragStart && onTextDragStart(e, textBox.id)}
+              onDragEnd={(e) => onTextDragEnd && onTextDragEnd(e, textBox.id)}
+              onDoubleClick={(e) => onTextDoubleClick && onTextDoubleClick(e, textBox.id)}
+              onContextMenu={(e) => onTextContextMenu && onTextContextMenu(e, textBox.id)}
+              draggable={shouldBeDraggable}
+            />
+          ))}
+      </>
+    );
+  },
+);
+
+export default TextLayer;

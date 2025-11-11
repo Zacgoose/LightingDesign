@@ -47,7 +47,7 @@ export const CippApplicationDeployDrawer = ({
           : null;
       }
     },
-    [formControl.setValue]
+    [formControl.setValue],
   );
 
   useEffect(() => {
@@ -138,8 +138,8 @@ export const CippApplicationDeployDrawer = ({
               {deployApplication.isLoading
                 ? "Deploying..."
                 : deployApplication.isSuccess
-                ? "Deploy Another"
-                : "Deploy Application"}
+                  ? "Deploy Another"
+                  : "Deploy Application"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close
@@ -784,13 +784,9 @@ export const CippApplicationDeployDrawer = ({
                   validators={{ required: "Please provide custom XML configuration" }}
                 />
                 <Alert severity="info" sx={{ mt: 1 }}>
-                  Provide a custom Office Configuration XML. When using custom XML, all other
-                  Office configuration options above will be ignored. See{" "}
-                  <a
-                    href="https://config.office.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  Provide a custom Office Configuration XML. When using custom XML, all other Office
+                  configuration options above will be ignored. See{" "}
+                  <a href="https://config.office.com/" target="_blank" rel="noopener noreferrer">
                     Office Customization Tool
                   </a>{" "}
                   to generate XML.

@@ -115,8 +115,8 @@ export const CippAddUserDrawer = ({
               {createUser.isPending
                 ? "Creating User..."
                 : createUser.isSuccess
-                ? "Create Another User"
-                : "Create User"}
+                  ? "Create Another User"
+                  : "Create User"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

@@ -66,8 +66,8 @@ export const CIPPM365OAuthButton = ({
       // Request device code from our API endpoint
       const deviceCodeResponse = await fetch(
         `/api/ExecDeviceCodeLogon?operation=getDeviceCode&clientId=${appId}&scope=${encodeURIComponent(
-          scope
-        )}`
+          scope,
+        )}`,
       );
       const deviceCodeData = await deviceCodeResponse.json();
 
@@ -129,7 +129,7 @@ export const CIPPM365OAuthButton = ({
       const popup = window.open(
         "https://microsoft.com/devicelogin",
         "deviceLoginPopup",
-        `width=${width},height=${height},left=${left},top=${top}`
+        `width=${width},height=${height},left=${left},top=${top}`,
       );
 
       // Start polling for token
@@ -155,7 +155,7 @@ export const CIPPM365OAuthButton = ({
         try {
           // Poll for token using our API endpoint
           const tokenResponse = await fetch(
-            `/api/ExecDeviceCodeLogon?operation=checkToken&clientId=${appId}&deviceCode=${deviceCodeInfo.device_code}`
+            `/api/ExecDeviceCodeLogon?operation=checkToken&clientId=${appId}&deviceCode=${deviceCodeInfo.device_code}`,
           );
           const tokenData = await tokenResponse.json();
 
@@ -327,7 +327,7 @@ export const CIPPM365OAuthButton = ({
     const popup = window.open(
       authUrl,
       "msalAuthPopup",
-      `width=${width},height=${height},left=${left},top=${top}`
+      `width=${width},height=${height},left=${left},top=${top}`,
     );
 
     // Function to actually exchange the authorization code for tokens
@@ -552,7 +552,7 @@ export const CIPPM365OAuthButton = ({
         !appIdInfo.isLoading &&
         appIdInfo?.data && // Only check if data is available
         !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
-          appIdInfo?.data?.applicationId
+          appIdInfo?.data?.applicationId,
         ) && (
           <Alert severity="warning" sx={{ mt: 1 }}>
             The Application ID is not valid. Please check your configuration.
@@ -661,7 +661,7 @@ export const CIPPM365OAuthButton = ({
           codeRetrievalInProgress ||
           (!applicationId &&
             !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
-              appIdInfo?.data?.applicationId
+              appIdInfo?.data?.applicationId,
             ))
         }
         onClick={useDeviceCode ? handleDeviceCodeAuthentication : handleMsalAuthentication}

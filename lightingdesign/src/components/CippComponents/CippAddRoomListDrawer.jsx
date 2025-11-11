@@ -102,8 +102,8 @@ export const CippAddRoomListDrawer = ({
               {addRoomList.isLoading
                 ? "Creating..."
                 : addRoomList.isSuccess
-                ? "Create Another"
-                : "Create Room List"}
+                  ? "Create Another"
+                  : "Create Room List"}
             </Button>
             <Button variant="outlined" onClick={handleCloseDrawer}>
               Close

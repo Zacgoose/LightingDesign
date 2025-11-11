@@ -221,8 +221,8 @@ export const CippApiDialog = (props) => {
               el?.label && el?.value
                 ? el
                 : typeof el === "string" || typeof el === "number"
-                ? { label: el, value: el }
-                : null
+                  ? { label: el, value: el }
+                  : null,
             )
             .filter(Boolean);
           formHook.setValue(field.name, values);
@@ -232,8 +232,8 @@ export const CippApiDialog = (props) => {
             typeof val === "string"
               ? { label: val, value: val }
               : val.label && val.value
-              ? val
-              : undefined
+                ? val
+                : undefined,
           );
         }
       });
@@ -245,17 +245,13 @@ export const CippApiDialog = (props) => {
       .split(".")
       .reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
 
-  const [linkClicked, setLinkClicked] = useState(false);
-  useEffect(() => setLinkClicked(false), [api.link]);
-
   useEffect(() => {
-    if (api.link && !linkClicked && row && Object.keys(row).length > 0) {
+    if (api.link && row && Object.keys(row).length > 0) {
       const timeoutId = setTimeout(() => {
         const linkWithData = api.link.replace(
           /\[([^\]]+)\]/g,
-          (_, key) => getNestedValue(row, key) || `[${key}]`
+          (_, key) => getNestedValue(row, key) || `[${key}]`,
         );
-        setLinkClicked(true);
         if (linkWithData.startsWith("/") && !api?.external)
           router.push(linkWithData, undefined, { shallow: true });
         else window.open(linkWithData, api.target || "_blank");
@@ -263,7 +259,7 @@ export const CippApiDialog = (props) => {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [api.link, linkClicked, row, router]);
+  }, [api.link, row, router]);
 
   useEffect(() => {
     if (api.noConfirm && !api.link) {
@@ -282,14 +278,14 @@ export const CippApiDialog = (props) => {
     if (!Array.isArray(row)) {
       confirmText = api.confirmText.replace(
         /\[([^\]]+)\]/g,
-        (_, key) => getNestedValue(row, key) || `[${key}]`
+        (_, key) => getNestedValue(row, key) || `[${key}]`,
       );
     } else if (row.length > 1) {
       confirmText = api.confirmText.replace(/\[([^\]]+)\]/g, "the selected rows");
     } else if (row.length === 1) {
       confirmText = api.confirmText.replace(
         /\[([^\]]+)\]/g,
-        (_, key) => getNestedValue(row[0], key) || `[${key}]`
+        (_, key) => getNestedValue(row[0], key) || `[${key}]`,
       );
     }
   } else {
@@ -301,7 +297,7 @@ export const CippApiDialog = (props) => {
             ? element.replace(/\[([^\]]+)\]/g, "the selected rows")
             : element.replace(
                 /\[([^\]]+)\]/g,
-                (_, key) => getNestedValue(row[0], key) || `[${key}]`
+                (_, key) => getNestedValue(row[0], key) || `[${key}]`,
               );
         }
         return element.replace(/\[([^\]]+)\]/g, (_, key) => getNestedValue(row, key) || `[${key}]`);

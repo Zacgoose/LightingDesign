@@ -25,7 +25,7 @@ export const CippAuditLogSearchDrawer = ({
   // Find the current tenant from the list using the domain name - handle pagination data structure
   const allTenants = tenantList.data?.pages?.flatMap((page) => page.Results || page) || [];
   const currentTenant = allTenants.find(
-    (tenant) => tenant.defaultDomainName === currentTenantDomain
+    (tenant) => tenant.defaultDomainName === currentTenantDomain,
   );
 
   // Create default values with current tenant prefilled
@@ -86,7 +86,7 @@ export const CippAuditLogSearchDrawer = ({
     // Handle KeywordFilter - extract values from array and join with spaces
     if (Array.isArray(formattedData.KeywordFilter)) {
       const keywords = formattedData.KeywordFilter.map((item) =>
-        typeof item === "object" ? item.value : item
+        typeof item === "object" ? item.value : item,
       ).filter(Boolean);
       formattedData.KeywordFilter = keywords.join(" ");
     }
@@ -94,49 +94,49 @@ export const CippAuditLogSearchDrawer = ({
     // Extract values from RecordTypeFilters array
     if (Array.isArray(formattedData.RecordTypeFilters)) {
       formattedData.RecordTypeFilters = formattedData.RecordTypeFilters.map((item) =>
-        typeof item === "object" ? item.value : item
+        typeof item === "object" ? item.value : item,
       );
     }
 
     // Extract values from ServiceFilters array
     if (Array.isArray(formattedData.ServiceFilters)) {
       formattedData.ServiceFilters = formattedData.ServiceFilters.map((item) =>
-        typeof item === "object" ? item.value : item
+        typeof item === "object" ? item.value : item,
       );
     }
 
     // Extract values from OperationsFilters array
     if (Array.isArray(formattedData.OperationsFilters)) {
       formattedData.OperationsFilters = formattedData.OperationsFilters.map((item) =>
-        typeof item === "object" ? item.value : item
+        typeof item === "object" ? item.value : item,
       );
     }
 
     // Extract values from UserPrincipalNameFilters array
     if (Array.isArray(formattedData.UserPrincipalNameFilters)) {
       formattedData.UserPrincipalNameFilters = formattedData.UserPrincipalNameFilters.map((item) =>
-        typeof item === "object" ? item.value : item
+        typeof item === "object" ? item.value : item,
       );
     }
 
     // Extract values from IPAddressFilters array
     if (Array.isArray(formattedData.IPAddressFilters)) {
       formattedData.IPAddressFilters = formattedData.IPAddressFilters.map((item) =>
-        typeof item === "object" ? item.value : item
+        typeof item === "object" ? item.value : item,
       );
     }
 
     // Extract values from ObjectIdFilters array
     if (Array.isArray(formattedData.ObjectIdFilters)) {
       formattedData.ObjectIdFilters = formattedData.ObjectIdFilters.map((item) =>
-        typeof item === "object" ? item.value : item
+        typeof item === "object" ? item.value : item,
       );
     }
 
     // Extract values from AdministrativeUnitFilters array
     if (Array.isArray(formattedData.AdministrativeUnitFilters)) {
       formattedData.AdministrativeUnitFilters = formattedData.AdministrativeUnitFilters.map(
-        (item) => (typeof item === "object" ? item.value : item)
+        (item) => (typeof item === "object" ? item.value : item),
       );
     }
 

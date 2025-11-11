@@ -26,6 +26,26 @@ import { Box } from "@mui/system";
 import { useSettings } from "../../hooks/use-settings";
 import { isEqual } from "lodash"; // Import lodash for deep comparison
 
+/**
+ * CippDataTable - A flexible data table component with advanced features
+ *
+ * @param {Object} props - Component props
+ * @param {string|Array<string>} props.imageColumn - Column name(s) that should render images from URLs
+ *   - Pass a single column name as a string: imageColumn="logoUrl"
+ *   - Pass multiple column names as an array: imageColumn={["logoUrl", "avatarUrl"]}
+ *   - The specified column(s) will render any URL values as images (40x40px by default)
+ *   - Arrays of URLs in a column will render multiple images side by side
+ *
+ * Example usage:
+ * ```jsx
+ * <CippDataTable
+ *   title="Products"
+ *   api={{ url: "api/ListProducts" }}
+ *   imageColumn="productImageUrl"
+ *   simpleColumns={["name", "productImageUrl", "price"]}
+ * />
+ * ```
+ */
 export const CippDataTable = (props) => {
   const {
     queryKey,
@@ -54,8 +74,11 @@ export const CippDataTable = (props) => {
     incorrectDataMessage = "Data not in correct format",
     onChange,
     filters,
-    maxHeightOffset = "380px",
+    maxHeightOffset = "330px",
     defaultSorting = [],
+    enableRowSelection = true,
+    imageColumn = null,
+    positionActionsColumn = "last",
   } = props;
   const [columnVisibility, setColumnVisibility] = useState(initialColumnVisibility);
   const [configuredSimpleColumns, setConfiguredSimpleColumns] = useState(simpleColumns);
@@ -94,8 +117,8 @@ export const CippDataTable = (props) => {
   }, [data, api?.url, usedData]);
 
   useEffect(() => {
-    if (getRequestData.isSuccess && !getRequestData.isFetching) {
-      const lastPage = getRequestData.data?.pages[getRequestData.data.pages.length - 1];
+    if (getRequestData.isSuccess && !getRequestData.isFetching && getRequestData.data?.pages) {
+      const lastPage = getRequestData.data.pages[getRequestData.data.pages.length - 1];
       const nextLinkExists = lastPage?.Metadata?.nextLink;
       if (nextLinkExists) {
         getRequestData.fetchNextPage();
@@ -104,7 +127,7 @@ export const CippDataTable = (props) => {
   }, [getRequestData.data?.pages?.length, getRequestData.isFetching, queryKey]);
 
   useEffect(() => {
-    if (getRequestData.isSuccess) {
+    if (getRequestData.isSuccess && getRequestData.data?.pages) {
       const allPages = getRequestData.data.pages;
       const getNestedValue = (obj, path) => {
         if (!path) {
@@ -146,14 +169,14 @@ export const CippDataTable = (props) => {
     ) {
       return;
     }
-    const apiColumns = utilColumnsFromAPI(usedData);
+    const apiColumns = utilColumnsFromAPI(usedData, imageColumn);
     let finalColumns = [];
     let newVisibility = { ...columnVisibility };
 
     // Check if we're in AllTenants mode and data has Tenant property
     const isAllTenants = settings?.currentTenant === "AllTenants";
     const hasTenantProperty = usedData.some(
-      (row) => row && typeof row === "object" && "Tenant" in row
+      (row) => row && typeof row === "object" && "Tenant" in row,
     );
     const shouldShowTenant = isAllTenants && hasTenantProperty;
 
@@ -197,7 +220,7 @@ export const CippDataTable = (props) => {
     }
     setUsedColumns(finalColumns);
     setColumnVisibility(newVisibility);
-  }, [columns.length, usedData, queryKey, settings?.currentTenant]);
+  }, [columns.length, usedData, queryKey, settings?.currentTenant, imageColumn]);
 
   const createDialog = useDialog();
 
@@ -210,8 +233,8 @@ export const CippDataTable = (props) => {
       configuredSimpleColumns,
       offCanvas,
       onChange,
-      maxHeightOffset
-    )
+      maxHeightOffset,
+    ),
   );
   //create memoized version of usedColumns, and usedData
   const memoizedColumns = useMemo(() => usedColumns, [usedColumns]);
@@ -225,6 +248,8 @@ export const CippDataTable = (props) => {
   };
 
   const table = useMaterialReactTable({
+    ...modeInfo,
+    enableRowSelection,
     muiTableBodyCellProps: {
       onCopy: (e) => {
         const sel = window.getSelection()?.toString() ?? "";
@@ -321,8 +346,10 @@ export const CippDataTable = (props) => {
     },
     // Initialize the filter chips with data attributes for tooltips
     initialState: {
+      ...modeInfo.initialState,
       columnFilters: columnFilters,
       columnVisibility: columnVisibility,
+      positionActionsColumn: positionActionsColumn,
     },
     columns: memoizedColumns,
     data: memoizedData ?? [],
@@ -333,8 +360,8 @@ export const CippDataTable = (props) => {
       showSkeletons: getRequestData.isFetchingNextPage
         ? false
         : getRequestData.isFetching
-        ? getRequestData.isFetching
-        : isFetching,
+          ? getRequestData.isFetching
+          : isFetching,
     },
     onSortingChange: (newSorting) => {
       setSorting(newSorting ?? []);
@@ -349,7 +376,6 @@ export const CippDataTable = (props) => {
         </Box>
       ) : undefined,
     onColumnVisibilityChange: setColumnVisibility,
-    ...modeInfo,
     renderRowActionMenuItems: actions
       ? ({ closeMenu, row }) => [
           actions.map((action, index) => (

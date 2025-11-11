@@ -1,10 +1,10 @@
-import { useCallback, useState } from 'react';
-import NextLink from 'next/link';
-import PropTypes from 'prop-types';
-import ChevronRightIcon from '@heroicons/react/24/outline/ChevronRightIcon';
-import ChevronDownIcon from '@heroicons/react/24/outline/ChevronDownIcon';
-import { Box, ButtonBase, Collapse, SvgIcon } from '@mui/material';
-import ArrowTopRightOnSquareIcon from '@heroicons/react/24/outline/ArrowTopRightOnSquareIcon';
+import { useCallback, useState } from "react";
+import NextLink from "next/link";
+import PropTypes from "prop-types";
+import ChevronRightIcon from "@heroicons/react/24/outline/ChevronRightIcon";
+import ChevronDownIcon from "@heroicons/react/24/outline/ChevronDownIcon";
+import { Box, ButtonBase, Collapse, SvgIcon } from "@mui/material";
+import ArrowTopRightOnSquareIcon from "@heroicons/react/24/outline/ArrowTopRightOnSquareIcon";
 
 export const MobileNavItem = (props) => {
   const {
@@ -16,7 +16,7 @@ export const MobileNavItem = (props) => {
     icon,
     openImmediately = false,
     path,
-    title
+    title,
   } = props;
   const [open, setOpen] = useState(openImmediately);
 
@@ -32,31 +32,31 @@ export const MobileNavItem = (props) => {
         <ButtonBase
           onClick={handleToggle}
           sx={{
-            alignItems: 'center',
+            alignItems: "center",
             borderRadius: 1,
-            display: 'flex',
+            display: "flex",
             fontFamily: (theme) => theme.typography.fontFamily,
             fontSize: 14,
             fontWeight: 500,
-            justifyContent: 'flex-start',
-            px: '6px',
-            py: '12px',
-            textAlign: 'left',
-            whiteSpace: 'nowrap',
-            width: '100%'
+            justifyContent: "flex-start",
+            px: "6px",
+            py: "12px",
+            textAlign: "left",
+            whiteSpace: "nowrap",
+            width: "100%",
           }}
         >
           <Box
             component="span"
             sx={{
-              alignItems: 'center',
-              color: 'neutral.400',
-              display: 'inline-flex',
+              alignItems: "center",
+              color: "neutral.400",
+              display: "inline-flex",
               flexGrow: 0,
               flexShrink: 0,
               height: 24,
-              justifyContent: 'center',
-              width: 24
+              justifyContent: "center",
+              width: 24,
             }}
           >
             {icon}
@@ -64,13 +64,13 @@ export const MobileNavItem = (props) => {
           <Box
             component="span"
             sx={{
-              color: depth === 0 ? 'text.primary' : 'text.secondary',
+              color: depth === 0 ? "text.primary" : "text.secondary",
               flexGrow: 1,
               fontSize: 14,
-              mx: '12px',
+              mx: "12px",
               ...(active && {
-                color: 'primary.main'
-              })
+                color: "primary.main",
+              }),
             }}
           >
             {title}
@@ -79,10 +79,7 @@ export const MobileNavItem = (props) => {
             {open ? <ChevronDownIcon /> : <ChevronRightIcon />}
           </SvgIcon>
         </ButtonBase>
-        <Collapse
-          in={open}
-          sx={{ mt: 0.5 }}
-        >
+        <Collapse in={open} sx={{ mt: 0.5 }}>
           {children}
         </Collapse>
       </li>
@@ -94,45 +91,46 @@ export const MobileNavItem = (props) => {
   const linkProps = path
     ? external
       ? {
-        component: 'a',
-        href: path,
-        target: '_blank'
-      }
+          component: "a",
+          href: path,
+          target: "_blank",
+        }
       : {
-        component: NextLink,
-        href: path
-      }
+          component: NextLink,
+          href: path,
+        }
     : {};
 
   return (
     <li>
       <ButtonBase
         sx={{
-          alignItems: 'center',
+          alignItems: "center",
           borderRadius: 1,
-          display: 'flex',
+          display: "flex",
           fontFamily: (theme) => theme.typography.fontFamily,
           fontSize: 14,
           fontWeight: 500,
-          justifyContent: 'flex-start',
-          px: '6px',
-          py: '12px',
-          textAlign: 'left',
-          whiteSpace: 'nowrap',
-          width: '100%'
+          justifyContent: "flex-start",
+          px: "6px",
+          py: "12px",
+          textAlign: "left",
+          whiteSpace: "nowrap",
+          width: "100%",
         }}
-        {...linkProps}>
+        {...linkProps}
+      >
         <Box
           component="span"
           sx={{
-            alignItems: 'center',
-            color: 'neutral.400',
-            display: 'inline-flex',
+            alignItems: "center",
+            color: "neutral.400",
+            display: "inline-flex",
             flexGrow: 0,
             flexShrink: 0,
             height: 24,
-            justifyContent: 'center',
-            width: 24
+            justifyContent: "center",
+            width: 24,
           }}
         >
           {icon}
@@ -140,12 +138,12 @@ export const MobileNavItem = (props) => {
         <Box
           component="span"
           sx={{
-            color: depth === 0 ? 'text.primary' : 'text.secondary',
+            color: depth === 0 ? "text.primary" : "text.secondary",
             flexGrow: 1,
-            mx: '12px',
+            mx: "12px",
             ...(active && {
-              color: 'primary.main'
-            })
+              color: "primary.main",
+            }),
           }}
         >
           {title}
@@ -169,5 +167,5 @@ MobileNavItem.propTypes = {
   icon: PropTypes.node,
   openImmediately: PropTypes.bool,
   path: PropTypes.string,
-  title: PropTypes.string.isRequired
+  title: PropTypes.string.isRequired,
 };

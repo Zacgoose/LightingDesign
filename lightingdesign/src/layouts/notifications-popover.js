@@ -27,8 +27,8 @@ const getContent = (notification) => {
             notification.type === "error"
               ? "warning"
               : notification.type === "update"
-              ? "info"
-              : "indigo"
+                ? "info"
+                : "indigo"
           }
           fontSize="small"
         >
@@ -77,8 +77,8 @@ export const NotificationsPopover = () => {
   const BadgeColour = notifications.some((notification) => notification.type === "error")
     ? "warning"
     : notifications.some((notification) => notification.type === "update")
-    ? "primary"
-    : "info";
+      ? "primary"
+      : "info";
 
   useEffect(() => {
     if (notifications.length === 0 && popover.open) {

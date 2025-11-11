@@ -298,6 +298,7 @@ const Page = () => {
   const layerSwitcherRef = useRef();
   const productListPanelRef = useRef();
   const stageRef = useRef();
+  const handleSaveRef = useRef(null);
 
   // State for dynamic panel positions
   const [layerSwitcherTop, setLayerSwitcherTop] = useState(16);
@@ -530,23 +531,29 @@ const Page = () => {
     selectedTextId,
   ]);
 
+  // Keep handleSaveRef in sync with handleSave
+  useEffect(() => {
+    handleSaveRef.current = handleSave;
+  }, [handleSave]);
+
   // Auto-save functionality - only when user owns the lock
   useEffect(() => {
-    if (!id || !hasUnsavedChanges || isSaving || !isOwner) return;
+    if (!id || !isOwner) return;
 
     // Get auto-save interval from user settings (in minutes), default to 2 minutes
     const autoSaveMinutes = parseInt(settings.autoSaveInterval?.value || "2", 10);
     const autoSaveMs = autoSaveMinutes * 60 * 1000;
 
     const autoSaveInterval = setInterval(() => {
-      if (hasUnsavedChanges && !isSaving) {
+      // Use ref to avoid recreating interval when handleSave changes
+      if (handleSaveRef.current) {
         console.log("Auto-saving design...");
-        handleSave();
+        handleSaveRef.current();
       }
     }, autoSaveMs);
 
     return () => clearInterval(autoSaveInterval);
-  }, [id, hasUnsavedChanges, isSaving, isOwner, handleSave, settings.autoSaveInterval]);
+  }, [id, isOwner, settings.autoSaveInterval]);
 
   // Lock/Unlock handlers
   const handleLockDesign = useCallback(async () => {

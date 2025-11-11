@@ -565,21 +565,21 @@ const Page = () => {
   const handleUnlockDesign = useCallback(async () => {
     if (!id) return { success: false, error: "No job ID" };
 
-    // Apply any pending transformations and clear all selections before saving
+    // Apply any pending transformations before saving
     // This ensures all transformations are saved even if items are selected
     const transformed = applyGroupTransform();
     if (transformed) {
       updateHistory(transformed);
     }
     
-    // Clear all selections (products, connectors, and text)
+    // Clear all selections (products, connectors, and text) after applying transformations
+    // This prevents any ghost transformers from appearing after unlock
     clearSelection();
     setSelectedTextId(null);
     
-    // Give React a moment to process the selection clearing before saving
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    
     // Save before unlocking if there are changes
+    // Note: handleSave will also call applyGroupTransform(), but since we already cleared
+    // the selection above, it will return null (no pending transforms)
     if (hasUnsavedChanges && !isSaving) {
       handleSave();
       // Wait for save to complete

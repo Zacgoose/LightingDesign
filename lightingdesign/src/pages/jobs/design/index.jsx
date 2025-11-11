@@ -90,8 +90,9 @@ const Page = () => {
   const lockDesignMutation = ApiPostCall({});
   const unlockDesignMutation = ApiPostCall({});
 
-  // Extract lock info - prefer from lockStatusData (frequently updated), fallback to designData
-  const lockInfo = lockStatusData?.data || designData?.data?.lockInfo || { IsLocked: false, IsOwner: false };
+  // Extract lock info - prefer from lockStatusData (frequently updated)
+  // If lock status query fails or has no data, default to locked state (safe fallback)
+  const lockInfo = lockStatusData?.data || { IsLocked: true, IsOwner: false };
   const isLocked = lockInfo.IsLocked || false;
   const isOwner = lockInfo.IsOwner || false;
   const isEditingDisabled = isLocked && !isOwner;
@@ -522,10 +523,13 @@ const Page = () => {
       });
 
       // Refetch lock status (lightweight) and design data (to ensure we have latest) in parallel
+      // Wait for both to complete before returning
       await Promise.all([
-        queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`] }),
-        queryClient.refetchQueries({ queryKey: [`Design-${id}`] })
+        queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: [`Design-${id}`], type: 'active' })
       ]);
+      
+      console.log("Lock acquired and data refreshed");
       
       return { success: true, data: result };
     } catch (error) {
@@ -555,7 +559,7 @@ const Page = () => {
     // Save before unlocking if there are changes
     if (hasUnsavedChanges && !isSaving) {
       handleSave();
-      // Wait a moment for save to complete
+      // Wait for save to complete
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
@@ -566,10 +570,13 @@ const Page = () => {
       });
 
       // Refetch lock status (lightweight) and design data (to get latest saved version) in parallel
+      // Wait for both to complete before returning
       await Promise.all([
-        queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`] }),
-        queryClient.refetchQueries({ queryKey: [`Design-${id}`] })
+        queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: [`Design-${id}`], type: 'active' })
       ]);
+      
+      console.log("Lock released and data refreshed");
       
       return { success: true, data: result };
     } catch (error) {

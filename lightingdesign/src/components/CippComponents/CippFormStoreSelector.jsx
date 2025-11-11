@@ -49,7 +49,7 @@ export const CippFormStoreSelector = ({
     url: "/api/ListStoreGroups",
     data: { AllStoreSelector: true },
     queryKey: "StoreGroupSelector",
-    enabled: includeGroups,
+    waiting: includeGroups,
   });
 
   const [options, setOptions] = useState([]);

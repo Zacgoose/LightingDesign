@@ -55,7 +55,11 @@ export const CippFormStoreSelector = ({
   const [options, setOptions] = useState([]);
 
   useEffect(() => {
-    if (storeList.isSuccess && (!includeGroups || storeGroupList.isSuccess)) {
+    // Only proceed if stores are loaded, and if groups are requested, wait for them too
+    const storesLoaded = storeList.isSuccess;
+    const groupsLoadedOrNotNeeded = !includeGroups || storeGroupList.isSuccess;
+    
+    if (storesLoaded && groupsLoadedOrNotNeeded) {
       const storeData = Array.isArray(storeList.data)
         ? storeList.data.map((store) => ({
             value: store[valueField],
@@ -71,11 +75,16 @@ export const CippFormStoreSelector = ({
         : [];
 
       const groupData =
-        includeGroups && Array.isArray(storeGroupList?.data)
+        includeGroups && storeGroupList.isSuccess && Array.isArray(storeGroupList.data)
           ? storeGroupList.data.map((group) => ({
               value: group.groupId,
               label: group.groupName,
               type: "Group",
+              addedFields: {
+                groupId: group.groupId,
+                groupName: group.groupName,
+                members: group.members,
+              },
             }))
           : [];
 

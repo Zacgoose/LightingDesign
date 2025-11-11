@@ -1,4 +1,6 @@
+import { TabbedLayout } from "/src/layouts/TabbedLayout";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
+import tabOptions from "../tabOptions";
 import { Button, SvgIcon } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage";
@@ -62,6 +64,10 @@ const Page = () => {
   );
 };
 
-Page.getLayout = (page) => <DashboardLayout>{page}</DashboardLayout>;
+Page.getLayout = (page) => (
+  <DashboardLayout>
+    <TabbedLayout tabOptions={tabOptions}>{page}</TabbedLayout>
+  </DashboardLayout>
+);
 
 export default Page;

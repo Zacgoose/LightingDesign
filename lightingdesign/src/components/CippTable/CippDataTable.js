@@ -12,7 +12,7 @@ import {
 import { ResourceUnavailable } from "../resource-unavailable";
 import { ResourceError } from "../resource-error";
 import { Scrollbar } from "../scrollbar";
-import { useEffect, useMemo, useState, useCallback, memo } from "react";
+import { useEffect, useMemo, useState, useCallback, memo, useRef } from "react";
 import { ApiGetCallWithPagination } from "../../api/ApiCall";
 import { utilTableMode } from "./util-tablemode";
 import { utilColumnsFromAPI, resolveSimpleColumnVariables } from "./util-columnsFromAPI";
@@ -91,6 +91,9 @@ export const CippDataTable = (props) => {
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
   const waitingBool = api?.url ? true : false;
+  
+  // Track if columns have been initialized to avoid infinite loops
+  const columnsInitializedRef = useRef(false);
 
   const settings = useSettings();
 
@@ -107,6 +110,11 @@ export const CippDataTable = (props) => {
       setColumnFilters(filters);
     }
   }, [filters]);
+  
+  // Reset column initialization tracking when queryKey changes (different dataset)
+  useEffect(() => {
+    columnsInitializedRef.current = false;
+  }, [queryKey]);
 
   useEffect(() => {
     if (Array.isArray(data) && !api?.url) {
@@ -221,21 +229,37 @@ export const CippDataTable = (props) => {
     return { finalColumns, newVisibility };
   }, [usedData, columns.length, configuredSimpleColumns, settings?.currentTenant, imageColumn, initialColumnVisibility]);
 
-  // Apply generated columns only when they change - use a ref to track if we've already applied them
+  // Apply generated columns only when they change
   useEffect(() => {
+    if (generatedColumns.finalColumns.length === 0) {
+      return; // Don't apply empty columns
+    }
+    
     setUsedColumns(generatedColumns.finalColumns);
-    // Only set column visibility if it's actually different to avoid infinite loops
-    setColumnVisibility((prevVisibility) => {
-      // Check if the new visibility is different from the previous one using deep comparison
-      if (!isEqual(prevVisibility, generatedColumns.newVisibility)) {
-        return generatedColumns.newVisibility;
-      }
-      return prevVisibility;
-    });
+    
+    // Only set column visibility on initial generation or when data structure changes
+    // Don't update if user has manually changed visibility via UI
+    if (!columnsInitializedRef.current) {
+      setColumnVisibility(generatedColumns.newVisibility);
+      columnsInitializedRef.current = true;
+    } else {
+      // Only update visibility if the column structure has actually changed (different column IDs)
+      setColumnVisibility((prevVisibility) => {
+        const prevColumnIds = Object.keys(prevVisibility).sort().join(',');
+        const newColumnIds = Object.keys(generatedColumns.newVisibility).sort().join(',');
+        
+        // If column structure changed, update visibility; otherwise keep user's preferences
+        if (prevColumnIds !== newColumnIds) {
+          return generatedColumns.newVisibility;
+        }
+        return prevVisibility;
+      });
+    }
+    
     if (defaultSorting?.length > 0 && sorting.length === 0) {
       setSorting(defaultSorting);
     }
-  }, [generatedColumns.finalColumns, generatedColumns.newVisibility, defaultSorting, sorting.length]);
+  }, [generatedColumns.finalColumns, defaultSorting, sorting.length]);
 
   const createDialog = useDialog();
 

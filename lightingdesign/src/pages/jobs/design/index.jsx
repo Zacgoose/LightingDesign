@@ -512,8 +512,8 @@ const Page = () => {
         data: { jobId: id },
       });
 
-      // Refresh design data to get updated lock info
-      queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
+      // Refetch design data to get updated lock info and wait for it to complete
+      await queryClient.refetchQueries({ queryKey: [`Design-${id}`] });
       
       return { success: true, data: result };
     } catch (error) {
@@ -553,8 +553,8 @@ const Page = () => {
         data: { jobId: id },
       });
 
-      // Refresh design data to get updated lock info and latest design
-      queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
+      // Refetch design data to get updated lock info and latest design, and wait for it to complete
+      await queryClient.refetchQueries({ queryKey: [`Design-${id}`] });
       
       return { success: true, data: result };
     } catch (error) {

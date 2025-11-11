@@ -31,11 +31,12 @@ import { getCippTranslation } from "./get-cipp-translation";
 import DOMPurify from "dompurify";
 import { getSignInErrorCodeTranslation } from "./get-cipp-signin-errorcode-translation";
 import { CollapsibleChipList } from "../components/CippComponents/CollapsibleChipList";
-import { useState } from "react";
+import { useState, memo } from "react";
 
-// Image component with hover preview
-const ImageWithHoverPreview = ({ src, alt, style }) => {
+// Memoized Image component with hover preview and lazy loading
+const ImageWithHoverPreview = memo(({ src, alt, style }) => {
   const [anchorEl, setAnchorEl] = useState(null);
+  const [loaded, setLoaded] = useState(false);
 
   const handleMouseEnter = (event) => {
     setAnchorEl(event.currentTarget);
@@ -52,9 +53,11 @@ const ImageWithHoverPreview = ({ src, alt, style }) => {
       <img
         src={src}
         alt={alt}
+        loading="lazy"
         style={{ ...style, cursor: "pointer" }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        onLoad={() => setLoaded(true)}
       />
       <Popover
         open={open}
@@ -77,6 +80,7 @@ const ImageWithHoverPreview = ({ src, alt, style }) => {
           <img
             src={src}
             alt={alt}
+            loading="lazy"
             style={{
               maxWidth: "400px",
               maxHeight: "400px",
@@ -88,7 +92,9 @@ const ImageWithHoverPreview = ({ src, alt, style }) => {
       </Popover>
     </>
   );
-};
+});
+
+ImageWithHoverPreview.displayName = 'ImageWithHoverPreview';
 
 export const getCippFormatting = (
   data,

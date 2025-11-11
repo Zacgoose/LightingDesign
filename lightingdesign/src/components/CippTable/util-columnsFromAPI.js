@@ -100,8 +100,11 @@ export const utilColumnsFromAPI = (dataArray, imageColumn = null) => {
         const resolveValue = (rowLike) =>
           accessorKey.includes("@odata") ? rowLike?.[accessorKey] : getAtPath(rowLike, accessorKey);
 
-        // Pre-compute some sample values for filter heuristics (optional)
-        const valuesForColumn = (Array.isArray(dataArray) ? dataArray : [])
+        // Pre-compute sample values only once for filter heuristics
+        // Limit to first 100 rows for performance
+        const sampleSize = Math.min(dataArray.length, 100);
+        const valuesForColumn = dataArray
+          .slice(0, sampleSize)
           .map((r) => resolveValue(r))
           .filter((v) => v !== undefined && v !== null);
 

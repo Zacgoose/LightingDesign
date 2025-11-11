@@ -12,7 +12,7 @@ import {
 import { ResourceUnavailable } from "../resource-unavailable";
 import { ResourceError } from "../resource-error";
 import { Scrollbar } from "../scrollbar";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, memo } from "react";
 import { ApiGetCallWithPagination } from "../../api/ApiCall";
 import { utilTableMode } from "./util-tablemode";
 import { utilColumnsFromAPI, resolveSimpleColumnVariables } from "./util-columnsFromAPI";
@@ -159,7 +159,8 @@ export const CippDataTable = (props) => {
     getRequestData.isFetching,
     queryKey,
   ]);
-  useEffect(() => {
+  // Memoize column generation to prevent recalculation on every render
+  const generatedColumns = useMemo(() => {
     if (
       !Array.isArray(usedData) ||
       usedData.length === 0 ||
@@ -167,8 +168,9 @@ export const CippDataTable = (props) => {
       usedData === null ||
       usedData === undefined
     ) {
-      return;
+      return { finalColumns: [], newVisibility: { ...initialColumnVisibility } };
     }
+    
     const apiColumns = utilColumnsFromAPI(usedData, imageColumn);
     let finalColumns = [];
     let newVisibility = { ...columnVisibility };
@@ -215,12 +217,18 @@ export const CippDataTable = (props) => {
         }
       }
     }
-    if (defaultSorting?.length > 0) {
+    
+    return { finalColumns, newVisibility };
+  }, [usedData, columns.length, configuredSimpleColumns, settings?.currentTenant, imageColumn, initialColumnVisibility]);
+
+  // Apply generated columns only when they change
+  useEffect(() => {
+    setUsedColumns(generatedColumns.finalColumns);
+    setColumnVisibility(generatedColumns.newVisibility);
+    if (defaultSorting?.length > 0 && sorting.length === 0) {
       setSorting(defaultSorting);
     }
-    setUsedColumns(finalColumns);
-    setColumnVisibility(newVisibility);
-  }, [columns.length, usedData, queryKey, settings?.currentTenant, imageColumn]);
+  }, [generatedColumns]);
 
   const createDialog = useDialog();
 
@@ -236,20 +244,53 @@ export const CippDataTable = (props) => {
       maxHeightOffset,
     ),
   );
-  //create memoized version of usedColumns, and usedData
+  
+  // Memoize columns and data more efficiently - only update when actual values change
   const memoizedColumns = useMemo(() => usedColumns, [usedColumns]);
   const memoizedData = useMemo(() => usedData, [usedData]);
 
-  const handleActionDisabled = (row, action) => {
+  const handleActionDisabled = useCallback((row, action) => {
     if (action?.condition) {
       return !action.condition(row);
     }
     return false;
-  };
+  }, []);
+  
+  const handleSortingChange = useCallback((newSorting) => {
+    setSorting(newSorting ?? []);
+  }, []);
+  
+  const handleColumnFiltersChange = useCallback((newFilters) => {
+    setColumnFilters(newFilters);
+  }, []);
+  
+  const handleColumnVisibilityChange = useCallback((newVisibility) => {
+    setColumnVisibility(newVisibility);
+  }, []);
+  
+  // Memoize setConfiguredSimpleColumns callback
+  const handleSetConfiguredSimpleColumns = useCallback((newColumns) => {
+    setConfiguredSimpleColumns(newColumns);
+  }, []);
+  
+  // Memoize setGraphFilterData callback  
+  const handleSetGraphFilterData = useCallback((newData) => {
+    setGraphFilterData(newData);
+  }, []);
 
   const table = useMaterialReactTable({
     ...modeInfo,
     enableRowSelection,
+    // Optimize virtualization for large datasets
+    enableRowVirtualization: true,
+    enableColumnVirtualization: true,
+    rowVirtualizerOptions: {
+      overscan: 5, // Render 5 extra rows above and below viewport
+      estimateSize: () => 50, // Estimated row height in pixels
+    },
+    columnVirtualizerOptions: {
+      overscan: 2, // Render 2 extra columns
+    },
     muiTableBodyCellProps: {
       onCopy: (e) => {
         const sel = window.getSelection()?.toString() ?? "";
@@ -363,10 +404,8 @@ export const CippDataTable = (props) => {
           ? getRequestData.isFetching
           : isFetching,
     },
-    onSortingChange: (newSorting) => {
-      setSorting(newSorting ?? []);
-    },
-    onColumnFiltersChange: setColumnFilters,
+    onSortingChange: handleSortingChange,
+    onColumnFiltersChange: handleColumnFiltersChange,
     renderEmptyRowsFallback: ({ table }) =>
       getRequestData.data?.pages?.[0].Metadata?.QueueMessage ? (
         <Box sx={{ py: 4 }}>
@@ -375,7 +414,7 @@ export const CippDataTable = (props) => {
           </center>
         </Box>
       ) : undefined,
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: handleColumnVisibilityChange,
     renderRowActionMenuItems: actions
       ? ({ closeMenu, row }) => [
           actions.map((action, index) => (
@@ -440,7 +479,7 @@ export const CippDataTable = (props) => {
             More Info
           </MenuItem>
         ),
-    renderTopToolbar: ({ table }) => {
+    renderTopToolbar: useCallback(({ table }) => {
       return (
         <>
           {!simple && (
@@ -458,18 +497,18 @@ export const CippDataTable = (props) => {
               actions={actions}
               exportEnabled={exportEnabled}
               refreshFunction={refreshFunction}
-              setColumnVisibility={setColumnVisibility}
+              setColumnVisibility={handleColumnVisibilityChange}
               filters={filters}
               queryKeys={queryKey ? queryKey : title}
               graphFilterData={graphFilterData}
-              setGraphFilterData={setGraphFilterData}
-              setConfiguredSimpleColumns={setConfiguredSimpleColumns}
+              setGraphFilterData={handleSetGraphFilterData}
+              setConfiguredSimpleColumns={handleSetConfiguredSimpleColumns}
               queueMetadata={getRequestData.data?.pages?.[0]?.Metadata}
             />
           )}
         </>
       );
-    },
+    }, [simple, api, queryKey, simpleColumns, data, columnVisibility, getRequestData, memoizedColumns, memoizedData, title, actions, exportEnabled, refreshFunction, handleColumnVisibilityChange, filters, graphFilterData, handleSetGraphFilterData, handleSetConfiguredSimpleColumns]),
     sortingFns: {
       dateTimeNullsLast: (a, b, id) => {
         const aVal = a?.original?.[id] ?? null;

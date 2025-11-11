@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import {
   Box,
   Button,
@@ -138,7 +138,7 @@ const ModernButton = styled(Button)(({ theme }) => ({
 
 const RefreshButton = styled(IconButton)(({ theme }) => ({}));
 
-export const CIPPTableToptoolbar = ({
+export const CIPPTableToptoolbar = memo(({
   api,
   simpleColumns,
   queryKey,
@@ -1219,4 +1219,6 @@ export const CIPPTableToptoolbar = ({
       </CippOffCanvas>
     </>
   );
-};
+});
+
+CIPPTableToptoolbar.displayName = 'CIPPTableToptoolbar';

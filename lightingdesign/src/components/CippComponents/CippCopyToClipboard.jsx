@@ -1,7 +1,7 @@
 import { CopyAll, Visibility, VisibilityOff } from "@mui/icons-material";
 import { Chip, IconButton, SvgIcon, Tooltip } from "@mui/material";
 import { useState } from "react";
-import CopyToClipboard from "react-copy-to-clipboard";
+import CopyToClipboard from "react-copy-to-clipboard-ts";
 
 export const CippCopyToClipBoard = (props) => {
   const { text, type = "button", visible = true, ...other } = props;

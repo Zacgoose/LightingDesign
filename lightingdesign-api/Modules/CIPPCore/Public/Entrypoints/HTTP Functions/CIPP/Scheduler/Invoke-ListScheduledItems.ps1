@@ -53,15 +53,9 @@ function Invoke-ListScheduledItems {
         $Tasks = $Tasks | Where-Object { $_.command -eq $Type }
     }
 
-    $AllowedTenants = Test-CIPPAccess -Request $Request -TenantList
-
-    if ($AllowedTenants -notcontains 'AllTenants') {
-        $TenantList = Get-Tenants -IncludeErrors | Select-Object customerId, defaultDomainName
-        $AllowedTenantDomains = $TenantList | Where-Object -Property customerId -In $AllowedTenants | Select-Object -ExpandProperty defaultDomainName
-        $Tasks = $Tasks | Where-Object -Property Tenant -In $AllowedTenantDomains
-    }
+    # Tenant access checks removed; permissions are now handled by .ROLE
     $ScheduledTasks = foreach ($Task in $tasks) {
-        if (!$Task.Tenant -or !$Task.Command) {
+        if (!$Task.Command) {
             continue
         }
 
@@ -81,33 +75,6 @@ function Invoke-ListScheduledItems {
         try {
             $Task.ScheduledTime = [DateTimeOffset]::FromUnixTimeSeconds($Task.ScheduledTime).UtcDateTime
         } catch {}
-
-        # Handle tenant group display information
-        if ($Task.TenantGroup) {
-            try {
-                $TenantGroupObject = $Task.TenantGroup | ConvertFrom-Json -ErrorAction SilentlyContinue
-                if ($TenantGroupObject) {
-                    # Create a tenant group object for the frontend formatting
-                    $TenantGroupForDisplay = [PSCustomObject]@{
-                        label = $TenantGroupObject.label
-                        value = $TenantGroupObject.value
-                        type  = 'Group'
-                    }
-                    $Task | Add-Member -NotePropertyName TenantGroupInfo -NotePropertyValue $TenantGroupForDisplay -Force
-                    # Update the tenant to show the group object for proper formatting
-                    $Task.Tenant = $TenantGroupForDisplay
-                }
-            } catch {
-                Write-Warning "Failed to parse tenant group information for task $($Task.RowKey): $($_.Exception.Message)"
-                # Fall back to keeping original tenant value
-            }
-        } else {
-            $Task.Tenant = [PSCustomObject]@{
-                label = $Task.Tenant
-                value = $Task.Tenant
-                type  = 'Tenant'
-            }
-        }
 
         $Task
     }

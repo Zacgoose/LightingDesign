@@ -87,6 +87,12 @@ export const nativeMenuItems = [
             permissions: ["LightingDesigner.SuperAdmin.ReadWrite"],
           },
           {
+            title: "Scheduler",
+            path: "/settings/super-admin/scheduler",
+            roles: ["superadmin"],
+            permissions: ["LightingDesigner.SuperAdmin.ReadWrite"],
+          },
+          {
             title: "Timers",
             path: "/settings/super-admin/timers",
             roles: ["superadmin"],

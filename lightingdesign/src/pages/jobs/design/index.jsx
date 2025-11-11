@@ -597,6 +597,43 @@ const Page = () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
 
+    // CRITICAL FIX: If there are selected items, we need to capture their current Konva positions
+    // before clearing the selection, in case they were dragged but dragEnd hasn't fired yet
+    let updatedProducts = products;
+    if (selectedIds.length > 0 && selectionGroupRef.current) {
+      console.log("[UNLOCK] Capturing current positions of selected items from Konva stage...");
+      const stage = selectionGroupRef.current.getStage();
+      if (stage) {
+        const productIds = selectedIds.filter(id => !id.startsWith("text-"));
+        if (productIds.length > 0) {
+          updatedProducts = products.map(product => {
+            if (productIds.includes(product.id)) {
+              // Find the Konva node for this product
+              const node = stage.findOne(`#${product.id}`);
+              if (node) {
+                const x = node.x();
+                const y = node.y();
+                console.log(`[UNLOCK] Product ${product.id} - Konva position: (${x}, ${y}), State position: (${product.x}, ${product.y})`);
+                // Update if positions differ
+                if (Math.abs(x - product.x) > 0.01 || Math.abs(y - product.y) > 0.01) {
+                  console.log(`[UNLOCK] Updating product ${product.id} position from (${product.x}, ${product.y}) to (${x}, ${y})`);
+                  return { ...product, x, y };
+                }
+              }
+            }
+            return product;
+          });
+          
+          // Update history and layer with the captured positions
+          if (updatedProducts !== products) {
+            updateHistory(updatedProducts);
+            updateLayer(activeLayerIdRef.current, { products: updatedProducts });
+            console.log("[UNLOCK] Updated products with current Konva positions");
+          }
+        }
+      }
+    }
+
     // Apply any pending transformations before saving
     // This ensures all transformations are saved even if items are selected
     const transformed = applyGroupTransform();
@@ -652,7 +689,7 @@ const Page = () => {
       console.error("[UNLOCK] Error unlocking design:", error);
       return { success: false, error: error.message || "Failed to unlock design" };
     }
-  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId, selectedIds, selectedConnectorIds, selectedTextId, updateLayer, selectionGroupRef, selectionSnapshot, transformerRef]);
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId, selectedIds, selectedConnectorIds, selectedTextId, updateLayer, selectionGroupRef, selectionSnapshot, transformerRef, products]);
 
   // Manual refresh handler to check lock status
   const handleRefreshLockStatus = useCallback(async () => {

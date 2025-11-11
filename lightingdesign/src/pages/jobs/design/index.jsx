@@ -445,8 +445,16 @@ const Page = () => {
       return;
     }
 
+    console.log("[SAVE] Starting save process...");
+    console.log("[SAVE] Current products count:", products.length);
+    console.log("[SAVE] Current selectedIds:", selectedIds);
+
     const transformed = applyGroupTransform();
-    if (transformed) updateHistory(transformed);
+    console.log("[SAVE] applyGroupTransform returned:", transformed ? `${transformed.length} products` : "null");
+    if (transformed) {
+      updateHistory(transformed);
+      console.log("[SAVE] Updated history with transformed products");
+    }
     setIsSaving(true);
 
     // Force sync of background image if it hasn't been synced yet
@@ -462,6 +470,10 @@ const Page = () => {
 
     // Strip metadata from all layers (products and connectors are already in layers)
     const strippedLayers = stripLayersForSave(layers);
+    console.log("[SAVE] Stripped layers for save, layer count:", strippedLayers.length);
+    if (strippedLayers.length > 0) {
+      console.log("[SAVE] First layer products count:", strippedLayers[0].products?.length || 0);
+    }
 
     // Use new format: only save layers (not root products/connectors)
     // Products and connectors are stored within their respective layers
@@ -495,6 +507,8 @@ const Page = () => {
     backgroundImage,
     backgroundImageNaturalSize,
     updateLayer,
+    products,
+    selectedIds,
   ]);
 
   // Auto-save functionality - only when user owns the lock
@@ -565,25 +579,42 @@ const Page = () => {
   const handleUnlockDesign = useCallback(async () => {
     if (!id) return { success: false, error: "No job ID" };
 
+    console.log("[UNLOCK] Starting unlock process...");
+    console.log("[UNLOCK] Current selectedIds:", selectedIds);
+    console.log("[UNLOCK] Current selectedConnectorIds:", selectedConnectorIds);
+    console.log("[UNLOCK] Current selectedTextId:", selectedTextId);
+
     // Apply any pending transformations before saving
     // This ensures all transformations are saved even if items are selected
     const transformed = applyGroupTransform();
+    console.log("[UNLOCK] Applied group transform, transformed:", transformed ? `${transformed.length} products` : "null");
+    
     if (transformed) {
       updateHistory(transformed);
+      console.log("[UNLOCK] Updated history with transformed products");
+      
+      // CRITICAL: Also update the layer directly with transformed products
+      // This ensures the layer has the latest data before save, without waiting for useEffect
+      updateLayer(activeLayerIdRef.current, { products: transformed });
+      console.log("[UNLOCK] Updated layer directly with transformed products");
     }
     
     // Clear all selections (products, connectors, and text) after applying transformations
     // This prevents any ghost transformers from appearing after unlock
     clearSelection();
     setSelectedTextId(null);
+    console.log("[UNLOCK] Cleared all selections");
     
     // Save before unlocking if there are changes
     // Note: handleSave will also call applyGroupTransform(), but since we already cleared
     // the selection above, it will return null (no pending transforms)
     if (hasUnsavedChanges && !isSaving) {
+      console.log("[UNLOCK] Calling handleSave...");
       handleSave();
       // Wait for save to complete
       await new Promise((resolve) => setTimeout(resolve, 1000));
+    } else {
+      console.log("[UNLOCK] No unsaved changes or already saving, skipping save");
     }
 
     try {
@@ -599,14 +630,14 @@ const Page = () => {
       // Force component re-render to update toolbar immediately
       forceUpdate(n => n + 1);
       
-      console.log("Lock released and toolbar updated");
+      console.log("[UNLOCK] Lock released and toolbar updated");
       
       return { success: true, data: result };
     } catch (error) {
-      console.error("Error unlocking design:", error);
+      console.error("[UNLOCK] Error unlocking design:", error);
       return { success: false, error: error.message || "Failed to unlock design" };
     }
-  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId]);
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId, selectedIds, selectedConnectorIds, selectedTextId, updateLayer]);
 
   // Manual refresh handler to check lock status
   const handleRefreshLockStatus = useCallback(async () => {

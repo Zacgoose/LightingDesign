@@ -99,9 +99,13 @@ const Page = () => {
 
   // Extract lock info - prefer from lockStatusData (frequently updated)
   // If lock status query fails or has no data, default to locked state (safe fallback)
-  const lockInfo = lockStatusData?.data || { IsLocked: true, IsOwner: false };
-  const isLocked = lockInfo.IsLocked || false;
-  const isOwner = lockInfo.IsOwner || false;
+  // This ensures that in case of network errors or API issues, users cannot accidentally edit
+  // Use ?? (nullish coalescing) to preserve explicit false values while defaulting missing values
+  const lockInfo = (lockStatusData?.isError || !lockStatusData?.data) 
+    ? { IsLocked: true, IsOwner: false } 
+    : lockStatusData.data;
+  const isLocked = lockInfo.IsLocked ?? true; // Default to true (locked) if undefined/null
+  const isOwner = lockInfo.IsOwner ?? false; // Default to false (not owner) if undefined/null
   const isEditingDisabled = isLocked && !isOwner;
 
   // Canvas state management using custom hook

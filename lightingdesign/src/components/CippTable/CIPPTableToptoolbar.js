@@ -182,6 +182,9 @@ export const CIPPTableToptoolbar = memo(({
 
   // Track if we've restored filters for this page to prevent infinite loops
   const restoredFiltersRef = useRef(new Set());
+  
+  // Debounce timer ref for search
+  const searchDebounceRef = useRef(null);
 
   const getBulkActions = (actions, selectedRows) => {
     return (
@@ -352,12 +355,30 @@ export const CIPPTableToptoolbar = memo(({
     waiting: !!api?.data?.Endpoint,
   });
 
-  // Handle search input changes
+  // Handle search input changes with debouncing
   const handleSearchChange = (event) => {
     const value = event.target.value;
     setSearchValue(value);
-    table.setGlobalFilter(value);
+    
+    // Clear existing timeout
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+    
+    // Set new timeout for debounced filter update (300ms delay)
+    searchDebounceRef.current = setTimeout(() => {
+      table.setGlobalFilter(value);
+    }, 300);
   };
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, []);
 
   // Handle column filters toggle
   const handleColumnFiltersToggle = () => {

@@ -10,6 +10,9 @@ function Invoke-ListJobs {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
+    # Get list of stores the user has access to
+    $AllowedStores = Test-CIPPAccess -Request $Request -StoreList
+    
     $Table = Get-CippTable -tablename 'Jobs'
 
     if ($Request.Query.jobentryid) {
@@ -17,6 +20,14 @@ function Invoke-ListJobs {
         $Filter = "RowKey eq '{0}'" -f $Request.Query.jobentryid
         $Row = Get-CIPPAzDataTableEntity @Table -Filter $Filter
         if ($Row) {
+            # Check if user has access to this job's store
+            if ($AllowedStores -notcontains 'AllStores' -and $AllowedStores -notcontains $Row.StoreId) {
+                return [HttpResponseContext]@{
+                    StatusCode = [System.Net.HttpStatusCode]::Forbidden
+                    Body       = @{ error = 'Access to this job is not allowed' }
+                }
+            }
+            
             $JobData = if ($Row.JobData -and (Test-Json -Json $Row.JobData -ErrorAction SilentlyContinue)) {
                 $Row.JobData | ConvertFrom-Json
             } else { $Row.JobData }
@@ -26,6 +37,7 @@ function Invoke-ListJobs {
                 JobNumber      = $Row.JobNumber
                 CustomerName   = $Row.CustomerName
                 CustomerId     = $Row.CustomerId
+                StoreId        = $Row.StoreId
                 Status         = $Row.Status
                 Description    = $Row.Description
                 Address        = $Row.Address
@@ -50,12 +62,20 @@ function Invoke-ListJobs {
         }
     } elseif ($Request.Query.ListJobs) {
         # List all jobs (summary)
-        $ReturnedJob = Get-CIPPAzDataTableEntity @Table | ForEach-Object {
+        $AllJobs = Get-CIPPAzDataTableEntity @Table
+        
+        # Filter jobs based on allowed stores
+        if ($AllowedStores -notcontains 'AllStores') {
+            $AllJobs = $AllJobs | Where-Object { $AllowedStores -contains $_.StoreId }
+        }
+        
+        $ReturnedJob = $AllJobs | ForEach-Object {
             [PSCustomObject]@{
                 DateTime       = $_.Timestamp
                 JobName        = $_.JobName
                 JobNumber      = $_.JobNumber
                 CustomerName   = $_.CustomerName
+                StoreId        = $_.StoreId
                 Status         = $_.Status
                 User           = $_.Username
                 Severity       = $_.Severity
@@ -73,6 +93,12 @@ function Invoke-ListJobs {
         $DateFilter = $Request.Query.DateFilter
 
         $Rows = Get-CIPPAzDataTableEntity @Table
+        
+        # Filter by allowed stores first
+        if ($AllowedStores -notcontains 'AllStores') {
+            $Rows = $Rows | Where-Object { $AllowedStores -contains $_.StoreId }
+        }
+        
         if ($StatusFilter) {
             $Rows = $Rows | Where-Object { $_.Status -in $StatusFilter }
         }
@@ -89,6 +115,7 @@ function Invoke-ListJobs {
                 JobName        = $_.JobName
                 JobNumber      = $_.JobNumber
                 CustomerName   = $_.CustomerName
+                StoreId        = $_.StoreId
                 Status         = $_.Status
                 User           = $_.Username
                 Severity       = $_.Severity

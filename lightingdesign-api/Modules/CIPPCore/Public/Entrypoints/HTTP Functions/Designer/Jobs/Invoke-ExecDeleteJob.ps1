@@ -8,6 +8,9 @@ function Invoke-ExecDeleteJob {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
+    # Validate store access first
+    Test-CIPPAccess -Request $Request
+
     $Table = Get-CIPPTable -TableName 'Jobs'
 
     $JobId = $Request.Body.jobId

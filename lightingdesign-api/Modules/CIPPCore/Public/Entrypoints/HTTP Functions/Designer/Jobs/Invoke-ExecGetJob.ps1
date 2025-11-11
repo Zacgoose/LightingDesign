@@ -8,6 +8,9 @@ function Invoke-ExecGetJob {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
+    # Validate store access first
+    Test-CIPPAccess -Request $Request
+
     $Table = Get-CippTable -tablename 'Jobs'
 
     $JobId = $Request.Query.jobId
@@ -34,6 +37,7 @@ function Invoke-ExecGetJob {
             jobId            = $Row.RowKey
             jobNumber        = $Row.JobNumber
             customerName     = if ($Row.CustomerId) { @{ value = $Row.CustomerId; label = $Row.CustomerName } } else { $null }
+            storeId          = if ($Row.StoreId) { @{ value = $Row.StoreId } } else { $null }
             status           = $Row.Status
             description      = $Row.Description
             address          = $Row.Address

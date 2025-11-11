@@ -8,6 +8,9 @@ function Invoke-ExecEditJob {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
+    # Validate store access first
+    Test-CIPPAccess -Request $Request
+
     $Table = Get-CIPPTable -TableName 'Jobs'
 
     $JobId = $Request.Body.jobId
@@ -36,6 +39,7 @@ function Invoke-ExecEditJob {
         RowKey           = $ExistingJob.RowKey
         JobNumber        = if ($Request.Body.jobNumber) { $Request.Body.jobNumber } else { $ExistingJob.JobNumber }
         CustomerId       = if ($Request.Body.customerId) { $Request.Body.customerId } else { $ExistingJob.CustomerId }
+        StoreId          = if ($Request.Body.storeId) { $Request.Body.storeId } else { $ExistingJob.StoreId }
         Status           = if ($Request.Body.status) { $Request.Body.status } else { $ExistingJob.Status }
         Description      = if ($Request.Body.description) { $Request.Body.description } else { $ExistingJob.Description }
         Address          = if ($Request.Body.address) { $Request.Body.address } else { $ExistingJob.Address }

@@ -1,6 +1,7 @@
 import { Box, Divider } from "@mui/material";
 import { Grid } from "@mui/system";
 import CippFormComponent from "../CippComponents/CippFormComponent";
+import { CippFormStoreSelector } from "../CippComponents/CippFormStoreSelector";
 import { ApiGetCall } from "../../api/ApiCall";
 
 export const JobForm = ({ formControl, mode = "new" }) => {
@@ -78,6 +79,16 @@ export const JobForm = ({ formControl, mode = "new" }) => {
           formControl={formControl}
           options={customerOptions}
           validators={{ required: "Customer is required" }}
+        />
+      </Grid>
+
+      <Grid size={{ md: 6, xs: 12 }}>
+        <CippFormStoreSelector
+          formControl={formControl}
+          name="storeId"
+          type="single"
+          required={true}
+          label="Store"
         />
       </Grid>
 

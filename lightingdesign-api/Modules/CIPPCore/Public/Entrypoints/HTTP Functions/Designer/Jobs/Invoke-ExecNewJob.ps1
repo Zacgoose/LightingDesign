@@ -8,6 +8,9 @@ function Invoke-ExecNewJob {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
+    # Validate store access first
+    Test-CIPPAccess -Request $Request
+
     # Helper function to extract value from autocomplete objects/arrays
     function Get-AutoCompleteValue {
         param($InputObject)
@@ -75,6 +78,12 @@ function Invoke-ExecNewJob {
         $CustomerName     = Get-AutoCompleteValue -InputObject $Request.Body.customerName
         $Status           = Get-AutoCompleteValue -InputObject $Request.Body.status
         $AssignedDesigner = Get-AutoCompleteValue -InputObject $Request.Body.assignedDesigner
+        $StoreId          = Get-AutoCompleteValue -InputObject $Request.Body.storeId
+
+        # Validate that storeId is provided
+        if ([string]::IsNullOrWhiteSpace($StoreId)) {
+            throw "Store ID is required"
+        }
 
         # Multi-select autocomplete fields (arrays of objects) - convert empty arrays to null
         $RelatedTrades    = if ($Request.Body.relatedTrades -and $Request.Body.relatedTrades.Count -gt 0) {
@@ -118,6 +127,7 @@ function Invoke-ExecNewJob {
             RowKey           = $NewJobId
             JobNumber        = $JobNumber
             CustomerId       = $CustomerName
+            StoreId          = $StoreId
             Status           = $Status
             Description      = $Description
             Address          = $Address

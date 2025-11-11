@@ -85,7 +85,7 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
     url: "/api/ListStores?AllStoreSelector=true",
     queryKey: "ListStores-AllStoreSelector",
   });
-  const stores = pages[0]?.Results || [];
+  const stores = pages[0] || [];
 
   const matchPattern = (pattern, value) => {
     const regex = new RegExp(`^${pattern.replace("*", ".*")}$`);

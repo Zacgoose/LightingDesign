@@ -49,13 +49,16 @@ import { CippApiResults } from "/src/components/CippComponents/CippApiResults";
 
 const Page = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, edit } = router.query;
   const theme = useTheme();
   const queryClient = useQueryClient();
   const settings = useSettings();
 
   // State for forcing component re-renders after lock state changes
   const [, forceUpdate] = useState(0);
+
+  // State to track if auto-lock has been attempted
+  const [autoLockAttempted, setAutoLockAttempted] = useState(false);
 
   // State for tracking save status
   const [isSaving, setIsSaving] = useState(false);
@@ -625,6 +628,41 @@ const Page = () => {
 
     return () => clearInterval(refreshInterval);
   }, [id, isOwner, lockDesignMutation, queryClient]);
+
+  // Auto-lock when navigating with edit=true parameter
+  useEffect(() => {
+    // Only attempt auto-lock once when:
+    // 1. edit=true parameter is present
+    // 2. Lock status data has loaded
+    // 3. User doesn't already own the lock
+    // 4. We haven't already attempted auto-lock
+    if (
+      edit === "true" &&
+      lockStatusData.isSuccess &&
+      !isOwner &&
+      !autoLockAttempted
+    ) {
+      setAutoLockAttempted(true);
+
+      // Only auto-lock if the design is not locked by someone else
+      if (!isLocked) {
+        console.log("Auto-locking design for editing...");
+        handleLockDesign().then((result) => {
+          if (result?.success) {
+            console.log("Auto-lock successful");
+            // Remove edit parameter from URL to prevent re-triggering
+            router.replace(`/jobs/design?id=${id}`, undefined, { shallow: true });
+          } else {
+            console.log("Auto-lock failed:", result?.error);
+          }
+        });
+      } else {
+        console.log("Design is locked by another user, cannot auto-lock");
+        // Remove edit parameter from URL
+        router.replace(`/jobs/design?id=${id}`, undefined, { shallow: true });
+      }
+    }
+  }, [edit, lockStatusData.isSuccess, isOwner, isLocked, autoLockAttempted, handleLockDesign, id, router]);
 
   // Switch to pan mode when user doesn't own lock
   useEffect(() => {

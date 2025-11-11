@@ -179,15 +179,18 @@ export const DesignerToolbarRow = memo(
               onRefresh={onRefreshLockStatus}
               disabled={false}
             />
-            <IconButton
-              size="small"
-              onClick={handleRefreshClick}
-              disabled={isRefreshing}
-              color="primary"
-              title="Check lock status"
-            >
-              {isRefreshing ? <CircularProgress size={20} /> : <Refresh />}
-            </IconButton>
+            {/* Only show refresh button when locked or in error state */}
+            {isLocked && (
+              <IconButton
+                size="small"
+                onClick={handleRefreshClick}
+                disabled={isRefreshing}
+                color="primary"
+                title="Check lock status"
+              >
+                {isRefreshing ? <CircularProgress size={20} /> : <Refresh />}
+              </IconButton>
+            )}
             <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave} disabled={!isOwner}>
               Save Project
             </Button>
@@ -404,7 +407,13 @@ export const DesignerToolbarRow = memo(
     if (prevProps.mainProps !== nextProps.mainProps) {
       const prev = prevProps.mainProps || {};
       const next = nextProps.mainProps || {};
-      if (prev.canUndo !== next.canUndo || prev.canRedo !== next.canRedo) {
+      if (
+        prev.canUndo !== next.canUndo ||
+        prev.canRedo !== next.canRedo ||
+        prev.isLocked !== next.isLocked ||
+        prev.isOwner !== next.isOwner ||
+        JSON.stringify(prev.lockInfo) !== JSON.stringify(next.lockInfo)
+      ) {
         return false; // Props changed, should re-render
       }
     }

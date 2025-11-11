@@ -23,8 +23,10 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
 
   const handleLockClick = async () => {
     if (isOwner) {
-      // User owns the lock, show confirmation to unlock
-      setConfirmDialogOpen(true);
+      // User owns the lock, unlock directly without confirmation
+      setIsLocking(true);
+      await onUnlock();
+      setIsLocking(false);
     } else if (isLocked) {
       // Someone else has the lock, show info
       setConfirmDialogOpen(true);
@@ -33,7 +35,7 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
       setIsLocking(true);
       const result = await onLock();
       setIsLocking(false);
-      
+
       // Handle errors (including 409 conflicts)
       if (!result?.success) {
         if (result?.isConflict && result?.lockInfo) {
@@ -67,13 +69,6 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
     }
   };
 
-  const handleConfirmUnlock = async () => {
-    setConfirmDialogOpen(false);
-    setIsLocking(true);
-    await onUnlock();
-    setIsLocking(false);
-  };
-
   const handleCloseDialog = () => {
     setConfirmDialogOpen(false);
   };
@@ -102,14 +97,8 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
   };
 
   const getDialogContent = () => {
-    if (isOwner) {
-      return {
-        title: "Finish Editing?",
-        content:
-          "Are you sure you want to finish editing? Any unsaved changes will be saved automatically, and the design will be unlocked for others to edit.",
-        action: "Finish Editing",
-      };
-    } else if (isLocked && lockInfo) {
+    // Only show dialog when locked by someone else
+    if (isLocked && !isOwner && lockInfo) {
       return {
         title: "Design Locked",
         content: (
@@ -184,14 +173,9 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
                 {isRefreshing ? "Checking..." : "Check Status"}
               </Button>
             )}
-            <Button onClick={handleCloseDialog} color="inherit">
+            <Button onClick={handleCloseDialog} color="primary" variant="contained">
               Close
             </Button>
-            {dialogContent.action && (
-              <Button onClick={handleConfirmUnlock} color="primary" variant="contained">
-                {dialogContent.action}
-              </Button>
-            )}
           </DialogActions>
         </Dialog>
       )}

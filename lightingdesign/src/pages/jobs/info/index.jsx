@@ -97,7 +97,7 @@ const Page = () => {
         addedButtons={
           <Button
             component={Link}
-            href={`/jobs/design?id=${id}`}
+            href={`/jobs/design?id=${id}&edit=true`}
             variant="outlined"
             startIcon={<DesignServices />}
             disabled={!id}

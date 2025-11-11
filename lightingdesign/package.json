@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "license": "UNLICENSED",
   "engines": {
-    "node": "^22.13.0"
+    "node": "^20.0.0"
   },
   "dependencies": {
     "@emotion/cache": "11.14.0",

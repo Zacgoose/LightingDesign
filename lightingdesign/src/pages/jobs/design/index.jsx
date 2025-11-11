@@ -445,16 +445,16 @@ const Page = () => {
       return;
     }
 
-    console.log("[SAVE] Starting save process...");
-    console.log("[SAVE] Current products count:", products.length);
-    console.log("[SAVE] Current selectedIds:", selectedIds);
+    // Prevent saving if items are selected to avoid losing transformations
+    if (selectedIds.length > 0 || selectedConnectorIds.length > 0 || selectedTextId) {
+      console.warn("Cannot save: Please deselect all items before saving.");
+      // Show a user-friendly message (you can replace this with a proper notification system)
+      alert("Please deselect all items before saving. Click on an empty area of the canvas to deselect.");
+      return;
+    }
 
     const transformed = applyGroupTransform();
-    console.log("[SAVE] applyGroupTransform returned:", transformed ? `${transformed.length} products` : "null");
-    if (transformed) {
-      updateHistory(transformed);
-      console.log("[SAVE] Updated history with transformed products");
-    }
+    if (transformed) updateHistory(transformed);
     setIsSaving(true);
 
     // Force sync of background image if it hasn't been synced yet
@@ -470,10 +470,6 @@ const Page = () => {
 
     // Strip metadata from all layers (products and connectors are already in layers)
     const strippedLayers = stripLayersForSave(layers);
-    console.log("[SAVE] Stripped layers for save, layer count:", strippedLayers.length);
-    if (strippedLayers.length > 0) {
-      console.log("[SAVE] First layer products count:", strippedLayers[0].products?.length || 0);
-    }
 
     // Use new format: only save layers (not root products/connectors)
     // Products and connectors are stored within their respective layers
@@ -507,8 +503,9 @@ const Page = () => {
     backgroundImage,
     backgroundImageNaturalSize,
     updateLayer,
-    products,
     selectedIds,
+    selectedConnectorIds,
+    selectedTextId,
   ]);
 
   // Auto-save functionality - only when user owns the lock
@@ -539,17 +536,17 @@ const Page = () => {
         data: { jobId: id },
       });
 
-      // First, refetch lock status and design data to get latest from server
+      // Reset design loader to force reload of design data
+      resetLoadedDesign();
+      
+      // Refetch lock status (lightweight) and design data (to ensure we have latest) in parallel
+      // Wait for both to complete before returning
       await Promise.all([
         queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' }),
         queryClient.refetchQueries({ queryKey: [`Design-${id}`], type: 'active' })
       ]);
       
-      // After design data is loaded, reset the design loader to force canvas refresh
-      // This ensures the canvas loads the fresh data we just fetched
-      resetLoadedDesign();
-      
-      // Force component re-render to update toolbar and trigger canvas reload
+      // Force component re-render to update toolbar immediately
       forceUpdate(n => n + 1);
       
       console.log("Lock acquired and data refreshed");
@@ -579,94 +576,18 @@ const Page = () => {
   const handleUnlockDesign = useCallback(async () => {
     if (!id) return { success: false, error: "No job ID" };
 
-    console.log("[UNLOCK] Starting unlock process...");
-    console.log("[UNLOCK] Current selectedIds:", selectedIds);
-    console.log("[UNLOCK] Current selectedConnectorIds:", selectedConnectorIds);
-    console.log("[UNLOCK] Current selectedTextId:", selectedTextId);
-    console.log("[UNLOCK] selectionGroupRef.current:", selectionGroupRef.current);
-    console.log("[UNLOCK] selectionSnapshot:", selectionSnapshot);
-
-    // Force any active transformer to end its transformation
-    // This ensures pending transforms are committed before we try to apply them
-    if (transformerRef.current) {
-      const transformer = transformerRef.current;
-      console.log("[UNLOCK] Forcing transformer to commit pending transforms...");
-      // Force the transformer to update and commit any pending changes
-      transformer.forceUpdate();
-      // Give the transformer a moment to process
-      await new Promise((resolve) => setTimeout(resolve, 50));
+    // Prevent unlocking if items are selected to avoid losing transformations
+    if (selectedIds.length > 0 || selectedConnectorIds.length > 0 || selectedTextId) {
+      console.warn("Cannot finish editing: Please deselect all items first.");
+      alert("Please deselect all items before finishing editing. Click on an empty area of the canvas to deselect.");
+      return { success: false, error: "Items are selected" };
     }
 
-    // CRITICAL FIX: If there are selected items, we need to capture their current Konva positions
-    // before clearing the selection, in case they were dragged but dragEnd hasn't fired yet
-    let updatedProducts = products;
-    if (selectedIds.length > 0 && selectionGroupRef.current) {
-      console.log("[UNLOCK] Capturing current positions of selected items from Konva stage...");
-      const stage = selectionGroupRef.current.getStage();
-      if (stage) {
-        const productIds = selectedIds.filter(id => !id.startsWith("text-"));
-        if (productIds.length > 0) {
-          updatedProducts = products.map(product => {
-            if (productIds.includes(product.id)) {
-              // Find the Konva node for this product
-              const node = stage.findOne(`#${product.id}`);
-              if (node) {
-                const x = node.x();
-                const y = node.y();
-                console.log(`[UNLOCK] Product ${product.id} - Konva position: (${x}, ${y}), State position: (${product.x}, ${product.y})`);
-                // Update if positions differ
-                if (Math.abs(x - product.x) > 0.01 || Math.abs(y - product.y) > 0.01) {
-                  console.log(`[UNLOCK] Updating product ${product.id} position from (${product.x}, ${product.y}) to (${x}, ${y})`);
-                  return { ...product, x, y };
-                }
-              }
-            }
-            return product;
-          });
-          
-          // Update history and layer with the captured positions
-          if (updatedProducts !== products) {
-            updateHistory(updatedProducts);
-            updateLayer(activeLayerIdRef.current, { products: updatedProducts });
-            console.log("[UNLOCK] Updated products with current Konva positions");
-          }
-        }
-      }
-    }
-
-    // Apply any pending transformations before saving
-    // This ensures all transformations are saved even if items are selected
-    const transformed = applyGroupTransform();
-    console.log("[UNLOCK] Applied group transform, transformed:", transformed ? `${transformed.length} products` : "null");
-    
-    if (transformed) {
-      updateHistory(transformed);
-      console.log("[UNLOCK] Updated history with transformed products");
-      
-      // CRITICAL: Also update the layer directly with transformed products
-      // This ensures the layer has the latest data before save, without waiting for useEffect
-      updateLayer(activeLayerIdRef.current, { products: transformed });
-      console.log("[UNLOCK] Updated layer directly with transformed products");
-    } else {
-      console.log("[UNLOCK] No transformations to apply - either no selection or no transform detected");
-    }
-    
-    // Clear all selections (products, connectors, and text) after applying transformations
-    // This prevents any ghost transformers from appearing after unlock
-    clearSelection();
-    setSelectedTextId(null);
-    console.log("[UNLOCK] Cleared all selections");
-    
     // Save before unlocking if there are changes
-    // Note: handleSave will also call applyGroupTransform(), but since we already cleared
-    // the selection above, it will return null (no pending transforms)
     if (hasUnsavedChanges && !isSaving) {
-      console.log("[UNLOCK] Calling handleSave...");
       handleSave();
       // Wait for save to complete
       await new Promise((resolve) => setTimeout(resolve, 1000));
-    } else {
-      console.log("[UNLOCK] No unsaved changes or already saving, skipping save");
     }
 
     try {
@@ -682,14 +603,14 @@ const Page = () => {
       // Force component re-render to update toolbar immediately
       forceUpdate(n => n + 1);
       
-      console.log("[UNLOCK] Lock released and toolbar updated");
+      console.log("Lock released and toolbar updated");
       
       return { success: true, data: result };
     } catch (error) {
-      console.error("[UNLOCK] Error unlocking design:", error);
+      console.error("Error unlocking design:", error);
       return { success: false, error: error.message || "Failed to unlock design" };
     }
-  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId, selectedIds, selectedConnectorIds, selectedTextId, updateLayer, selectionGroupRef, selectionSnapshot, transformerRef, products]);
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, selectedIds, selectedConnectorIds, selectedTextId]);
 
   // Manual refresh handler to check lock status
   const handleRefreshLockStatus = useCallback(async () => {

@@ -421,7 +421,9 @@ const Page = () => {
   // Handle save mutation success
   useEffect(() => {
     if (saveDesignMutation.isSuccess) {
-      setLastSaved(new Date().toISOString());
+      // Defensive: Only set lastSaved if Date is valid
+      const now = new Date();
+      setLastSaved(!isNaN(now) ? now.toISOString() : null);
       setHasUnsavedChanges(false);
       setIsSaving(false);
       queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });

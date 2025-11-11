@@ -26,14 +26,6 @@
     "RunOnProcessor": true
   },
   {
-    "Id": "5ff6c500-e420-4a3b-8532-ace2e4da4f7d",
-    "Command": "Start-ApplicationOrchestrator",
-    "Description": "Orchestrator to process application uploads",
-    "Cron": "0 0 */12 * * *",
-    "Priority": 2,
-    "RunOnProcessor": true
-  },
-  {
     "Id": "97145a1d-28f0-4bb2-b929-5a43517d23cc",
     "Command": "Start-SchedulerOrchestrator",
     "Description": "Orchestrator to process system scheduled tasks",
@@ -47,15 +39,6 @@
     "Description": "Orchestrator to update tokens",
     "Cron": "0 0 0 * * 0",
     "Priority": 7,
-    "RunOnProcessor": true,
-    "IsSystem": true
-  },
-  {
-    "Id": "3fb9745b-08c9-411b-bfac-dc48087489d5",
-    "Command": "Start-CIPPStatsTimer",
-    "Description": "Timer to process CIPP stats",
-    "Cron": "0 0 0 * * *",
-    "Priority": 15,
     "RunOnProcessor": true,
     "IsSystem": true
   },

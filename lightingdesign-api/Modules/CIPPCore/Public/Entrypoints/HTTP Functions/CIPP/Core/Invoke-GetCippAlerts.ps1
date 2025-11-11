@@ -10,10 +10,6 @@ function Invoke-GetCippAlerts {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
-    $APIName = $Request.Params.CIPPEndpoint
-    $Headers = $Request.Headers
-
-
     $Alerts = [System.Collections.Generic.List[object]]::new()
     $Table = Get-CippTable -tablename CippAlerts
     $PartitionKey = Get-Date -UFormat '%Y%m%d'
@@ -25,29 +21,29 @@ function Invoke-GetCippAlerts {
     $Version = Assert-CippVersion -CIPPVersion $CIPPVersion
     if ($Version.OutOfDateCIPP) {
         $Alerts.Add(@{
-                title = 'CIPP Frontend Out of Date'
-                Alert = 'Your CIPP Frontend is out of date. Please update to the latest version. Find more on the following '
+                title = 'CLightingDesigner IPP Frontend Out of Date'
+                Alert = 'Your LightingDesigner  Frontend is out of date. Please update to the latest version. Find more on the following '
                 link  = 'https://docs.cipp.app/setup/self-hosting-guide/updating'
                 type  = 'warning'
             })
-        Write-LogMessage -message 'Your CIPP Frontend is out of date. Please update to the latest version' -API 'Updates' -tenant 'All Tenants' -sev Alert
+        Write-LogMessage -message 'Your LightingDesigner  Frontend is out of date. Please update to the latest version' -API 'Updates' -tenant 'All Tenants' -sev Alert
 
     }
     if ($Version.OutOfDateCIPPAPI) {
         $Alerts.Add(@{
-                title = 'CIPP API Out of Date'
-                Alert = 'Your CIPP API is out of date. Please update to the latest version. Find more on the following'
+                title = 'LightingDesigner  API Out of Date'
+                Alert = 'Your LightingDesigner  API is out of date. Please update to the latest version. Find more on the following'
                 link  = 'https://docs.cipp.app/setup/self-hosting-guide/updating'
                 type  = 'warning'
             })
-        Write-LogMessage -message 'Your CIPP API is out of date. Please update to the latest version' -API 'Updates' -tenant 'All Tenants' -sev Alert
+        Write-LogMessage -message 'Your LightingDesigner  API is out of date. Please update to the latest version' -API 'Updates' -tenant 'All Tenants' -sev Alert
     }
 
     if ($env:ApplicationID -eq 'LongApplicationID' -or $null -eq $env:ApplicationID) {
         $Alerts.Add(@{
                 title          = 'SAM Setup Incomplete'
                 Alert          = 'You have not yet completed your setup. Please go to the Setup Wizard in Application Settings to connect CIPP to your tenants.'
-                link           = '/cipp/setup'
+                link           = '/settings/super-admin/onboardingv2'
                 type           = 'warning'
                 setupCompleted = $false
             })

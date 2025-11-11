@@ -54,6 +54,9 @@ const Page = () => {
   const queryClient = useQueryClient();
   const settings = useSettings();
 
+  // State for forcing component re-renders after lock state changes
+  const [, forceUpdate] = useState(0);
+
   // State for tracking save status
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
@@ -68,6 +71,15 @@ const Page = () => {
     waiting: !!id,
   });
 
+  // Separate lightweight query for lock status polling (every 1 minute)
+  const lockStatusData = ApiGetCall({
+    url: "/api/ExecGetDesignLockStatus",
+    data: { jobId: id },
+    queryKey: `DesignLockStatus-${id}`,
+    waiting: !!id,
+    refetchInterval: 60000, // Poll every 1 minute for lock status changes only
+  });
+
   // Load products catalog for enriching saved designs
   const productsData = ApiGetCall({
     url: "/api/ExecListBeaconProducts",
@@ -76,6 +88,17 @@ const Page = () => {
 
   // Save design mutation
   const saveDesignMutation = ApiPostCall({});
+
+  // Lock design mutation (for enabling/disabling editing)
+  const lockDesignMutation = ApiPostCall({});
+  const unlockDesignMutation = ApiPostCall({});
+
+  // Extract lock info - prefer from lockStatusData (frequently updated)
+  // If lock status query fails or has no data, default to locked state (safe fallback)
+  const lockInfo = lockStatusData?.data || { IsLocked: true, IsOwner: false };
+  const isLocked = lockInfo.IsLocked || false;
+  const isOwner = lockInfo.IsOwner || false;
+  const isEditingDisabled = isLocked && !isOwner;
 
   // Canvas state management using custom hook
   const canvasState = useCanvasState();
@@ -416,6 +439,12 @@ const Page = () => {
       return;
     }
 
+    // Only allow save if user owns the lock
+    if (!isOwner) {
+      console.error("Cannot save: design is not locked by current user.");
+      return;
+    }
+
     const transformed = applyGroupTransform();
     if (transformed) updateHistory(transformed);
     setIsSaving(true);
@@ -453,6 +482,7 @@ const Page = () => {
     });
   }, [
     id,
+    isOwner,
     layers,
     canvasWidth,
     canvasHeight,
@@ -467,9 +497,9 @@ const Page = () => {
     updateLayer,
   ]);
 
-  // Auto-save functionality
+  // Auto-save functionality - only when user owns the lock
   useEffect(() => {
-    if (!id || !hasUnsavedChanges || isSaving) return;
+    if (!id || !hasUnsavedChanges || isSaving || !isOwner) return;
 
     // Get auto-save interval from user settings (in minutes), default to 2 minutes
     const autoSaveMinutes = parseInt(settings.autoSaveInterval?.value || "2", 10);
@@ -483,7 +513,129 @@ const Page = () => {
     }, autoSaveMs);
 
     return () => clearInterval(autoSaveInterval);
-  }, [id, hasUnsavedChanges, isSaving, handleSave, settings.autoSaveInterval]);
+  }, [id, hasUnsavedChanges, isSaving, isOwner, handleSave, settings.autoSaveInterval]);
+
+  // Lock/Unlock handlers
+  const handleLockDesign = useCallback(async () => {
+    if (!id) return { success: false, error: "No job ID" };
+
+    try {
+      const result = await lockDesignMutation.mutateAsync({
+        url: "/api/ExecLockDesign",
+        data: { jobId: id },
+      });
+
+      // Refetch lock status (lightweight) and design data (to ensure we have latest) in parallel
+      // Wait for both to complete before returning
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: [`Design-${id}`], type: 'active' })
+      ]);
+      
+      // Force component re-render to update toolbar immediately
+      forceUpdate(n => n + 1);
+      
+      console.log("Lock acquired and data refreshed");
+      
+      return { success: true, data: result };
+    } catch (error) {
+      console.error("Error locking design:", error);
+      
+      // Handle 409 Conflict - design is locked by another user
+      if (error.response?.status === 409) {
+        const lockData = error.response?.data;
+        return { 
+          success: false, 
+          error: lockData?.error || "Design is locked by another user",
+          isConflict: true,
+          lockInfo: lockData
+        };
+      }
+      
+      return { 
+        success: false, 
+        error: error.response?.data?.error || error.message || "Failed to lock design" 
+      };
+    }
+  }, [id, lockDesignMutation, queryClient, forceUpdate]);
+
+  const handleUnlockDesign = useCallback(async () => {
+    if (!id) return { success: false, error: "No job ID" };
+
+    // Save before unlocking if there are changes
+    if (hasUnsavedChanges && !isSaving) {
+      handleSave();
+      // Wait for save to complete
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    try {
+      const result = await unlockDesignMutation.mutateAsync({
+        url: "/api/ExecUnlockDesign",
+        data: { jobId: id },
+      });
+
+      // Refetch lock status (lightweight) and design data (to get latest saved version) in parallel
+      // Wait for both to complete before returning
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: [`Design-${id}`], type: 'active' })
+      ]);
+      
+      // Force component re-render to update toolbar immediately
+      forceUpdate(n => n + 1);
+      
+      console.log("Lock released and data refreshed");
+      
+      return { success: true, data: result };
+    } catch (error) {
+      console.error("Error unlocking design:", error);
+      return { success: false, error: error.message || "Failed to unlock design" };
+    }
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate]);
+
+  // Manual refresh handler to check lock status
+  const handleRefreshLockStatus = useCallback(async () => {
+    if (!id) return;
+    console.log("Manually refreshing lock status...");
+    await queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`] });
+    // Force component re-render to update UI immediately
+    forceUpdate(n => n + 1);
+  }, [id, queryClient, forceUpdate]);
+
+  // Auto-refresh lock every 1 minute when user owns the lock (15 min timeout)
+  useEffect(() => {
+    if (!id || !isOwner) return;
+
+    const refreshInterval = setInterval(async () => {
+      if (isOwner) {
+        console.log("Auto-refreshing design lock...");
+        try {
+          await lockDesignMutation.mutateAsync({
+            url: "/api/ExecLockDesign",
+            data: { jobId: id },
+          });
+          // Invalidate lock status query to pick up the refreshed lock
+          queryClient.invalidateQueries({ queryKey: [`DesignLockStatus-${id}`] });
+        } catch (error) {
+          console.error("Failed to refresh lock:", error);
+        }
+      }
+    }, 1 * 60 * 1000); // 1 minute
+
+    return () => clearInterval(refreshInterval);
+  }, [id, isOwner, lockDesignMutation, queryClient]);
+
+  // Switch to pan mode when user doesn't own lock
+  useEffect(() => {
+    if (!isOwner && selectedTool !== "pan") {
+      setSelectedTool("pan");
+      // Clear any selections when switching out of edit mode
+      setSelectedIds([]);
+      setSelectedConnectorIds([]);
+      setSelectedTextId(null);
+    }
+  }, [isOwner, selectedTool, setSelectedTool, setSelectedIds, setSelectedConnectorIds, setSelectedTextId]);
 
   // Context menus hook
   const contextMenus = useContextMenus({
@@ -786,15 +938,51 @@ const Page = () => {
   });
 
   const {
-    handleProductClick,
-    handleProductDragStart,
-    handleProductDragEnd,
-    handleGroupTransformEnd,
+    handleProductClick: rawHandleProductClick,
+    handleProductDragStart: rawHandleProductDragStart,
+    handleProductDragEnd: rawHandleProductDragEnd,
+    handleGroupTransformEnd: rawHandleGroupTransformEnd,
   } = productInteraction;
+
+  // Wrap interaction handlers to check lock state
+  const handleProductClick = useCallback(
+    (...args) => {
+      if (isEditingDisabled) return;
+      return rawHandleProductClick(...args);
+    },
+    [isEditingDisabled, rawHandleProductClick],
+  );
+
+  const handleProductDragStart = useCallback(
+    (...args) => {
+      if (isEditingDisabled) return;
+      return rawHandleProductDragStart(...args);
+    },
+    [isEditingDisabled, rawHandleProductDragStart],
+  );
+
+  const handleProductDragEnd = useCallback(
+    (...args) => {
+      if (isEditingDisabled) return;
+      return rawHandleProductDragEnd(...args);
+    },
+    [isEditingDisabled, rawHandleProductDragEnd],
+  );
+
+  const handleGroupTransformEnd = useCallback(
+    (...args) => {
+      if (isEditingDisabled) return;
+      return rawHandleGroupTransformEnd(...args);
+    },
+    [isEditingDisabled, rawHandleGroupTransformEnd],
+  );
 
   // Connector selection handler with multi-select support
   const handleConnectorSelect = useCallback(
     (e, connectorId) => {
+      // Prevent editing when locked by someone else
+      if (isEditingDisabled) return;
+
       // Ignore right-clicks (button 2) - those are handled by context menu
       if (e.evt?.button === 2) {
         return;
@@ -826,7 +1014,7 @@ const Page = () => {
 
       forceGroupUpdate();
     },
-    [selectedIds, selectedConnectorIds, setSelectedIds, setSelectedConnectorIds, forceGroupUpdate],
+    [selectedIds, selectedConnectorIds, setSelectedIds, setSelectedConnectorIds, forceGroupUpdate, isEditingDisabled],
   );
 
   // Unified group transform handler that handles both products and text boxes
@@ -1923,6 +2111,9 @@ const Page = () => {
 
   const handleTextSelect = useCallback(
     (e, textId) => {
+      // Prevent editing when locked by someone else
+      if (isEditingDisabled) return;
+
       // Filter out middle mouse clicks (button === 1) to prevent selection during panning
       if (e.evt?.button === 1) {
         return;
@@ -1973,6 +2164,7 @@ const Page = () => {
       setSelectedConnectorIds,
       setSelectedTextId,
       forceGroupUpdate,
+      isEditingDisabled,
     ],
   );
 
@@ -2452,6 +2644,13 @@ const Page = () => {
       canUndo: timelineTracker.timelineStep.current > -1,
       canRedo: timelineTracker.timelineStep.current < timelineTracker.timeline.current.length - 1,
       onMeasure: handleMeasure,
+      // Lock props
+      isLocked,
+      isOwner,
+      lockInfo,
+      onLock: handleLockDesign,
+      onUnlock: handleUnlockDesign,
+      onRefreshLockStatus: handleRefreshLockStatus,
     }),
     [
       handleUploadFloorPlan,
@@ -2462,6 +2661,12 @@ const Page = () => {
       handleMeasure,
       timelineTracker.timelineStep.current,
       timelineTracker.timeline.current.length,
+      isLocked,
+      isOwner,
+      lockInfo,
+      handleLockDesign,
+      handleUnlockDesign,
+      handleRefreshLockStatus,
     ],
   );
 
@@ -2683,6 +2888,27 @@ const Page = () => {
             sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}
           >
             <div style={{ height: 4 }} />
+
+            {/* Read-only mode indicator */}
+            {isLocked && !isOwner && lockInfo && (
+              <Box
+                sx={{
+                  backgroundColor: "error.main",
+                  color: "white",
+                  px: 2,
+                  py: 1,
+                  mb: 1,
+                  borderRadius: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography variant="body2" fontWeight="bold">
+                  🔒 Read-Only Mode: Design locked by {lockInfo.LockedBy}.
+                </Typography>
+              </Box>
+            )}
 
             <DesignerToolbarRow
               mainProps={toolbarMainProps}
@@ -3040,6 +3266,7 @@ const Page = () => {
                         onClose={handleLayerClose}
                         subLayerControlsRef={subLayerControlsRef}
                         top={layerSwitcherTop}
+                        editingEnabled={isOwner}
                       />
                       <SubLayerControls
                         ref={subLayerControlsRef}
@@ -3053,6 +3280,7 @@ const Page = () => {
                         onSetDefaultSublayer={setDefaultSublayer}
                         onClose={handleLayerClose}
                         top={subLayerControlsTop}
+                        editingEnabled={isOwner}
                       />
                     </>
                   )}

@@ -6,6 +6,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import { useState, useEffect, useRef, memo, useCallback } from "react";
 import {
@@ -27,12 +28,15 @@ import {
   VerticalAlignCenter,
   VerticalAlignTop,
   MultipleStop,
+  Refresh,
 } from "@mui/icons-material";
+import { DesignLockButton } from "/src/components/designer/DesignLockButton";
 
 export const DesignerToolbarRow = memo(
   ({ mainProps, toolsProps, viewProps, alignProps }) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const [showCollapseButton, setShowCollapseButton] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const containerRef = useRef(null);
 
     useEffect(() => {
@@ -86,6 +90,12 @@ export const DesignerToolbarRow = memo(
       canUndo = false,
       canRedo = false,
       onMeasure,
+      isLocked = false,
+      isOwner = false,
+      lockInfo = null,
+      onLock,
+      onUnlock,
+      onRefreshLockStatus,
     } = mainProps || {};
 
     const { selectedTool, onToolChange, placementMode, onStopPlacement, onDisconnectCable } =
@@ -126,6 +136,14 @@ export const DesignerToolbarRow = memo(
       },
       [onToolChange],
     );
+    
+    const handleRefreshClick = useCallback(async () => {
+      if (onRefreshLockStatus && !isRefreshing) {
+        setIsRefreshing(true);
+        await onRefreshLockStatus();
+        setIsRefreshing(false);
+      }
+    }, [onRefreshLockStatus, isRefreshing]);
 
     return (
       <Card sx={{ px: 1, py: 0, mb: 0 }}>
@@ -148,19 +166,38 @@ export const DesignerToolbarRow = memo(
               startIcon={<Upload />}
               size="small"
               onClick={onUploadFloorPlan}
+              disabled={!isOwner}
             >
               Upload Floor Plan
             </Button>
-            <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave}>
+            <DesignLockButton
+              isLocked={isLocked}
+              isOwner={isOwner}
+              lockInfo={lockInfo}
+              onLock={onLock}
+              onUnlock={onUnlock}
+              onRefresh={onRefreshLockStatus}
+              disabled={false}
+            />
+            <IconButton
+              size="small"
+              onClick={handleRefreshClick}
+              disabled={isRefreshing}
+              color="primary"
+              title="Check lock status"
+            >
+              {isRefreshing ? <CircularProgress size={20} /> : <Refresh />}
+            </IconButton>
+            <Button variant="contained" startIcon={<Save />} size="small" onClick={onSave} disabled={!isOwner}>
               Save Project
             </Button>
             <Button variant="outlined" startIcon={<Download />} size="small" onClick={onExport}>
               Export
             </Button>
-            <Button variant="outlined" size="small" onClick={onUndo} disabled={!canUndo}>
+            <Button variant="outlined" size="small" onClick={onUndo} disabled={!canUndo || !isOwner}>
               <Undo />
             </Button>
-            <Button variant="outlined" size="small" onClick={onRedo} disabled={!canRedo}>
+            <Button variant="outlined" size="small" onClick={onRedo} disabled={!canRedo || !isOwner}>
               <Redo />
             </Button>
             <Button
@@ -169,6 +206,7 @@ export const DesignerToolbarRow = memo(
               size="small"
               onClick={onMeasure}
               minWidth={100}
+              disabled={!isOwner}
             >
               Measure
             </Button>
@@ -273,20 +311,27 @@ export const DesignerToolbarRow = memo(
                     },
                   }}
                 >
-                  <ToggleButton value="select">
-                    <NearMe fontSize="small" />
-                  </ToggleButton>
+                  {/* Only show select/connect/text tools when user owns the lock */}
+                  {isOwner && (
+                    <ToggleButton value="select">
+                      <NearMe fontSize="small" />
+                    </ToggleButton>
+                  )}
                   <ToggleButton value="pan">
                     <PanTool fontSize="small" />
                   </ToggleButton>
-                  <ToggleButton value="connect">
-                    <Cable fontSize="small" />
-                  </ToggleButton>
-                  <ToggleButton value="text">
-                    <TextFields fontSize="small" />
-                  </ToggleButton>
+                  {isOwner && (
+                    <>
+                      <ToggleButton value="connect">
+                        <Cable fontSize="small" />
+                      </ToggleButton>
+                      <ToggleButton value="text">
+                        <TextFields fontSize="small" />
+                      </ToggleButton>
+                    </>
+                  )}
                 </ToggleButtonGroup>
-                {selectedTool === "connect" && (
+                {selectedTool === "connect" && isOwner && (
                   <Button
                     variant="outlined"
                     color="primary"

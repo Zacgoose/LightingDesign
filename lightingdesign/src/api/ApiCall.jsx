@@ -25,7 +25,7 @@ export function ApiGetCall(props) {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const MAX_RETRIES = retry;
-  const HTTP_STATUS_TO_NOT_RETRY = [302, 401, 403, 404, 500];
+  const HTTP_STATUS_TO_NOT_RETRY = [302, 401, 403, 404, 409, 500];
   const retryFn = (failureCount, error) => {
     let returnRetry = true;
     if (failureCount >= MAX_RETRIES) {
@@ -248,7 +248,7 @@ export function ApiGetCallWithPagination({
 }) {
   const dispatch = useDispatch();
   const MAX_RETRIES = retry;
-  const HTTP_STATUS_TO_NOT_RETRY = [401, 403, 404];
+  const HTTP_STATUS_TO_NOT_RETRY = [401, 403, 404, 409];
 
   const retryFn = (failureCount, error) => {
     let returnRetry = true;

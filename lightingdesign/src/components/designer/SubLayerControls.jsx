@@ -142,6 +142,7 @@ export const SubLayerControls = memo(
         onSetDefaultSublayer,
         onClose,
         top = 200,
+        editingEnabled = true,
       },
       ref,
     ) => {
@@ -157,6 +158,7 @@ export const SubLayerControls = memo(
       }
 
       const handleContextMenu = (e, sublayer) => {
+        if (!editingEnabled) return; // Don't show context menu if editing disabled
         e.preventDefault();
         e.stopPropagation();
         setContextMenu({
@@ -264,11 +266,13 @@ export const SubLayerControls = memo(
               <Typography variant="h6" sx={{ fontWeight: 500, fontSize: "0.8rem" }}>
                 Sublayers
               </Typography>
-              <Tooltip title="Add Sublayer">
-                <IconButton size="small" onClick={handleAddSublayer} color="primary">
-                  <AddIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              {editingEnabled && (
+                <Tooltip title="Add Sublayer">
+                  <IconButton size="small" onClick={handleAddSublayer} color="primary">
+                    <AddIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
             </Box>
             <Divider />
             <Box sx={{ px: 1.5, py: 1, overflow: "auto", flex: 1 }}>

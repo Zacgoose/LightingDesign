@@ -179,8 +179,8 @@ export const DesignerToolbarRow = memo(
               onRefresh={onRefreshLockStatus}
               disabled={false}
             />
-            {/* Only show refresh button when design is locked or there's an error */}
-            {isLocked && (
+            {/* Only show refresh button when design is locked by someone else */}
+            {isLocked && !isOwner && (
               <IconButton
                 size="small"
                 onClick={handleRefreshClick}

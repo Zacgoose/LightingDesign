@@ -543,15 +543,15 @@ const Page = () => {
         data: { jobId: id },
       });
 
-      // Reset design loader to force reload of design data
-      resetLoadedDesign();
-      
-      // Refetch lock status (lightweight) and design data (to ensure we have latest) in parallel
-      // Wait for both to complete before returning
+      // First refetch lock status and design data from server
+      // Wait for both to complete to ensure we have latest data
       await Promise.all([
         queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' }),
         queryClient.refetchQueries({ queryKey: [`Design-${id}`], type: 'active' })
       ]);
+      
+      // Then reset design loader to trigger canvas refresh with the fresh data
+      resetLoadedDesign();
       
       // Force component re-render to update toolbar immediately
       forceUpdate(n => n + 1);

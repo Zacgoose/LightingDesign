@@ -565,6 +565,14 @@ const Page = () => {
   const handleUnlockDesign = useCallback(async () => {
     if (!id) return { success: false, error: "No job ID" };
 
+    // Apply any pending transformations and clear selection before saving
+    // This ensures all transformations are saved even if items are selected
+    const transformed = applyGroupTransform();
+    if (transformed) {
+      updateHistory(transformed);
+    }
+    clearSelection();
+    
     // Save before unlocking if there are changes
     if (hasUnsavedChanges && !isSaving) {
       handleSave();
@@ -592,7 +600,7 @@ const Page = () => {
       console.error("Error unlocking design:", error);
       return { success: false, error: error.message || "Failed to unlock design" };
     }
-  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate]);
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, applyGroupTransform, updateHistory, clearSelection]);
 
   // Manual refresh handler to check lock status
   const handleRefreshLockStatus = useCallback(async () => {

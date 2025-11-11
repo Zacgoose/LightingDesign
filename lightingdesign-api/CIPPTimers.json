@@ -34,14 +34,6 @@
     "RunOnProcessor": true
   },
   {
-    "Id": "5b3bb926-d107-471e-8787-3b22b0d4dbbe",
-    "Command": "Start-WebhookOrchestrator",
-    "Description": "Orchestrator to process webhooks",
-    "Cron": "0 */15 * * * *",
-    "Priority": 3,
-    "RunOnProcessor": true
-  },
-  {
     "Id": "97145a1d-28f0-4bb2-b929-5a43517d23cc",
     "Command": "Start-SchedulerOrchestrator",
     "Description": "Orchestrator to process system scheduled tasks",
@@ -55,27 +47,6 @@
     "Description": "Orchestrator to update tokens",
     "Cron": "0 0 0 * * 0",
     "Priority": 7,
-    "RunOnProcessor": true,
-    "IsSystem": true
-  },
-  {
-    "Id": "f82345da-e370-4b15-8167-be148cfd04af",
-    "Command": "Get-Tenants",
-    "Parameters": {
-      "TriggerRefresh": true
-    },
-    "Description": "Update tenants",
-    "Cron": "0 0 23 * * *",
-    "Priority": 10,
-    "RunOnProcessor": true,
-    "IsSystem": true
-  },
-  {
-    "Id": "d9ff3af4-bd34-40d6-b12a-8fa24463f331",
-    "Command": "Start-UpdatePermissionsOrchestrator",
-    "Description": "Orchestrator to update CPV permissions",
-    "Cron": "0 0 0 * * *",
-    "Priority": 10,
     "RunOnProcessor": true,
     "IsSystem": true
   },

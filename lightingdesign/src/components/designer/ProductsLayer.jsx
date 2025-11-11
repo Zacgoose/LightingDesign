@@ -223,7 +223,8 @@ export const ProductsLayer = memo(
         if (groupIndex !== -1) {
           prefixMap.set(product.id, `${letterPrefix}${groupIndex + 1}`);
         } else {
-          prefixMap.set(product.id, letterPrefix);
+          // Edge case: if grouping key not found, default to "1"
+          prefixMap.set(product.id, `${letterPrefix}1`);
         }
       });
 
@@ -316,7 +317,7 @@ export const ProductsLayer = memo(
               // Use explicit check for map presence to handle empty string letterPrefix
               const letterPrefix = letterPrefixMap.has(product.id) 
                 ? letterPrefixMap.get(product.id) 
-                : (config.letterPrefix || "O");
+                : `${config.letterPrefix || "O"}1`;
 
               return (
                 <ProductShape
@@ -407,7 +408,7 @@ export const ProductsLayer = memo(
               // Use explicit check for map presence to handle empty string letterPrefix
               const letterPrefix = letterPrefixMap.has(product.id) 
                 ? letterPrefixMap.get(product.id) 
-                : (config.letterPrefix || "O");
+                : `${config.letterPrefix || "O"}1`;
 
               const relativeProduct = {
                 ...product,

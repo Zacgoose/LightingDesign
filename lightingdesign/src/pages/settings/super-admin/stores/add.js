@@ -3,8 +3,7 @@ import { Layout as DashboardLayout } from "/src/layouts/index";
 import { useForm } from "react-hook-form";
 import CippFormPage from "/src/components/CippFormPages/CippFormPage";
 import CippFormComponent from "/src/components/CippComponents/CippFormComponent";
-import { Stack, Typography } from "@mui/material";
-import CippFormSection from "/src/components/CippFormPages/CippFormSection";
+import { Stack } from "@mui/material";
 
 const Page = () => {
   const formControl = useForm({
@@ -30,50 +29,50 @@ const Page = () => {
         postUrl="/api/ExecStore"
         customDataformatter={(values) => {
           return {
-            ...values,
             Action: "AddEdit",
-            status: values.status?.value,
+            storeName: values.storeName,
+            storeCode: values.storeCode,
+            location: values.location,
+            status: values.status?.value || "active",
           };
         }}
       >
-        <CippFormSection title="Store Details" formControl={formControl}>
-          <Stack spacing={2}>
-            <CippFormComponent
-              type="textField"
-              name="storeName"
-              label="Store Name"
-              placeholder="Enter the store name"
-              formControl={formControl}
-              required
-            />
-            <CippFormComponent
-              type="textField"
-              name="storeCode"
-              label="Store Code"
-              placeholder="Enter the store code"
-              formControl={formControl}
-              required
-            />
-            <CippFormComponent
-              type="textField"
-              name="location"
-              label="Location"
-              placeholder="Enter the store location"
-              formControl={formControl}
-            />
-            <CippFormComponent
-              type="autoComplete"
-              name="status"
-              label="Status"
-              options={[
-                { value: "active", label: "Active" },
-                { value: "inactive", label: "Inactive" },
-              ]}
-              formControl={formControl}
-              required
-            />
-          </Stack>
-        </CippFormSection>
+        <Stack spacing={2}>
+          <CippFormComponent
+            type="textField"
+            name="storeName"
+            label="Store Name"
+            placeholder="Enter the store name"
+            formControl={formControl}
+            required
+          />
+          <CippFormComponent
+            type="textField"
+            name="storeCode"
+            label="Store Code"
+            placeholder="Enter the store code"
+            formControl={formControl}
+            required
+          />
+          <CippFormComponent
+            type="textField"
+            name="location"
+            label="Location"
+            placeholder="Enter the store location"
+            formControl={formControl}
+          />
+          <CippFormComponent
+            type="autoComplete"
+            name="status"
+            label="Status"
+            options={[
+              { value: "active", label: "Active" },
+              { value: "inactive", label: "Inactive" },
+            ]}
+            formControl={formControl}
+            required
+          />
+        </Stack>
       </CippFormPage>
     </>
   );

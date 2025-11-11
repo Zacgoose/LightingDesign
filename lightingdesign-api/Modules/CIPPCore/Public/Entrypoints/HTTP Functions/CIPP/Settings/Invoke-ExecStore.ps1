@@ -51,6 +51,7 @@ function Invoke-ExecStore {
             }
         }
         default {
+            # If no action specified, return all stores
             $Body = Get-CIPPAzDataTableEntity @Table
             if (!$Body) {
                 $Body = @(

@@ -1,38 +1,46 @@
 import Head from "next/head";
+import { useRouter } from "next/router";
 import { Layout as DashboardLayout } from "/src/layouts/index";
 import { useForm } from "react-hook-form";
 import CippFormPage from "/src/components/CippFormPages/CippFormPage";
-import CippAddEditStoreGroups from "/src/components/CippComponents/CippAddEditStoreGroups";
-import { useRouter } from "next/router";
+import { CippFormStoreSelector } from "/src/components/CippComponents/CippFormStoreSelector";
+import CippFormComponent from "/src/components/CippComponents/CippFormComponent";
+import { Stack } from "@mui/material";
 import { ApiGetCall } from "/src/api/ApiCall";
+import { useEffect } from "react";
 
 const Page = () => {
   const router = useRouter();
   const { id } = router.query;
 
-  const formControl = useForm({
-    mode: "onChange",
-  });
-
   // Fetch store group data
-  const storeGroupData = ApiGetCall({
-    url: "/api/ListStoreGroups",
+  const groupData = ApiGetCall({
+    url: "/api/ExecGetStoreGroup",
     data: { groupId: id },
     queryKey: `StoreGroup-${id}`,
     enabled: !!id,
   });
 
-  // Set form values when data is loaded
-  const group = storeGroupData.data?.Results?.find((g) => g.groupId === id);
+  const formControl = useForm({
+    mode: "onChange",
+    defaultValues: {
+      groupName: "",
+      groupDescription: "",
+      members: [],
+    },
+  });
 
-  if (group && !formControl.formState.isDirty) {
-    formControl.reset({
-      groupId: group.groupId,
-      groupName: group.groupName,
-      groupDescription: group.groupDescription,
-      members: group.members || [],
-    });
-  }
+  // Update form when group data loads
+  useEffect(() => {
+    if (groupData.data) {
+      formControl.reset({
+        groupId: groupData.data.groupId,
+        groupName: groupData.data.groupName,
+        groupDescription: groupData.data.groupDescription,
+        members: groupData.data.members || [],
+      });
+    }
+  }, [groupData.data]);
 
   return (
     <>
@@ -42,15 +50,45 @@ const Page = () => {
       <CippFormPage
         formControl={formControl}
         queryKey="StoreGroupsList"
-        title="Edit Store Group"
+        title={`Edit Store Group: ${groupData.data?.groupName || "Loading..."}`}
         backButtonTitle="Store Groups"
+        postUrl="/api/ExecStoreGroup"
+        customDataformatter={(values) => {
+          return {
+            Action: "AddEdit",
+            groupId: id,
+            groupName: values.groupName,
+            groupDescription: values.groupDescription,
+            members: values.members?.map((m) => m.value) || [],
+          };
+        }}
       >
-        <CippAddEditStoreGroups
-          formControl={formControl}
-          title="Store Group Details"
-          backButtonTitle="Store Groups"
-          initialValues={group}
-        />
+        <Stack spacing={2}>
+          <CippFormComponent
+            type="textField"
+            name="groupName"
+            label="Group Name"
+            placeholder="Enter the name for this group"
+            formControl={formControl}
+            required
+          />
+          <CippFormComponent
+            type="textField"
+            name="groupDescription"
+            label="Group Description"
+            placeholder="Enter a description for this group"
+            formControl={formControl}
+          />
+          <CippFormStoreSelector
+            formControl={formControl}
+            multiple={true}
+            required={false}
+            disableClearable={false}
+            name="members"
+            valueField="storeId"
+            placeholder="Select stores to add to this group"
+          />
+        </Stack>
       </CippFormPage>
     </>
   );

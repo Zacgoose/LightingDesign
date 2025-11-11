@@ -1,7 +1,7 @@
 import { TabbedLayout } from "/src/layouts/TabbedLayout";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import tabOptions from "../tabOptions";
-import { Button, SvgIcon } from "@mui/material";
+import { Button } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
 import { CippTablePage } from "/src/components/CippComponents/CippTablePage";
 import Link from "next/link";
@@ -12,7 +12,7 @@ const Page = () => {
   const actions = [
     {
       label: "Edit Store",
-      link: "/settings/super-admin/stores/edit?id=[storeId]",
+      link: "/settings/super-admin/stores/edit?id=[RowKey]",
       icon: <Edit />,
       color: "success",
       target: "_self",
@@ -23,7 +23,7 @@ const Page = () => {
       url: "/api/ExecStore",
       data: {
         Action: "Delete",
-        storeId: "storeId",
+        storeId: "RowKey",
       },
       confirmText: "Are you sure you want to delete this store?",
       icon: <Delete />,
@@ -41,20 +41,15 @@ const Page = () => {
   return (
     <CippTablePage
       title={pageTitle}
-      apiUrl="/api/ListStores"
+      apiUrl="/api/ListStores?AllStoreSelector=true"
       actions={actions}
       offCanvas={offCanvas}
       simpleColumns={simpleColumns}
-      tenantInTitle={false}
       cardButton={
         <Button
           component={Link}
           href="/settings/super-admin/stores/add"
-          startIcon={
-            <SvgIcon fontSize="small">
-              <Add />
-            </SvgIcon>
-          }
+          startIcon={<Add />}
           variant="contained"
         >
           Add Store

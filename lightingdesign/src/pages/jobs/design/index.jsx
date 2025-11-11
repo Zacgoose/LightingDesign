@@ -66,7 +66,15 @@ const Page = () => {
     data: { jobId: id },
     queryKey: `Design-${id}`,
     waiting: !!id,
-    refetchInterval: 10000, // Poll every 10 seconds to check lock status changes
+  });
+
+  // Separate lightweight query for lock status polling (every 10 seconds)
+  const lockStatusData = ApiGetCall({
+    url: "/api/ExecGetDesignLockStatus",
+    data: { jobId: id },
+    queryKey: `DesignLockStatus-${id}`,
+    waiting: !!id,
+    refetchInterval: 10000, // Poll every 10 seconds for lock status changes only
   });
 
   // Load products catalog for enriching saved designs
@@ -82,8 +90,8 @@ const Page = () => {
   const lockDesignMutation = ApiPostCall({});
   const unlockDesignMutation = ApiPostCall({});
 
-  // Extract lock info from design data
-  const lockInfo = designData?.data?.lockInfo || { IsLocked: false, IsOwner: false };
+  // Extract lock info - prefer from lockStatusData (frequently updated), fallback to designData
+  const lockInfo = lockStatusData?.data || designData?.data?.lockInfo || { IsLocked: false, IsOwner: false };
   const isLocked = lockInfo.IsLocked || false;
   const isOwner = lockInfo.IsOwner || false;
   const isEditingDisabled = isLocked && !isOwner;
@@ -513,8 +521,11 @@ const Page = () => {
         data: { jobId: id },
       });
 
-      // Refetch design data to get updated lock info and wait for it to complete
-      await queryClient.refetchQueries({ queryKey: [`Design-${id}`] });
+      // Refetch lock status (lightweight) and design data (to ensure we have latest) in parallel
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`] }),
+        queryClient.refetchQueries({ queryKey: [`Design-${id}`] })
+      ]);
       
       return { success: true, data: result };
     } catch (error) {
@@ -554,8 +565,11 @@ const Page = () => {
         data: { jobId: id },
       });
 
-      // Refetch design data to get updated lock info and latest design, and wait for it to complete
-      await queryClient.refetchQueries({ queryKey: [`Design-${id}`] });
+      // Refetch lock status (lightweight) and design data (to get latest saved version) in parallel
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`] }),
+        queryClient.refetchQueries({ queryKey: [`Design-${id}`] })
+      ]);
       
       return { success: true, data: result };
     } catch (error) {
@@ -568,7 +582,7 @@ const Page = () => {
   const handleRefreshLockStatus = useCallback(async () => {
     if (!id) return;
     console.log("Manually refreshing lock status...");
-    await queryClient.refetchQueries({ queryKey: [`Design-${id}`] });
+    await queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`] });
   }, [id, queryClient]);
 
   // Auto-refresh lock every 1 minute when user owns the lock (15 min timeout)
@@ -583,7 +597,8 @@ const Page = () => {
             url: "/api/ExecLockDesign",
             data: { jobId: id },
           });
-          queryClient.invalidateQueries({ queryKey: [`Design-${id}`] });
+          // Invalidate lock status query to pick up the refreshed lock
+          queryClient.invalidateQueries({ queryKey: [`DesignLockStatus-${id}`] });
         } catch (error) {
           console.error("Failed to refresh lock:", error);
         }

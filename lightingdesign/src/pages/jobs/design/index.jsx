@@ -106,7 +106,9 @@ const Page = () => {
     : lockStatusData.data;
   const isLocked = lockInfo.IsLocked ?? true; // Default to true (locked) if undefined/null
   const isOwner = lockInfo.IsOwner ?? false; // Default to false (not owner) if undefined/null
-  const isEditingDisabled = isLocked && !isOwner;
+  // Editing is ONLY allowed when the user owns an active lock
+  // This means: no lock = read-only, locked by someone else = read-only, only locked by me = can edit
+  const isEditingDisabled = !isOwner;
 
   // Canvas state management using custom hook
   const canvasState = useCanvasState();
@@ -2946,7 +2948,7 @@ const Page = () => {
             <div style={{ height: 4 }} />
 
             {/* Read-only mode indicator */}
-            {isLocked && !isOwner && lockInfo && (
+            {isEditingDisabled && (
               <Box
                 sx={{
                   backgroundColor: "error.main",
@@ -2961,7 +2963,10 @@ const Page = () => {
                 }}
               >
                 <Typography variant="body2" fontWeight="bold">
-                  🔒 Read-Only Mode: Design locked by {lockInfo.LockedBy}.
+                  {isLocked && lockInfo?.LockedBy 
+                    ? `🔒 Read-Only Mode: Design locked by ${lockInfo.LockedBy}.`
+                    : `🔒 Read-Only Mode: Click "Enable Editing" to make changes.`
+                  }
                 </Typography>
               </Box>
             )}

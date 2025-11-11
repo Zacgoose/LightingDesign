@@ -578,27 +578,21 @@ const Page = () => {
         data: { jobId: id },
       });
 
-      // Reset design loader to force reload of design data
-      resetLoadedDesign();
-      
-      // Refetch lock status (lightweight) and design data (to get latest saved version) in parallel
-      // Wait for both to complete before returning
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' }),
-        queryClient.refetchQueries({ queryKey: [`Design-${id}`], type: 'active' })
-      ]);
+      // Refetch lock status to update toolbar state
+      // No need to reload design data when finishing editing - we're going to read-only mode
+      await queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' });
       
       // Force component re-render to update toolbar immediately
       forceUpdate(n => n + 1);
       
-      console.log("Lock released and data refreshed");
+      console.log("Lock released and toolbar updated");
       
       return { success: true, data: result };
     } catch (error) {
       console.error("Error unlocking design:", error);
       return { success: false, error: error.message || "Failed to unlock design" };
     }
-  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, resetLoadedDesign]);
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate]);
 
   // Manual refresh handler to check lock status
   const handleRefreshLockStatus = useCallback(async () => {

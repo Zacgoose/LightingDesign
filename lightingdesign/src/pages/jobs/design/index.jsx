@@ -1249,6 +1249,7 @@ const Page = () => {
     selectedConnectorIds,
     connectors,
     clipboard,
+    isEditingDisabled,
     onCopy: () => {
       const selectedProducts = products.filter((p) => selectedIds.includes(p.id));
       const selectedConnectors = connectors.filter(

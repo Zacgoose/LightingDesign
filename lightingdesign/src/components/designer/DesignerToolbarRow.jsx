@@ -214,8 +214,8 @@ export const DesignerToolbarRow = memo(
               Measure
             </Button>
 
-            {/* Alignment Controls - only show when multiple objects selected */}
-            {selectedCount > 1 && (
+            {/* Alignment Controls - only show when multiple objects selected and user owns lock */}
+            {selectedCount > 1 && isOwner && (
               <>
                 <IconButton
                   size="small"
@@ -262,8 +262,8 @@ export const DesignerToolbarRow = memo(
               </>
             )}
 
-            {/* Even Spacing Controls - only show when 3 or more objects selected */}
-            {selectedCount > 2 && (
+            {/* Even Spacing Controls - only show when 3 or more objects selected and user owns lock */}
+            {selectedCount > 2 && isOwner && (
               <>
                 <IconButton
                   size="small"

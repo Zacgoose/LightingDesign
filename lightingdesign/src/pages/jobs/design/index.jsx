@@ -197,6 +197,19 @@ const Page = () => {
     canRedo: canRedoTextBoxes,
   } = useHistory([], timelineTracker, "textBoxes");
   const [selectedTextId, setSelectedTextId] = useState(null);
+
+  // Collect all products from all layers for consistent numbering across the design
+  // This ensures product prefixes (O1, O2, etc.) are numbered globally, not per-layer
+  const allProductsFromAllLayers = useMemo(() => {
+    const allProducts = [];
+    layers.forEach((layer) => {
+      if (layer.products) {
+        allProducts.push(...layer.products);
+      }
+    });
+    return allProducts;
+  }, [layers]);
+
   const isLoadingLayerData = useRef(false);
   const lastLoadedLayerId = useRef(null); // Initialize to null so first layer loads properly
   const lastLoadedLayersVersion = useRef(0); // Track when layer data changes
@@ -3057,6 +3070,7 @@ const Page = () => {
                         {/* Unselected products only */}
                         <ProductsLayer
                           products={filterProductsBySublayers(products, activeLayerId)}
+                          allProducts={allProductsFromAllLayers}
                           textBoxes={textBoxes}
                           selectedIds={selectedIds}
                           selectedTool={selectedTool}
@@ -3194,6 +3208,7 @@ const Page = () => {
                         {/* Selection group only (selected products and text) */}
                         <ProductsLayer
                           products={filterProductsBySublayers(products, activeLayerId)}
+                          allProducts={allProductsFromAllLayers}
                           textBoxes={textBoxes}
                           selectedIds={selectedIds}
                           selectedTool={selectedTool}
@@ -3226,6 +3241,7 @@ const Page = () => {
                         {/* Transformer only (always on top) */}
                         <ProductsLayer
                           products={filterProductsBySublayers(products, activeLayerId)}
+                          allProducts={allProductsFromAllLayers}
                           textBoxes={textBoxes}
                           selectedIds={selectedIds}
                           selectedTool={selectedTool}

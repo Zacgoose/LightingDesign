@@ -12,7 +12,7 @@ import {
 import { ResourceUnavailable } from "../resource-unavailable";
 import { ResourceError } from "../resource-error";
 import { Scrollbar } from "../scrollbar";
-import { useEffect, useMemo, useState, useCallback, memo, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ApiGetCallWithPagination } from "../../api/ApiCall";
 import { utilTableMode } from "./util-tablemode";
 import { utilColumnsFromAPI, resolveSimpleColumnVariables } from "./util-columnsFromAPI";
@@ -91,9 +91,6 @@ export const CippDataTable = (props) => {
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
   const waitingBool = api?.url ? true : false;
-  
-  // Track if columns have been initialized to avoid infinite loops
-  const columnsInitializedRef = useRef(false);
 
   const settings = useSettings();
 
@@ -110,11 +107,6 @@ export const CippDataTable = (props) => {
       setColumnFilters(filters);
     }
   }, [filters]);
-  
-  // Reset column initialization tracking when queryKey changes (different dataset)
-  useEffect(() => {
-    columnsInitializedRef.current = false;
-  }, [queryKey]);
 
   useEffect(() => {
     if (Array.isArray(data) && !api?.url) {
@@ -167,8 +159,7 @@ export const CippDataTable = (props) => {
     getRequestData.isFetching,
     queryKey,
   ]);
-  // Memoize column generation to prevent recalculation on every render
-  const generatedColumns = useMemo(() => {
+  useEffect(() => {
     if (
       !Array.isArray(usedData) ||
       usedData.length === 0 ||
@@ -176,12 +167,11 @@ export const CippDataTable = (props) => {
       usedData === null ||
       usedData === undefined
     ) {
-      return { finalColumns: [], newVisibility: { ...initialColumnVisibility }, columnKey: '' };
+      return;
     }
-    
     const apiColumns = utilColumnsFromAPI(usedData, imageColumn);
     let finalColumns = [];
-    let newVisibility = { ...initialColumnVisibility };
+    let newVisibility = { ...columnVisibility };
 
     // Check if we're in AllTenants mode and data has Tenant property
     const isAllTenants = settings?.currentTenant === "AllTenants";
@@ -225,34 +215,12 @@ export const CippDataTable = (props) => {
         }
       }
     }
-    
-    // Create a stable key from column IDs to detect structural changes
-    const columnKey = finalColumns.map(col => col.id).sort().join(',');
-    
-    return { finalColumns, newVisibility, columnKey };
-  }, [usedData, columns.length, configuredSimpleColumns, settings?.currentTenant, imageColumn, initialColumnVisibility]);
-
-  // Apply generated columns when they change
-  useEffect(() => {
-    if (generatedColumns.columnKey) {
-      setUsedColumns(generatedColumns.finalColumns);
-    }
-  }, [generatedColumns.columnKey]);
-  
-  // Set initial column visibility only once
-  useEffect(() => {
-    if (!columnsInitializedRef.current && generatedColumns.finalColumns.length > 0) {
-      setColumnVisibility(generatedColumns.newVisibility);
-      columnsInitializedRef.current = true;
-    }
-  }, [generatedColumns.columnKey]);
-  
-  // Apply default sorting
-  useEffect(() => {
-    if (defaultSorting?.length > 0 && sorting.length === 0) {
+    if (defaultSorting?.length > 0) {
       setSorting(defaultSorting);
     }
-  }, [defaultSorting, sorting.length]);
+    setUsedColumns(finalColumns);
+    setColumnVisibility(newVisibility);
+  }, [columns.length, usedData, queryKey, settings?.currentTenant, imageColumn]);
 
   const createDialog = useDialog();
 
@@ -268,53 +236,20 @@ export const CippDataTable = (props) => {
       maxHeightOffset,
     ),
   );
-  
-  // Memoize columns and data more efficiently - only update when actual values change
+  //create memoized version of usedColumns, and usedData
   const memoizedColumns = useMemo(() => usedColumns, [usedColumns]);
   const memoizedData = useMemo(() => usedData, [usedData]);
 
-  const handleActionDisabled = useCallback((row, action) => {
+  const handleActionDisabled = (row, action) => {
     if (action?.condition) {
       return !action.condition(row);
     }
     return false;
-  }, []);
-  
-  const handleSortingChange = useCallback((newSorting) => {
-    setSorting(newSorting ?? []);
-  }, []);
-  
-  const handleColumnFiltersChange = useCallback((newFilters) => {
-    setColumnFilters(newFilters);
-  }, []);
-  
-  const handleColumnVisibilityChange = useCallback((newVisibility) => {
-    setColumnVisibility(newVisibility);
-  }, []);
-  
-  // Memoize setConfiguredSimpleColumns callback
-  const handleSetConfiguredSimpleColumns = useCallback((newColumns) => {
-    setConfiguredSimpleColumns(newColumns);
-  }, []);
-  
-  // Memoize setGraphFilterData callback  
-  const handleSetGraphFilterData = useCallback((newData) => {
-    setGraphFilterData(newData);
-  }, []);
+  };
 
   const table = useMaterialReactTable({
     ...modeInfo,
     enableRowSelection,
-    // Optimize virtualization for large datasets
-    enableRowVirtualization: true,
-    enableColumnVirtualization: true,
-    rowVirtualizerOptions: {
-      overscan: 25, // Render 5 extra rows above and below viewport
-      estimateSize: () => 50, // Estimated row height in pixels
-    },
-    columnVirtualizerOptions: {
-      overscan: 20, // Render 20 extra columns
-    },
     muiTableBodyCellProps: {
       onCopy: (e) => {
         const sel = window.getSelection()?.toString() ?? "";
@@ -428,8 +363,10 @@ export const CippDataTable = (props) => {
           ? getRequestData.isFetching
           : isFetching,
     },
-    onSortingChange: handleSortingChange,
-    onColumnFiltersChange: handleColumnFiltersChange,
+    onSortingChange: (newSorting) => {
+      setSorting(newSorting ?? []);
+    },
+    onColumnFiltersChange: setColumnFilters,
     renderEmptyRowsFallback: ({ table }) =>
       getRequestData.data?.pages?.[0].Metadata?.QueueMessage ? (
         <Box sx={{ py: 4 }}>
@@ -438,7 +375,7 @@ export const CippDataTable = (props) => {
           </center>
         </Box>
       ) : undefined,
-    onColumnVisibilityChange: handleColumnVisibilityChange,
+    onColumnVisibilityChange: setColumnVisibility,
     renderRowActionMenuItems: actions
       ? ({ closeMenu, row }) => [
           actions.map((action, index) => (
@@ -503,7 +440,7 @@ export const CippDataTable = (props) => {
             More Info
           </MenuItem>
         ),
-    renderTopToolbar: useCallback(({ table }) => {
+    renderTopToolbar: ({ table }) => {
       return (
         <>
           {!simple && (
@@ -521,18 +458,18 @@ export const CippDataTable = (props) => {
               actions={actions}
               exportEnabled={exportEnabled}
               refreshFunction={refreshFunction}
-              setColumnVisibility={handleColumnVisibilityChange}
+              setColumnVisibility={setColumnVisibility}
               filters={filters}
               queryKeys={queryKey ? queryKey : title}
               graphFilterData={graphFilterData}
-              setGraphFilterData={handleSetGraphFilterData}
-              setConfiguredSimpleColumns={handleSetConfiguredSimpleColumns}
+              setGraphFilterData={setGraphFilterData}
+              setConfiguredSimpleColumns={setConfiguredSimpleColumns}
               queueMetadata={getRequestData.data?.pages?.[0]?.Metadata}
             />
           )}
         </>
       );
-    }, [simple, api, queryKey, simpleColumns, data, columnVisibility, getRequestData, memoizedColumns, memoizedData, title, actions, exportEnabled, refreshFunction, handleColumnVisibilityChange, filters, graphFilterData, handleSetGraphFilterData, handleSetConfiguredSimpleColumns]),
+    },
     sortingFns: {
       dateTimeNullsLast: (a, b, id) => {
         const aVal = a?.original?.[id] ?? null;

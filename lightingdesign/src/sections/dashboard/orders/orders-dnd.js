@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { DragDropContext } from "react-beautiful-dnd";
+import { DragDropContext } from "@hello-pangea/dnd";
 import { Box } from "@mui/material";
 import { ResourceError } from "../../../components/resource-error";
 import { ResourceLoading } from "../../../components/resource-loading";

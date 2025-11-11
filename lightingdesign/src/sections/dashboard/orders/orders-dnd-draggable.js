@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import NextLink from "next/link";
 import { format } from "date-fns";
-import { Draggable } from "react-beautiful-dnd";
+import { Draggable } from "@hello-pangea/dnd";
 import { Box, Card, Chip, IconButton, Link, Stack } from "@mui/material";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { PropertyList } from "../../../components/property-list";

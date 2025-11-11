@@ -27,6 +27,7 @@ const Page = () => {
     defaultValues: {
       jobNumber: "",
       customerName: null,
+      storeId: null,
       status: { value: "pending", label: "Pending" },
       description: "",
       address: "",
@@ -74,6 +75,7 @@ const Page = () => {
             jobId: id,
             jobNumber: values.jobNumber,
             customerId: values.customerName?.value,
+            storeId: values.storeId?.value,
             status: values.status?.value,
             description: values.description,
             address: values.address,

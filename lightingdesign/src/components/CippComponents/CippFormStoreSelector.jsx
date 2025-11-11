@@ -56,8 +56,8 @@ export const CippFormStoreSelector = ({
 
   useEffect(() => {
     if (storeList.isSuccess && (!includeGroups || storeGroupList.isSuccess)) {
-      const storeData = Array.isArray(storeList.data?.Results)
-        ? storeList.data.Results.map((store) => ({
+      const storeData = Array.isArray(storeList.data)
+        ? storeList.data.map((store) => ({
             value: store[valueField],
             label: `${store.storeName} (${store.storeCode || store.storeId})`,
             type: "Store",
@@ -71,8 +71,8 @@ export const CippFormStoreSelector = ({
         : [];
 
       const groupData =
-        includeGroups && Array.isArray(storeGroupList?.data?.Results)
-          ? storeGroupList.data.Results.map((group) => ({
+        includeGroups && Array.isArray(storeGroupList?.data)
+          ? storeGroupList.data.map((group) => ({
               value: group.groupId,
               label: group.groupName,
               type: "Group",

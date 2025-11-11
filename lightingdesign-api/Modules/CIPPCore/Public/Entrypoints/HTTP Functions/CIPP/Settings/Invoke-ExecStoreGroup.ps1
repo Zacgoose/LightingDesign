@@ -48,15 +48,11 @@ function Invoke-ExecStoreGroup {
             }
         }
         default {
-            $Body = Get-CIPPAzDataTableEntity @Table
-            if (!$Body) {
-                $Body = @(
-                    @{
-                        RowKey = 'No store groups found'
-                    }
-                )
+            $AllGroups = Get-CIPPAzDataTableEntity @Table
+            if (!$AllGroups) {
+                $Body = @()
             } else {
-                $StoreGroups = foreach ($Group in $Body) {
+                $StoreGroups = foreach ($Group in $AllGroups) {
                     if ($Group.members) {
                         try {
                             $Group.members = @($Group.members | ConvertFrom-Json)

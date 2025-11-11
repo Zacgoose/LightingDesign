@@ -9,7 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import CopyToClipboard from "react-copy-to-clipboard";
+import CopyToClipboard from "react-copy-to-clipboard-ts";
 import { CopyAll } from "@mui/icons-material";
 
 export const PropertyListItem = (props) => {

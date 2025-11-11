@@ -33,6 +33,7 @@ import { CippComponentDialog } from "/src/components/CippComponents/CippComponen
 import { TextLayer } from "/src/components/designer/TextLayer";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
 import { TextEntryDialog } from "/src/components/designer/TextEntryDialog";
+import { ConfirmDialog } from "/src/components/designer/ConfirmDialog";
 import { useHistory } from "/src/hooks/useHistory";
 import { useUnifiedHistory } from "/src/hooks/useUnifiedHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
@@ -62,6 +63,9 @@ const Page = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingExportNavigation, setPendingExportNavigation] = useState(false);
+
+  // State for deselection confirmation dialog
+  const [deselectDialog, setDeselectDialog] = useState({ open: false, action: null });
 
   // Load design data
   const designData = ApiGetCall({
@@ -392,7 +396,7 @@ const Page = () => {
     setScaleFactor,
   });
 
-  const { stripProductMetadata, stripLayersForSave } = designLoader;
+  const { stripProductMetadata, stripLayersForSave, resetLoadedDesign } = designLoader;
 
   // Track changes to mark as unsaved
   useEffect(() => {
@@ -442,6 +446,17 @@ const Page = () => {
     // Only allow save if user owns the lock
     if (!isOwner) {
       console.error("Cannot save: design is not locked by current user.");
+      return;
+    }
+
+    // Prevent saving if items are selected to avoid losing transformations
+    if (selectedIds.length > 0 || selectedConnectorIds.length > 0 || selectedTextId) {
+      console.warn("Cannot save: Please deselect all items before saving.");
+      setDeselectDialog({ 
+        open: true, 
+        action: 'save',
+        message: "Please deselect all items before saving. Click on an empty area of the canvas to deselect."
+      });
       return;
     }
 
@@ -495,6 +510,9 @@ const Page = () => {
     backgroundImage,
     backgroundImageNaturalSize,
     updateLayer,
+    selectedIds,
+    selectedConnectorIds,
+    selectedTextId,
   ]);
 
   // Auto-save functionality - only when user owns the lock
@@ -525,12 +543,15 @@ const Page = () => {
         data: { jobId: id },
       });
 
-      // Refetch lock status (lightweight) and design data (to ensure we have latest) in parallel
-      // Wait for both to complete before returning
+      // First refetch lock status and design data from server
+      // Wait for both to complete to ensure we have latest data
       await Promise.all([
         queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' }),
         queryClient.refetchQueries({ queryKey: [`Design-${id}`], type: 'active' })
       ]);
+      
+      // Then reset design loader to trigger canvas refresh with the fresh data
+      resetLoadedDesign();
       
       // Force component re-render to update toolbar immediately
       forceUpdate(n => n + 1);
@@ -557,10 +578,21 @@ const Page = () => {
         error: error.response?.data?.error || error.message || "Failed to lock design" 
       };
     }
-  }, [id, lockDesignMutation, queryClient, forceUpdate]);
+  }, [id, lockDesignMutation, queryClient, forceUpdate, resetLoadedDesign]);
 
   const handleUnlockDesign = useCallback(async () => {
     if (!id) return { success: false, error: "No job ID" };
+
+    // Prevent unlocking if items are selected to avoid losing transformations
+    if (selectedIds.length > 0 || selectedConnectorIds.length > 0 || selectedTextId) {
+      console.warn("Cannot finish editing: Please deselect all items first.");
+      setDeselectDialog({ 
+        open: true, 
+        action: 'unlock',
+        message: "Please deselect all items before finishing editing. Click on an empty area of the canvas to deselect."
+      });
+      return { success: false, error: "Items are selected" };
+    }
 
     // Save before unlocking if there are changes
     if (hasUnsavedChanges && !isSaving) {
@@ -575,24 +607,21 @@ const Page = () => {
         data: { jobId: id },
       });
 
-      // Refetch lock status (lightweight) and design data (to get latest saved version) in parallel
-      // Wait for both to complete before returning
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' }),
-        queryClient.refetchQueries({ queryKey: [`Design-${id}`], type: 'active' })
-      ]);
+      // Refetch lock status to update toolbar state
+      // No need to reload design data when finishing editing - we're going to read-only mode
+      await queryClient.refetchQueries({ queryKey: [`DesignLockStatus-${id}`], type: 'active' });
       
       // Force component re-render to update toolbar immediately
       forceUpdate(n => n + 1);
       
-      console.log("Lock released and data refreshed");
+      console.log("Lock released and toolbar updated");
       
       return { success: true, data: result };
     } catch (error) {
       console.error("Error unlocking design:", error);
       return { success: false, error: error.message || "Failed to unlock design" };
     }
-  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate]);
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, selectedIds, selectedConnectorIds, selectedTextId]);
 
   // Manual refresh handler to check lock status
   const handleRefreshLockStatus = useCallback(async () => {
@@ -3410,6 +3439,15 @@ const Page = () => {
           onColorChange={contextMenus.handleColorChange}
         />
       )}
+
+      {/* Deselection confirmation dialog */}
+      <ConfirmDialog
+        open={deselectDialog.open}
+        onClose={() => setDeselectDialog({ open: false, action: null })}
+        onConfirm={() => setDeselectDialog({ open: false, action: null })}
+        title="Items Selected"
+        message={deselectDialog.message || "Please deselect all items before continuing."}
+      />
     </>
   );
 };

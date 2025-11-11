@@ -229,6 +229,10 @@ export const useDesignLoader = ({
     stripProductMetadata,
     stripLayersForSave,
     isLoading: isLoadingRef.current,
+    resetLoadedDesign: () => {
+      loadedDesignIdRef.current = null;
+      isLoadingRef.current = false;
+    },
   };
 };
 

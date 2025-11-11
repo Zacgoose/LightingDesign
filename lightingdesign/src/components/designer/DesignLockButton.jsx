@@ -23,8 +23,10 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
 
   const handleLockClick = async () => {
     if (isOwner) {
-      // User owns the lock, show confirmation to unlock
-      setConfirmDialogOpen(true);
+      // User owns the lock, unlock immediately without confirmation
+      setIsLocking(true);
+      await onUnlock();
+      setIsLocking(false);
     } else if (isLocked) {
       // Someone else has the lock, show info
       setConfirmDialogOpen(true);
@@ -67,13 +69,6 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
     }
   };
 
-  const handleConfirmUnlock = async () => {
-    setConfirmDialogOpen(false);
-    setIsLocking(true);
-    await onUnlock();
-    setIsLocking(false);
-  };
-
   const handleCloseDialog = () => {
     setConfirmDialogOpen(false);
   };
@@ -102,14 +97,8 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
   };
 
   const getDialogContent = () => {
-    if (isOwner) {
-      return {
-        title: "Finish Editing?",
-        content:
-          "Are you sure you want to finish editing? Any unsaved changes will be saved automatically, and the design will be unlocked for others to edit.",
-        action: "Finish Editing",
-      };
-    } else if (isLocked && lockInfo) {
+    // Only show dialog when locked by someone else
+    if (isLocked && lockInfo && !isOwner) {
       return {
         title: "Design Locked",
         content: (
@@ -187,11 +176,6 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
             <Button onClick={handleCloseDialog} color="inherit">
               Close
             </Button>
-            {dialogContent.action && (
-              <Button onClick={handleConfirmUnlock} color="primary" variant="contained">
-                {dialogContent.action}
-              </Button>
-            )}
           </DialogActions>
         </Dialog>
       )}

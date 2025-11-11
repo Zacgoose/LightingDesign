@@ -173,7 +173,7 @@ export const CippDataTable = (props) => {
     
     const apiColumns = utilColumnsFromAPI(usedData, imageColumn);
     let finalColumns = [];
-    let newVisibility = { ...columnVisibility };
+    let newVisibility = { ...initialColumnVisibility };
 
     // Check if we're in AllTenants mode and data has Tenant property
     const isAllTenants = settings?.currentTenant === "AllTenants";
@@ -221,14 +221,21 @@ export const CippDataTable = (props) => {
     return { finalColumns, newVisibility };
   }, [usedData, columns.length, configuredSimpleColumns, settings?.currentTenant, imageColumn, initialColumnVisibility]);
 
-  // Apply generated columns only when they change
+  // Apply generated columns only when they change - use a ref to track if we've already applied them
   useEffect(() => {
     setUsedColumns(generatedColumns.finalColumns);
-    setColumnVisibility(generatedColumns.newVisibility);
+    // Only set column visibility if it's actually different to avoid infinite loops
+    setColumnVisibility((prevVisibility) => {
+      // Check if the new visibility is different from the previous one using deep comparison
+      if (!isEqual(prevVisibility, generatedColumns.newVisibility)) {
+        return generatedColumns.newVisibility;
+      }
+      return prevVisibility;
+    });
     if (defaultSorting?.length > 0 && sorting.length === 0) {
       setSorting(defaultSorting);
     }
-  }, [generatedColumns]);
+  }, [generatedColumns.finalColumns, generatedColumns.newVisibility, defaultSorting, sorting.length]);
 
   const createDialog = useDialog();
 

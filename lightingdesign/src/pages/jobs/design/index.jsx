@@ -392,7 +392,7 @@ const Page = () => {
     setScaleFactor,
   });
 
-  const { stripProductMetadata, stripLayersForSave } = designLoader;
+  const { stripProductMetadata, stripLayersForSave, resetLoadedDesign } = designLoader;
 
   // Track changes to mark as unsaved
   useEffect(() => {
@@ -525,6 +525,9 @@ const Page = () => {
         data: { jobId: id },
       });
 
+      // Reset design loader to force reload of design data
+      resetLoadedDesign();
+      
       // Refetch lock status (lightweight) and design data (to ensure we have latest) in parallel
       // Wait for both to complete before returning
       await Promise.all([
@@ -557,7 +560,7 @@ const Page = () => {
         error: error.response?.data?.error || error.message || "Failed to lock design" 
       };
     }
-  }, [id, lockDesignMutation, queryClient, forceUpdate]);
+  }, [id, lockDesignMutation, queryClient, forceUpdate, resetLoadedDesign]);
 
   const handleUnlockDesign = useCallback(async () => {
     if (!id) return { success: false, error: "No job ID" };
@@ -575,6 +578,9 @@ const Page = () => {
         data: { jobId: id },
       });
 
+      // Reset design loader to force reload of design data
+      resetLoadedDesign();
+      
       // Refetch lock status (lightweight) and design data (to get latest saved version) in parallel
       // Wait for both to complete before returning
       await Promise.all([
@@ -592,7 +598,7 @@ const Page = () => {
       console.error("Error unlocking design:", error);
       return { success: false, error: error.message || "Failed to unlock design" };
     }
-  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate]);
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, resetLoadedDesign]);
 
   // Manual refresh handler to check lock status
   const handleRefreshLockStatus = useCallback(async () => {

@@ -8,11 +8,7 @@ function Invoke-ListCustomRole {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
-    $APIName = $Request.Params.CIPPEndpoint
-    $Headers = $Request.Headers
-
-
-    $DefaultRoles = @('readonly', 'editor', 'admin', 'superadmin')
+    $DefaultRoles = @('readonly', 'editor', 'admin', 'superadmin', 'lightingdesigner')
     $Table = Get-CippTable -tablename 'CustomRoles'
     $CustomRoles = Get-CIPPAzDataTableEntity @Table
 

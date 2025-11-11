@@ -21,7 +21,7 @@ function Invoke-ListStores {
             }) + $Stores
     }
 
-    $Body = @{ Results = @($Stores) }
+    $Body = $Stores
 
     return ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK

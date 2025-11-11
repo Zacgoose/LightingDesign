@@ -41,7 +41,7 @@ const Page = () => {
   return (
     <CippTablePage
       title={pageTitle}
-      apiUrl="/api/ListStores?AllStoreSelector=true"
+      apiUrl="/api/ListStores"
       actions={actions}
       offCanvas={offCanvas}
       simpleColumns={simpleColumns}

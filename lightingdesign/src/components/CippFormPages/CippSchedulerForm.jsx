@@ -2,7 +2,6 @@ import { Box, Button, Divider, Skeleton, SvgIcon, Typography } from "@mui/materi
 import { Grid } from "@mui/system";
 import { useWatch } from "react-hook-form";
 import CippFormComponent from "/src/components/CippComponents/CippFormComponent";
-import { CippFormTenantSelector } from "/src/components/CippComponents/CippFormTenantSelector";
 import { CippFormCondition } from "/src/components/CippComponents/CippFormCondition";
 import { getCippValidator } from "/src/utils/get-cipp-validator";
 import { useRouter } from "next/router";
@@ -268,16 +267,6 @@ const CippSchedulerForm = (props) => {
         {(scheduledTaskList.isFetching || tenantList.isLoading || commands.isLoading) && (
           <Skeleton width={"100%"} />
         )}
-        <Grid size={{ md: 12, xs: 12 }}>
-          <CippFormTenantSelector
-            label="Select a Tenant"
-            formControl={formControl}
-            type="single"
-            allTenants={true}
-            includeGroups={true}
-            required={true}
-          />
-        </Grid>
 
         <Grid size={{ md: 12, xs: 12 }}>
           <CippFormComponent

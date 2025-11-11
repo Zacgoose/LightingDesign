@@ -309,11 +309,11 @@ export const CippDataTable = (props) => {
     enableRowVirtualization: true,
     enableColumnVirtualization: true,
     rowVirtualizerOptions: {
-      overscan: 5, // Render 5 extra rows above and below viewport
+      overscan: 25, // Render 5 extra rows above and below viewport
       estimateSize: () => 50, // Estimated row height in pixels
     },
     columnVirtualizerOptions: {
-      overscan: 2, // Render 2 extra columns
+      overscan: 20, // Render 20 extra columns
     },
     muiTableBodyCellProps: {
       onCopy: (e) => {

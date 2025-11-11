@@ -48,24 +48,9 @@ function Invoke-ExecStoreGroup {
             }
         }
         default {
-            $AllGroups = Get-CIPPAzDataTableEntity @Table
-            if (!$AllGroups) {
-                $Body = @()
-            } else {
-                $StoreGroups = foreach ($Group in $AllGroups) {
-                    if ($Group.members) {
-                        try {
-                            $Group.members = @($Group.members | ConvertFrom-Json)
-                        } catch {
-                            $Group.members = @()
-                        }
-                    } else {
-                        $Group | Add-Member -NotePropertyName members -NotePropertyValue @() -Force
-                    }
-                    $Group
-                }
-                $Body = @($StoreGroups)
-            }
+            # List all store groups using the helper function
+            $StoreGroups = Get-StoreGroups
+            $Body = if ($StoreGroups) { @($StoreGroups) } else { @() }
         }
     }
 

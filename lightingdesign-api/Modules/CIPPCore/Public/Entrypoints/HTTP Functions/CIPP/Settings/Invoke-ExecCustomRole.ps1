@@ -38,8 +38,8 @@ function Invoke-ExecCustomRole {
                         'PartitionKey'     = 'CustomRoles'
                         'RowKey'           = "$($Request.Body.RoleName.ToLower())"
                         'Permissions'      = "$($Request.Body.Permissions | ConvertTo-Json -Compress)"
-                        'AllowedTenants'   = "$($Request.Body.AllowedTenants | ConvertTo-Json -Compress)"
-                        'BlockedTenants'   = "$($Request.Body.BlockedTenants | ConvertTo-Json -Compress)"
+                        'AllowedStores'    = "$($Request.Body.AllowedStores | ConvertTo-Json -Compress)"
+                        'BlockedStores'    = "$($Request.Body.BlockedStores | ConvertTo-Json -Compress)"
                         'BlockedEndpoints' = "$($Request.Body.BlockedEndpoints | ConvertTo-Json -Compress)"
                     }
                     Add-CIPPAzDataTableEntity @Table -Entity $Role -Force | Out-Null
@@ -93,8 +93,8 @@ function Invoke-ExecCustomRole {
                     'PartitionKey'     = 'CustomRoles'
                     'RowKey'           = "$($Request.Body.NewRoleName.ToLower())"
                     'Permissions'      = $ExistingRole.Permissions
-                    'AllowedTenants'   = $ExistingRole.AllowedTenants
-                    'BlockedTenants'   = $ExistingRole.BlockedTenants
+                    'AllowedStores'    = $ExistingRole.AllowedStores
+                    'BlockedStores'    = $ExistingRole.BlockedStores
                     'BlockedEndpoints' = $ExistingRole.BlockedEndpoints
                 }
                 Add-CIPPAzDataTableEntity @Table -Entity $NewRole -Force | Out-Null
@@ -138,23 +138,23 @@ function Invoke-ExecCustomRole {
                     } catch {
                         $Role.Permissions = @()
                     }
-                    if ($Role.AllowedTenants) {
+                    if ($Role.AllowedStores) {
                         try {
-                            $Role.AllowedTenants = @($Role.AllowedTenants | ConvertFrom-Json)
+                            $Role.AllowedStores = @($Role.AllowedStores | ConvertFrom-Json)
                         } catch {
-                            $Role.AllowedTenants = @()
+                            $Role.AllowedStores = @()
                         }
                     } else {
-                        $Role | Add-Member -NotePropertyName AllowedTenants -NotePropertyValue @() -Force
+                        $Role | Add-Member -NotePropertyName AllowedStores -NotePropertyValue @() -Force
                     }
-                    if ($Role.BlockedTenants) {
+                    if ($Role.BlockedStores) {
                         try {
-                            $Role.BlockedTenants = @($Role.BlockedTenants | ConvertFrom-Json)
+                            $Role.BlockedStores = @($Role.BlockedStores | ConvertFrom-Json)
                         } catch {
-                            $Role.BlockedTenants = @()
+                            $Role.BlockedStores = @()
                         }
                     } else {
-                        $Role | Add-Member -NotePropertyName BlockedTenants -NotePropertyValue @() -Force
+                        $Role | Add-Member -NotePropertyName BlockedStores -NotePropertyValue @() -Force
                     }
                     if ($Role.BlockedEndpoints) {
                         try {
@@ -177,8 +177,8 @@ function Invoke-ExecCustomRole {
                     $Role = @{
                         RowKey           = $DefaultRole
                         Permissions      = $DefaultRoles.$DefaultRole
-                        AllowedTenants   = @('AllTenants')
-                        BlockedTenants   = @()
+                        AllowedStores    = @('AllStores')
+                        BlockedStores    = @()
                         BlockedEndpoints = @()
                     }
                     $EntraRoleGroup = $EntraRoleGroups | Where-Object -Property RowKey -EQ $Role.RowKey

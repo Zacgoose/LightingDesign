@@ -119,6 +119,8 @@ function Invoke-ExecSaveDesign {
 
         Add-CIPPAzDataTableEntity @Table -Entity $Entity -Force
 
+        Write-LogMessage -API 'SaveDesign' -message "Design saved successfully for JobId: $JobId (DesignId: $($Entity.RowKey)) by user: $Username - CompressionRatio: $compressionRatio%" -Sev 'Info' -headers $Request.Headers
+
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::OK
             Body       = @{
@@ -134,6 +136,7 @@ function Invoke-ExecSaveDesign {
     } catch {
         Write-Error "Error saving design: $_"
         Write-Error "Stack trace: $($_.ScriptStackTrace)"
+        Write-LogMessage -API 'SaveDesign' -message "Failed to save design for JobId: $JobId - Error: $($_.Exception.Message)" -Sev 'Error' -headers $Request.Headers -LogData $_
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::InternalServerError
             Body       = @{

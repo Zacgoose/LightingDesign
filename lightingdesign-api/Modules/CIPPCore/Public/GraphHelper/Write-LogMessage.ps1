@@ -40,7 +40,7 @@ function Write-LogMessage {
     $Table = Get-CIPPTable -tablename CippLogs
 
     if (!$tenant) { $tenant = 'None' }
-    if (!$username) { $username = 'CIPP' }
+    if (!$username) { $username = 'LightingDesigner System' }
     if ($sev -eq 'Debug' -and $env:DebugMode -ne $true) {
         return
     }

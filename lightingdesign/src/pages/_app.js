@@ -25,13 +25,9 @@ import {
   BugReport as BugReportIcon,
   Feedback as FeedbackIcon,
   AutoStories,
-  Gavel,
 } from "@mui/icons-material";
-import { SvgIcon } from "@mui/material";
-import discordIcon from "../../public/discord-mark-blue.svg";
 import React, { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useRouter } from "next/router";
 import { persistQueryClient } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 
@@ -49,7 +45,6 @@ const App = (props) => {
   const getLayout = Component.getLayout ?? ((page) => page);
   const preferredTheme = useMediaPredicate("(prefers-color-scheme: dark)") ? "dark" : "light";
   const pathname = usePathname();
-  const route = useRouter();
   const excludeQueryKeys = ["authmeswa", "alertsDashboard"];
 
   // 👇 Persist TanStack Query cache to localStorage
@@ -89,13 +84,6 @@ const App = (props) => {
 
   const speedDialActions = [
     {
-      id: "license",
-      icon: <Gavel />,
-      name: "License",
-      href: "/license",
-      onClick: () => route.push("/license"),
-    },
-    {
       id: "bug-report",
       icon: <BugReportIcon />,
       name: "Report Bug",
@@ -113,19 +101,6 @@ const App = (props) => {
           "https://github.com/KelvinTegelaar/CIPP/issues/new?template=feature.yml",
           "_blank",
         ),
-    },
-    {
-      id: "discord",
-      icon: (
-        <SvgIcon
-          component={discordIcon}
-          viewBox="0 0 127.14 96.36"
-          sx={{ fontSize: "1.5rem" }}
-        ></SvgIcon>
-      ),
-      name: "Join the Discord!",
-      href: "https://discord.gg/cyberdrain",
-      onClick: () => window.open("https://discord.gg/cyberdrain", "_blank"),
     },
     {
       id: "documentation",

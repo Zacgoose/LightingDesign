@@ -99,10 +99,16 @@ const Page = () => {
 
   // Extract lock info - prefer from lockStatusData (frequently updated)
   // If lock status query fails or has no data, default to locked state (safe fallback)
-  const lockInfo = lockStatusData?.data || { IsLocked: true, IsOwner: false };
-  const isLocked = lockInfo.IsLocked || false;
-  const isOwner = lockInfo.IsOwner || false;
-  const isEditingDisabled = isLocked && !isOwner;
+  // This ensures that in case of network errors or API issues, users cannot accidentally edit
+  // Use ?? (nullish coalescing) to preserve explicit false values while defaulting missing values
+  const lockInfo = (lockStatusData?.isError || !lockStatusData?.data) 
+    ? { IsLocked: true, IsOwner: false } 
+    : lockStatusData.data;
+  const isLocked = lockInfo.IsLocked ?? true; // Default to true (locked) if undefined/null
+  const isOwner = lockInfo.IsOwner ?? false; // Default to false (not owner) if undefined/null
+  // Editing is ONLY allowed when the user owns an active lock
+  // This means: no lock = read-only, locked by someone else = read-only, only locked by me = can edit
+  const isEditingDisabled = !isOwner;
 
   // Canvas state management using custom hook
   const canvasState = useCanvasState();
@@ -298,6 +304,7 @@ const Page = () => {
   const layerSwitcherRef = useRef();
   const productListPanelRef = useRef();
   const stageRef = useRef();
+  const handleSaveRef = useRef(null);
 
   // State for dynamic panel positions
   const [layerSwitcherTop, setLayerSwitcherTop] = useState(16);
@@ -530,23 +537,29 @@ const Page = () => {
     selectedTextId,
   ]);
 
+  // Keep handleSaveRef in sync with handleSave
+  useEffect(() => {
+    handleSaveRef.current = handleSave;
+  }, [handleSave]);
+
   // Auto-save functionality - only when user owns the lock
   useEffect(() => {
-    if (!id || !hasUnsavedChanges || isSaving || !isOwner) return;
+    if (!id || !isOwner) return;
 
     // Get auto-save interval from user settings (in minutes), default to 2 minutes
     const autoSaveMinutes = parseInt(settings.autoSaveInterval?.value || "2", 10);
     const autoSaveMs = autoSaveMinutes * 60 * 1000;
 
     const autoSaveInterval = setInterval(() => {
-      if (hasUnsavedChanges && !isSaving) {
+      // Use ref to avoid recreating interval when handleSave changes
+      if (handleSaveRef.current) {
         console.log("Auto-saving design...");
-        handleSave();
+        handleSaveRef.current();
       }
     }, autoSaveMs);
 
     return () => clearInterval(autoSaveInterval);
-  }, [id, hasUnsavedChanges, isSaving, isOwner, handleSave, settings.autoSaveInterval]);
+  }, [id, isOwner, settings.autoSaveInterval]);
 
   // Lock/Unlock handlers
   const handleLockDesign = useCallback(async () => {
@@ -1242,6 +1255,7 @@ const Page = () => {
     selectedConnectorIds,
     connectors,
     clipboard,
+    isEditingDisabled,
     onCopy: () => {
       const selectedProducts = products.filter((p) => selectedIds.includes(p.id));
       const selectedConnectors = connectors.filter(
@@ -2934,7 +2948,7 @@ const Page = () => {
             <div style={{ height: 4 }} />
 
             {/* Read-only mode indicator */}
-            {isLocked && !isOwner && lockInfo && (
+            {isEditingDisabled && (
               <Box
                 sx={{
                   backgroundColor: "error.main",
@@ -2949,7 +2963,10 @@ const Page = () => {
                 }}
               >
                 <Typography variant="body2" fontWeight="bold">
-                  🔒 Read-Only Mode: Design locked by {lockInfo.LockedBy}.
+                  {isLocked && lockInfo?.LockedBy 
+                    ? `🔒 Read-Only Mode: Design locked by ${lockInfo.LockedBy}.`
+                    : `🔒 Read-Only Mode: Click "Enable Editing" to make changes.`
+                  }
                 </Typography>
               </Box>
             )}

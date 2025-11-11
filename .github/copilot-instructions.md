@@ -59,6 +59,9 @@ const formControl = useForm({
 
 ## Development Workflow
 
+## Development Testing Notes
+Do not build the package during development as the build script deletes package.json
+
 ### Local Development Setup
 1. Start Azure Storage emulator:
 ```powershell

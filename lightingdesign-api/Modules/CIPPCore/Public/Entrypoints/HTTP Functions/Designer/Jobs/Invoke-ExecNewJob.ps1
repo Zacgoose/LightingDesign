@@ -137,6 +137,8 @@ function Invoke-ExecNewJob {
 
         Add-CIPPAzDataTableEntity @Table -Entity $Entity -Force
 
+        Write-LogMessage -API 'NewJob' -message "Job created successfully: JobId: $NewJobId, JobNumber: $JobNumber" -Sev 'Info' -headers $Request.Headers
+
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::Created
             Body       = @{
@@ -148,6 +150,7 @@ function Invoke-ExecNewJob {
     }
     catch {
         Write-Error "Error creating job: $_"
+        Write-LogMessage -API 'NewJob' -message "Failed to create job: $($_.Exception.Message)" -Sev 'Error' -headers $Request.Headers -LogData $_
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::InternalServerError
             Body       = @{

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { usePathname } from "next/navigation";
 import PropTypes from "prop-types";
 import { Box, Divider, Drawer, Stack, IconButton, Tooltip } from "@mui/material";
@@ -97,7 +97,7 @@ const reduceChildRoutes = ({ acc, collapse, depth, item, pathname }) => {
   return acc;
 };
 
-export const SideNav = (props) => {
+const SideNavComponent = (props) => {
   const { items, onPin, pinned = false } = props;
   const pathname = usePathname();
   const [hovered, setHovered] = useState(false);
@@ -231,7 +231,12 @@ export const SideNav = (props) => {
   );
 };
 
-SideNav.propTypes = {
+SideNavComponent.propTypes = {
   onPin: PropTypes.func,
   pinned: PropTypes.bool,
 };
+
+// Memoize SideNav to prevent unnecessary re-renders when parent components update
+// This is especially important for pages like the designer where frequent state changes
+// (e.g., canvas panning) should not trigger navigation re-renders
+export const SideNav = memo(SideNavComponent);

@@ -24,26 +24,8 @@
     {
       "type": "queue",
       "direction": "out",
-      "name": "Subscription",
-      "queueName": "AlertSubscriptions"
-    },
-    {
-      "type": "queue",
-      "direction": "out",
-      "name": "gradientqueue",
-      "queueName": "billqueue"
-    },
-    {
-      "type": "queue",
-      "direction": "out",
       "name": "alertqueue",
       "queueName": "alertqueue"
-    },
-    {
-      "type": "queue",
-      "direction": "out",
-      "name": "incidentqueue",
-      "queueName": "incidentqueue"
     },
     {
       "name": "starter",

@@ -21,6 +21,12 @@ const Page = () => {
     enabled: !!id,
   });
 
+  // Fetch all stores to map member IDs to store objects
+  const storeList = ApiGetCall({
+    url: "/api/ListStores",
+    queryKey: "ListStores-EditGroup",
+  });
+
   const formControl = useForm({
     mode: "onChange",
     defaultValues: {
@@ -32,15 +38,35 @@ const Page = () => {
 
   // Update form when group data loads
   useEffect(() => {
-    if (groupData.data) {
+    if (groupData.data && storeList.isSuccess) {
+      // Transform member IDs to autocomplete format
+      const memberObjects = groupData.data.members
+        ? groupData.data.members.map((memberId) => {
+            const store = storeList.data?.find((s) => s.storeId === memberId);
+            if (store) {
+              return {
+                value: store.storeId,
+                label: `${store.storeName} (${store.storeCode || store.storeId})`,
+                type: "Store",
+              };
+            }
+            // If store not found, return basic object with ID
+            return {
+              value: memberId,
+              label: memberId,
+              type: "Store",
+            };
+          })
+        : [];
+
       formControl.reset({
         groupId: groupData.data.groupId,
         groupName: groupData.data.groupName,
         groupDescription: groupData.data.groupDescription,
-        members: groupData.data.members || [],
+        members: memberObjects,
       });
     }
-  }, [groupData.data]);
+  }, [groupData.data, storeList.isSuccess]);
 
   return (
     <>

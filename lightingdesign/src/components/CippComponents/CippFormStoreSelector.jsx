@@ -81,7 +81,7 @@ export const CippFormStoreSelector = ({
 
       setOptions([...storeData, ...groupData]);
     }
-  }, [storeList.isSuccess, storeGroupList.isSuccess, includeGroups]);
+  }, [storeList.isSuccess, storeGroupList.isSuccess, includeGroups, storeList.data, storeGroupList.data, valueField]);
 
   return (
     <CippFormComponent

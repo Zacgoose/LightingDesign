@@ -115,6 +115,7 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
       stage.batchDraw();
 
       // Debounce state updates to reduce re-renders
+      // Only update state after user has stopped zooming for 100ms
       if (wheelTimeoutRef.current) {
         clearTimeout(wheelTimeoutRef.current);
       }
@@ -122,7 +123,7 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
       wheelTimeoutRef.current = setTimeout(() => {
         setStageScale(newScale);
         setStagePosition(newPos);
-      }, 50); // Update state after 50ms of no wheel events
+      }, 100); // Increased from 50ms to 100ms to reduce state updates
 
       wheelPendingRef.current = false;
     });

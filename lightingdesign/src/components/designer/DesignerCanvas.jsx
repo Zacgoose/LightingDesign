@@ -236,15 +236,16 @@ export const DesignerCanvas = memo(
     // Custom comparison - only re-render if these props actually change
     // Note: We don't compare callbacks (onWheel, onDragEnd, etc.) because they may have
     // new references due to useCallback dependencies, but Konva handles them correctly.
-    // We also let stagePosition and stageScale changes through since Konva handles them internally.
+    // IMPORTANT: We ignore stagePosition changes to prevent re-renders during panning
+    // The Stage component will update its internal position through the x/y props,
+    // but we don't need to re-render the entire component tree for pan operations
     return (
       prevProps.width === nextProps.width &&
       prevProps.height === nextProps.height &&
       prevProps.viewportWidth === nextProps.viewportWidth &&
       prevProps.viewportHeight === nextProps.viewportHeight &&
       prevProps.stageScale === nextProps.stageScale &&
-      prevProps.stagePosition.x === nextProps.stagePosition.x &&
-      prevProps.stagePosition.y === nextProps.stagePosition.y &&
+      // Removed stagePosition comparison - panning updates Stage directly without re-render
       prevProps.showGrid === nextProps.showGrid &&
       prevProps.gridSize === nextProps.gridSize &&
       prevProps.scaleFactor === nextProps.scaleFactor &&

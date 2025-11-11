@@ -33,6 +33,7 @@ import { CippComponentDialog } from "/src/components/CippComponents/CippComponen
 import { TextLayer } from "/src/components/designer/TextLayer";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
 import { TextEntryDialog } from "/src/components/designer/TextEntryDialog";
+import { ConfirmDialog } from "/src/components/designer/ConfirmDialog";
 import { useHistory } from "/src/hooks/useHistory";
 import { useUnifiedHistory } from "/src/hooks/useUnifiedHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
@@ -62,6 +63,9 @@ const Page = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingExportNavigation, setPendingExportNavigation] = useState(false);
+
+  // State for deselection confirmation dialog
+  const [deselectDialog, setDeselectDialog] = useState({ open: false, action: null });
 
   // Load design data
   const designData = ApiGetCall({
@@ -448,8 +452,11 @@ const Page = () => {
     // Prevent saving if items are selected to avoid losing transformations
     if (selectedIds.length > 0 || selectedConnectorIds.length > 0 || selectedTextId) {
       console.warn("Cannot save: Please deselect all items before saving.");
-      // Show a user-friendly message (you can replace this with a proper notification system)
-      alert("Please deselect all items before saving. Click on an empty area of the canvas to deselect.");
+      setDeselectDialog({ 
+        open: true, 
+        action: 'save',
+        message: "Please deselect all items before saving. Click on an empty area of the canvas to deselect."
+      });
       return;
     }
 
@@ -579,7 +586,11 @@ const Page = () => {
     // Prevent unlocking if items are selected to avoid losing transformations
     if (selectedIds.length > 0 || selectedConnectorIds.length > 0 || selectedTextId) {
       console.warn("Cannot finish editing: Please deselect all items first.");
-      alert("Please deselect all items before finishing editing. Click on an empty area of the canvas to deselect.");
+      setDeselectDialog({ 
+        open: true, 
+        action: 'unlock',
+        message: "Please deselect all items before finishing editing. Click on an empty area of the canvas to deselect."
+      });
       return { success: false, error: "Items are selected" };
     }
 
@@ -3428,6 +3439,15 @@ const Page = () => {
           onColorChange={contextMenus.handleColorChange}
         />
       )}
+
+      {/* Deselection confirmation dialog */}
+      <ConfirmDialog
+        open={deselectDialog.open}
+        onClose={() => setDeselectDialog({ open: false, action: null })}
+        onConfirm={() => setDeselectDialog({ open: false, action: null })}
+        title="Items Selected"
+        message={deselectDialog.message || "Please deselect all items before continuing."}
+      />
     </>
   );
 };

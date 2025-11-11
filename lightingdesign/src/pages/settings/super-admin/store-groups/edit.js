@@ -49,7 +49,7 @@ const Page = () => {
       </Head>
       <CippFormPage
         formControl={formControl}
-        queryKey="StoreGroupsList"
+        queryKey={["Store Groups", `StoreGroup-${id}`]}
         title={`Edit Store Group: ${groupData.data?.groupName || "Loading..."}`}
         backButtonTitle="Store Groups"
         postUrl="/api/ExecStoreGroup"

@@ -23,7 +23,7 @@ const Page = () => {
       </Head>
       <CippFormPage
         formControl={formControl}
-        queryKey="StoreGroupsList"
+        queryKey="Store Groups"
         title="Add Store Group"
         backButtonTitle="Store Groups"
         postUrl="/api/ExecStoreGroup"

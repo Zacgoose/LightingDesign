@@ -176,7 +176,7 @@ export const CippDataTable = (props) => {
       usedData === null ||
       usedData === undefined
     ) {
-      return { finalColumns: [], newVisibility: { ...initialColumnVisibility } };
+      return { finalColumns: [], newVisibility: { ...initialColumnVisibility }, columnKey: '' };
     }
     
     const apiColumns = utilColumnsFromAPI(usedData, imageColumn);
@@ -226,40 +226,33 @@ export const CippDataTable = (props) => {
       }
     }
     
-    return { finalColumns, newVisibility };
+    // Create a stable key from column IDs to detect structural changes
+    const columnKey = finalColumns.map(col => col.id).sort().join(',');
+    
+    return { finalColumns, newVisibility, columnKey };
   }, [usedData, columns.length, configuredSimpleColumns, settings?.currentTenant, imageColumn, initialColumnVisibility]);
 
-  // Apply generated columns only when they change
+  // Apply generated columns when they change
   useEffect(() => {
-    if (generatedColumns.finalColumns.length === 0) {
-      return; // Don't apply empty columns
+    if (generatedColumns.columnKey) {
+      setUsedColumns(generatedColumns.finalColumns);
     }
-    
-    setUsedColumns(generatedColumns.finalColumns);
-    
-    // Only set column visibility on initial generation or when data structure changes
-    // Don't update if user has manually changed visibility via UI
-    if (!columnsInitializedRef.current) {
+  }, [generatedColumns.columnKey, generatedColumns.finalColumns]);
+  
+  // Set initial column visibility only once
+  useEffect(() => {
+    if (!columnsInitializedRef.current && generatedColumns.finalColumns.length > 0) {
       setColumnVisibility(generatedColumns.newVisibility);
       columnsInitializedRef.current = true;
-    } else {
-      // Only update visibility if the column structure has actually changed (different column IDs)
-      setColumnVisibility((prevVisibility) => {
-        const prevColumnIds = Object.keys(prevVisibility).sort().join(',');
-        const newColumnIds = Object.keys(generatedColumns.newVisibility).sort().join(',');
-        
-        // If column structure changed, update visibility; otherwise keep user's preferences
-        if (prevColumnIds !== newColumnIds) {
-          return generatedColumns.newVisibility;
-        }
-        return prevVisibility;
-      });
     }
-    
+  }, [generatedColumns.columnKey, generatedColumns.newVisibility]);
+  
+  // Apply default sorting
+  useEffect(() => {
     if (defaultSorting?.length > 0 && sorting.length === 0) {
       setSorting(defaultSorting);
     }
-  }, [generatedColumns.finalColumns, defaultSorting, sorting.length]);
+  }, [defaultSorting, sorting.length]);
 
   const createDialog = useDialog();
 

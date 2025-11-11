@@ -13,8 +13,8 @@ function Assert-CippVersion {
     Param($CIPPVersion)
     $APIVersion = (Get-Content 'version_latest.txt' -Raw).trim()
 
-    $RemoteAPIVersion = (Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/Zacgoose/LightingDesign/blob/main/lightingdesign-api/version_latest.txt').trim()
-    $RemoteCIPPVersion = (Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/Zacgoose/LightingDesign/blob/main/lightingdesign/public/version.json').version
+    $RemoteAPIVersion = (Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/Zacgoose/LightingDesign/main/lightingdesign-api/version_latest.txt').trim()
+    $RemoteCIPPVersion = (Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/Zacgoose/LightingDesign/main/lightingdesign/public/version.json').version
 
     [PSCustomObject]@{
         LocalCIPPVersion     = $CIPPVersion

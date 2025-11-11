@@ -39,25 +39,34 @@ const Page = () => {
   // Update form when group data loads
   useEffect(() => {
     if (groupData.data && storeList.isSuccess) {
-      // Transform member IDs to autocomplete format
-      const memberObjects = groupData.data.members
-        ? groupData.data.members.map((memberId) => {
-            const store = storeList.data?.find((s) => s.storeId === memberId);
-            if (store) {
-              return {
-                value: store.storeId,
-                label: `${store.storeName} (${store.storeCode || store.storeId})`,
-                type: "Store",
-              };
-            }
-            // If store not found, return basic object with ID
-            return {
-              value: memberId,
-              label: memberId,
-              type: "Store",
-            };
-          })
-        : [];
+      // Defensive: ensure members is always an array
+      let membersArr = [];
+      if (Array.isArray(groupData.data.members)) {
+        membersArr = groupData.data.members;
+      } else if (typeof groupData.data.members === 'string' && groupData.data.members.length > 0) {
+        // If it's a comma-separated string, split it
+        membersArr = groupData.data.members.split(',').map((m) => m.trim());
+      } else if (groupData.data.members) {
+        // If it's a single value, wrap in array
+        membersArr = [groupData.data.members];
+      }
+
+      const memberObjects = membersArr.map((memberId) => {
+        const store = storeList.data?.find((s) => s.storeId === memberId);
+        if (store) {
+          return {
+            value: store.storeId,
+            label: `${store.storeName} (${store.storeCode || store.storeId})`,
+            type: "Store",
+          };
+        }
+        // If store not found, return basic object with ID
+        return {
+          value: memberId,
+          label: memberId,
+          type: "Store",
+        };
+      });
 
       formControl.reset({
         groupId: groupData.data.groupId,

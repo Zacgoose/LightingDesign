@@ -586,6 +586,17 @@ const Page = () => {
     console.log("[UNLOCK] selectionGroupRef.current:", selectionGroupRef.current);
     console.log("[UNLOCK] selectionSnapshot:", selectionSnapshot);
 
+    // Force any active transformer to end its transformation
+    // This ensures pending transforms are committed before we try to apply them
+    if (transformerRef.current) {
+      const transformer = transformerRef.current;
+      console.log("[UNLOCK] Forcing transformer to commit pending transforms...");
+      // Force the transformer to update and commit any pending changes
+      transformer.forceUpdate();
+      // Give the transformer a moment to process
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
     // Apply any pending transformations before saving
     // This ensures all transformations are saved even if items are selected
     const transformed = applyGroupTransform();
@@ -641,7 +652,7 @@ const Page = () => {
       console.error("[UNLOCK] Error unlocking design:", error);
       return { success: false, error: error.message || "Failed to unlock design" };
     }
-  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId, selectedIds, selectedConnectorIds, selectedTextId, updateLayer, selectionGroupRef, selectionSnapshot]);
+  }, [id, hasUnsavedChanges, isSaving, handleSave, unlockDesignMutation, queryClient, forceUpdate, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId, selectedIds, selectedConnectorIds, selectedTextId, updateLayer, selectionGroupRef, selectionSnapshot, transformerRef]);
 
   // Manual refresh handler to check lock status
   const handleRefreshLockStatus = useCallback(async () => {

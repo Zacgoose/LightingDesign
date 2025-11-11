@@ -81,6 +81,13 @@ LastRefreshed: ISO timestamp (string)
 **Features**:
 Located at: `/src/components/designer/DesignLockButton.jsx`
 
+**Auto-Save**:
+- Automatic saving occurs when user owns the lock
+- Interval configurable in user preferences (2-8 minutes, default: 2 minutes)
+- Uses React ref pattern to prevent interval recreation
+- Only saves when there are unsaved changes
+- Respects `handleSave` validation rules (no save when items selected)
+
 **States**:
 1. **Unlocked**: Shows "Enable Editing" button
 2. **Owned**: Shows green "Finish Editing" button
@@ -163,8 +170,9 @@ If somehow a user without a lock tries to save:
 ### For Users
 1. **Lock Early**: Click "Enable Editing" before making changes
 2. **Finish When Done**: Click "Finish Editing" to release the lock so others can edit
-3. **Auto-Save**: Design auto-saves while locked, and saves on unlock
+3. **Auto-Save**: Design auto-saves while locked based on user preferences (default: every 2 minutes), and saves on unlock
 4. **Lock Timeout**: Locks expire after 15 minutes, but are auto-refreshed every minute while editing
+5. **Configure Auto-Save**: Adjust auto-save interval in User Preferences (2-8 minutes)
 
 ### For Administrators
 1. **Monitor Locks**: Check DesignLocks table for stuck locks

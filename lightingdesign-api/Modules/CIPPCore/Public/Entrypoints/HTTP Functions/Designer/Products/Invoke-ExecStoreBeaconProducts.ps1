@@ -39,7 +39,7 @@ Function Invoke-ExecStoreBeaconProducts {
         $Table = Get-CIPPTable -TableName 'Products'
 
         # Remove all existing products from Products table
-        Remove-AzDataTable @Table
+        Clear-AzDataTable @Table
 
         # Store each product as a separate entity in Products table
         foreach ($Product in $AllProducts) {

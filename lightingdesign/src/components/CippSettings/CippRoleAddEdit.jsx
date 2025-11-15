@@ -137,116 +137,126 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
 
   useEffect(() => {
     if (
-      (customRoleListSuccess &&
-        storesSuccess &&
-        selectedRole &&
-        selectedRoleState !== selectedRole) ||
-      baseRolePermissions
+      !customRoleListSuccess ||
+      !storesSuccess ||
+      !selectedRole ||
+      selectedRoleState === selectedRole
     ) {
-      setSelectedRoleState(selectedRole);
-      const isApiRole = selectedRole === "api-role";
-      setCippApiRoleSelected(isApiRole);
-
-      const currentPermissions = customRoleList?.pages?.[0]?.find(
-        (role) => role.RowKey === selectedRole,
-      );
-
-      // Process allowed stores - handle both groups and store IDs
-      var newAllowedStores = [];
-      currentPermissions?.AllowedStores?.forEach((item) => {
-        if (typeof item === "object" && item.type === "Group") {
-          // Handle group objects
-          newAllowedStores.push({
-            label: item.label,
-            value: item.value,
-            type: "Group",
-          });
-        } else {
-          // Handle store IDs
-          var storeInfo = stores.find((s) => s.storeId === item);
-          if (storeInfo?.storeName) {
-            var label = `${storeInfo.storeName} (${storeInfo.storeCode || storeInfo.storeId})`;
-            newAllowedStores.push({
-              label: label,
-              value: storeInfo.storeId,
-              type: "Store",
-              addedFields: {
-                storeId: storeInfo.storeId,
-                storeName: storeInfo.storeName,
-                storeCode: storeInfo.storeCode,
-              },
-            });
-          }
-        }
-      });
-
-      // Process blocked stores - handle both groups and store IDs
-      var newBlockedStores = [];
-      currentPermissions?.BlockedStores?.forEach((item) => {
-        if (typeof item === "object" && item.type === "Group") {
-          // Handle group objects
-          newBlockedStores.push({
-            label: item.label,
-            value: item.value,
-            type: "Group",
-          });
-        } else {
-          // Handle store IDs
-          var storeInfo = stores.find((s) => s.storeId === item);
-          if (storeInfo?.storeName) {
-            var label = `${storeInfo.storeName} (${storeInfo.storeCode || storeInfo.storeId})`;
-            newBlockedStores.push({
-              label: label,
-              value: storeInfo.storeId,
-              type: "Store",
-              addedFields: {
-                storeId: storeInfo.storeId,
-                storeName: storeInfo.storeName,
-                storeCode: storeInfo.storeCode,
-              },
-            });
-          }
-        }
-      });
-
-      const basePermissions = {};
-      Object.entries(getBaseRolePermissions(selectedRole)).forEach(([cat, objects]) => {
-        Object.entries(objects).forEach(([obj, permission]) => {
-          basePermissions[`${cat}${obj}`] = `${cat}.${obj}.${permission}`;
-        });
-      });
-      const processPermissions = (permissions) => {
-        const processed = {};
-        Object.keys(apiPermissions).forEach((cat) => {
-          Object.keys(apiPermissions[cat]).forEach((obj) => {
-            const key = `${cat}${obj}`;
-            const existingPerm = permissions?.[key];
-            processed[key] = existingPerm || `${cat}.${obj}.None`;
-          });
-        });
-        return processed;
-      };
-
-      // Process blocked endpoints
-      const processedBlockedEndpoints =
-        currentPermissions?.BlockedEndpoints?.map((endpoint) => ({
-          label: endpoint,
-          value: endpoint,
-        })) || [];
-
-      formControl.reset({
-        Permissions:
-          basePermissions && Object.keys(basePermissions).length > 0
-            ? basePermissions
-            : processPermissions(currentPermissions?.Permissions),
-        RoleName: selectedRole ?? currentPermissions?.RowKey,
-        allowedStores: newAllowedStores,
-        blockedStores: newBlockedStores,
-        BlockedEndpoints: processedBlockedEndpoints,
-        EntraGroup: currentPermissions?.EntraGroup,
-      });
+      return;
     }
-  }, [customRoleList, customRoleListSuccess, storesSuccess, baseRolePermissions]);
+
+    setSelectedRoleState(selectedRole);
+    const isApiRole = selectedRole === "api-role";
+    setCippApiRoleSelected(isApiRole);
+
+    const currentPermissions = customRoleList?.pages?.[0]?.find(
+      (role) => role.RowKey === selectedRole,
+    );
+
+    // Process allowed stores - handle both groups and store IDs
+    var newAllowedStores = [];
+    currentPermissions?.AllowedStores?.forEach((item) => {
+      if (typeof item === "object" && item.type === "Group") {
+        newAllowedStores.push({
+          label: item.label,
+          value: item.value,
+          type: "Group",
+        });
+      } else {
+        var storeInfo = stores.find((s) => s.storeId === item);
+        if (storeInfo?.storeName) {
+          var label = `${storeInfo.storeName} (${storeInfo.storeCode || storeInfo.storeId})`;
+          newAllowedStores.push({
+            label: label,
+            value: storeInfo.storeId,
+            type: "Store",
+            addedFields: {
+              storeId: storeInfo.storeId,
+              storeName: storeInfo.storeName,
+              storeCode: storeInfo.storeCode,
+            },
+          });
+        } else {
+          // Log warning when store can't be found
+          console.warn(`Store not found for ID: ${item}`);
+        }
+      }
+    });
+
+    // Process blocked stores - handle both groups and store IDs
+    var newBlockedStores = [];
+    currentPermissions?.BlockedStores?.forEach((item) => {
+      if (typeof item === "object" && item.type === "Group") {
+        newBlockedStores.push({
+          label: item.label,
+          value: item.value,
+          type: "Group",
+        });
+      } else {
+        var storeInfo = stores.find((s) => s.storeId === item);
+        if (storeInfo?.storeName) {
+          var label = `${storeInfo.storeName} (${storeInfo.storeCode || storeInfo.storeId})`;
+          newBlockedStores.push({
+            label: label,
+            value: storeInfo.storeId,
+            type: "Store",
+            addedFields: {
+              storeId: storeInfo.storeId,
+              storeName: storeInfo.storeName,
+              storeCode: storeInfo.storeCode,
+            },
+          });
+        } else {
+          console.warn(`Store not found for ID: ${item}`);
+        }
+      }
+    });
+
+    const basePermissions = {};
+    Object.entries(getBaseRolePermissions(selectedRole)).forEach(([cat, objects]) => {
+      Object.entries(objects).forEach(([obj, permission]) => {
+        basePermissions[`${cat}${obj}`] = `${cat}.${obj}.${permission}`;
+      });
+    });
+
+    const processPermissions = (permissions) => {
+      const processed = {};
+      Object.keys(apiPermissions).forEach((cat) => {
+        Object.keys(apiPermissions[cat]).forEach((obj) => {
+          const key = `${cat}${obj}`;
+          const existingPerm = permissions?.[key];
+          processed[key] = existingPerm || `${cat}.${obj}.None`;
+        });
+      });
+      return processed;
+    };
+
+    const processedBlockedEndpoints =
+      currentPermissions?.BlockedEndpoints?.map((endpoint) => ({
+        label: endpoint,
+        value: endpoint,
+      })) || [];
+
+    formControl.reset({
+      Permissions:
+        basePermissions && Object.keys(basePermissions).length > 0
+          ? basePermissions
+          : processPermissions(currentPermissions?.Permissions),
+      RoleName: selectedRole ?? currentPermissions?.RowKey,
+      allowedStores: newAllowedStores,
+      blockedStores: newBlockedStores,
+      BlockedEndpoints: processedBlockedEndpoints,
+      EntraGroup: currentPermissions?.EntraGroup,
+    });
+  }, [
+    customRoleList,
+    customRoleListSuccess,
+    storesSuccess,
+    selectedRole,
+    stores,
+    apiPermissions,
+    formControl,
+  ]);
 
   useEffect(() => {
     if (updateDefaults !== setDefaults) {

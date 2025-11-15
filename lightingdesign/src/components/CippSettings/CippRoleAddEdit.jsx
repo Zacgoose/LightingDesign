@@ -259,7 +259,7 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
   ]);
 
   useEffect(() => {
-    if (updateDefaults !== setDefaults) {
+    if (setDefaults && updateDefaults !== setDefaults) {
       setUpdateDefaults(setDefaults);
       var newPermissions = {};
       Object.keys(apiPermissions).forEach((cat) => {

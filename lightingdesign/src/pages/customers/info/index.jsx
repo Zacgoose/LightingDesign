@@ -13,7 +13,7 @@ const Page = () => {
 
   // Fetch customer details
   const customerDetails = ApiGetCall({
-    url: "/api/GetCustomer",
+    url: "/api/ExecGetCustomer",
     data: { customerId: id },
     queryKey: `Customer-${id}`,
     enabled: !!id,

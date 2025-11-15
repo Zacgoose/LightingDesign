@@ -43,7 +43,7 @@ const Page = () => {
         queryKey="EditCustomer"
         title={`Customer: ${customerDetails.data?.customerName || "Loading..."}`}
         backButtonTitle="Customers"
-        postUrl="/api/EditCustomer"
+        postUrl="/api/ExecEditCustomer"
         customDataformatter={(values) => {
           return {
             customerId: id,

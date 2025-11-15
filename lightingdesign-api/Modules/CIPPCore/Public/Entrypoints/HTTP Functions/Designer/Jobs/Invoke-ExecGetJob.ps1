@@ -28,7 +28,7 @@ function Invoke-ExecGetJob {
 
     if ($Row) {
         Write-LogMessage -API 'GetJob' -message "Retrieved job: JobId: $JobId, JobNumber: $($Row.JobNumber)" -Sev 'Info' -headers $Request.Headers
-        
+
         $JobData = if ($Row.JobData -and (Test-Json -Json $Row.JobData -ErrorAction SilentlyContinue)) {
             $Row.JobData | ConvertFrom-Json
         } else { $Row.JobData }
@@ -51,7 +51,7 @@ function Invoke-ExecGetJob {
             notes            = $Row.Notes
             relatedTrades    = if ($Row.RelatedTrades) { $Row.RelatedTrades | ConvertFrom-Json } else { @() }
             builders         = if ($Row.Builders) { $Row.Builders | ConvertFrom-Json } else { @() }
-            assignedDesigner = if ($Row.AssignedDesigner) { $Row.AssignedDesigner | ConvertFrom-Json } else { $null }
+            assignedDesigner = $Row.AssignedDesigner
             pricingMatrix    = if ($Row.PricingMatrix) { $Row.PricingMatrix | ConvertFrom-Json } else { $null }
             createdDate      = $Row.Timestamp
             user             = $Row.Username

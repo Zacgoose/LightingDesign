@@ -27,13 +27,6 @@ const Page = () => {
           },
           {
             description:
-              "Choose this option if you would like to add a tenant to your environment.",
-            icon: <CpuChipIcon />,
-            label: "Add a tenant",
-            value: "AddTenant",
-          },
-          {
-            description:
               "Choose this option if you want to setup which application registration is used to connect to your tenants.",
             icon: <CpuChipIcon />,
             label: "Create a new application registration for me and connect to my tenants",
@@ -66,8 +59,7 @@ const Page = () => {
       component: CippTenantModeDeploy,
       showStepWhen: (values) =>
         values?.selectedOption === "CreateApp" ||
-        values?.selectedOption === "FirstSetup" ||
-        values?.selectedOption === "AddTenant",
+        values?.selectedOption === "FirstSetup",
     },
     {
       description: "Next Steps",

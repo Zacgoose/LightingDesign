@@ -46,6 +46,6 @@ function Invoke-ExecNewCustomer {
 
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::Created
-        Body       = $Entity
+        Body       = "Customer created successfully"
     }
 }

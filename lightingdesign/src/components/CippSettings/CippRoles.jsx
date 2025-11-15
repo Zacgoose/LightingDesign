@@ -69,7 +69,7 @@ const CippRoles = () => {
 
   const offCanvas = {
     children: (data) => {
-      const includeProps = ["RoleName", "Type", "EntraGroup", "AllowedTenants", "BlockedTenants"];
+      const includeProps = ["RoleName", "Type", "EntraGroup", "AllowedStores", "BlockedStores"];
       const keys = includeProps.filter((key) => Object.keys(data).includes(key));
       const properties = [];
       keys.forEach((key) => {
@@ -133,7 +133,7 @@ const CippRoles = () => {
           url: "/api/ListCustomRole",
         }}
         queryKey="customRoleTable"
-        simpleColumns={["RoleName", "Type", "EntraGroup", "AllowedTenants", "BlockedTenants"]}
+        simpleColumns={["RoleName", "Type", "EntraGroup", "AllowedStores", "BlockedStores"]}
         offCanvas={offCanvas}
       />
     </Box>

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Box,
   Button,
   Tooltip,
   Typography,
@@ -13,7 +12,15 @@ import {
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
+
+// Helper function to safely format dates
+const formatDate = (dateValue) => {
+  if (!dateValue) return "N/A";
+  const date = typeof dateValue === "string" ? parseISO(dateValue) : new Date(dateValue);
+  if (!isValid(date)) return "Invalid Date";
+  return format(date, "MMM dd, yyyy HH:mm:ss");
+};
 
 export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock, onRefresh, disabled }) => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -107,11 +114,11 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
               This design is currently locked by <strong>{lockInfo.LockedBy}</strong>.
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Locked at: {format(new Date(lockInfo.LockedAt), "MMM dd, yyyy HH:mm:ss")}
+              Locked at: {formatDate(lockInfo.LockedAt)}
             </Typography>
             {lockInfo.ExpiresAt && (
               <Typography variant="body2" color="text.secondary">
-                Expires at: {format(new Date(lockInfo.ExpiresAt), "MMM dd, yyyy HH:mm:ss")}
+                Expires at: {formatDate(lockInfo.ExpiresAt)}
               </Typography>
             )}
             <Typography variant="body2" sx={{ mt: 2 }}>
@@ -194,14 +201,12 @@ export const DesignLockButton = ({ isLocked, isOwner, lockInfo, onLock, onUnlock
               </Typography>
               {errorDialog.lockInfo.LockedAt && (
                 <Typography variant="body2" color="text.secondary">
-                  <strong>Locked at:</strong>{" "}
-                  {format(new Date(errorDialog.lockInfo.LockedAt), "MMM dd, yyyy HH:mm:ss")}
+                  <strong>Locked at:</strong> {formatDate(errorDialog.lockInfo.LockedAt)}
                 </Typography>
               )}
               {errorDialog.lockInfo.ExpiresAt && (
                 <Typography variant="body2" color="text.secondary">
-                  <strong>Expires at:</strong>{" "}
-                  {format(new Date(errorDialog.lockInfo.ExpiresAt), "MMM dd, yyyy HH:mm:ss")}
+                  <strong>Expires at:</strong> {formatDate(errorDialog.lockInfo.ExpiresAt)}
                 </Typography>
               )}
             </>

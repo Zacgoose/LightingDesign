@@ -39,7 +39,7 @@ const Page = () => {
   // Define off-canvas details when clicking a row
   const offCanvas = {
     extendedInfoFields: [
-      "jobNumber",
+      "jobName",
       "customerName",
       "status",
       "createdDate",
@@ -75,7 +75,7 @@ const Page = () => {
   ];
 
   // Columns to display in the table
-  const simpleColumns = ["JobNumber", "CustomerName", "Status", "User", "createdDate"];
+  const simpleColumns = ["JobName", "CustomerName", "Status", "User", "createdDate"];
 
   return (
     <CippTablePage

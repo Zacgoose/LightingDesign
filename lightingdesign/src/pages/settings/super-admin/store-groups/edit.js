@@ -1,0 +1,134 @@
+import Head from "next/head";
+import { useRouter } from "next/router";
+import { Layout as DashboardLayout } from "/src/layouts/index";
+import { useForm } from "react-hook-form";
+import CippFormPage from "/src/components/CippFormPages/CippFormPage";
+import { CippFormStoreSelector } from "/src/components/CippComponents/CippFormStoreSelector";
+import CippFormComponent from "/src/components/CippComponents/CippFormComponent";
+import { Stack } from "@mui/material";
+import { ApiGetCall } from "/src/api/ApiCall";
+import { useEffect } from "react";
+
+const Page = () => {
+  const router = useRouter();
+  const { id } = router.query;
+
+  // Fetch store group data
+  const groupData = ApiGetCall({
+    url: "/api/ExecGetStoreGroup",
+    data: { groupId: id },
+    queryKey: `StoreGroup-${id}`,
+    enabled: !!id,
+  });
+
+  // Fetch all stores to map member IDs to store objects
+  const storeList = ApiGetCall({
+    url: "/api/ListStores",
+    queryKey: "ListStores-EditGroup",
+  });
+
+  const formControl = useForm({
+    mode: "onChange",
+    defaultValues: {
+      groupName: "",
+      groupDescription: "",
+      members: [],
+    },
+  });
+
+  // Update form when group data loads
+  useEffect(() => {
+    if (groupData.data && storeList.isSuccess) {
+      // Defensive: ensure members is always an array
+      let membersArr = [];
+      if (Array.isArray(groupData.data.members)) {
+        membersArr = groupData.data.members;
+      } else if (typeof groupData.data.members === 'string' && groupData.data.members.length > 0) {
+        // If it's a comma-separated string, split it
+        membersArr = groupData.data.members.split(',').map((m) => m.trim());
+      } else if (groupData.data.members) {
+        // If it's a single value, wrap in array
+        membersArr = [groupData.data.members];
+      }
+
+      const memberObjects = membersArr.map((memberId) => {
+        const store = storeList.data?.find((s) => s.storeId === memberId);
+        if (store) {
+          return {
+            value: store.storeId,
+            label: `${store.storeName} (${store.storeCode || store.storeId})`,
+            type: "Store",
+          };
+        }
+        // If store not found, return basic object with ID
+        return {
+          value: memberId,
+          label: memberId,
+          type: "Store",
+        };
+      });
+
+      formControl.reset({
+        groupId: groupData.data.groupId,
+        groupName: groupData.data.groupName,
+        groupDescription: groupData.data.groupDescription,
+        members: memberObjects,
+      });
+    }
+  }, [groupData.data, storeList.isSuccess]);
+
+  return (
+    <>
+      <Head>
+        <title>Edit Store Group - Lighting Design</title>
+      </Head>
+      <CippFormPage
+        formControl={formControl}
+        queryKey={["Store Groups", `StoreGroup-${id}`]}
+        title={`Edit Store Group: ${groupData.data?.groupName || "Loading..."}`}
+        backButtonTitle="Store Groups"
+        postUrl="/api/ExecStoreGroup"
+        customDataformatter={(values) => {
+          return {
+            Action: "AddEdit",
+            groupId: id,
+            groupName: values.groupName,
+            groupDescription: values.groupDescription,
+            members: values.members?.map((m) => m.value) || [],
+          };
+        }}
+      >
+        <Stack spacing={2}>
+          <CippFormComponent
+            type="textField"
+            name="groupName"
+            label="Group Name"
+            placeholder="Enter the name for this group"
+            formControl={formControl}
+            required
+          />
+          <CippFormComponent
+            type="textField"
+            name="groupDescription"
+            label="Group Description"
+            placeholder="Enter a description for this group"
+            formControl={formControl}
+          />
+          <CippFormStoreSelector
+            formControl={formControl}
+            multiple={true}
+            required={false}
+            disableClearable={false}
+            name="members"
+            valueField="storeId"
+            placeholder="Select stores to add to this group"
+          />
+        </Stack>
+      </CippFormPage>
+    </>
+  );
+};
+
+Page.getLayout = (page) => <DashboardLayout allTenantsSupport={false}>{page}</DashboardLayout>;
+
+export default Page;

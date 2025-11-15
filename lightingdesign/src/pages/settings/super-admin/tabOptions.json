@@ -4,6 +4,14 @@
     "path": "/settings/super-admin/user-roles"
   },
   {
+    "label": "Stores",
+    "path": "/settings/super-admin/stores"
+  },
+  {
+    "label": "Store Groups",
+    "path": "/settings/super-admin/store-groups"
+  },
+  {
     "label": "Function Offloading",
     "path": "/settings/super-admin/function-offloading"
   }

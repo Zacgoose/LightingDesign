@@ -31,45 +31,7 @@ export const CippAlertsStep = (props) => {
           </Typography>
           <ul>
             <li>
-              CIPP has the ability to send alerts to your PSA, Webhook or Email. You can configure
-              these settings under &gt; Tenant Administration &gt; Alert Configuration.
-            </li>
-          </ul>
-          <ul>
-            <li>
-              If you imported baselines, or want to set tenants to your own baseline, you should
-              check out our standards under these settings under &gt; Tenant Administration &gt;
-              Standards.
-            </li>
-          </ul>
-          <ul>
-            <li>
-              If you want to use our integrations, you should set these up under &gt; CIPP &gt;
-              Integrations. Some examples are CSP integrations, Password Pusher, PSA, and more.
-            </li>
-          </ul>
-          <ul>
-            <li>
               Adding more users to CIPP? you can do this via CIPP &gt; Advanced &gt; Super Admin.
-            </li>
-          </ul>
-          <ul>
-            <li>
-              You can deploy Windows Applications too, directly using intune. We have Chocolately,
-              WinGet, and RMM apps under &gt; Intune &gt; Applications. Some examples are CSP
-              integrations, Password Pusher, PSA, and more.
-            </li>
-          </ul>
-          <ul>
-            <li>
-              Tenants can be grouped, and you can implement custom variables for your tenants under
-              WinGet, and RMM apps under Tenant Administrator &gt; Administration &gt; Tenants.
-            </li>
-          </ul>
-          <ul>
-            <li>
-              Have an enterprise app you want to deploy? Check out our <strong> tools</strong>{" "}
-              section. This menu also contains useful things such as our geo-ip lookup, and more.
             </li>
           </ul>
         </Alert>

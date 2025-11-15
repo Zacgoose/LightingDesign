@@ -1,7 +1,84 @@
+function Get-CIPPUserStores {
+    param(
+        $CustomRoles,
+        $BaseRole
+    )
+
+    # Base roles (admin, superadmin, lightingdesigner) have access to all stores
+    if (@('admin', 'superadmin', 'lightingdesigner') -contains $BaseRole.Name) {
+        return @('AllStores')
+    }
+
+    # No custom roles = all stores
+    if (($CustomRoles | Measure-Object).Count -eq 0) {
+        return @('AllStores')
+    }
+
+    $Stores = Get-Stores -IncludeErrors
+    $PermissionsFound = $false
+    $PermissionSet = foreach ($CustomRole in $CustomRoles) {
+        try {
+            Get-CIPPRolePermissions -Role $CustomRole
+            $PermissionsFound = $true
+        } catch {
+            Write-Information $_.Exception.Message
+            continue
+        }
+    }
+
+    if (!$PermissionsFound) {
+        return @('AllStores')
+    }
+
+    # Build list of allowed stores from all roles
+    $LimitedStoreList = foreach ($Permission in $PermissionSet) {
+        if ((($Permission.AllowedStores | Measure-Object).Count -eq 0 -or $Permission.AllowedStores -contains 'AllStores') -and (($Permission.BlockedStores | Measure-Object).Count -eq 0)) {
+            @('AllStores')
+        } else {
+            # Expand store groups to individual store IDs
+            $ExpandedAllowedStores = foreach ($AllowedItem in $Permission.AllowedStores) {
+                if ($AllowedItem -is [PSCustomObject] -and $AllowedItem.type -eq 'Group') {
+                    try {
+                        $GroupMembers = Expand-CIPPStoreGroups -StoreFilter @($AllowedItem)
+                        $GroupMembers | ForEach-Object { $_.storeId }
+                    } catch {
+                        Write-Warning "Failed to expand store group '$($AllowedItem.label)': $($_.Exception.Message)"
+                        @()
+                    }
+                } else {
+                    $AllowedItem
+                }
+            }
+
+            $ExpandedBlockedStores = foreach ($BlockedItem in $Permission.BlockedStores) {
+                if ($BlockedItem -is [PSCustomObject] -and $BlockedItem.type -eq 'Group') {
+                    try {
+                        $GroupMembers = Expand-CIPPStoreGroups -StoreFilter @($BlockedItem)
+                        $GroupMembers | ForEach-Object { $_.storeId }
+                    } catch {
+                        Write-Warning "Failed to expand blocked store group '$($BlockedItem.label)': $($_.Exception.Message)"
+                        @()
+                    }
+                } else {
+                    $BlockedItem
+                }
+            }
+
+            if ($ExpandedAllowedStores -contains 'AllStores') {
+                $ExpandedAllowedStores = $Stores.storeId
+            }
+            $ExpandedAllowedStores | Where-Object { $ExpandedBlockedStores -notcontains $_ }
+        }
+    }
+
+    return $LimitedStoreList
+}
+
 function Test-CIPPAccess {
     param(
         $Request,
-        [switch]$TenantList
+        [switch]$StoreList,
+        [string]$StoreId
     )
     if ($Request.Params.CIPPEndpoint -eq 'ExecSAMSetup') { return $true }
 
@@ -101,7 +178,6 @@ function Test-CIPPAccess {
             $User = Test-CIPPAccessUserRole -User $User
         }
 
-        #Write-Information ($User | ConvertTo-Json -Depth 5)
         # Return user permissions
         if ($Request.Params.CIPPEndpoint -eq 'me') {
 
@@ -127,12 +203,6 @@ function Test-CIPPAccess {
                 })
         }
 
-        if ($User.userRoles -contains 'admin' -or $User.userRoles -contains 'superadmin' -or $User.userRoles -contains 'lightingdesigner') {
-            if ($TenantList.IsPresent) {
-                return @('AllTenants')
-            }
-        }
-
         $CustomRoles = $User.userRoles | ForEach-Object {
             if ($DefaultRoles -notcontains $_) {
                 $_
@@ -156,7 +226,19 @@ function Test-CIPPAccess {
                 }
             }
         }
+    }
 
+    # If StoreId parameter provided, validate store access early
+    if ($StoreId) {
+        $AllowedStores = Get-CIPPUserStores -CustomRoles $CustomRoles -BaseRole $BaseRole
+
+        if ($AllowedStores -notcontains 'AllStores' -and $AllowedStores -notcontains $StoreId) {
+            $EndpointName = $Request.Params.CIPPEndpoint
+            Write-LogMessage -API $EndpointName -message "Access denied: User attempted to access resource from unauthorized store $StoreId" -Sev 'Warn' -headers $Request.Headers
+            throw "Access to this store is not allowed"
+        }
+
+        return $true
     }
 
     # Check base role permissions before continuing to custom roles
@@ -180,15 +262,18 @@ function Test-CIPPAccess {
         }
     }
 
-    # Check custom role permissions for limitations on api calls or tenants
+    # Check custom role permissions for limitations on api calls or stores
     if ($null -eq $BaseRole.Name -and $Type -eq 'User' -and ($CustomRoles | Measure-Object).Count -eq 0) {
         Write-Information $BaseRole.Name
         throw 'Access to this CIPP API endpoint is not allowed, the user does not have the required permission'
     } elseif (($CustomRoles | Measure-Object).Count -gt 0) {
         if (@('admin', 'superadmin', 'lightingdesigner') -contains $BaseRole.Name) {
+            if ($StoreList.IsPresent) {
+                return @('AllStores')
+            }
             return $true
         } else {
-            $Tenants = Get-Tenants -IncludeErrors
+            $Stores = Get-Stores -IncludeErrors
             $PermissionsFound = $false
             $PermissionSet = foreach ($CustomRole in $CustomRoles) {
                 try {
@@ -201,50 +286,12 @@ function Test-CIPPAccess {
             }
 
             if ($PermissionsFound) {
-                if ($TenantList.IsPresent) {
-                    $LimitedTenantList = foreach ($Permission in $PermissionSet) {
-                        if ((($Permission.AllowedTenants | Measure-Object).Count -eq 0 -or $Permission.AllowedTenants -contains 'AllTenants') -and (($Permission.BlockedTenants | Measure-Object).Count -eq 0)) {
-                            @('AllTenants')
-                        } else {
-                            # Expand tenant groups to individual tenant IDs
-                            $ExpandedAllowedTenants = foreach ($AllowedItem in $Permission.AllowedTenants) {
-                                if ($AllowedItem -is [PSCustomObject] -and $AllowedItem.type -eq 'Group') {
-                                    try {
-                                        $GroupMembers = Expand-CIPPTenantGroups -TenantFilter @($AllowedItem)
-                                        $GroupMembers | ForEach-Object { $_.addedFields.customerId }
-                                    } catch {
-                                        Write-Warning "Failed to expand tenant group '$($AllowedItem.label)': $($_.Exception.Message)"
-                                        @()
-                                    }
-                                } else {
-                                    $AllowedItem
-                                }
-                            }
-
-                            $ExpandedBlockedTenants = foreach ($BlockedItem in $Permission.BlockedTenants) {
-                                if ($BlockedItem -is [PSCustomObject] -and $BlockedItem.type -eq 'Group') {
-                                    try {
-                                        $GroupMembers = Expand-CIPPTenantGroups -TenantFilter @($BlockedItem)
-                                        $GroupMembers | ForEach-Object { $_.addedFields.customerId }
-                                    } catch {
-                                        Write-Warning "Failed to expand blocked tenant group '$($BlockedItem.label)': $($_.Exception.Message)"
-                                        @()
-                                    }
-                                } else {
-                                    $BlockedItem
-                                }
-                            }
-
-                            if ($ExpandedAllowedTenants -contains 'AllTenants') {
-                                $ExpandedAllowedTenants = $Tenants.customerId
-                            }
-                            $ExpandedAllowedTenants | Where-Object { $ExpandedBlockedTenants -notcontains $_ }
-                        }
-                    }
-                    return $LimitedTenantList
+                # Handle -StoreList request
+                if ($StoreList.IsPresent) {
+                    return Get-CIPPUserStores -CustomRoles $CustomRoles -BaseRole $BaseRole
                 }
 
-                $TenantAllowed = $false
+                $StoreAllowed = $false
                 $APIAllowed = $false
                 foreach ($Role in $PermissionSet) {
                     foreach ($Perm in $Role.Permissions) {
@@ -258,23 +305,23 @@ function Test-CIPPAccess {
                     }
 
                     if ($APIAllowed) {
-                        $TenantFilter = $Request.Query.tenantFilter ?? $Request.Body.tenantFilter ?? $Request.Body.tenantFilter.value ?? $Request.Query.tenantId ?? $Request.Body.tenantId ?? $Request.Body.tenantId.value ?? $env:TenantID
-                        # Check tenant level access
-                        if (($Role.BlockedTenants | Measure-Object).Count -eq 0 -and $Role.AllowedTenants -contains 'AllTenants') {
-                            $TenantAllowed = $true
-                        } elseif ($TenantFilter -eq 'AllTenants') {
-                            $TenantAllowed = $false
+                        $StoreFilter = $Request.Query.storeFilter ?? $Request.Body.storeFilter ?? $Request.Body.storeFilter.value ?? $Request.Query.storeId ?? $Request.Body.storeId ?? $Request.Body.storeId.value
+                        # Check store level access
+                        if (($Role.BlockedStores | Measure-Object).Count -eq 0 -and $Role.AllowedStores -contains 'AllStores') {
+                            $StoreAllowed = $true
+                        } elseif ($StoreFilter -eq 'AllStores') {
+                            $StoreAllowed = $false
                         } else {
-                            $Tenant = ($Tenants | Where-Object { $TenantFilter -eq $_.customerId -or $TenantFilter -eq $_.defaultDomainName }).customerId
+                            $Store = ($Stores | Where-Object { $StoreFilter -eq $_.storeId -or $StoreFilter -eq $_.storeCode }).storeId
 
-                            # Expand allowed tenant groups to individual tenant IDs
-                            $ExpandedAllowedTenants = foreach ($AllowedItem in $Role.AllowedTenants) {
+                            # Expand allowed store groups to individual store IDs
+                            $ExpandedAllowedStores = foreach ($AllowedItem in $Role.AllowedStores) {
                                 if ($AllowedItem -is [PSCustomObject] -and $AllowedItem.type -eq 'Group') {
                                     try {
-                                        $GroupMembers = Expand-CIPPTenantGroups -TenantFilter @($AllowedItem)
-                                        $GroupMembers | ForEach-Object { $_.addedFields.customerId }
+                                        $GroupMembers = Expand-CIPPStoreGroups -StoreFilter @($AllowedItem)
+                                        $GroupMembers | ForEach-Object { $_.storeId }
                                     } catch {
-                                        Write-Warning "Failed to expand allowed tenant group '$($AllowedItem.label)': $($_.Exception.Message)"
+                                        Write-Warning "Failed to expand allowed store group '$($AllowedItem.label)': $($_.Exception.Message)"
                                         @()
                                     }
                                 } else {
@@ -282,14 +329,14 @@ function Test-CIPPAccess {
                                 }
                             }
 
-                            # Expand blocked tenant groups to individual tenant IDs
-                            $ExpandedBlockedTenants = foreach ($BlockedItem in $Role.BlockedTenants) {
+                            # Expand blocked store groups to individual store IDs
+                            $ExpandedBlockedStores = foreach ($BlockedItem in $Role.BlockedStores) {
                                 if ($BlockedItem -is [PSCustomObject] -and $BlockedItem.type -eq 'Group') {
                                     try {
-                                        $GroupMembers = Expand-CIPPTenantGroups -TenantFilter @($BlockedItem)
-                                        $GroupMembers | ForEach-Object { $_.addedFields.customerId }
+                                        $GroupMembers = Expand-CIPPStoreGroups -StoreFilter @($BlockedItem)
+                                        $GroupMembers | ForEach-Object { $_.storeId }
                                     } catch {
-                                        Write-Warning "Failed to expand blocked tenant group '$($BlockedItem.label)': $($_.Exception.Message)"
+                                        Write-Warning "Failed to expand blocked store group '$($BlockedItem.label)': $($_.Exception.Message)"
                                         @()
                                     }
                                 } else {
@@ -297,18 +344,18 @@ function Test-CIPPAccess {
                                 }
                             }
 
-                            if ($ExpandedAllowedTenants -contains 'AllTenants') {
-                                $AllowedTenants = $Tenants.customerId
+                            if ($ExpandedAllowedStores -contains 'AllStores') {
+                                $AllowedStores = $Stores.storeId
                             } else {
-                                $AllowedTenants = $ExpandedAllowedTenants
+                                $AllowedStores = $ExpandedAllowedStores
                             }
 
-                            if ($Tenant) {
-                                $TenantAllowed = $AllowedTenants -contains $Tenant -and $ExpandedBlockedTenants -notcontains $Tenant
-                                if (!$TenantAllowed) { continue }
+                            if ($Store) {
+                                $StoreAllowed = $AllowedStores -contains $Store -and $ExpandedBlockedStores -notcontains $Store
+                                if (!$StoreAllowed) { continue }
                                 break
                             } else {
-                                $TenantAllowed = $true
+                                $StoreAllowed = $true
                                 break
                             }
                         }
@@ -318,70 +365,23 @@ function Test-CIPPAccess {
                 if (!$APIAllowed) {
                     throw "Access to this CIPP API endpoint is not allowed, you do not have the required permission: $APIRole"
                 }
-                if (!$TenantAllowed -and $Help.Functionality -notmatch 'AnyTenant') {
-                    throw 'Access to this tenant is not allowed'
+                if (!$StoreAllowed -and $Help.Functionality -notmatch 'AnyStore') {
+                    throw 'Access to this store is not allowed'
                 } else {
                     return $true
                 }
             } else {
                 # No permissions found for any roles
-                if ($TenantList.IsPresent) {
-                    return @('AllTenants')
+                if ($StoreList.IsPresent) {
+                    return @('AllStores')
                 }
                 return $true
-                if ($APIAllowed) {
-                    $TenantFilter = $Request.Query.tenantFilter ?? $Request.Body.tenantFilter ?? $Request.Query.tenantId ?? $Request.Body.tenantId ?? $env:TenantID
-                    # Check tenant level access
-                    if (($Role.BlockedTenants | Measure-Object).Count -eq 0 -and $Role.AllowedTenants -contains 'AllTenants') {
-                        $TenantAllowed = $true
-                    } elseif ($TenantFilter -eq 'AllTenants') {
-
-                        $TenantAllowed = $false
-                    } else {
-                        $Tenant = ($Tenants | Where-Object { $TenantFilter -eq $_.customerId -or $TenantFilter -eq $_.defaultDomainName }).customerId
-
-                        if ($Role.AllowedTenants -contains 'AllTenants') {
-                            $AllowedTenants = $Tenants.customerId
-                        } else {
-                            $AllowedTenants = $Role.AllowedTenants
-                        }
-                        if ($Tenant) {
-                            $TenantAllowed = $AllowedTenants -contains $Tenant -and $Role.BlockedTenants -notcontains $Tenant
-                            if (!$TenantAllowed) { continue }
-                            break
-                        } else {
-                            $TenantAllowed = $true
-                            break
-                        }
-                    }
-                }
             }
-
-            if (!$TenantAllowed -and $Help.Functionality -notmatch 'AnyTenant') {
-
-                if (!$APIAllowed) {
-                    throw "Access to this CIPP API endpoint is not allowed, you do not have the required permission: $APIRole"
-                }
-                if (!$TenantAllowed -and $Help.Functionality -notmatch 'AnyTenant') {
-                    Write-Information "Tenant not allowed: $TenantFilter"
-
-                    throw 'Access to this tenant is not allowed'
-                } else {
-                    return $true
-                }
-
-            }
-        } else {
-            # No permissions found for any roles
-            if ($TenantList.IsPresent) {
-                return @('AllTenants')
-            }
-            return $true
         }
     }
 
-    if ($TenantList.IsPresent) {
-        return @('AllTenants')
+    if ($StoreList.IsPresent) {
+        return @('AllStores')
     }
     return $true
 }

@@ -1,0 +1,68 @@
+import { TabbedLayout } from "/src/layouts/TabbedLayout";
+import { Layout as DashboardLayout } from "/src/layouts/index.js";
+import tabOptions from "../tabOptions";
+import { Button } from "@mui/material";
+import { Add, Edit, Delete } from "@mui/icons-material";
+import { CippTablePage } from "/src/components/CippComponents/CippTablePage";
+import Link from "next/link";
+
+const Page = () => {
+  const pageTitle = "Store Groups";
+
+  const actions = [
+    {
+      label: "Edit Store Group",
+      link: "/settings/super-admin/store-groups/edit?id=[RowKey]",
+      icon: <Edit />,
+      color: "success",
+      target: "_self",
+    },
+    {
+      label: "Delete Store Group",
+      type: "POST",
+      url: "/api/ExecStoreGroup",
+      data: {
+        Action: "Delete",
+        groupId: "RowKey",
+      },
+      confirmText: "Are you sure you want to delete this store group?",
+      icon: <Delete />,
+      color: "danger",
+    },
+  ];
+
+  const offCanvas = {
+    extendedInfoFields: ["groupName", "groupDescription", "groupId", "members"],
+    actions: actions,
+  };
+
+  const simpleColumns = ["groupName", "groupDescription"];
+
+  return (
+    <CippTablePage
+      title={pageTitle}
+      apiUrl="/api/ExecStoreGroup"
+      actions={actions}
+      offCanvas={offCanvas}
+      simpleColumns={simpleColumns}
+      cardButton={
+        <Button
+          component={Link}
+          href="/settings/super-admin/store-groups/add"
+          startIcon={<Add />}
+          variant="contained"
+        >
+          Add Store Group
+        </Button>
+      }
+    />
+  );
+};
+
+Page.getLayout = (page) => (
+  <DashboardLayout>
+    <TabbedLayout tabOptions={tabOptions}>{page}</TabbedLayout>
+  </DashboardLayout>
+);
+
+export default Page;

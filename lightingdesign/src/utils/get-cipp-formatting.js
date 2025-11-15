@@ -405,13 +405,13 @@ export const getCippFormatting = (
     return data === "directTenant" ? "Direct Tenant" : "GDAP Tenant";
   }
 
-  //if the cellName is tenantFilter, return a chip with the tenant name. This can sometimes be an array, sometimes be a single item.
+  //if the cellName is storeFilter, return a chip with the store name. This can sometimes be an array, sometimes be a single item.
   if (
-    cellName === "tenantFilter" ||
-    cellName === "Tenant" ||
-    cellName === "Tenants" ||
-    cellName === "AllowedTenants" ||
-    cellName === "BlockedTenants"
+    cellName === "storeFilter" ||
+    cellName === "Store" ||
+    cellName === "Stores" ||
+    cellName === "AllowedStores" ||
+    cellName === "BlockedStores"
   ) {
     //check if data is an array.
     if (Array.isArray(data)) {

@@ -16,7 +16,7 @@ import {
 import { Grid } from "@mui/system";
 import { ApiGetCall, ApiGetCallWithPagination, ApiPostCall } from "../../api/ApiCall";
 import { CippOffCanvas } from "/src/components/CippComponents/CippOffCanvas";
-import { CippFormTenantSelector } from "/src/components/CippComponents/CippFormTenantSelector";
+import { CippFormStoreSelector } from "/src/components/CippComponents/CippFormStoreSelector";
 import { Save, WarningOutlined } from "@mui/icons-material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CippFormComponent from "../CippComponents/CippFormComponent";
@@ -32,7 +32,7 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
     relatedQueryKeys: ["customRoleList", "customRoleTable"],
   });
 
-  const [allTenantSelected, setAllTenantSelected] = useState(false);
+  const [allStoreSelected, setAllStoreSelected] = useState(false);
   const [cippApiRoleSelected, setCippApiRoleSelected] = useState(false);
   const [selectedRoleState, setSelectedRoleState] = useState(null);
   const [updateDefaults, setUpdateDefaults] = useState(false);
@@ -56,8 +56,8 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
     return true;
   };
 
-  const selectedTenant = useWatch({ control: formControl.control, name: "allowedTenants" });
-  const blockedTenants = useWatch({ control: formControl.control, name: "blockedTenants" });
+  const selectedStore = useWatch({ control: formControl.control, name: "allowedStores" });
+  const blockedStores = useWatch({ control: formControl.control, name: "blockedStores" });
   const blockedEndpoints = useWatch({ control: formControl.control, name: "BlockedEndpoints" });
   const setDefaults = useWatch({ control: formControl.control, name: "Defaults" });
   const selectedPermissions = useWatch({ control: formControl.control, name: "Permissions" });
@@ -81,11 +81,11 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
     queryKey: "customRoleList",
   });
 
-  const { data: { pages = [] } = {}, isSuccess: tenantsSuccess } = ApiGetCallWithPagination({
-    url: "/api/ListTenants?AllTenantSelector=true",
-    queryKey: "ListTenants-AllTenantSelector",
+  const { data: { pages = [] } = {}, isSuccess: storesSuccess } = ApiGetCallWithPagination({
+    url: "/api/ListStores?AllStoreSelector=true",
+    queryKey: "ListStores-AllStoreSelector",
   });
-  const tenants = pages[0] || [];
+  const stores = pages[0] || [];
 
   const matchPattern = (pattern, value) => {
     const regex = new RegExp(`^${pattern.replace("*", ".*")}$`);
@@ -137,116 +137,126 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
 
   useEffect(() => {
     if (
-      (customRoleListSuccess &&
-        tenantsSuccess &&
-        selectedRole &&
-        selectedRoleState !== selectedRole) ||
-      baseRolePermissions
+      !customRoleListSuccess ||
+      !storesSuccess ||
+      !selectedRole ||
+      selectedRoleState === selectedRole
     ) {
-      setSelectedRoleState(selectedRole);
-      const isApiRole = selectedRole === "api-role";
-      setCippApiRoleSelected(isApiRole);
-
-      const currentPermissions = customRoleList?.pages?.[0]?.find(
-        (role) => role.RowKey === selectedRole,
-      );
-
-      // Process allowed tenants - handle both groups and tenant IDs
-      var newAllowedTenants = [];
-      currentPermissions?.AllowedTenants?.forEach((item) => {
-        if (typeof item === "object" && item.type === "Group") {
-          // Handle group objects
-          newAllowedTenants.push({
-            label: item.label,
-            value: item.value,
-            type: "Group",
-          });
-        } else {
-          // Handle tenant customer IDs (legacy format)
-          var tenantInfo = tenants.find((t) => t.customerId === item);
-          if (tenantInfo?.displayName) {
-            var label = `${tenantInfo.displayName} (${tenantInfo.defaultDomainName})`;
-            newAllowedTenants.push({
-              label: label,
-              value: tenantInfo.defaultDomainName,
-              type: "Tenant",
-              addedFields: {
-                defaultDomainName: tenantInfo.defaultDomainName,
-                displayName: tenantInfo.displayName,
-                customerId: tenantInfo.customerId,
-              },
-            });
-          }
-        }
-      });
-
-      // Process blocked tenants - handle both groups and tenant IDs
-      var newBlockedTenants = [];
-      currentPermissions?.BlockedTenants?.forEach((item) => {
-        if (typeof item === "object" && item.type === "Group") {
-          // Handle group objects
-          newBlockedTenants.push({
-            label: item.label,
-            value: item.value,
-            type: "Group",
-          });
-        } else {
-          // Handle tenant customer IDs (legacy format)
-          var tenantInfo = tenants.find((t) => t.customerId === item);
-          if (tenantInfo?.displayName) {
-            var label = `${tenantInfo.displayName} (${tenantInfo.defaultDomainName})`;
-            newBlockedTenants.push({
-              label: label,
-              value: tenantInfo.defaultDomainName,
-              type: "Tenant",
-              addedFields: {
-                defaultDomainName: tenantInfo.defaultDomainName,
-                displayName: tenantInfo.displayName,
-                customerId: tenantInfo.customerId,
-              },
-            });
-          }
-        }
-      });
-
-      const basePermissions = {};
-      Object.entries(getBaseRolePermissions(selectedRole)).forEach(([cat, objects]) => {
-        Object.entries(objects).forEach(([obj, permission]) => {
-          basePermissions[`${cat}${obj}`] = `${cat}.${obj}.${permission}`;
-        });
-      });
-      const processPermissions = (permissions) => {
-        const processed = {};
-        Object.keys(apiPermissions).forEach((cat) => {
-          Object.keys(apiPermissions[cat]).forEach((obj) => {
-            const key = `${cat}${obj}`;
-            const existingPerm = permissions?.[key];
-            processed[key] = existingPerm || `${cat}.${obj}.None`;
-          });
-        });
-        return processed;
-      };
-
-      // Process blocked endpoints
-      const processedBlockedEndpoints =
-        currentPermissions?.BlockedEndpoints?.map((endpoint) => ({
-          label: endpoint,
-          value: endpoint,
-        })) || [];
-
-      formControl.reset({
-        Permissions:
-          basePermissions && Object.keys(basePermissions).length > 0
-            ? basePermissions
-            : processPermissions(currentPermissions?.Permissions),
-        RoleName: selectedRole ?? currentPermissions?.RowKey,
-        allowedTenants: newAllowedTenants,
-        blockedTenants: newBlockedTenants,
-        BlockedEndpoints: processedBlockedEndpoints,
-        EntraGroup: currentPermissions?.EntraGroup,
-      });
+      return;
     }
-  }, [customRoleList, customRoleListSuccess, tenantsSuccess, baseRolePermissions]);
+
+    setSelectedRoleState(selectedRole);
+    const isApiRole = selectedRole === "api-role";
+    setCippApiRoleSelected(isApiRole);
+
+    const currentPermissions = customRoleList?.pages?.[0]?.find(
+      (role) => role.RowKey === selectedRole,
+    );
+
+    // Process allowed stores - handle both groups and store IDs
+    var newAllowedStores = [];
+    currentPermissions?.AllowedStores?.forEach((item) => {
+      if (typeof item === "object" && item.type === "Group") {
+        newAllowedStores.push({
+          label: item.label,
+          value: item.value,
+          type: "Group",
+        });
+      } else {
+        var storeInfo = stores.find((s) => s.storeId === item);
+        if (storeInfo?.storeName) {
+          var label = `${storeInfo.storeName} (${storeInfo.storeCode || storeInfo.storeId})`;
+          newAllowedStores.push({
+            label: label,
+            value: storeInfo.storeId,
+            type: "Store",
+            addedFields: {
+              storeId: storeInfo.storeId,
+              storeName: storeInfo.storeName,
+              storeCode: storeInfo.storeCode,
+            },
+          });
+        } else {
+          // Log warning when store can't be found
+          console.warn(`Store not found for ID: ${item}`);
+        }
+      }
+    });
+
+    // Process blocked stores - handle both groups and store IDs
+    var newBlockedStores = [];
+    currentPermissions?.BlockedStores?.forEach((item) => {
+      if (typeof item === "object" && item.type === "Group") {
+        newBlockedStores.push({
+          label: item.label,
+          value: item.value,
+          type: "Group",
+        });
+      } else {
+        var storeInfo = stores.find((s) => s.storeId === item);
+        if (storeInfo?.storeName) {
+          var label = `${storeInfo.storeName} (${storeInfo.storeCode || storeInfo.storeId})`;
+          newBlockedStores.push({
+            label: label,
+            value: storeInfo.storeId,
+            type: "Store",
+            addedFields: {
+              storeId: storeInfo.storeId,
+              storeName: storeInfo.storeName,
+              storeCode: storeInfo.storeCode,
+            },
+          });
+        } else {
+          console.warn(`Store not found for ID: ${item}`);
+        }
+      }
+    });
+
+    const basePermissions = {};
+    Object.entries(getBaseRolePermissions(selectedRole)).forEach(([cat, objects]) => {
+      Object.entries(objects).forEach(([obj, permission]) => {
+        basePermissions[`${cat}${obj}`] = `${cat}.${obj}.${permission}`;
+      });
+    });
+
+    const processPermissions = (permissions) => {
+      const processed = {};
+      Object.keys(apiPermissions).forEach((cat) => {
+        Object.keys(apiPermissions[cat]).forEach((obj) => {
+          const key = `${cat}${obj}`;
+          const existingPerm = permissions?.[key];
+          processed[key] = existingPerm || `${cat}.${obj}.None`;
+        });
+      });
+      return processed;
+    };
+
+    const processedBlockedEndpoints =
+      currentPermissions?.BlockedEndpoints?.map((endpoint) => ({
+        label: endpoint,
+        value: endpoint,
+      })) || [];
+
+    formControl.reset({
+      Permissions:
+        basePermissions && Object.keys(basePermissions).length > 0
+          ? basePermissions
+          : processPermissions(currentPermissions?.Permissions),
+      RoleName: selectedRole ?? currentPermissions?.RowKey,
+      allowedStores: newAllowedStores,
+      blockedStores: newBlockedStores,
+      BlockedEndpoints: processedBlockedEndpoints,
+      EntraGroup: currentPermissions?.EntraGroup,
+    });
+  }, [
+    customRoleList,
+    customRoleListSuccess,
+    storesSuccess,
+    selectedRole,
+    stores,
+    apiPermissions,
+    formControl,
+  ]);
 
   useEffect(() => {
     if (updateDefaults !== setDefaults) {
@@ -268,18 +278,18 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
   }, [setDefaults, updateDefaults]);
 
   useEffect(() => {
-    var alltenant = false;
-    selectedTenant?.map((tenant) => {
-      if (tenant?.value === "AllTenants") {
-        alltenant = true;
+    var allstore = false;
+    selectedStore?.map((store) => {
+      if (store?.value === "AllStores") {
+        allstore = true;
       }
     });
-    if (alltenant) {
-      setAllTenantSelected(true);
+    if (allstore) {
+      setAllStoreSelected(true);
     } else {
-      setAllTenantSelected(false);
+      setAllStoreSelected(false);
     }
-  }, [selectedTenant, blockedTenants]);
+  }, [selectedStore, blockedStores]);
 
   useEffect(() => {
     if (selectedRole) {
@@ -290,40 +300,40 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
   const handleSubmit = () => {
     let values = formControl.getValues();
 
-    // Process allowed tenants - preserve groups and convert tenants to IDs
-    const processedAllowedTenants =
-      selectedTenant
-        ?.map((tenant) => {
-          if (tenant.type === "Group") {
+    // Process allowed stores - preserve groups and convert stores to IDs
+    const processedAllowedStores =
+      selectedStore
+        ?.map((store) => {
+          if (store.type === "Group") {
             // Keep groups as-is for backend processing
             return {
               type: "Group",
-              value: tenant.value,
-              label: tenant.label,
+              value: store.value,
+              label: store.label,
             };
           } else {
-            // Convert tenant domain names to customer IDs
-            const tenantInfo = tenants.find((t) => t.defaultDomainName === tenant.value);
-            return tenantInfo?.customerId;
+            // Convert store values to store IDs
+            const storeInfo = stores.find((s) => s.storeId === store.value);
+            return storeInfo?.storeId;
           }
         })
         .filter(Boolean) || [];
 
-    // Process blocked tenants - preserve groups and convert tenants to IDs
-    const processedBlockedTenants =
-      blockedTenants
-        ?.map((tenant) => {
-          if (tenant.type === "Group") {
+    // Process blocked stores - preserve groups and convert stores to IDs
+    const processedBlockedStores =
+      blockedStores
+        ?.map((store) => {
+          if (store.type === "Group") {
             // Keep groups as-is for backend processing
             return {
               type: "Group",
-              value: tenant.value,
-              label: tenant.label,
+              value: store.value,
+              label: store.label,
             };
           } else {
-            // Convert tenant domain names to customer IDs
-            const tenantInfo = tenants.find((t) => t.defaultDomainName === tenant.value);
-            return tenantInfo?.customerId;
+            // Convert store values to store IDs
+            const storeInfo = stores.find((s) => s.storeId === store.value);
+            return storeInfo?.storeId;
           }
         })
         .filter(Boolean) || [];
@@ -340,8 +350,8 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
         RoleName: values?.["RoleName"],
         Permissions: selectedPermissions,
         EntraGroup: selectedEntraGroup,
-        AllowedTenants: processedAllowedTenants,
-        BlockedTenants: processedBlockedTenants,
+        AllowedStores: processedAllowedStores,
+        BlockedStores: processedBlockedStores,
         BlockedEndpoints: processedBlockedEndpoints,
       },
     });
@@ -517,34 +527,34 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
           {!isBaseRole && (
             <>
               <Stack spacing={1} sx={{ my: 3 }}>
-                <CippFormTenantSelector
-                  label="Allowed Tenants"
+                <CippFormStoreSelector
+                  label="Allowed Stores"
                   formControl={formControl}
                   type="multiple"
-                  allTenants={true}
-                  name="allowedTenants"
+                  allStores={true}
+                  name="allowedStores"
                   fullWidth={true}
                   includeGroups={true}
-                  helperText="Select the tenants that users should have access to with this role."
+                  helperText="Select the stores that users should have access to with this role."
                 />
-                {allTenantSelected && blockedTenants?.length == 0 && (
+                {allStoreSelected && blockedStores?.length == 0 && (
                   <Alert color="warning">
-                    All tenants selected, no tenant restrictions will be applied unless blocked
-                    tenants are specified.
+                    All stores selected, no store restrictions will be applied unless blocked
+                    stores are specified.
                   </Alert>
                 )}
               </Stack>
-              {allTenantSelected && (
+              {allStoreSelected && (
                 <Box sx={{ mb: 3 }}>
-                  <CippFormTenantSelector
-                    label="Blocked Tenants"
+                  <CippFormStoreSelector
+                    label="Blocked Stores"
                     formControl={formControl}
                     type="multiple"
-                    allTenants={false}
-                    name="blockedTenants"
+                    allStores={false}
+                    name="blockedStores"
                     fullWidth={true}
                     includeGroups={true}
-                    helperText="Select tenants that this role should not have access to."
+                    helperText="Select stores that this role should not have access to."
                   />
                 </Box>
               )}
@@ -782,22 +792,22 @@ export const CippRoleAddEdit = ({ selectedRole }) => {
               <strong>{selectedEntraGroup.label}</strong>
             </Alert>
           )}
-          {selectedTenant?.length > 0 && (
+          {selectedStore?.length > 0 && (
             <>
-              <h5>Allowed Tenants</h5>
+              <h5>Allowed Stores</h5>
               <ul>
-                {selectedTenant.map((tenant, idx) => (
-                  <li key={`allowed-tenant-${idx}`}>{tenant?.label}</li>
+                {selectedStore.map((store, idx) => (
+                  <li key={`allowed-store-${idx}`}>{store?.label}</li>
                 ))}
               </ul>
             </>
           )}
-          {blockedTenants?.length > 0 && (
+          {blockedStores?.length > 0 && (
             <>
-              <h5>Blocked Tenants</h5>
+              <h5>Blocked Stores</h5>
               <ul>
-                {blockedTenants.map((tenant, idx) => (
-                  <li key={`blocked-tenant-${idx}`}>{tenant?.label}</li>
+                {blockedStores.map((store, idx) => (
+                  <li key={`blocked-store-${idx}`}>{store?.label}</li>
                 ))}
               </ul>
             </>

@@ -75,36 +75,7 @@ export const CippTenantModeDeploy = (props) => {
         </Box>
       </Box>
 
-      {/* Per-Tenant */}
       <Box>
-        <Typography variant="h6" gutterBottom>
-          Per-Tenant Authentication
-        </Typography>
-        <Typography variant="body2" sx={{ mt: 2, mb: 2 }}>
-          Click the button below to connect to individual tenants. You can authenticate to multiple
-          tenants by repeating this step for each tenant you want to add. Accidentally added the
-          wrong tenant? Use the table below to remove it.
-        </Typography>
-
-        <Box sx={{ display: "flex", justifyContent: "flex-start", mt: 2, mb: 2 }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <CIPPM365OAuthButton
-              onAuthSuccess={(tokenData) => {
-                const updatedTokenData = {
-                  ...tokenData,
-                  tenantMode: "perTenant",
-                };
-                addTenant.mutate({
-                  url: "/api/ExecAddTenant",
-                  data: updatedTokenData,
-                });
-              }}
-              buttonText="Connect to Separate Tenants"
-              showSuccessAlert={false}
-            />
-          </Stack>
-        </Box>
-
         <CippTenantTable
           title="Authenticated Tenants"
           tenantInTitle={false}

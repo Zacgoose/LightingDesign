@@ -8,11 +8,33 @@ function Invoke-ExecGetDesign {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
+    $JobId = $Request.Query.jobId
+
+    if (-not $JobId) {
+        return [HttpResponseContext]@{
+            StatusCode = [System.Net.HttpStatusCode]::BadRequest
+            Body       = @{ error = 'jobId parameter is required' }
+        }
+    }
+
+    # Get the job to retrieve its StoreId for access validation
+    $JobTable = Get-CIPPTable -TableName 'Jobs'
+    $JobFilter = "RowKey eq '{0}'" -f $JobId
+    $Job = Get-CIPPAzDataTableEntity @JobTable -Filter $JobFilter
+
+    if (-not $Job) {
+        return [HttpResponseContext]@{
+            StatusCode = [System.Net.HttpStatusCode]::NotFound
+            Body       = @{ error = 'Job not found' }
+        }
+    }
+
+    # Validate store access
+    Test-CIPPAccess -Request $Request -StoreId $Job.StoreId
+
     $Table = Get-CippTable -tablename 'Designs'
     $LocksTable = Get-CippTable -tablename 'DesignLocks'
 
-    $JobId = $Request.Query.jobId
-    
     # Extract username using the correct method (same as Write-LogMessage)
     if ($Request.Headers.'x-ms-client-principal-idp' -eq 'azureStaticWebApps' -or !$Request.Headers.'x-ms-client-principal-idp') {
         $user = $Request.Headers.'x-ms-client-principal'
@@ -31,13 +53,6 @@ function Invoke-ExecGetDesign {
             $Username = ([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($user)) | ConvertFrom-Json).userDetails
         } catch {
             $Username = $null
-        }
-    }
-
-    if (-not $JobId) {
-        return [HttpResponseContext]@{
-            StatusCode = [System.Net.HttpStatusCode]::BadRequest
-            Body       = @{ error = 'jobId parameter is required' }
         }
     }
 
@@ -126,7 +141,6 @@ function Invoke-ExecGetDesign {
                     Write-Host "✓ JSON parsing successful"
                 } catch {
                     Write-Error "JSON parsing failed: $_"
-                    # Debug info
 
                     if ($_.Exception.Message -match 'position (\d+)') {
                         $errorPos = [int]$matches[1]

@@ -260,7 +260,7 @@ const Page = () => {
 
       // Get job information
       const jobInfo = jobData.data || {};
-      const jobNumber = jobInfo.jobNumber || "N/A";
+      const jobName = jobInfo.jobName || "N/A";
       // Extract string values from potential objects
       const customerName =
         typeof jobInfo.customerName === "object" && jobInfo.customerName !== null
@@ -383,7 +383,7 @@ const Page = () => {
 
         // Add footer info bar (replacing old title block)
         await addFooterInfoBar(pdf, pageWidth, pageHeight, {
-          jobNumber,
+          jobName,
           customerName,
           address: jobAddress,
           floorName: floorName,
@@ -440,7 +440,7 @@ const Page = () => {
       setExportStatus("Finalizing PDF...");
 
       // Save the PDF
-      const fileName = `${jobNumber || "design"}_export_${new Date().toISOString().split("T")[0]}.pdf`;
+      const fileName = `${jobName || "design"}_export_${new Date().toISOString().split("T")[0]}.pdf`;
       pdf.save(fileName);
 
       setExportProgress(100);
@@ -533,7 +533,7 @@ const Page = () => {
     pdf.setFont("helvetica", "bold");
     pdf.text("Job #:", infoX, infoY);
     pdf.setFont("helvetica", "normal");
-    pdf.text(info.jobNumber, infoX, infoY + 4);
+    pdf.text(info.jobName, infoX, infoY + 4);
 
     infoX += labelSpacing;
     pdf.setFont("helvetica", "bold");
@@ -1634,7 +1634,7 @@ const Page = () => {
   const addProductLegend = async (pdf, pageWidth, pageHeight, allProducts) => {
     // Get job info
     const jobInfo = jobData.data || {};
-    const jobNumber = jobInfo.jobNumber || "N/A";
+    const jobName = jobInfo.jobName || "N/A";
     // Extract string values from potential objects
     const customerName =
       typeof jobInfo.customerName === "object" && jobInfo.customerName !== null
@@ -2251,7 +2251,7 @@ const Page = () => {
       pdf.setFont("helvetica", "bold");
       pdf.text("Job #:", infoX, infoY);
       pdf.setFont("helvetica", "normal");
-      pdf.text(jobNumber, infoX, infoY + 4);
+      pdf.text(jobName, infoX, infoY + 4);
 
       infoX += labelSpacing;
       pdf.setFont("helvetica", "bold");

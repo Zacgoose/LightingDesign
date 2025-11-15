@@ -110,7 +110,7 @@ function Invoke-ExecCombinedSetup {
             $Results.add('Manual credentials setup has been completed.')
         }
 
-        $Results.add('Setup is now complete. You may navigate away from this page and start using CIPP.')
+        $Results.add('Setup is now complete. You may navigate away from this page and start using LightingDesigner.')
         #one more force of reauth so env vars update.
         $auth = Get-CIPPAuthentication
     } catch {

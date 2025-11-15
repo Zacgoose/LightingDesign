@@ -14,49 +14,30 @@ const Page = () => {
   const router = useRouter();
   const { id } = router.query;
 
+  const formControl = useForm({
+    mode: "onChange",
+  });
+
   // Fetch job details
   const jobDetails = ApiGetCall({
     url: "/api/ExecGetJob",
     data: { jobId: id },
     queryKey: `Job-${id}`,
-    enabled: !!id,
-  });
-
-  const formControl = useForm({
-    mode: "onChange",
-    defaultValues: {
-      jobNumber: "",
-      customerName: null,
-      status: { value: "pending", label: "Pending" },
-      description: "",
-      address: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      contactName: "",
-      contactPhone: "",
-      contactEmail: "",
-      estimatedValue: "",
-      notes: "",
-      assignedDesigner: null,
-      builders: [],
-      relatedTrades: [],
-      pricingMatrix: {
-        customerPrice: "",
-        tradePrice: "",
-        builderPrice: "",
-        costBasis: "",
-        markupPercentage: "",
-      },
-    },
+    waiting: !!id,
   });
 
   // Update form when job details load
   useEffect(() => {
-    if (jobDetails.data) {
-      formControl.reset(jobDetails.data);
+    if (jobDetails.isSuccess && jobDetails.data) {
+      const cleanedData = {
+        ...jobDetails.data,
+        relatedTrades: jobDetails.data.relatedTrades || undefined,
+        builders: jobDetails.data.builders || undefined,
+      };
+      
+      formControl.reset(cleanedData);
     }
-  }, [jobDetails.data]);
+  }, [jobDetails.isSuccess, jobDetails.data]);
 
   return (
     <>
@@ -65,35 +46,30 @@ const Page = () => {
       </Head>
       <CippFormPage
         formControl={formControl}
-        queryKey="EditJob"
-        title={`Job: ${jobDetails.data?.jobNumber || "Loading..."}`}
+        title={`Job: ${jobDetails.data?.jobName || "Loading..."}`}
         backButtonTitle="Jobs"
-        postUrl="/api/EditJob"
-        customDataformatter={(values) => {
-          return {
-            jobId: id,
-            jobNumber: values.jobNumber,
-            customerId: values.customerName?.value,
-            status: values.status?.value,
-            description: values.description,
-            address: values.address,
-            city: values.city,
-            state: values.state,
-            postalCode: values.postalCode,
-            contactName: values.contactName,
-            contactPhone: values.contactPhone,
-            contactEmail: values.contactEmail,
-            estimatedValue: values.estimatedValue,
-            notes: values.notes,
-            assignedDesigner: values.assignedDesigner?.value
-              ? { value: values.assignedDesigner.value, label: values.assignedDesigner.label }
-              : null,
-            builders: values.builders?.map((b) => ({ value: b.value, label: b.label })) || [],
-            relatedTrades:
-              values.relatedTrades?.map((t) => ({ value: t.value, label: t.label })) || [],
-            pricingMatrix: values.pricingMatrix || {},
-          };
-        }}
+        postUrl="/api/ExecEditJob"
+        customDataformatter={(values) => ({
+          jobId: id,
+          jobName: values.jobName,
+          customerId: values.customerId?.value || values.customerId,
+          storeId: values.storeId?.value || values.storeId,
+          status: values.status?.value || values.status,
+          description: values.description,
+          address: values.address,
+          city: values.city,
+          state: values.state,
+          postalCode: values.postalCode,
+          contactName: values.contactName,
+          contactPhone: values.contactPhone,
+          contactEmail: values.contactEmail,
+          estimatedValue: values.estimatedValue,
+          notes: values.notes,
+          assignedDesigner: values.assignedDesigner?.value || values.assignedDesigner,
+          builders: values.builders?.map((b) => b.value || b),
+          relatedTrades: values.relatedTrades?.map((t) => t.value || t),
+          pricingMatrix: values.pricingMatrix,
+        })}
         addedButtons={
           <Button
             component={Link}

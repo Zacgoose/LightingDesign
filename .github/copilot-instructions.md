@@ -46,7 +46,7 @@ const data = ApiGetCall({
 const formControl = useForm({
   mode: "onChange",
   defaultValues: {
-    jobNumber: "",
+    jobName: "",
     status: { value: "pending", label: "Pending" }
   }
 });

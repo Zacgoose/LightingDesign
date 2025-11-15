@@ -7,31 +7,6 @@ import { JobForm } from "/src/components/designer/JobForm";
 const Page = () => {
   const formControl = useForm({
     mode: "onChange",
-    defaultValues: {
-      jobNumber: "",
-      customerName: null,
-      status: { value: "pending", label: "Pending" },
-      description: "",
-      address: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      contactName: "",
-      contactPhone: "",
-      contactEmail: "",
-      estimatedValue: "",
-      notes: "",
-      assignedDesigner: null,
-      builders: [],
-      relatedTrades: [],
-      pricingMatrix: {
-        customerPrice: "",
-        tradePrice: "",
-        builderPrice: "",
-        costBasis: "",
-        markupPercentage: "",
-      },
-    },
   });
 
   return (
@@ -45,6 +20,26 @@ const Page = () => {
         title="New Job"
         backButtonTitle="Jobs"
         postUrl="/api/ExecNewJob"
+        customDataformatter={(values) => ({
+          jobName: values.jobName,
+          customerId: values.customerId?.value || values.customerId,
+          storeId: values.storeId?.value || values.storeId,
+          status: values.status?.value || values.status,
+          description: values.description,
+          address: values.address,
+          city: values.city,
+          state: values.state,
+          postalCode: values.postalCode,
+          contactName: values.contactName,
+          contactPhone: values.contactPhone,
+          contactEmail: values.contactEmail,
+          estimatedValue: values.estimatedValue,
+          notes: values.notes,
+          assignedDesigner: values.assignedDesigner?.value || values.assignedDesigner,
+          builders: values.builders?.map((b) => b.value || b) || [],
+          relatedTrades: values.relatedTrades?.map((t) => t.value || t) || [],
+          pricingMatrix: values.pricingMatrix,
+        })}
       >
         <JobForm formControl={formControl} mode="new" />
       </CippFormPage>

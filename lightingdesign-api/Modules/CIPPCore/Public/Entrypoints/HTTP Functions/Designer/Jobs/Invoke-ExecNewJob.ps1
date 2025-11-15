@@ -81,7 +81,7 @@ function Invoke-ExecNewJob {
         $Table = Get-CIPPTable -TableName 'Jobs'
 
         # Extract simple text fields (convert empty strings to null)
-        $JobNumber        = ConvertTo-NullIfEmpty -Value $Request.Body.jobNumber
+        $JobName          = ConvertTo-NullIfEmpty -Value $Request.Body.jobName
         $Description      = ConvertTo-NullIfEmpty -Value $Request.Body.description
         $Address          = ConvertTo-NullIfEmpty -Value $Request.Body.address
         $City             = ConvertTo-NullIfEmpty -Value $Request.Body.city
@@ -128,7 +128,7 @@ function Invoke-ExecNewJob {
         $Entity = @{
             PartitionKey     = 'Job'
             RowKey           = $NewJobId
-            JobNumber        = $JobNumber
+            JobName          = $JobName
             CustomerId       = $CustomerId
             StoreId          = $StoreId
             Status           = $Status
@@ -150,7 +150,7 @@ function Invoke-ExecNewJob {
 
         Add-CIPPAzDataTableEntity @Table -Entity $Entity -Force
 
-        Write-LogMessage -API 'NewJob' -message "Job created successfully: JobId: $NewJobId, JobNumber: $JobNumber" -Sev 'Info' -headers $Request.Headers
+        Write-LogMessage -API 'NewJob' -message "Job created successfully: JobId: $NewJobId, JobName: $JobName" -Sev 'Info' -headers $Request.Headers
 
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::Created

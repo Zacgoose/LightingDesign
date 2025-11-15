@@ -83,7 +83,7 @@ function Invoke-ExecEditJob {
     $Entity = @{
         PartitionKey     = $ExistingJob.PartitionKey
         RowKey           = $ExistingJob.RowKey
-        JobNumber        = if ($Request.Body.jobNumber) { $Request.Body.jobNumber } else { $ExistingJob.JobNumber }
+        JobName          = if ($Request.Body.jobName) { $Request.Body.jobName } else { $ExistingJob.JobName }
         CustomerId       = if ($CustomerId) { $CustomerId } else { $ExistingJob.CustomerId }
         StoreId          = if ($NewStoreId) { $NewStoreId } else { $ExistingJob.StoreId }
         Status           = if ($Status) { $Status } else { $ExistingJob.Status }
@@ -107,7 +107,7 @@ function Invoke-ExecEditJob {
 
     Add-CIPPAzDataTableEntity @Table -Entity $Entity -Force
 
-    Write-LogMessage -API 'EditJob' -message "Job updated successfully: JobId: $JobId, JobNumber: $($Entity.JobNumber)" -Sev 'Info' -headers $Request.Headers
+    Write-LogMessage -API 'EditJob' -message "Job updated successfully: JobId: $JobId, JobName: $($Entity.JobName)" -Sev 'Info' -headers $Request.Headers
 
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::OK

@@ -61,7 +61,7 @@ function Invoke-ExecDeleteJob {
         }
     }
 
-    Write-LogMessage -API 'DeleteJob' -message "Job deleted successfully: JobId: $JobId, JobNumber: $($ExistingJob.JobNumber)" -Sev 'Info' -headers $Request.Headers
+    Write-LogMessage -API 'DeleteJob' -message "Job deleted successfully: JobId: $JobId, JobName: $($ExistingJob.JobName)" -Sev 'Info' -headers $Request.Headers
 
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::OK

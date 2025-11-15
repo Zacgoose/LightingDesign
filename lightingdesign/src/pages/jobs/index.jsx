@@ -39,7 +39,7 @@ const Page = () => {
   // Define off-canvas details when clicking a row
   const offCanvas = {
     extendedInfoFields: [
-      "jobNumber",
+      "jobName",
       "customerName",
       "status",
       "createdDate",

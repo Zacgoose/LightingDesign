@@ -3,6 +3,7 @@ import { Grid } from "@mui/system";
 import CippFormComponent from "../CippComponents/CippFormComponent";
 import { CippFormStoreSelector } from "../CippComponents/CippFormStoreSelector";
 import { ApiGetCall } from "../../api/ApiCall";
+import { useMemo } from "react";
 
 export const JobForm = ({ formControl, mode = "new" }) => {
   // Fetch customers for dropdown
@@ -10,13 +11,18 @@ export const JobForm = ({ formControl, mode = "new" }) => {
     url: "/api/ListCustomers",
     queryKey: "Customers",
   });
-  // Ensure customers.data is always an array
-  const customerOptions = Array.isArray(customers.data)
-    ? customers.data.map((customer) => ({
-        value: customer.id,
-        label: customer.customerName,
-      }))
-    : [];
+
+  // Ensure customers.data is always an array and map to autocomplete format
+  const customerOptions = useMemo(
+    () =>
+      Array.isArray(customers.data)
+        ? customers.data.map((customer) => ({
+            value: customer.id,
+            label: customer.customerName,
+          }))
+        : [],
+    [customers.data]
+  );
 
   // Job status options
   const statusOptions = [
@@ -27,14 +33,18 @@ export const JobForm = ({ formControl, mode = "new" }) => {
   ];
 
   // Builder options (customers marked as builders)
-  const builderOptions = Array.isArray(customers.data)
-    ? customers.data
-        .filter((c) => c.customerType === "builder" || !c.customerType)
-        .map((customer) => ({
-          value: customer.id,
-          label: customer.customerName,
-        }))
-    : [];
+  const builderOptions = useMemo(
+    () =>
+      Array.isArray(customers.data)
+        ? customers.data
+            .filter((c) => c.customerType === "builder" || !c.customerType)
+            .map((customer) => ({
+              value: customer.id,
+              label: customer.customerName,
+            }))
+        : [],
+    [customers.data]
+  );
 
   // Trade options
   const tradeOptions = [
@@ -47,7 +57,7 @@ export const JobForm = ({ formControl, mode = "new" }) => {
     { value: "landscaping", label: "Landscaping" },
   ];
 
-  // Designer options (for now, hardcoded - can be fetched from API later)
+  // Designer options
   const designerOptions = [
     { value: "designer1", label: "John Doe" },
     { value: "designer2", label: "Jane Smith" },
@@ -64,10 +74,10 @@ export const JobForm = ({ formControl, mode = "new" }) => {
       <Grid size={{ md: 6, xs: 12 }}>
         <CippFormComponent
           type="textField"
-          label="Job Number"
-          name="jobNumber"
+          label="Job Name"
+          name="jobName"
           formControl={formControl}
-          validators={{ required: "Job Number is required" }}
+          validators={{ required: "Job Name is required" }}
         />
       </Grid>
 
@@ -75,10 +85,11 @@ export const JobForm = ({ formControl, mode = "new" }) => {
         <CippFormComponent
           type="autoComplete"
           label="Customer"
-          name="customerName"
+          name="customerId"
           formControl={formControl}
           options={customerOptions}
           validators={{ required: "Customer is required" }}
+          isFetching={customers.isFetching}
         />
       </Grid>
 
@@ -129,6 +140,7 @@ export const JobForm = ({ formControl, mode = "new" }) => {
           name="builders"
           formControl={formControl}
           options={builderOptions}
+          isFetching={customers.isFetching}
           multiple
         />
       </Grid>

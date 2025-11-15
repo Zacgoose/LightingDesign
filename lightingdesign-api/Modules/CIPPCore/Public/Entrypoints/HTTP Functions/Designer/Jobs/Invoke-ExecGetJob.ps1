@@ -33,7 +33,7 @@ function Invoke-ExecGetJob {
     # Validate store access
     Test-CIPPAccess -Request $Request -StoreId $Row.StoreId
 
-    Write-LogMessage -API 'GetJob' -message "Retrieved job: JobId: $JobId, JobNumber: $($Row.JobNumber)" -Sev 'Info' -headers $Request.Headers
+    Write-LogMessage -API 'GetJob' -message "Retrieved job: JobId: $JobId, JobName: $($Row.JobName)" -Sev 'Info' -headers $Request.Headers
 
     # Parse JSON fields
     $RelatedTrades = if ($Row.RelatedTrades) {
@@ -55,7 +55,7 @@ function Invoke-ExecGetJob {
     # Return simple values - let frontend handle autocomplete formatting
     $ReturnedJob = [PSCustomObject]@{
         jobId            = $Row.RowKey
-        jobNumber        = $Row.JobNumber
+        jobName          = $Row.JobName
         customerId       = $Row.CustomerId
         storeId          = $Row.StoreId
         status           = $Row.Status

@@ -65,8 +65,12 @@ function Invoke-ExecEditCustomer {
     # Extract values from autocomplete fields
     $Status = Get-AutoCompleteValue -InputObject $Request.Body.status
     $CustomerType = Get-AutoCompleteValue -InputObject $Request.Body.customerType
-    $RelatedBuilders = Get-AutoCompleteArrayValues -InputArray $Request.Body.relatedBuilders
-    $TradeAssociations = Get-AutoCompleteArrayValues -InputArray $Request.Body.tradeAssociations
+    $RelatedBuilders = if ($Request.Body.PSObject.Properties.Name -contains 'relatedBuilders') {
+        Get-AutoCompleteArrayValues -InputArray $Request.Body.relatedBuilders
+    } else { $null }
+    $TradeAssociations = if ($Request.Body.PSObject.Properties.Name -contains 'tradeAssociations') {
+        Get-AutoCompleteArrayValues -InputArray $Request.Body.tradeAssociations
+    } else { $null }
 
     # Update customer fields
     $Entity = @{
@@ -79,9 +83,9 @@ function Invoke-ExecEditCustomer {
         City              = if ($Request.Body.city) { $Request.Body.city } else { $ExistingCustomer.City }
         State             = if ($Request.Body.state) { $Request.Body.state } else { $ExistingCustomer.State }
         PostalCode        = if ($Request.Body.postalCode) { $Request.Body.postalCode } else { $ExistingCustomer.PostalCode }
-        Status            = if ($Status) { $Status } else { $ExistingCustomer.Status }
+        Status            = if ($Request.Body.PSObject.Properties.Name -contains 'status') { $Status } else { $ExistingCustomer.Status }
         Notes             = if ($Request.Body.notes) { $Request.Body.notes } else { $ExistingCustomer.Notes }
-        CustomerType      = if ($CustomerType) { $CustomerType } else { $ExistingCustomer.CustomerType }
+        CustomerType      = if ($Request.Body.PSObject.Properties.Name -contains 'customerType') { $CustomerType } else { $ExistingCustomer.CustomerType }
         RelatedBuilders   = if ($null -ne $RelatedBuilders) { 
             if ($RelatedBuilders.Count -gt 0) { ($RelatedBuilders | ConvertTo-Json -Compress) } else { $null }
         } else { $ExistingCustomer.RelatedBuilders }

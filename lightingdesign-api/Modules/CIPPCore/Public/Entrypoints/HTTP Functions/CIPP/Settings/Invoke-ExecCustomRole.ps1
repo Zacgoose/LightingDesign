@@ -38,9 +38,9 @@ function Invoke-ExecCustomRole {
                         'PartitionKey'     = 'CustomRoles'
                         'RowKey'           = "$($Request.Body.RoleName.ToLower())"
                         'Permissions'      = "$($Request.Body.Permissions | ConvertTo-Json -Compress)"
-                        'AllowedStores'    = "$($Request.Body.AllowedStores | ConvertTo-Json -Compress)"
-                        'BlockedStores'    = "$($Request.Body.BlockedStores | ConvertTo-Json -Compress)"
-                        'BlockedEndpoints' = "$($Request.Body.BlockedEndpoints | ConvertTo-Json -Compress)"
+                        'AllowedStores'    = "$(@($Request.Body.AllowedStores) | ConvertTo-Json -Compress)"
+                        'BlockedStores'    = "$(@($Request.Body.BlockedStores) | ConvertTo-Json -Compress)"
+                        'BlockedEndpoints' = "$(@($Request.Body.BlockedEndpoints) | ConvertTo-Json -Compress)"
                     }
                     Add-CIPPAzDataTableEntity @Table -Entity $Role -Force | Out-Null
                     $Results.Add("Custom role $($Request.Body.RoleName) saved")

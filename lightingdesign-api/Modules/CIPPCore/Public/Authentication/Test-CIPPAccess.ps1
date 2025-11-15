@@ -1,7 +1,84 @@
+function Get-CIPPUserStores {
+    param(
+        $CustomRoles,
+        $BaseRole
+    )
+
+    # Base roles (admin, superadmin, lightingdesigner) have access to all stores
+    if (@('admin', 'superadmin', 'lightingdesigner') -contains $BaseRole.Name) {
+        return @('AllStores')
+    }
+
+    # No custom roles = all stores
+    if (($CustomRoles | Measure-Object).Count -eq 0) {
+        return @('AllStores')
+    }
+
+    $Stores = Get-Stores -IncludeErrors
+    $PermissionsFound = $false
+    $PermissionSet = foreach ($CustomRole in $CustomRoles) {
+        try {
+            Get-CIPPRolePermissions -Role $CustomRole
+            $PermissionsFound = $true
+        } catch {
+            Write-Information $_.Exception.Message
+            continue
+        }
+    }
+
+    if (!$PermissionsFound) {
+        return @('AllStores')
+    }
+
+    # Build list of allowed stores from all roles
+    $LimitedStoreList = foreach ($Permission in $PermissionSet) {
+        if ((($Permission.AllowedStores | Measure-Object).Count -eq 0 -or $Permission.AllowedStores -contains 'AllStores') -and (($Permission.BlockedStores | Measure-Object).Count -eq 0)) {
+            @('AllStores')
+        } else {
+            # Expand store groups to individual store IDs
+            $ExpandedAllowedStores = foreach ($AllowedItem in $Permission.AllowedStores) {
+                if ($AllowedItem -is [PSCustomObject] -and $AllowedItem.type -eq 'Group') {
+                    try {
+                        $GroupMembers = Expand-CIPPStoreGroups -StoreFilter @($AllowedItem)
+                        $GroupMembers | ForEach-Object { $_.storeId }
+                    } catch {
+                        Write-Warning "Failed to expand store group '$($AllowedItem.label)': $($_.Exception.Message)"
+                        @()
+                    }
+                } else {
+                    $AllowedItem
+                }
+            }
+
+            $ExpandedBlockedStores = foreach ($BlockedItem in $Permission.BlockedStores) {
+                if ($BlockedItem -is [PSCustomObject] -and $BlockedItem.type -eq 'Group') {
+                    try {
+                        $GroupMembers = Expand-CIPPStoreGroups -StoreFilter @($BlockedItem)
+                        $GroupMembers | ForEach-Object { $_.storeId }
+                    } catch {
+                        Write-Warning "Failed to expand blocked store group '$($BlockedItem.label)': $($_.Exception.Message)"
+                        @()
+                    }
+                } else {
+                    $BlockedItem
+                }
+            }
+
+            if ($ExpandedAllowedStores -contains 'AllStores') {
+                $ExpandedAllowedStores = $Stores.storeId
+            }
+            $ExpandedAllowedStores | Where-Object { $ExpandedBlockedStores -notcontains $_ }
+        }
+    }
+
+    return $LimitedStoreList
+}
+
 function Test-CIPPAccess {
     param(
         $Request,
-        [switch]$StoreList
+        [switch]$StoreList,
+        [string]$StoreId
     )
     if ($Request.Params.CIPPEndpoint -eq 'ExecSAMSetup') { return $true }
 
@@ -101,7 +178,6 @@ function Test-CIPPAccess {
             $User = Test-CIPPAccessUserRole -User $User
         }
 
-        #Write-Information ($User | ConvertTo-Json -Depth 5)
         # Return user permissions
         if ($Request.Params.CIPPEndpoint -eq 'me') {
 
@@ -127,12 +203,6 @@ function Test-CIPPAccess {
                 })
         }
 
-        if ($User.userRoles -contains 'admin' -or $User.userRoles -contains 'superadmin' -or $User.userRoles -contains 'lightingdesigner') {
-            if ($StoreList.IsPresent) {
-                return @('AllStores')
-            }
-        }
-
         $CustomRoles = $User.userRoles | ForEach-Object {
             if ($DefaultRoles -notcontains $_) {
                 $_
@@ -156,7 +226,19 @@ function Test-CIPPAccess {
                 }
             }
         }
+    }
 
+    # If StoreId parameter provided, validate store access early
+    if ($StoreId) {
+        $AllowedStores = Get-CIPPUserStores -CustomRoles $CustomRoles -BaseRole $BaseRole
+
+        if ($AllowedStores -notcontains 'AllStores' -and $AllowedStores -notcontains $StoreId) {
+            $EndpointName = $Request.Params.CIPPEndpoint
+            Write-LogMessage -API $EndpointName -message "Access denied: User attempted to access resource from unauthorized store $StoreId" -Sev 'Warn' -headers $Request.Headers
+            throw "Access to this store is not allowed"
+        }
+
+        return $true
     }
 
     # Check base role permissions before continuing to custom roles
@@ -186,6 +268,9 @@ function Test-CIPPAccess {
         throw 'Access to this CIPP API endpoint is not allowed, the user does not have the required permission'
     } elseif (($CustomRoles | Measure-Object).Count -gt 0) {
         if (@('admin', 'superadmin', 'lightingdesigner') -contains $BaseRole.Name) {
+            if ($StoreList.IsPresent) {
+                return @('AllStores')
+            }
             return $true
         } else {
             $Stores = Get-Stores -IncludeErrors
@@ -201,47 +286,9 @@ function Test-CIPPAccess {
             }
 
             if ($PermissionsFound) {
+                # Handle -StoreList request
                 if ($StoreList.IsPresent) {
-                    $LimitedStoreList = foreach ($Permission in $PermissionSet) {
-                        if ((($Permission.AllowedStores | Measure-Object).Count -eq 0 -or $Permission.AllowedStores -contains 'AllStores') -and (($Permission.BlockedStores | Measure-Object).Count -eq 0)) {
-                            @('AllStores')
-                        } else {
-                            # Expand store groups to individual store IDs
-                            $ExpandedAllowedStores = foreach ($AllowedItem in $Permission.AllowedStores) {
-                                if ($AllowedItem -is [PSCustomObject] -and $AllowedItem.type -eq 'Group') {
-                                    try {
-                                        $GroupMembers = Expand-CIPPStoreGroups -StoreFilter @($AllowedItem)
-                                        $GroupMembers | ForEach-Object { $_.storeId }
-                                    } catch {
-                                        Write-Warning "Failed to expand store group '$($AllowedItem.label)': $($_.Exception.Message)"
-                                        @()
-                                    }
-                                } else {
-                                    $AllowedItem
-                                }
-                            }
-
-                            $ExpandedBlockedStores = foreach ($BlockedItem in $Permission.BlockedStores) {
-                                if ($BlockedItem -is [PSCustomObject] -and $BlockedItem.type -eq 'Group') {
-                                    try {
-                                        $GroupMembers = Expand-CIPPStoreGroups -StoreFilter @($BlockedItem)
-                                        $GroupMembers | ForEach-Object { $_.storeId }
-                                    } catch {
-                                        Write-Warning "Failed to expand blocked store group '$($BlockedItem.label)': $($_.Exception.Message)"
-                                        @()
-                                    }
-                                } else {
-                                    $BlockedItem
-                                }
-                            }
-
-                            if ($ExpandedAllowedStores -contains 'AllStores') {
-                                $ExpandedAllowedStores = $Stores.storeId
-                            }
-                            $ExpandedAllowedStores | Where-Object { $ExpandedBlockedStores -notcontains $_ }
-                        }
-                    }
-                    return $LimitedStoreList
+                    return Get-CIPPUserStores -CustomRoles $CustomRoles -BaseRole $BaseRole
                 }
 
                 $StoreAllowed = $false
@@ -330,12 +377,6 @@ function Test-CIPPAccess {
                 }
                 return $true
             }
-        } else {
-            # No permissions found for any roles
-            if ($StoreList.IsPresent) {
-                return @('AllStores')
-            }
-            return $true
         }
     }
 

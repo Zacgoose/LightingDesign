@@ -51,7 +51,7 @@ Function Invoke-ExecUpdateRefreshToken {
             $TenantName = $request.body.tenantId
         }
         $Results = @{
-            'message'  = "Successfully updated the credentials for $($TenantName). You may continue to the next step, or add additional tenants if required."
+            'message'  = "Successfully updated the credentials for $($TenantName). You may continue to the next step."
             'severity' = 'success'
         }
     } catch {

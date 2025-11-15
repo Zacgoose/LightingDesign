@@ -32,7 +32,6 @@ function Invoke-ListJobs {
         $ReturnedJob = [PSCustomObject]@{
             DateTime       = $Row.Timestamp
             JobName        = $Row.JobName
-            JobNumber      = $Row.JobNumber
             CustomerName   = $Row.CustomerName
             CustomerId     = $Row.CustomerId
             StoreId        = $Row.StoreId
@@ -71,7 +70,6 @@ function Invoke-ListJobs {
             [PSCustomObject]@{
                 DateTime       = $_.Timestamp
                 JobName        = $_.JobName
-                JobNumber      = $_.JobNumber
                 CustomerName   = $_.CustomerName
                 StoreId        = $_.StoreId
                 Status         = $_.Status
@@ -114,7 +112,6 @@ function Invoke-ListJobs {
             [PSCustomObject]@{
                 DateTime       = $_.Timestamp
                 JobName        = $_.JobName
-                JobNumber      = $_.JobNumber
                 CustomerName   = $_.CustomerName
                 StoreId        = $_.StoreId
                 Status         = $_.Status

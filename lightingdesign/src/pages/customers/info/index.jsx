@@ -13,7 +13,7 @@ const Page = () => {
 
   // Fetch customer details
   const customerDetails = ApiGetCall({
-    url: "/api/GetCustomer",
+    url: "/api/ExecGetCustomer",
     data: { customerId: id },
     queryKey: `Customer-${id}`,
     enabled: !!id,
@@ -22,18 +22,7 @@ const Page = () => {
   const formControl = useForm({
     mode: "onChange",
     defaultValues: {
-      customerName: "",
-      email: "",
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      postalCode: "",
       status: { value: "active", label: "Active" },
-      notes: "",
-      customerType: null,
-      relatedBuilders: [],
-      tradeAssociations: [],
     },
   });
 
@@ -51,12 +40,12 @@ const Page = () => {
       </Head>
       <CippFormPage
         formControl={formControl}
-        queryKey="EditCustomer"
+        //queryKey="EditCustomer"
         title={`Customer: ${customerDetails.data?.customerName || "Loading..."}`}
         backButtonTitle="Customers"
-        postUrl="/api/EditCustomer"
+        postUrl="/api/ExecEditCustomer"
         customDataformatter={(values) => {
-          return {
+          const formattedData = {
             customerId: id,
             customerName: values.customerName,
             email: values.email,
@@ -65,12 +54,22 @@ const Page = () => {
             city: values.city,
             state: values.state,
             postalCode: values.postalCode,
-            status: values.status?.value,
+            status: values.status?.value || values.status,
             notes: values.notes,
             customerType: values.customerType?.value,
-            relatedBuilders: values.relatedBuilders?.map((b) => b.value) || [],
-            tradeAssociations: values.tradeAssociations?.map((t) => t.value) || [],
           };
+
+          // Only include relatedBuilders if it has values
+          if (values.relatedBuilders && values.relatedBuilders.length > 0) {
+            formattedData.relatedBuilders = values.relatedBuilders.map((b) => b.value || b);
+          }
+
+          // Only include tradeAssociations if it has values
+          if (values.tradeAssociations && values.tradeAssociations.length > 0) {
+            formattedData.tradeAssociations = values.tradeAssociations.map((t) => t.value || t);
+          }
+
+          return formattedData;
         }}
       >
         <CustomerForm formControl={formControl} mode="edit" />

@@ -1,6 +1,7 @@
 import { Box, Divider } from "@mui/material";
 import { Grid } from "@mui/system";
 import CippFormComponent from "../CippComponents/CippFormComponent";
+import { ApiGetCall } from "../../api/ApiCall";
 
 export const CustomerForm = ({ formControl, mode = "new" }) => {
   // Customer status options
@@ -67,6 +68,7 @@ export const CustomerForm = ({ formControl, mode = "new" }) => {
           name="status"
           formControl={formControl}
           options={statusOptions}
+          creatable={false}
           validators={{ required: "Status is required" }}
         />
       </Grid>
@@ -97,6 +99,7 @@ export const CustomerForm = ({ formControl, mode = "new" }) => {
           label="Customer Type"
           name="customerType"
           formControl={formControl}
+          creatable={false}
           options={customerTypeOptions}
         />
       </Grid>
@@ -108,6 +111,7 @@ export const CustomerForm = ({ formControl, mode = "new" }) => {
           name="relatedBuilders"
           formControl={formControl}
           options={builderOptions}
+          creatable={false}
           multiple
         />
       </Grid>
@@ -119,6 +123,7 @@ export const CustomerForm = ({ formControl, mode = "new" }) => {
           name="tradeAssociations"
           formControl={formControl}
           options={tradeOptions}
+          creatable={false}
           multiple
         />
       </Grid>

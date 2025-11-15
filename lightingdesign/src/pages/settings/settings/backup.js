@@ -7,9 +7,6 @@ import {
   Skeleton,
   Alert,
   AlertTitle,
-  Input,
-  FormControl,
-  FormLabel,
 } from "@mui/material";
 import { Layout as DashboardLayout } from "/src/layouts/index.js";
 import CippPageCard from "../../../components/CippCards/CippPageCard";
@@ -37,6 +34,8 @@ import { CippApiDialog } from "../../../components/CippComponents/CippApiDialog"
 import { BackupValidator, BackupValidationError } from "../../../utils/backupValidation";
 import { useState } from "react";
 import { useDialog } from "../../../hooks/use-dialog";
+import { TabbedLayout } from "/src/layouts/TabbedLayout";
+import tabOptions from "./tabOptions";
 
 const Page = () => {
   const [validationResult, setValidationResult] = useState(null);
@@ -557,6 +556,10 @@ const Page = () => {
   );
 };
 
-Page.getLayout = (page) => <DashboardLayout>{page}</DashboardLayout>;
+Page.getLayout = (page) => (
+  <DashboardLayout>
+    <TabbedLayout tabOptions={tabOptions}>{page}</TabbedLayout>
+  </DashboardLayout>
+);
 
 export default Page;

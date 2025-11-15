@@ -8,18 +8,7 @@ const Page = () => {
   const formControl = useForm({
     mode: "onChange",
     defaultValues: {
-      customerName: "",
-      email: "",
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      postalCode: "",
       status: { value: "active", label: "Active" },
-      notes: "",
-      customerType: null,
-      relatedBuilders: [],
-      tradeAssociations: [],
     },
   });
 
@@ -30,12 +19,12 @@ const Page = () => {
       </Head>
       <CippFormPage
         formControl={formControl}
-        queryKey="AddCustomer"
+        //queryKey="Customers"
         title="New Customer"
         backButtonTitle="Customers"
         postUrl="/api/ExecNewCustomer"
         customDataformatter={(values) => {
-          return {
+          const formattedData = {
             customerName: values.customerName,
             email: values.email,
             phone: values.phone,
@@ -43,12 +32,22 @@ const Page = () => {
             city: values.city,
             state: values.state,
             postalCode: values.postalCode,
-            status: values.status?.value,
+            status: values.status?.value || values.status,
             notes: values.notes,
             customerType: values.customerType?.value,
-            relatedBuilders: values.relatedBuilders?.map((b) => b.value) || [],
-            tradeAssociations: values.tradeAssociations?.map((t) => t.value) || [],
           };
+
+          // Only include relatedBuilders if it has values
+          if (values.relatedBuilders && values.relatedBuilders.length > 0) {
+            formattedData.relatedBuilders = values.relatedBuilders.map((b) => b.value || b);
+          }
+
+          // Only include tradeAssociations if it has values
+          if (values.tradeAssociations && values.tradeAssociations.length > 0) {
+            formattedData.tradeAssociations = values.tradeAssociations.map((t) => t.value || t);
+          }
+
+          return formattedData;
         }}
       >
         <CustomerForm formControl={formControl} mode="new" />

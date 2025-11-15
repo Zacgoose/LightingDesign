@@ -75,7 +75,7 @@ const Page = () => {
   ];
 
   // Columns to display in the table
-  const simpleColumns = ["JobNumber", "CustomerName", "Status", "User", "createdDate"];
+  const simpleColumns = ["JobName", "CustomerName", "Status", "User", "createdDate"];
 
   return (
     <CippTablePage

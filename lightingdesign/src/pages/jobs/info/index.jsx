@@ -29,7 +29,13 @@ const Page = () => {
   // Update form when job details load
   useEffect(() => {
     if (jobDetails.isSuccess && jobDetails.data) {
-      formControl.reset(jobDetails.data);
+      const cleanedData = {
+        ...jobDetails.data,
+        relatedTrades: jobDetails.data.relatedTrades || undefined,
+        builders: jobDetails.data.builders || undefined,
+      };
+      
+      formControl.reset(cleanedData);
     }
   }, [jobDetails.isSuccess, jobDetails.data]);
 
@@ -60,8 +66,8 @@ const Page = () => {
           estimatedValue: values.estimatedValue,
           notes: values.notes,
           assignedDesigner: values.assignedDesigner?.value || values.assignedDesigner,
-          builders: values.builders?.map((b) => b.value || b) || [],
-          relatedTrades: values.relatedTrades?.map((t) => t.value || t) || [],
+          builders: values.builders?.map((b) => b.value || b),
+          relatedTrades: values.relatedTrades?.map((t) => t.value || t),
           pricingMatrix: values.pricingMatrix,
         })}
         addedButtons={

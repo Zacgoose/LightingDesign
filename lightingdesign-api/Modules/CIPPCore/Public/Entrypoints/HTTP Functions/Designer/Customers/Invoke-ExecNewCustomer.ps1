@@ -8,8 +8,41 @@ function Invoke-ExecNewCustomer {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
+    # Helper function to extract value from autocomplete objects
+    function Get-AutoCompleteValue {
+        param($InputObject)
+
+        if ($null -eq $InputObject) {
+            return $null
+        }
+
+        if ($InputObject.value) {
+            return $InputObject.value
+        }
+
+        return $InputObject
+    }
+
+    # Helper function to extract array of values from autocomplete multi-select
+    function Get-AutoCompleteArrayValues {
+        param($InputArray)
+
+        if ($null -eq $InputArray -or $InputArray.Count -eq 0) {
+            return @()
+        }
+
+        return @($InputArray | ForEach-Object {
+            if ($_.value) {
+                $_.value
+            } else {
+                $_
+            }
+        })
+    }
+
     $Table = Get-CIPPTable -TableName 'Customers'
 
+    # Extract values from autocomplete fields
     $CustomerName      = $Request.Body.customerName
     $Address           = $Request.Body.address
     $City              = $Request.Body.city
@@ -18,10 +51,10 @@ function Invoke-ExecNewCustomer {
     $Phone             = $Request.Body.phone
     $PostalCode        = $Request.Body.postalCode
     $State             = $Request.Body.state
-    $Status            = $Request.Body.status
-    $CustomerType      = $Request.Body.customerType
-    $RelatedBuilders   = $Request.Body.relatedBuilders
-    $TradeAssociations = $Request.Body.tradeAssociations
+    $Status            = Get-AutoCompleteValue -InputObject $Request.Body.status
+    $CustomerType      = Get-AutoCompleteValue -InputObject $Request.Body.customerType
+    $RelatedBuilders   = Get-AutoCompleteArrayValues -InputArray $Request.Body.relatedBuilders
+    $TradeAssociations = Get-AutoCompleteArrayValues -InputArray $Request.Body.tradeAssociations
 
     $Entity = @{
         PartitionKey      = 'Customer'
@@ -36,8 +69,8 @@ function Invoke-ExecNewCustomer {
         State             = $State
         Status            = $Status
         CustomerType      = $CustomerType
-        RelatedBuilders   = if ($RelatedBuilders) { ($RelatedBuilders | ConvertTo-Json -Compress) } else { $null }
-        TradeAssociations = if ($TradeAssociations) { ($TradeAssociations | ConvertTo-Json -Compress) } else { $null }
+        RelatedBuilders   = if ($RelatedBuilders -and $RelatedBuilders.Count -gt 0) { ($RelatedBuilders | ConvertTo-Json -Compress) } else { $null }
+        TradeAssociations = if ($TradeAssociations -and $TradeAssociations.Count -gt 0) { ($TradeAssociations | ConvertTo-Json -Compress) } else { $null }
     }
 
     Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $Entity -Force

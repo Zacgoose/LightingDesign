@@ -8,6 +8,38 @@ function Invoke-ExecEditCustomer {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
+    # Helper function to extract value from autocomplete objects
+    function Get-AutoCompleteValue {
+        param($InputObject)
+
+        if ($null -eq $InputObject) {
+            return $null
+        }
+
+        if ($InputObject.value) {
+            return $InputObject.value
+        }
+
+        return $InputObject
+    }
+
+    # Helper function to extract array of values from autocomplete multi-select
+    function Get-AutoCompleteArrayValues {
+        param($InputArray)
+
+        if ($null -eq $InputArray -or $InputArray.Count -eq 0) {
+            return $null
+        }
+
+        return @($InputArray | ForEach-Object {
+            if ($_.value) {
+                $_.value
+            } else {
+                $_
+            }
+        })
+    }
+
     $Table = Get-CIPPTable -TableName 'Customers'
     
     $CustomerId = $Request.Body.customerId
@@ -30,6 +62,12 @@ function Invoke-ExecEditCustomer {
         }
     }
 
+    # Extract values from autocomplete fields
+    $Status = Get-AutoCompleteValue -InputObject $Request.Body.status
+    $CustomerType = Get-AutoCompleteValue -InputObject $Request.Body.customerType
+    $RelatedBuilders = Get-AutoCompleteArrayValues -InputArray $Request.Body.relatedBuilders
+    $TradeAssociations = Get-AutoCompleteArrayValues -InputArray $Request.Body.tradeAssociations
+
     # Update customer fields
     $Entity = @{
         PartitionKey      = $ExistingCustomer.PartitionKey
@@ -41,11 +79,15 @@ function Invoke-ExecEditCustomer {
         City              = if ($Request.Body.city) { $Request.Body.city } else { $ExistingCustomer.City }
         State             = if ($Request.Body.state) { $Request.Body.state } else { $ExistingCustomer.State }
         PostalCode        = if ($Request.Body.postalCode) { $Request.Body.postalCode } else { $ExistingCustomer.PostalCode }
-        Status            = if ($Request.Body.status) { $Request.Body.status } else { $ExistingCustomer.Status }
+        Status            = if ($Status) { $Status } else { $ExistingCustomer.Status }
         Notes             = if ($Request.Body.notes) { $Request.Body.notes } else { $ExistingCustomer.Notes }
-        CustomerType      = if ($Request.Body.customerType) { $Request.Body.customerType } else { $ExistingCustomer.CustomerType }
-        RelatedBuilders   = if ($Request.Body.relatedBuilders) { ($Request.Body.relatedBuilders | ConvertTo-Json -Compress) } else { $ExistingCustomer.RelatedBuilders }
-        TradeAssociations = if ($Request.Body.tradeAssociations) { ($Request.Body.tradeAssociations | ConvertTo-Json -Compress) } else { $ExistingCustomer.TradeAssociations }
+        CustomerType      = if ($CustomerType) { $CustomerType } else { $ExistingCustomer.CustomerType }
+        RelatedBuilders   = if ($null -ne $RelatedBuilders) { 
+            if ($RelatedBuilders.Count -gt 0) { ($RelatedBuilders | ConvertTo-Json -Compress) } else { $null }
+        } else { $ExistingCustomer.RelatedBuilders }
+        TradeAssociations = if ($null -ne $TradeAssociations) { 
+            if ($TradeAssociations.Count -gt 0) { ($TradeAssociations | ConvertTo-Json -Compress) } else { $null }
+        } else { $ExistingCustomer.TradeAssociations }
     }
 
     Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $Entity -Force

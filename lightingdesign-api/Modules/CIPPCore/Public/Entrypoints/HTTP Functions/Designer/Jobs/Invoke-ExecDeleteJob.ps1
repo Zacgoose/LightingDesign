@@ -8,9 +8,6 @@ function Invoke-ExecDeleteJob {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
-    # Validate store access first
-    Test-CIPPAccess -Request $Request
-
     $Table = Get-CIPPTable -TableName 'Jobs'
 
     $JobId = $Request.Body.jobId
@@ -22,7 +19,6 @@ function Invoke-ExecDeleteJob {
         }
     }
 
-    # Get existing job to verify it exists
     $Filter = "RowKey eq '{0}'" -f $JobId
     $ExistingJob = Get-CIPPAzDataTableEntity @Table -Filter $Filter
 
@@ -30,6 +26,18 @@ function Invoke-ExecDeleteJob {
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::NotFound
             Body       = @{ error = 'Job not found' }
+        }
+    }
+
+    # Get user's allowed stores
+    $AllowedStores = Test-CIPPAccess -Request $Request -StoreList
+
+    # Check if user has access to this job's store
+    if ($AllowedStores -notcontains 'AllStores' -and $AllowedStores -notcontains $ExistingJob.StoreId) {
+        Write-LogMessage -API 'DeleteJob' -message "Access denied: User attempted to delete job $JobId from unauthorized store $($ExistingJob.StoreId)" -Sev 'Warn' -headers $Request.Headers
+        return [HttpResponseContext]@{
+            StatusCode = [System.Net.HttpStatusCode]::Forbidden
+            Body       = @{ error = 'Access to this job is not allowed' }
         }
     }
 
@@ -52,9 +60,9 @@ function Invoke-ExecDeleteJob {
             Remove-AzDataTableEntity @DesignTable -Entity $DesignEntity -Force
         }
     }
-    
+
     Write-LogMessage -API 'DeleteJob' -message "Job deleted successfully: JobId: $JobId, JobNumber: $($ExistingJob.JobNumber)" -Sev 'Info' -headers $Request.Headers
-    
+
     return [HttpResponseContext]@{
         StatusCode = [System.Net.HttpStatusCode]::OK
         Body       = @{ Results = 'Job deleted successfully' }

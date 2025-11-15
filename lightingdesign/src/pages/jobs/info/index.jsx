@@ -66,17 +66,16 @@ const Page = () => {
       </Head>
       <CippFormPage
         formControl={formControl}
-        queryKey="EditJob"
         title={`Job: ${jobDetails.data?.jobNumber || "Loading..."}`}
         backButtonTitle="Jobs"
-        postUrl="/api/EditJob"
+        postUrl="/api/ExecEditJob"
         customDataformatter={(values) => {
           return {
             jobId: id,
             jobNumber: values.jobNumber,
-            customerId: values.customerName?.value,
-            storeId: values.storeId?.value,
-            status: values.status?.value,
+            customerId: values.customerId?.value || values.customerId,
+            storeId: values.storeId?.value || values.storeId,
+            status: values.status?.value || values.status,
             description: values.description,
             address: values.address,
             city: values.city,
@@ -87,12 +86,9 @@ const Page = () => {
             contactEmail: values.contactEmail,
             estimatedValue: values.estimatedValue,
             notes: values.notes,
-            assignedDesigner: values.assignedDesigner?.value
-              ? { value: values.assignedDesigner.value, label: values.assignedDesigner.label }
-              : null,
-            builders: values.builders?.map((b) => ({ value: b.value, label: b.label })) || [],
-            relatedTrades:
-              values.relatedTrades?.map((t) => ({ value: t.value, label: t.label })) || [],
+            assignedDesigner: values.assignedDesigner?.value || values.assignedDesigner,
+            builders: values.builders?.map((b) => b.value || b) || [],
+            relatedTrades: values.relatedTrades?.map((t) => t.value || t) || [],
             pricingMatrix: values.pricingMatrix || {},
           };
         }}

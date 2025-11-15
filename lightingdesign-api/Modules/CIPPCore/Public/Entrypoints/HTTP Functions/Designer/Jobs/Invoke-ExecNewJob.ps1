@@ -8,39 +8,47 @@ function Invoke-ExecNewJob {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
-    # Validate store access first
-    Test-CIPPAccess -Request $Request
-
     # Helper function to extract value from autocomplete objects/arrays
     function Get-AutoCompleteValue {
         param($InputObject)
 
-        # Handle null or empty
         if ($null -eq $InputObject) {
             return $null
         }
 
-        # Handle empty arrays
         if ($InputObject -is [Array] -and $InputObject.Count -eq 0) {
             return $null
         }
 
-        # Handle array with objects (single-select autocomplete)
         if ($InputObject -is [Array] -and $InputObject.Count -gt 0) {
-            # Get first item if it has a .value property
             if ($InputObject[0].value) {
                 return $InputObject[0].value
             }
             return $InputObject[0]
         }
 
-        # Handle single object with .value property
         if ($InputObject.value) {
             return $InputObject.value
         }
 
-        # Return the object itself
         return $InputObject
+    }
+
+    # Helper function to extract array of values from autocomplete multi-select
+    function Get-AutoCompleteArrayValues {
+        param($InputArray)
+
+        if ($null -eq $InputArray -or $InputArray.Count -eq 0) {
+            return @()
+        }
+
+        return @($InputArray | ForEach-Object {
+            if ($_.value) {
+                $_.value
+            } else {
+                $_
+            }
+        })
     }
 
     # Helper function to convert empty strings to null
@@ -59,6 +67,17 @@ function Invoke-ExecNewJob {
             throw "Request body is null or empty"
         }
 
+        # Extract storeId early for validation
+        $StoreId = Get-AutoCompleteValue -InputObject $Request.Body.storeId
+
+        # Validate that storeId is provided
+        if ([string]::IsNullOrWhiteSpace($StoreId)) {
+            throw "Store ID is required"
+        }
+
+        # Validate user has access to this store
+        Test-CIPPAccess -Request $Request -StoreId $StoreId
+
         $Table = Get-CIPPTable -TableName 'Jobs'
 
         # Extract simple text fields (convert empty strings to null)
@@ -74,29 +93,14 @@ function Invoke-ExecNewJob {
         $EstimatedValue   = ConvertTo-NullIfEmpty -Value $Request.Body.estimatedValue
         $Notes            = ConvertTo-NullIfEmpty -Value $Request.Body.notes
 
-        # Extract autocomplete fields using helper (handles arrays and objects)
-        $CustomerName     = Get-AutoCompleteValue -InputObject $Request.Body.customerName
+        # Extract autocomplete fields - store only the VALUE
+        $CustomerId       = Get-AutoCompleteValue -InputObject $Request.Body.customerId
         $Status           = Get-AutoCompleteValue -InputObject $Request.Body.status
         $AssignedDesigner = Get-AutoCompleteValue -InputObject $Request.Body.assignedDesigner
-        $StoreId          = Get-AutoCompleteValue -InputObject $Request.Body.storeId
 
-        # Validate that storeId is provided
-        if ([string]::IsNullOrWhiteSpace($StoreId)) {
-            throw "Store ID is required"
-        }
-
-        # Multi-select autocomplete fields (arrays of objects) - convert empty arrays to null
-        $RelatedTrades    = if ($Request.Body.relatedTrades -and $Request.Body.relatedTrades.Count -gt 0) {
-            $Request.Body.relatedTrades
-        } else {
-            $null
-        }
-
-        $Builders         = if ($Request.Body.builders -and $Request.Body.builders.Count -gt 0) {
-            $Request.Body.builders
-        } else {
-            $null
-        }
+        # Multi-select autocomplete fields - store array of VALUES only
+        $RelatedTrades    = Get-AutoCompleteArrayValues -InputArray $Request.Body.relatedTrades
+        $Builders         = Get-AutoCompleteArrayValues -InputArray $Request.Body.builders
 
         # Handle nested pricing matrix - only include if it has any non-empty values
         $PricingMatrix = $null
@@ -114,7 +118,6 @@ function Invoke-ExecNewJob {
                 }
             }
 
-            # Only set PricingMatrix if it has at least one non-null value
             if ($hasValues) {
                 $PricingMatrix = $cleanedMatrix
             }
@@ -126,7 +129,7 @@ function Invoke-ExecNewJob {
             PartitionKey     = 'Job'
             RowKey           = $NewJobId
             JobNumber        = $JobNumber
-            CustomerId       = $CustomerName
+            CustomerId       = $CustomerId
             StoreId          = $StoreId
             Status           = $Status
             Description      = $Description
@@ -139,8 +142,8 @@ function Invoke-ExecNewJob {
             ContactEmail     = $ContactEmail
             EstimatedValue   = $EstimatedValue
             Notes            = $Notes
-            RelatedTrades    = if ($RelatedTrades) { ($RelatedTrades | ConvertTo-Json -Compress -Depth 5) } else { $null }
-            Builders         = if ($Builders) { ($Builders | ConvertTo-Json -Compress -Depth 5) } else { $null }
+            RelatedTrades    = if ($RelatedTrades -and $RelatedTrades.Count -gt 0) { ($RelatedTrades | ConvertTo-Json -Compress -Depth 5) } else { $null }
+            Builders         = if ($Builders -and $Builders.Count -gt 0) { ($Builders | ConvertTo-Json -Compress -Depth 5) } else { $null }
             AssignedDesigner = $AssignedDesigner
             PricingMatrix    = if ($PricingMatrix) { ($PricingMatrix | ConvertTo-Json -Compress -Depth 5) } else { $null }
         }

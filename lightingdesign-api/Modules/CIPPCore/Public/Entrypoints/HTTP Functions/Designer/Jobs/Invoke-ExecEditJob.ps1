@@ -8,11 +8,39 @@ function Invoke-ExecEditJob {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
-    # Validate store access first
-    Test-CIPPAccess -Request $Request
+    # Helper function to extract value from autocomplete objects
+    function Get-AutoCompleteValue {
+        param($InputObject)
+
+        if ($null -eq $InputObject) {
+            return $null
+        }
+
+        if ($InputObject.value) {
+            return $InputObject.value
+        }
+
+        return $InputObject
+    }
+
+    # Helper function to extract array of values from autocomplete multi-select
+    function Get-AutoCompleteArrayValues {
+        param($InputArray)
+
+        if ($null -eq $InputArray -or $InputArray.Count -eq 0) {
+            return $null
+        }
+
+        return @($InputArray | ForEach-Object {
+            if ($_.value) {
+                $_.value
+            } else {
+                $_
+            }
+        })
+    }
 
     $Table = Get-CIPPTable -TableName 'Jobs'
-
     $JobId = $Request.Body.jobId
 
     if (-not $JobId) {
@@ -33,14 +61,32 @@ function Invoke-ExecEditJob {
         }
     }
 
+    # Validate access to the existing job's store
+    Test-CIPPAccess -Request $Request -StoreId $ExistingJob.StoreId
+
+    # Extract new store ID if changing
+    $NewStoreId = Get-AutoCompleteValue -InputObject $Request.Body.storeId
+
+    # If changing store, validate access to the new store
+    if ($NewStoreId -and $NewStoreId -ne $ExistingJob.StoreId) {
+        Test-CIPPAccess -Request $Request -StoreId $NewStoreId
+    }
+
+    # Extract values from autocomplete fields
+    $CustomerId = Get-AutoCompleteValue -InputObject $Request.Body.customerId
+    $Status = Get-AutoCompleteValue -InputObject $Request.Body.status
+    $AssignedDesigner = Get-AutoCompleteValue -InputObject $Request.Body.assignedDesigner
+    $RelatedTrades = Get-AutoCompleteArrayValues -InputArray $Request.Body.relatedTrades
+    $Builders = Get-AutoCompleteArrayValues -InputArray $Request.Body.builders
+
     # Update job fields
     $Entity = @{
         PartitionKey     = $ExistingJob.PartitionKey
         RowKey           = $ExistingJob.RowKey
         JobNumber        = if ($Request.Body.jobNumber) { $Request.Body.jobNumber } else { $ExistingJob.JobNumber }
-        CustomerId       = if ($Request.Body.customerId) { $Request.Body.customerId } else { $ExistingJob.CustomerId }
-        StoreId          = if ($Request.Body.storeId) { $Request.Body.storeId } else { $ExistingJob.StoreId }
-        Status           = if ($Request.Body.status) { $Request.Body.status } else { $ExistingJob.Status }
+        CustomerId       = if ($CustomerId) { $CustomerId } else { $ExistingJob.CustomerId }
+        StoreId          = if ($NewStoreId) { $NewStoreId } else { $ExistingJob.StoreId }
+        Status           = if ($Status) { $Status } else { $ExistingJob.Status }
         Description      = if ($Request.Body.description) { $Request.Body.description } else { $ExistingJob.Description }
         Address          = if ($Request.Body.address) { $Request.Body.address } else { $ExistingJob.Address }
         City             = if ($Request.Body.city) { $Request.Body.city } else { $ExistingJob.City }
@@ -51,9 +97,9 @@ function Invoke-ExecEditJob {
         ContactEmail     = if ($Request.Body.contactEmail) { $Request.Body.contactEmail } else { $ExistingJob.ContactEmail }
         EstimatedValue   = if ($Request.Body.estimatedValue) { $Request.Body.estimatedValue } else { $ExistingJob.EstimatedValue }
         Notes            = if ($Request.Body.notes) { $Request.Body.notes } else { $ExistingJob.Notes }
-        RelatedTrades    = if ($Request.Body.relatedTrades) { ($Request.Body.relatedTrades | ConvertTo-Json -Compress) } else { $ExistingJob.RelatedTrades }
-        Builders         = if ($Request.Body.builders) { ($Request.Body.builders | ConvertTo-Json -Compress) } else { $ExistingJob.Builders }
-        AssignedDesigner = if ($Request.Body.assignedDesigner) { ($Request.Body.assignedDesigner | ConvertTo-Json -Compress) } else { $ExistingJob.AssignedDesigner }
+        RelatedTrades    = if ($RelatedTrades) { ($RelatedTrades | ConvertTo-Json -Compress) } else { $ExistingJob.RelatedTrades }
+        Builders         = if ($Builders) { ($Builders | ConvertTo-Json -Compress) } else { $ExistingJob.Builders }
+        AssignedDesigner = if ($AssignedDesigner) { $AssignedDesigner } else { $ExistingJob.AssignedDesigner }
         PricingMatrix    = if ($Request.Body.pricingMatrix) { ($Request.Body.pricingMatrix | ConvertTo-Json -Compress) } else { $ExistingJob.PricingMatrix }
         Username         = $ExistingJob.Username
         JobData          = $ExistingJob.JobData

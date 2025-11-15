@@ -8,9 +8,32 @@ function Invoke-ExecLockDesign {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
-    $Table = Get-CIPPTable -TableName 'DesignLocks'
     $JobId = $Request.Body.jobId
-    
+
+    if (-not $JobId) {
+        return [HttpResponseContext]@{
+            StatusCode = [System.Net.HttpStatusCode]::BadRequest
+            Body       = @{ error = 'jobId is required' }
+        }
+    }
+
+    # Get the job to retrieve its StoreId for access validation
+    $JobTable = Get-CIPPTable -TableName 'Jobs'
+    $JobFilter = "RowKey eq '{0}'" -f $JobId
+    $Job = Get-CIPPAzDataTableEntity @JobTable -Filter $JobFilter
+
+    if (-not $Job) {
+        return [HttpResponseContext]@{
+            StatusCode = [System.Net.HttpStatusCode]::NotFound
+            Body       = @{ error = 'Job not found' }
+        }
+    }
+
+    # Validate store access
+    Test-CIPPAccess -Request $Request -StoreId $Job.StoreId
+
+    $Table = Get-CIPPTable -TableName 'DesignLocks'
+
     # Extract username using the correct method (same as Write-LogMessage)
     if ($Request.Headers.'x-ms-client-principal-idp' -eq 'azureStaticWebApps' -or !$Request.Headers.'x-ms-client-principal-idp') {
         $user = $Request.Headers.'x-ms-client-principal'
@@ -32,13 +55,6 @@ function Invoke-ExecLockDesign {
         }
     }
 
-    if (-not $JobId) {
-        return [HttpResponseContext]@{
-            StatusCode = [System.Net.HttpStatusCode]::BadRequest
-            Body       = @{ error = 'jobId is required' }
-        }
-    }
-
     if (-not $Username) {
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::Forbidden
@@ -57,7 +73,7 @@ function Invoke-ExecLockDesign {
         if ($ExistingLock) {
             # Check if lock is expired
             $LockExpiry = [DateTime]::Parse($ExistingLock.ExpiresAt)
-            
+
             if ($LockExpiry -gt $Now) {
                 # Lock is still valid
                 if ($ExistingLock.LockedBy -eq $Username) {

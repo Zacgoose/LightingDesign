@@ -1,5 +1,3 @@
-
-
 function Invoke-ListJobs {
     <#
     .FUNCTIONALITY
@@ -10,65 +8,65 @@ function Invoke-ListJobs {
     [CmdletBinding()]
     param($Request, $TriggerMetadata)
 
-    # Get list of stores the user has access to
-    $AllowedStores = Test-CIPPAccess -Request $Request -StoreList
-    
     $Table = Get-CippTable -tablename 'Jobs'
 
     if ($Request.Query.jobentryid) {
         # Lookup a single job by RowKey
         $Filter = "RowKey eq '{0}'" -f $Request.Query.jobentryid
         $Row = Get-CIPPAzDataTableEntity @Table -Filter $Filter
-        if ($Row) {
-            # Check if user has access to this job's store
-            if ($AllowedStores -notcontains 'AllStores' -and $AllowedStores -notcontains $Row.StoreId) {
-                return [HttpResponseContext]@{
-                    StatusCode = [System.Net.HttpStatusCode]::Forbidden
-                    Body       = @{ error = 'Access to this job is not allowed' }
-                }
+
+        if (-not $Row) {
+            return [HttpResponseContext]@{
+                StatusCode = [System.Net.HttpStatusCode]::NotFound
+                Body       = @{ error = 'Job not found' }
             }
-            
-            $JobData = if ($Row.JobData -and (Test-Json -Json $Row.JobData -ErrorAction SilentlyContinue)) {
-                $Row.JobData | ConvertFrom-Json
-            } else { $Row.JobData }
-            $ReturnedJob = [PSCustomObject]@{
-                DateTime       = $Row.Timestamp
-                JobName        = $Row.JobName
-                JobNumber      = $Row.JobNumber
-                CustomerName   = $Row.CustomerName
-                CustomerId     = $Row.CustomerId
-                StoreId        = $Row.StoreId
-                Status         = $Row.Status
-                Description    = $Row.Description
-                Address        = $Row.Address
-                City           = $Row.City
-                State          = $Row.State
-                PostalCode     = $Row.PostalCode
-                ContactName    = $Row.ContactName
-                ContactPhone   = $Row.ContactPhone
-                ContactEmail   = $Row.ContactEmail
-                EstimatedValue = $Row.EstimatedValue
-                Notes          = $Row.Notes
-                User           = $Row.Username
-                Severity       = $Row.Severity
-                JobData        = $JobData
-                AppId          = $Row.AppId
-                IP             = $Row.IP
-                RowKey         = $Row.RowKey
-                id             = $Row.RowKey
-            }
-        } else {
-            $ReturnedJob = $null
+        }
+
+        # Validate store access - throws exception if access denied
+        Test-CIPPAccess -Request $Request -StoreId $Row.StoreId
+
+        $JobData = if ($Row.JobData -and (Test-Json -Json $Row.JobData -ErrorAction SilentlyContinue)) {
+            $Row.JobData | ConvertFrom-Json
+        } else { $Row.JobData }
+
+        $ReturnedJob = [PSCustomObject]@{
+            DateTime       = $Row.Timestamp
+            JobName        = $Row.JobName
+            JobNumber      = $Row.JobNumber
+            CustomerName   = $Row.CustomerName
+            CustomerId     = $Row.CustomerId
+            StoreId        = $Row.StoreId
+            Status         = $Row.Status
+            Description    = $Row.Description
+            Address        = $Row.Address
+            City           = $Row.City
+            State          = $Row.State
+            PostalCode     = $Row.PostalCode
+            ContactName    = $Row.ContactName
+            ContactPhone   = $Row.ContactPhone
+            ContactEmail   = $Row.ContactEmail
+            EstimatedValue = $Row.EstimatedValue
+            Notes          = $Row.Notes
+            User           = $Row.Username
+            Severity       = $Row.Severity
+            JobData        = $JobData
+            AppId          = $Row.AppId
+            IP             = $Row.IP
+            RowKey         = $Row.RowKey
+            id             = $Row.RowKey
         }
     } elseif ($Request.Query.ListJobs) {
+        # Get list of stores the user has access to
+        $AllowedStores = Test-CIPPAccess -Request $Request -StoreList
+
         # List all jobs (summary)
         $AllJobs = Get-CIPPAzDataTableEntity @Table
-        
+
         # Filter jobs based on allowed stores
         if ($AllowedStores -notcontains 'AllStores') {
             $AllJobs = $AllJobs | Where-Object { $AllowedStores -contains $_.StoreId }
         }
-        
+
         $ReturnedJob = $AllJobs | ForEach-Object {
             [PSCustomObject]@{
                 DateTime       = $_.Timestamp
@@ -87,18 +85,21 @@ function Invoke-ListJobs {
             }
         }
     } else {
+        # Get list of stores the user has access to
+        $AllowedStores = Test-CIPPAccess -Request $Request -StoreList
+
         # Optionally filter jobs by status, date, or user
         $StatusFilter = if ($Request.Query.Status) { ($Request.Query.Status).split(',') } else { $null }
         $UserFilter = $Request.Query.User
         $DateFilter = $Request.Query.DateFilter
 
         $Rows = Get-CIPPAzDataTableEntity @Table
-        
+
         # Filter by allowed stores first
         if ($AllowedStores -notcontains 'AllStores') {
             $Rows = $Rows | Where-Object { $AllowedStores -contains $_.StoreId }
         }
-        
+
         if ($StatusFilter) {
             $Rows = $Rows | Where-Object { $_.Status -in $StatusFilter }
         }

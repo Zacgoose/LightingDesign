@@ -26,7 +26,7 @@ const Page = () => {
     {
       label: "Delete Customer",
       type: "POST",
-      url: "/api/DeleteCustomer",
+      url: "/api/execDeleteCustomer",
       data: {
         customerId: "id",
       },
@@ -39,7 +39,7 @@ const Page = () => {
 
   // Define off-canvas details when clicking a row
   const offCanvas = {
-    extendedInfoFields: ["CustomerName", "Status", "DateTime"],
+    extendedInfoFields: ["customerName", "Status", "Email"],
     actions: actions,
   };
 
@@ -63,7 +63,7 @@ const Page = () => {
   ];
 
   // Columns to display in the table
-  const simpleColumns = ["CustomerName", "Status", "DateTime"];
+  const simpleColumns = ["customerName", "Status", "Email"];
 
   return (
     <CippTablePage

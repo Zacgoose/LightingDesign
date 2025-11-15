@@ -10,6 +10,13 @@ function Invoke-ListJobs {
 
     $Table = Get-CippTable -tablename 'Jobs'
 
+    # Get all stores for name lookup
+    $AllStores = Get-Stores
+    $StoreLookup = @{}
+    foreach ($Store in $AllStores) {
+        $StoreLookup[$Store.storeId] = $Store.storeName
+    }
+
     if ($Request.Query.jobentryid) {
         # Lookup a single job by RowKey
         $Filter = "RowKey eq '{0}'" -f $Request.Query.jobentryid
@@ -35,6 +42,7 @@ function Invoke-ListJobs {
             CustomerName   = $Row.CustomerName
             CustomerId     = $Row.CustomerId
             StoreId        = $Row.StoreId
+            StoreName      = if ($Row.StoreId -and $StoreLookup.ContainsKey($Row.StoreId)) { $StoreLookup[$Row.StoreId] } else { $Row.StoreId }
             Status         = $Row.Status
             Description    = $Row.Description
             Address        = $Row.Address
@@ -72,6 +80,7 @@ function Invoke-ListJobs {
                 JobName        = $_.JobName
                 CustomerName   = $_.CustomerName
                 StoreId        = $_.StoreId
+                StoreName      = if ($_.StoreId -and $StoreLookup.ContainsKey($_.StoreId)) { $StoreLookup[$_.StoreId] } else { $_.StoreId }
                 Status         = $_.Status
                 User           = $_.Username
                 Severity       = $_.Severity
@@ -114,6 +123,7 @@ function Invoke-ListJobs {
                 JobName        = $_.JobName
                 CustomerName   = $_.CustomerName
                 StoreId        = $_.StoreId
+                StoreName      = if ($_.StoreId -and $StoreLookup.ContainsKey($_.StoreId)) { $StoreLookup[$_.StoreId] } else { $_.StoreId }
                 Status         = $_.Status
                 User           = $_.Username
                 Severity       = $_.Severity

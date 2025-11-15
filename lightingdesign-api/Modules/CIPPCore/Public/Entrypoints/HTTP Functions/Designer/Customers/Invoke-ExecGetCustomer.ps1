@@ -23,31 +23,40 @@ function Invoke-ExecGetCustomer {
     $Filter = "RowKey eq '{0}'" -f $CustomerId
     $Row = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
     
-    if ($Row) {
-        Write-LogMessage -API 'GetCustomer' -message "Retrieved customer: CustomerId: $CustomerId, CustomerName: $($Row.CustomerName)" -Sev 'Info' -headers $Request.Headers
-        
-        $ReturnedCustomer = [PSCustomObject]@{
-            id             = $Row.RowKey
-            customerName   = $Row.CustomerName
-            email          = $Row.Email
-            phone          = $Row.Phone
-            address        = $Row.Address
-            city           = $Row.City
-            state          = $Row.State
-            postalCode     = $Row.PostalCode
-            status         = if ($Row.Status) { @{ value = $Row.Status; label = (Get-Culture).TextInfo.ToTitleCase($Row.Status) } } else { $null }
-            notes          = $Row.Notes
-            customerType   = $Row.CustomerType
-            relatedBuilders = if ($Row.RelatedBuilders) { $Row.RelatedBuilders | ConvertFrom-Json } else { @() }
-            tradeAssociations = if ($Row.TradeAssociations) { $Row.TradeAssociations | ConvertFrom-Json } else { @() }
-            createdDate    = $Row.Timestamp
-        }
-    } else {
+    if (-not $Row) {
         Write-LogMessage -API 'GetCustomer' -message "Customer not found: CustomerId: $CustomerId" -Sev 'Warning' -headers $Request.Headers
         return [HttpResponseContext]@{
             StatusCode = [System.Net.HttpStatusCode]::NotFound
             Body       = @{ error = 'Customer not found' }
         }
+    }
+
+    Write-LogMessage -API 'GetCustomer' -message "Retrieved customer: CustomerId: $CustomerId, CustomerName: $($Row.CustomerName)" -Sev 'Info' -headers $Request.Headers
+    
+    # Parse JSON fields - return simple values, let frontend handle autocomplete formatting
+    $RelatedBuilders = if ($Row.RelatedBuilders) {
+        try { $Row.RelatedBuilders | ConvertFrom-Json } catch { @() }
+    } else { @() }
+
+    $TradeAssociations = if ($Row.TradeAssociations) {
+        try { $Row.TradeAssociations | ConvertFrom-Json } catch { @() }
+    } else { @() }
+
+    $ReturnedCustomer = [PSCustomObject]@{
+        id                = $Row.RowKey
+        customerName      = $Row.CustomerName
+        email             = $Row.Email
+        phone             = $Row.Phone
+        address           = $Row.Address
+        city              = $Row.City
+        state             = $Row.State
+        postalCode        = $Row.PostalCode
+        status            = $Row.Status
+        notes             = $Row.Notes
+        customerType      = $Row.CustomerType
+        relatedBuilders   = $RelatedBuilders
+        tradeAssociations = $TradeAssociations
+        createdDate       = $Row.Timestamp
     }
 
     return [HttpResponseContext]@{

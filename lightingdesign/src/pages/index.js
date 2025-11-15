@@ -12,7 +12,7 @@ import { Add, Visibility } from "@mui/icons-material";
 const Page = () => {
   // Fetch user information
   const userInfo = ApiGetCall({
-    url: "/api/GetUserInfo",
+    url: "/api/ExecGetUserInfo",
     queryKey: "UserInfo",
   });
 
@@ -24,7 +24,7 @@ const Page = () => {
 
   // Fetch job statistics for the user
   const jobStats = ApiGetCall({
-    url: "/api/GetUserJobStats",
+    url: "/api/ExecGetUserJobStats",
     queryKey: "UserJobStats",
   });
 

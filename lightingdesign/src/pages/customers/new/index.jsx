@@ -7,6 +7,9 @@ import { CustomerForm } from "/src/components/designer/CustomerForm";
 const Page = () => {
   const formControl = useForm({
     mode: "onChange",
+    defaultValues: {
+      status: { value: "active", label: "Active" },
+    },
   });
 
   return (

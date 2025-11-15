@@ -22,18 +22,7 @@ const Page = () => {
   const formControl = useForm({
     mode: "onChange",
     defaultValues: {
-      customerName: "",
-      email: "",
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      postalCode: "",
       status: { value: "active", label: "Active" },
-      notes: "",
-      customerType: null,
-      relatedBuilders: [],
-      tradeAssociations: [],
     },
   });
 

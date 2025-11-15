@@ -40,6 +40,22 @@ function Invoke-ExecEditJob {
         })
     }
 
+    # Helper function to safely add property only if it has a value
+    function Add-PropertyIfNotNull {
+        param(
+            [hashtable]$Entity,
+            [string]$PropertyName,
+            $NewValue,
+            $ExistingValue
+        )
+
+        if ($null -ne $NewValue -and $NewValue -ne '') {
+            $Entity[$PropertyName] = $NewValue
+        } elseif ($null -ne $ExistingValue -and $ExistingValue -ne '') {
+            $Entity[$PropertyName] = $ExistingValue
+        }
+    }
+
     $Table = Get-CIPPTable -TableName 'Jobs'
     $JobId = $Request.Body.jobId
 
@@ -79,30 +95,61 @@ function Invoke-ExecEditJob {
     $RelatedTrades = Get-AutoCompleteArrayValues -InputArray $Request.Body.relatedTrades
     $Builders = Get-AutoCompleteArrayValues -InputArray $Request.Body.builders
 
-    # Update job fields
+    # Start with required properties
     $Entity = @{
-        PartitionKey     = $ExistingJob.PartitionKey
-        RowKey           = $ExistingJob.RowKey
-        JobName          = if ($Request.Body.jobName) { $Request.Body.jobName } else { $ExistingJob.JobName }
-        CustomerId       = if ($CustomerId) { $CustomerId } else { $ExistingJob.CustomerId }
-        StoreId          = if ($NewStoreId) { $NewStoreId } else { $ExistingJob.StoreId }
-        Status           = if ($Status) { $Status } else { $ExistingJob.Status }
-        Description      = if ($Request.Body.description) { $Request.Body.description } else { $ExistingJob.Description }
-        Address          = if ($Request.Body.address) { $Request.Body.address } else { $ExistingJob.Address }
-        City             = if ($Request.Body.city) { $Request.Body.city } else { $ExistingJob.City }
-        State            = if ($Request.Body.state) { $Request.Body.state } else { $ExistingJob.State }
-        PostalCode       = if ($Request.Body.postalCode) { $Request.Body.postalCode } else { $ExistingJob.PostalCode }
-        ContactName      = if ($Request.Body.contactName) { $Request.Body.contactName } else { $ExistingJob.ContactName }
-        ContactPhone     = if ($Request.Body.contactPhone) { $Request.Body.contactPhone } else { $ExistingJob.ContactPhone }
-        ContactEmail     = if ($Request.Body.contactEmail) { $Request.Body.contactEmail } else { $ExistingJob.ContactEmail }
-        EstimatedValue   = if ($Request.Body.estimatedValue) { $Request.Body.estimatedValue } else { $ExistingJob.EstimatedValue }
-        Notes            = if ($Request.Body.notes) { $Request.Body.notes } else { $ExistingJob.Notes }
-        RelatedTrades    = if ($RelatedTrades) { ($RelatedTrades | ConvertTo-Json -Compress) } else { $ExistingJob.RelatedTrades }
-        Builders         = if ($Builders) { ($Builders | ConvertTo-Json -Compress) } else { $ExistingJob.Builders }
-        AssignedDesigner = if ($AssignedDesigner) { $AssignedDesigner } else { $ExistingJob.AssignedDesigner }
-        PricingMatrix    = if ($Request.Body.pricingMatrix) { ($Request.Body.pricingMatrix | ConvertTo-Json -Compress) } else { $ExistingJob.PricingMatrix }
-        Username         = $ExistingJob.Username
-        JobData          = $ExistingJob.JobData
+        PartitionKey = $ExistingJob.PartitionKey
+        RowKey       = $ExistingJob.RowKey
+    }
+
+    # Add properties only if they have values
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'JobName' -NewValue $Request.Body.jobName -ExistingValue $ExistingJob.JobName
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'CustomerId' -NewValue $CustomerId -ExistingValue $ExistingJob.CustomerId
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'StoreId' -NewValue $NewStoreId -ExistingValue $ExistingJob.StoreId
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'Status' -NewValue $Status -ExistingValue $ExistingJob.Status
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'Description' -NewValue $Request.Body.description -ExistingValue $ExistingJob.Description
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'Address' -NewValue $Request.Body.address -ExistingValue $ExistingJob.Address
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'City' -NewValue $Request.Body.city -ExistingValue $ExistingJob.City
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'State' -NewValue $Request.Body.state -ExistingValue $ExistingJob.State
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'PostalCode' -NewValue $Request.Body.postalCode -ExistingValue $ExistingJob.PostalCode
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'ContactName' -NewValue $Request.Body.contactName -ExistingValue $ExistingJob.ContactName
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'ContactPhone' -NewValue $Request.Body.contactPhone -ExistingValue $ExistingJob.ContactPhone
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'ContactEmail' -NewValue $Request.Body.contactEmail -ExistingValue $ExistingJob.ContactEmail
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'EstimatedValue' -NewValue $Request.Body.estimatedValue -ExistingValue $ExistingJob.EstimatedValue
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'Notes' -NewValue $Request.Body.notes -ExistingValue $ExistingJob.Notes
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'AssignedDesigner' -NewValue $AssignedDesigner -ExistingValue $ExistingJob.AssignedDesigner
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'Username' -NewValue $null -ExistingValue $ExistingJob.Username
+    Add-PropertyIfNotNull -Entity $Entity -PropertyName 'JobData' -NewValue $null -ExistingValue $ExistingJob.JobData
+
+    # Handle array properties (convert to JSON only if they have values)
+    if ($RelatedTrades -and $RelatedTrades.Count -gt 0) {
+        $Entity['RelatedTrades'] = ($RelatedTrades | ConvertTo-Json -Compress)
+    } elseif ($ExistingJob.RelatedTrades) {
+        $Entity['RelatedTrades'] = $ExistingJob.RelatedTrades
+    }
+
+    if ($Builders -and $Builders.Count -gt 0) {
+        $Entity['Builders'] = ($Builders | ConvertTo-Json -Compress)
+    } elseif ($ExistingJob.Builders) {
+        $Entity['Builders'] = $ExistingJob.Builders
+    }
+
+    # Handle pricing matrix - only include if it has actual values
+    if ($Request.Body.pricingMatrix) {
+        $hasValues = $false
+        foreach ($key in $Request.Body.pricingMatrix.Keys) {
+            if ($null -ne $Request.Body.pricingMatrix[$key] -and $Request.Body.pricingMatrix[$key] -ne '') {
+                $hasValues = $true
+                break
+            }
+        }
+
+        if ($hasValues) {
+            $Entity['PricingMatrix'] = ($Request.Body.pricingMatrix | ConvertTo-Json -Compress)
+        } elseif ($ExistingJob.PricingMatrix) {
+            $Entity['PricingMatrix'] = $ExistingJob.PricingMatrix
+        }
+    } elseif ($ExistingJob.PricingMatrix) {
+        $Entity['PricingMatrix'] = $ExistingJob.PricingMatrix
     }
 
     Add-CIPPAzDataTableEntity @Table -Entity $Entity -Force

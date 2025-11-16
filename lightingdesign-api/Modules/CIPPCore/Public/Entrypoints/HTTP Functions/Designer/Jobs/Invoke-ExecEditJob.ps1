@@ -78,14 +78,14 @@ function Invoke-ExecEditJob {
     }
 
     # Validate access to the existing job's store
-    Test-CIPPAccess -Request $Request -StoreId $ExistingJob.StoreId
+    $null = Test-CIPPAccess -Request $Request -StoreId $ExistingJob.StoreId
 
     # Extract new store ID if changing
     $NewStoreId = Get-AutoCompleteValue -InputObject $Request.Body.storeId
 
     # If changing store, validate access to the new store
     if ($NewStoreId -and $NewStoreId -ne $ExistingJob.StoreId) {
-        Test-CIPPAccess -Request $Request -StoreId $NewStoreId
+        $null = Test-CIPPAccess -Request $Request -StoreId $NewStoreId
     }
 
     # Extract values from autocomplete fields

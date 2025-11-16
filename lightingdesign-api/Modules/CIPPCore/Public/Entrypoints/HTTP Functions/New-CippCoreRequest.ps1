@@ -38,6 +38,11 @@ function New-CippCoreRequest {
                 Write-LogMessage -headers $Headers -API $Request.Params.CIPPEndpoint -message 'Accessed this API' -Sev 'Debug'
                 if ($Access) {
                     $Response = & $FunctionName @HttpTrigger
+                    # If response is an array, extract the HttpResponseContext
+                    if ($Response -is [array]) {
+                        Write-Information "DEBUG: Response is array, extracting HttpResponseContext"
+                        $Response = $Response | Where-Object { $_ -is [Microsoft.Azure.Functions.PowerShellWorker.HttpResponseContext] } | Select-Object -First 1
+                    }
                     # Return HttpResponseContext as-is or wrap non-context responses
                     if ($Response -and $Response.StatusCode) {
                         # Response is already an HttpResponseContext, return it

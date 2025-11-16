@@ -31,7 +31,7 @@ function Invoke-ExecGetJob {
     }
 
     # Validate store access
-    Test-CIPPAccess -Request $Request -StoreId $Row.StoreId
+    $null = Test-CIPPAccess -Request $Request -StoreId $Row.StoreId
 
     Write-LogMessage -API 'GetJob' -message "Retrieved job: JobId: $JobId, JobName: $($Row.JobName)" -Sev 'Info' -headers $Request.Headers
 

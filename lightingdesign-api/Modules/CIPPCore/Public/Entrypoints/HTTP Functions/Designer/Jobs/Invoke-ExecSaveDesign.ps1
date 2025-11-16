@@ -30,7 +30,7 @@ function Invoke-ExecSaveDesign {
     }
 
     # Validate store access
-    Test-CIPPAccess -Request $Request -StoreId $Job.StoreId
+    $null = Test-CIPPAccess -Request $Request -StoreId $Job.StoreId
 
     $Table = Get-CIPPTable -TableName 'Designs'
     $LocksTable = Get-CIPPTable -TableName 'DesignLocks'

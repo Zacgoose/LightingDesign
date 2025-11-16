@@ -38,18 +38,18 @@ function New-CippCoreRequest {
                 Write-LogMessage -headers $Headers -API $Request.Params.CIPPEndpoint -message 'Accessed this API' -Sev 'Debug'
                 if ($Access) {
                     $Response = & $FunctionName @HttpTrigger
-                    # Filter to only return HttpResponseContext objects
-                    $HttpResponse = $Response | Where-Object { $_.PSObject.TypeNames -contains 'HttpResponseContext' -or ($_.StatusCode -and $_.Body) }
-                    if ($HttpResponse) {
-                        # Return the first valid HttpResponseContext found
-                        return ([HttpResponseContext]($HttpResponse | Select-Object -First 1))
-                    } else {
-                        # If no valid response context found, create a default success response
+                    # Return HttpResponseContext as-is or wrap non-context responses
+                    if ($Response -and $Response.StatusCode) {
+                        # Response is already an HttpResponseContext, return it
+                        return $Response
+                    } elseif ($null -ne $Response -and $Response -ne '') {
+                        # Wrap non-HttpResponseContext data
                         return ([HttpResponseContext]@{
                                 StatusCode = [HttpStatusCode]::OK
                                 Body       = $Response
                             })
                     }
+                    # If no response data, return nothing
                 }
             } catch {
                 Write-Warning "Exception occurred on HTTP trigger ($FunctionName): $($_.Exception.Message)"

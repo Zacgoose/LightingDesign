@@ -471,13 +471,24 @@ const Page = () => {
       return;
     }
 
-    // Apply transformations if items are selected to avoid losing changes
-    // This works for both auto-save and manual save
+    // Prevent saving if items are selected to avoid losing transformations
+    // For auto-save, we silently apply transformations instead of blocking with a dialog
     if (selectedIds.length > 0 || selectedConnectorIds.length > 0 || selectedTextId) {
-      const saveType = isAutoSave ? "Auto-save" : "Manual save";
-      console.log(`${saveType}: Applying transformations for selected items before saving`);
-      const transformed = applyGroupTransform();
-      if (transformed) updateHistory(transformed);
+      if (isAutoSave) {
+        // Auto-save: silently apply transformations before saving
+        console.log("Auto-save: Applying transformations for selected items before saving");
+        const transformed = applyGroupTransform();
+        if (transformed) updateHistory(transformed);
+      } else {
+        // Manual save: show dialog to user
+        console.warn("Cannot save: Please deselect all items before saving.");
+        setDeselectDialog({ 
+          open: true, 
+          action: 'save',
+          message: "Please deselect all items before saving. Click on an empty area of the canvas to deselect."
+        });
+        return;
+      }
     }
 
     const transformed = applyGroupTransform();

@@ -139,15 +139,23 @@ function Receive-CippHttpTrigger {
         return
     } else {
         $Response = New-CippCoreRequest -Request $Request -TriggerMetadata $TriggerMetadata
+        Write-Host "[Receive-CippHttpTrigger] Response from New-CippCoreRequest: $($Response | ConvertTo-Json -Depth 2 -Compress)"
         if ($Response.StatusCode) {
+            Write-Host "[Receive-CippHttpTrigger] Response.Body type: $($Response.Body.GetType().Name)"
+            Write-Host "[Receive-CippHttpTrigger] Response.Body is array: $($Response.Body -is [array])"
+            Write-Host "[Receive-CippHttpTrigger] Response.Body is PSCustomObject: $($Response.Body -is [PSCustomObject])"
             if ($Response.Body -is [PSCustomObject] -or $Response.Body -is [array]) {
                 if ($Response.Body -is [array] -and $Response.Body.Count -eq 0) {
                     # Empty arrays need special handling as ConvertTo-Json returns null for them
+                    Write-Host "[Receive-CippHttpTrigger] Converting empty array to '[]'"
                     $Response.Body = '[]'
                 } else {
+                    Write-Host "[Receive-CippHttpTrigger] Converting to JSON"
                     $Response.Body = $Response.Body | ConvertTo-Json -Depth 20 -Compress
                 }
             }
+            Write-Host "[Receive-CippHttpTrigger] Final Response.Body: $($Response.Body)"
+            Write-Host "[Receive-CippHttpTrigger] Pushing output binding with response: $($Response | ConvertTo-Json -Depth 2 -Compress)"
             Push-OutputBinding -Name Response -Value ([HttpResponseContext]$Response)
         }
     }

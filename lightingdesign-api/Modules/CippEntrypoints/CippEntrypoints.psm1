@@ -140,8 +140,15 @@ function Receive-CippHttpTrigger {
     } else {
         $Response = New-CippCoreRequest -Request $Request -TriggerMetadata $TriggerMetadata
         if ($Response.StatusCode) {
-            if ($Response.Body -is [PSCustomObject]) {
-                $Response.Body = $Response.Body | ConvertTo-Json -Depth 20 -Compress
+            # Convert Body to JSON string if it's not already a string
+            if ($Response.Body -isnot [string]) {
+                if ($Response.Body -is [array] -and $Response.Body.Count -eq 0) {
+                    # Empty arrays need special handling as ConvertTo-Json returns null
+                    $Response.Body = '[]'
+                } elseif ($null -ne $Response.Body) {
+                    # Convert any non-string, non-null body to JSON
+                    $Response.Body = $Response.Body | ConvertTo-Json -Depth 20 -Compress
+                }
             }
             Push-OutputBinding -Name Response -Value ([HttpResponseContext]$Response)
         }

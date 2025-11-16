@@ -459,7 +459,7 @@ const Page = () => {
     }
   }, [saveDesignMutation.isPending]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback((isAutoSave = false) => {
     if (!id) {
       console.error("No job ID found. Cannot save design.");
       return;
@@ -472,14 +472,23 @@ const Page = () => {
     }
 
     // Prevent saving if items are selected to avoid losing transformations
+    // For auto-save, we silently apply transformations instead of blocking with a dialog
     if (selectedIds.length > 0 || selectedConnectorIds.length > 0 || selectedTextId) {
-      console.warn("Cannot save: Please deselect all items before saving.");
-      setDeselectDialog({ 
-        open: true, 
-        action: 'save',
-        message: "Please deselect all items before saving. Click on an empty area of the canvas to deselect."
-      });
-      return;
+      if (isAutoSave) {
+        // Auto-save: silently apply transformations before saving
+        console.log("Auto-save: Applying transformations for selected items before saving");
+        const transformed = applyGroupTransform();
+        if (transformed) updateHistory(transformed);
+      } else {
+        // Manual save: show dialog to user
+        console.warn("Cannot save: Please deselect all items before saving.");
+        setDeselectDialog({ 
+          open: true, 
+          action: 'save',
+          message: "Please deselect all items before saving. Click on an empty area of the canvas to deselect."
+        });
+        return;
+      }
     }
 
     const transformed = applyGroupTransform();
@@ -554,7 +563,7 @@ const Page = () => {
       // Use ref to avoid recreating interval when handleSave changes
       if (handleSaveRef.current) {
         console.log("Auto-saving design...");
-        handleSaveRef.current();
+        handleSaveRef.current(true); // Pass true to indicate this is an auto-save
       }
     }, autoSaveMs);
 
@@ -2607,6 +2616,17 @@ const Page = () => {
   );
 
   const handleExport = useCallback(() => {
+    // Check if items are selected - if so, show dialog and prevent export
+    if (selectedIds.length > 0 || selectedConnectorIds.length > 0 || selectedTextId) {
+      console.warn("Cannot export: Please deselect all items before exporting.");
+      setDeselectDialog({ 
+        open: true, 
+        action: 'export',
+        message: "Please deselect all items before exporting. Click on an empty area of the canvas to deselect."
+      });
+      return;
+    }
+    
     // Save if there are pending changes before navigating to export page
     if (hasUnsavedChanges && !isSaving) {
       console.log("Saving design before export...");
@@ -2616,7 +2636,7 @@ const Page = () => {
       // No unsaved changes, navigate immediately
       router.push(`/jobs/design/export?id=${id}`);
     }
-  }, [router, id, hasUnsavedChanges, isSaving, handleSave]);
+  }, [router, id, hasUnsavedChanges, isSaving, handleSave, selectedIds, selectedConnectorIds, selectedTextId]);
 
   // Memoize callback functions for toolbar to prevent re-renders
   const handleToggleGrid = useCallback(() => setShowGrid(!showGrid), [showGrid]);

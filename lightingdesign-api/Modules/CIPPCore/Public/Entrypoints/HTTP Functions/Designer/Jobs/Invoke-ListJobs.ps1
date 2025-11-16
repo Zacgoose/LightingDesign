@@ -30,7 +30,7 @@ function Invoke-ListJobs {
         }
 
         # Validate store access - throws exception if access denied
-        Test-CIPPAccess -Request $Request -StoreId $Row.StoreId
+        $null = Test-CIPPAccess -Request $Request -StoreId $Row.StoreId
 
         $JobData = if ($Row.JobData -and (Test-Json -Json $Row.JobData -ErrorAction SilentlyContinue)) {
             $Row.JobData | ConvertFrom-Json

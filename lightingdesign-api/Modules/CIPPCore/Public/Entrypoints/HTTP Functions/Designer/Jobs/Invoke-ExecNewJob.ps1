@@ -76,7 +76,7 @@ function Invoke-ExecNewJob {
         }
 
         # Validate user has access to this store
-        Test-CIPPAccess -Request $Request -StoreId $StoreId
+        $null = Test-CIPPAccess -Request $Request -StoreId $StoreId
 
         $Table = Get-CIPPTable -TableName 'Jobs'
 

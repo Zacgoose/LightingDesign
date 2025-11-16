@@ -41,8 +41,17 @@ function New-CippCoreRequest {
                     # Filter to only return HttpResponseContext objects
                     $HttpResponse = $Response | Where-Object { $_.PSObject.TypeNames -contains 'HttpResponseContext' -or ($_.StatusCode -and $_.Body) }
                     if ($HttpResponse) {
-                        # Return the first valid HttpResponseContext found
-                        return ([HttpResponseContext]($HttpResponse | Select-Object -First 1))
+                        # Return the first valid HttpResponseContext found, ensuring only valid properties are included
+                        $FirstResponse = $HttpResponse | Select-Object -First 1
+                        $CleanResponse = @{
+                            StatusCode = $FirstResponse.StatusCode
+                            Body       = $FirstResponse.Body
+                        }
+                        # Include optional properties if they exist
+                        if ($FirstResponse.Headers) { $CleanResponse.Headers = $FirstResponse.Headers }
+                        if ($FirstResponse.ContentType) { $CleanResponse.ContentType = $FirstResponse.ContentType }
+                        if ($FirstResponse.Cookies) { $CleanResponse.Cookies = $FirstResponse.Cookies }
+                        return ([HttpResponseContext]$CleanResponse)
                     } elseif ($null -ne $Response -and $Response -ne '') {
                         # If response has data but is not an HttpResponseContext, wrap it
                         return ([HttpResponseContext]@{

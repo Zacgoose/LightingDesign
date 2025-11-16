@@ -40,20 +40,19 @@ function New-CippCoreRequest {
                     $Response = & $FunctionName @HttpTrigger
                     Write-Host "[New-CippCoreRequest] Response type: $($Response.GetType().Name)"
                     Write-Host "[New-CippCoreRequest] Response properties: $($Response.PSObject.Properties.Name -join ', ')"
-                    # Filter to only return HttpResponseContext objects
-                    $HttpResponse = $Response | Where-Object { $_.PSObject.TypeNames -contains 'HttpResponseContext' -or ($_.StatusCode -and $_.Body) }
-                    if ($HttpResponse) {
-                        # Return the first valid HttpResponseContext found, ensuring only valid properties are included
-                        $FirstResponse = $HttpResponse | Select-Object -First 1
-                        Write-Host "[New-CippCoreRequest] FirstResponse properties: $($FirstResponse.PSObject.Properties.Name -join ', ')"
+                    
+                    # Check if response has the structure of an HttpResponseContext
+                    if ($Response -and $Response.StatusCode) {
+                        Write-Host "[New-CippCoreRequest] Response has StatusCode, treating as HttpResponseContext"
+                        # Create a clean response object with only valid HttpResponseContext properties
                         $CleanResponse = @{
-                            StatusCode = $FirstResponse.StatusCode
-                            Body       = $FirstResponse.Body
+                            StatusCode = $Response.StatusCode
+                            Body       = $Response.Body
                         }
                         # Include optional properties if they exist
-                        if ($FirstResponse.Headers) { $CleanResponse.Headers = $FirstResponse.Headers }
-                        if ($FirstResponse.ContentType) { $CleanResponse.ContentType = $FirstResponse.ContentType }
-                        if ($FirstResponse.Cookies) { $CleanResponse.Cookies = $FirstResponse.Cookies }
+                        if ($Response.Headers) { $CleanResponse.Headers = $Response.Headers }
+                        if ($Response.ContentType) { $CleanResponse.ContentType = $Response.ContentType }
+                        if ($Response.Cookies) { $CleanResponse.Cookies = $Response.Cookies }
                         Write-Host "[New-CippCoreRequest] CleanResponse properties: $($CleanResponse.Keys -join ', ')"
                         return ([HttpResponseContext]$CleanResponse)
                     } elseif ($null -ne $Response -and $Response -ne '') {

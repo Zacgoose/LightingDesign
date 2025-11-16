@@ -1,5 +1,27 @@
 import { useEffect, useRef } from "react";
 
+/**
+ * Custom hook for handling keyboard shortcuts on the designer canvas.
+ * 
+ * This hook intercepts keyboard events for copy/paste/delete operations, but respects
+ * user text selection. When text is selected in the DOM (e.g., from properties panels),
+ * the browser's native copy/paste behavior is preserved.
+ * 
+ * @param {Object} props - Hook configuration
+ * @param {Array} props.products - Array of canvas products
+ * @param {Array} props.selectedIds - IDs of selected canvas objects
+ * @param {Array} props.selectedConnectorIds - IDs of selected connectors
+ * @param {Array} props.connectors - Array of canvas connectors
+ * @param {Object} props.clipboard - Ref object containing clipboard data
+ * @param {Function} props.onCopy - Callback for copy operation
+ * @param {Function} props.onPaste - Callback for paste operation
+ * @param {Function} props.onDelete - Callback for delete operation
+ * @param {Function} props.onSelectAll - Callback for select all operation
+ * @param {Function} props.onEscape - Callback for escape key
+ * @param {Function} props.onUndo - Callback for undo operation
+ * @param {Function} props.onRedo - Callback for redo operation
+ * @param {boolean} props.isEditingDisabled - Whether editing is currently disabled
+ */
 export const useKeyboardShortcuts = ({
   products,
   selectedIds,

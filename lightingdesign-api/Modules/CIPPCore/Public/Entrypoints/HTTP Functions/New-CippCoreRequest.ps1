@@ -38,26 +38,18 @@ function New-CippCoreRequest {
                 Write-LogMessage -headers $Headers -API $Request.Params.CIPPEndpoint -message 'Accessed this API' -Sev 'Debug'
                 if ($Access) {
                     $Response = & $FunctionName @HttpTrigger
-
-                    # Check if response has the structure of an HttpResponseContext
+                    # Return HttpResponseContext as-is or wrap non-context responses
                     if ($Response -and $Response.StatusCode) {
-                        # Create a clean response object with only valid HttpResponseContext properties
-                        $CleanResponse = @{
-                            StatusCode = $Response.StatusCode
-                            Body       = $Response.Body
-                        }
-                        # Include optional properties if they exist
-                        if ($Response.Headers) { $CleanResponse.Headers = $Response.Headers }
-                        if ($Response.ContentType) { $CleanResponse.ContentType = $Response.ContentType }
-                        if ($Response.Cookies) { $CleanResponse.Cookies = $Response.Cookies }
-                        return ([HttpResponseContext]$CleanResponse)
+                        # Response is already an HttpResponseContext, return it
+                        return $Response
                     } elseif ($null -ne $Response -and $Response -ne '') {
-                        # If response has data but is not an HttpResponseContext, wrap it
+                        # Wrap non-HttpResponseContext data
                         return ([HttpResponseContext]@{
                                 StatusCode = [HttpStatusCode]::OK
                                 Body       = $Response
                             })
                     }
+                    # If no response data, return nothing
                 }
             } catch {
                 Write-Warning "Exception occurred on HTTP trigger ($FunctionName): $($_.Exception.Message)"

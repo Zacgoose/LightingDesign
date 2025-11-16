@@ -38,12 +38,9 @@ function New-CippCoreRequest {
                 Write-LogMessage -headers $Headers -API $Request.Params.CIPPEndpoint -message 'Accessed this API' -Sev 'Debug'
                 if ($Access) {
                     $Response = & $FunctionName @HttpTrigger
-                    Write-Host "[New-CippCoreRequest] Response type: $($Response.GetType().Name)"
-                    Write-Host "[New-CippCoreRequest] Response properties: $($Response.PSObject.Properties.Name -join ', ')"
                     
                     # Check if response has the structure of an HttpResponseContext
                     if ($Response -and $Response.StatusCode) {
-                        Write-Host "[New-CippCoreRequest] Response has StatusCode, treating as HttpResponseContext"
                         # Create a clean response object with only valid HttpResponseContext properties
                         $CleanResponse = @{
                             StatusCode = $Response.StatusCode
@@ -53,17 +50,14 @@ function New-CippCoreRequest {
                         if ($Response.Headers) { $CleanResponse.Headers = $Response.Headers }
                         if ($Response.ContentType) { $CleanResponse.ContentType = $Response.ContentType }
                         if ($Response.Cookies) { $CleanResponse.Cookies = $Response.Cookies }
-                        Write-Host "[New-CippCoreRequest] CleanResponse properties: $($CleanResponse.Keys -join ', ')"
                         return ([HttpResponseContext]$CleanResponse)
                     } elseif ($null -ne $Response -and $Response -ne '') {
                         # If response has data but is not an HttpResponseContext, wrap it
-                        Write-Host "[New-CippCoreRequest] Wrapping non-HttpResponseContext response"
                         return ([HttpResponseContext]@{
                                 StatusCode = [HttpStatusCode]::OK
                                 Body       = $Response
                             })
                     }
-                    Write-Host "[New-CippCoreRequest] No response data, returning nothing"
                     # If no response data, return nothing (no output binding will be pushed)
                 }
             } catch {

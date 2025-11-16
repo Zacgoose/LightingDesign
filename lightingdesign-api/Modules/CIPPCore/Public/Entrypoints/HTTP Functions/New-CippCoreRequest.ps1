@@ -43,13 +43,14 @@ function New-CippCoreRequest {
                     if ($HttpResponse) {
                         # Return the first valid HttpResponseContext found
                         return ([HttpResponseContext]($HttpResponse | Select-Object -First 1))
-                    } else {
-                        # If no valid response context found, create a default success response
+                    } elseif ($null -ne $Response -and $Response -ne '') {
+                        # If response has data but is not an HttpResponseContext, wrap it
                         return ([HttpResponseContext]@{
                                 StatusCode = [HttpStatusCode]::OK
                                 Body       = $Response
                             })
                     }
+                    # If no response data, return nothing (no output binding will be pushed)
                 }
             } catch {
                 Write-Warning "Exception occurred on HTTP trigger ($FunctionName): $($_.Exception.Message)"

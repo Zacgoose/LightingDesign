@@ -38,7 +38,7 @@ function New-CippCoreRequest {
                 Write-LogMessage -headers $Headers -API $Request.Params.CIPPEndpoint -message 'Accessed this API' -Sev 'Debug'
                 if ($Access) {
                     $Response = & $FunctionName @HttpTrigger
-                    
+
                     # Check if response has the structure of an HttpResponseContext
                     if ($Response -and $Response.StatusCode) {
                         # Create a clean response object with only valid HttpResponseContext properties
@@ -58,7 +58,6 @@ function New-CippCoreRequest {
                                 Body       = $Response
                             })
                     }
-                    # If no response data, return nothing (no output binding will be pushed)
                 }
             } catch {
                 Write-Warning "Exception occurred on HTTP trigger ($FunctionName): $($_.Exception.Message)"

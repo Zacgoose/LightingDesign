@@ -2616,6 +2616,16 @@ const Page = () => {
   );
 
   const handleExport = useCallback(() => {
+    // Apply any pending transformations before clearing selection
+    const transformed = applyGroupTransform();
+    if (transformed) {
+      updateHistory(transformed);
+    }
+    
+    // Clear all selections before saving to avoid blocking save dialog
+    clearSelection();
+    setSelectedTextId(null);
+    
     // Save if there are pending changes before navigating to export page
     if (hasUnsavedChanges && !isSaving) {
       console.log("Saving design before export...");
@@ -2625,7 +2635,7 @@ const Page = () => {
       // No unsaved changes, navigate immediately
       router.push(`/jobs/design/export?id=${id}`);
     }
-  }, [router, id, hasUnsavedChanges, isSaving, handleSave]);
+  }, [router, id, hasUnsavedChanges, isSaving, handleSave, applyGroupTransform, updateHistory, clearSelection, setSelectedTextId]);
 
   // Memoize callback functions for toolbar to prevent re-renders
   const handleToggleGrid = useCallback(() => setShowGrid(!showGrid), [showGrid]);

@@ -1,0 +1,16 @@
+{
+  "entry": [
+    "src/index.js",
+    "src/pages/**/*.{js,jsx}"
+  ],
+  "extensions": [".js", ".jsx"],
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/*.test.{js,jsx}",
+    "**/*.spec.{js,jsx}"
+  ],
+  "ignoreUnresolved": [
+    "react",
+    "react-dom"
+  ]
+}

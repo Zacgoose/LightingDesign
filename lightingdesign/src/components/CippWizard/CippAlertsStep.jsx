@@ -4,22 +4,6 @@ import { CippWizardStepButtons } from "./CippWizardStepButtons";
 export const CippAlertsStep = (props) => {
   const { formControl, onPreviousStep, onNextStep, currentStep } = props;
 
-  const postExecutionOptions = [
-    { label: "Webhook", value: "Webhook" },
-    { label: "Email", value: "Email" },
-    { label: "PSA", value: "PSA" },
-  ];
-
-  const recurrenceOptions = [
-    { value: "30m", label: "Every 30 minutes" },
-    { value: "1h", label: "Every hour" },
-    { value: "4h", label: "Every 4 hours" },
-    { value: "1d", label: "Every 1 day" },
-    { value: "7d", label: "Every 7 days" },
-    { value: "30d", label: "Every 30 days" },
-    { value: "365d", label: "Every 365 days" },
-  ];
-
   return (
     <Stack spacing={3}>
       <Stack spacing={2}>

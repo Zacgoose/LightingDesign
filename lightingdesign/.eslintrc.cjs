@@ -26,8 +26,17 @@ module.exports = {
   ],
   plugins: ['react-hooks', 'import'],
   rules: {
-    'no-unused-vars': 'off',
-    'react/prop-types': 'warn',
+    'no-unused-vars': ['warn', {
+      'varsIgnorePattern': '^_',
+      'argsIgnorePattern': '^_'
+    }],
+    'react/prop-types': 'off',
+    'prettier/prettier': 'off',
+    'react/display-name': 'off',
+    'import/no-unresolved': 'off',
+    'no-empty': 'off',
+    'no-useless-escape': 'off',
+    'react-hooks/exhaustive-deps': 'off',
     // this rule is annoying on strings with quotes in them
     'react/no-unescaped-entities': 'off',
   },

@@ -207,8 +207,13 @@ export const getCippFormatting = (
 
   if (cellName === "Severity" || cellName === "logsToInclude") {
     if (Array.isArray(data)) {
-      return isText ? data.join(", ") : renderChipList(data);
+      // Filter out undefined/null items
+      const validItems = data.filter((item) => item !== undefined && item !== null);
+      return isText ? validItems.join(", ") : renderChipList(validItems);
     } else {
+      if (data === undefined || data === null) {
+        return isText ? "No data" : <Chip variant="outlined" label="No data" size="small" color="info" />;
+      }
       return isText ? (
         data
       ) : (
@@ -909,22 +914,21 @@ export const getCippFormatting = (
     return isText ? data : <CippCopyToClipBoard text={data} />;
   }
 
-  // handle autocomplete labels
-  if (data?.label && data?.value) {
-    return isText ? data.label : <CippCopyToClipBoard text={data.label} type="chip" />;
+  // handle autocomplete labels (single object or array)
+  if (data === null || data === undefined) {
+    return isText ? "No data" : <Chip variant="outlined" label="No data" size="small" color="info" />;
   }
-
-  // handle array of autocomplete labels
-  if (Array.isArray(data) && data.length > 0 && data[0]?.label && data[0]?.value) {
+  if (Array.isArray(data)) {
+    const validItems = data.filter(item => item && typeof item === "object" && "label" in item && "value" in item);
+    if (validItems.length === 0) {
+      return isText ? "No data" : <Chip variant="outlined" label="No data" size="small" color="info" />;
+    }
     return isText
-      ? data.map((item) => item.label).join(", ")
-      : renderChipList(
-          data.map((item) => {
-            return {
-              label: item.label,
-            };
-          }),
-        );
+      ? validItems.map(item => item.label).join(", ")
+      : renderChipList(validItems.map(item => ({ label: item.label })));
+  }
+  if (typeof data === "object" && "label" in data && "value" in data) {
+    return isText ? data.label : <CippCopyToClipBoard text={data.label} type="chip" />;
   }
 
   // Handle arrays of strings

@@ -167,7 +167,8 @@ const Page = () => {
   const fetchTableData = ApiPostCall({
     queryKey: "CippTableData",
     onResult: (result) => {
-      setTableData(result);
+      const normalized = Array.isArray(result) ? result : result ? [result] : [];
+      setTableData(normalized);
     },
   });
 
@@ -254,7 +255,7 @@ const Page = () => {
   ];
 
   const getTableFields = () => {
-    if (tableData.length === 0) return [];
+    if (!Array.isArray(tableData) || tableData.length === 0 || !tableData[0]) return [];
     const sampleRow = tableData[0];
     return Object.keys(sampleRow)
       .filter((key) => key !== "ETag" && key !== "Timestamp")

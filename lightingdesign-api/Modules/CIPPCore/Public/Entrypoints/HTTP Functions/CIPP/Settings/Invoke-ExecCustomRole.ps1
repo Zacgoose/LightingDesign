@@ -114,8 +114,7 @@ function Invoke-ExecCustomRole {
             Write-LogMessage -headers $Request.Headers -API 'ExecCustomRole' -message "Deleted custom role $($Request.Body.RoleName)" -Sev 'Info'
         }
         'ListEntraGroups' {
-            $TenantFilter = $Request.Query.tenantFilter ?? $Request.Body.tenantFilter
-            $Groups = New-GraphGetRequest -uri 'https://graph.microsoft.com/beta/groups?$filter=securityEnabled eq true' -tenantid $TenantFilter -NoAuthCheck $true
+            $Groups = New-GraphGetRequest -uri 'https://graph.microsoft.com/beta/groups?$filter=securityEnabled eq true' -tenantid $env:TenantID -NoAuthCheck $true -AsApp $true
             $Body = @{
                 Results  = @($Groups)
                 Metadata = @{

@@ -679,16 +679,16 @@ export const getCippFormatting = (
   // Handle assigned licenses
   if (cellName === "assignedLicenses") {
     // Return raw license data without translation
-    if (!Array.isArray(data)) {
-      data = [data];
-    }
-
-    if (data.length === 0 || !data) {
+    if (!data || (Array.isArray(data) && data.length === 0)) {
       return isText ? (
         "No Licenses Assigned"
       ) : (
         <Chip variant="outlined" label="No Licenses Assigned" size="small" color="info" />
       );
+    }
+
+    if (!Array.isArray(data)) {
+      data = [data];
     }
 
     const licenses = data.map((license) => license?.skuPartNumber || license?.skuId || "Unknown");

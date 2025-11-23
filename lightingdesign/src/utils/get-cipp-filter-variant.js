@@ -1,5 +1,3 @@
-import { getCippUniqueLicenses } from "./get-cipp-unique-licenses";
-
 export const getCippFilterVariant = (providedColumnKeys, arg) => {
   // Back-compat + new options mode
   const isOptions =
@@ -39,33 +37,6 @@ export const getCippFilterVariant = (providedColumnKeys, arg) => {
   const typeOf = typeof sampleValue;
   //First key based filters
   switch (tailKey) {
-    case "assignedLicenses":
-      // Extract unique licenses from the data if available
-      let filterSelectOptions = [];
-      if (isOptions && arg.dataArray && Array.isArray(arg.dataArray)) {
-        const uniqueLicenses = getCippUniqueLicenses(arg.dataArray);
-        filterSelectOptions = uniqueLicenses.map((license) => ({
-          label: license.displayName,
-          value: license.skuId,
-        }));
-      }
-
-      return {
-        filterVariant: "multi-select",
-        sortingFn: "alphanumeric",
-        filterFn: (row, columnId, filterValue) => {
-          const userLicenses = row.original.assignedLicenses;
-          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) {
-            return true;
-          }
-          if (!userLicenses || !Array.isArray(userLicenses) || userLicenses.length === 0) {
-            return false;
-          }
-          const userSkuIds = userLicenses.map((license) => license.skuId).filter(Boolean);
-          return filterValue.some((selectedSkuId) => userSkuIds.includes(selectedSkuId));
-        },
-        filterSelectOptions: filterSelectOptions,
-      };
     case "accountEnabled":
       return {
         filterVariant: "select",

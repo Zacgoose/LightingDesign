@@ -19,7 +19,6 @@ import { CippFormCondition } from "../CippComponents/CippFormCondition";
 import { CippOffCanvas } from "../CippComponents/CippOffCanvas";
 import { CippCodeBlock } from "../CippComponents/CippCodeBlock";
 import CippSchedulerForm from "../CippFormPages/CippSchedulerForm";
-import defaultPresets from "../../data/GraphExplorerPresets";
 import { Grid, Stack } from "@mui/system";
 import { GroupHeader, GroupItems } from "../CippComponents/CippAutocompleteGrouping";
 
@@ -117,32 +116,26 @@ const CippGraphExplorerFilter = ({
   useEffect(() => {
     var presetOptionList = [];
     const normalizeEndpoint = (endpoint) => endpoint.replace(/^\//, "");
-    defaultPresets
-      .filter(
-        (item) =>
-          !endpointFilter ||
-          normalizeEndpoint(item.params.endpoint) === normalizeEndpoint(endpointFilter),
-      )
-      .forEach((item) => {
-        presetOptionList.push({
-          label: item.name,
-          value: item.id,
-          addedFields: item,
-          type: "Built-In",
-        });
-      });
+    
+    // Only use API-loaded presets, no longer using static defaultPresets
     if (presetList.isSuccess && presetList.data?.Results.length > 0) {
-      presetList.data.Results.forEach((item) => {
-        presetOptionList.push({
-          label: item.name,
-          value: item.id,
-          addedFields: item,
-          type: "Custom",
+      presetList.data.Results
+        .filter(
+          (item) =>
+            !endpointFilter ||
+            normalizeEndpoint(item.params.endpoint) === normalizeEndpoint(endpointFilter),
+        )
+        .forEach((item) => {
+          presetOptionList.push({
+            label: item.name,
+            value: item.id,
+            addedFields: item,
+            type: item.isBuiltin ? "Built-In" : "Custom",
+          });
         });
-      });
     }
     setPresetOptions(presetOptionList);
-  }, [defaultPresets, presetList.isSuccess, presetList.data]);
+  }, [presetList.isSuccess, presetList.data, endpointFilter]);
 
   // Debounced refetch when endpoint, put in in a useEffect dependand on endpoint
   const debouncedRefetch = useCallback(

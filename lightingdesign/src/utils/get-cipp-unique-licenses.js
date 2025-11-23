@@ -1,9 +1,7 @@
-import { getCippLicenseTranslation } from "./get-cipp-license-translation";
-
 /**
  * Extracts unique licenses from assignedLicenses data
  * @param {Array} dataArray - Array of user data containing assignedLicenses
- * @returns {Array} Array of unique license objects with skuId and translated name
+ * @returns {Array} Array of unique license objects with skuId and name
  */
 export const getCippUniqueLicenses = (dataArray) => {
   if (!Array.isArray(dataArray) || dataArray.length === 0) {
@@ -19,9 +17,8 @@ export const getCippUniqueLicenses = (dataArray) => {
         if (license && license.skuId) {
           // Use skuId as the unique key
           if (!uniqueLicensesMap.has(license.skuId)) {
-            // Get the translated name for this license
-            const translatedName = getCippLicenseTranslation([license]);
-            const displayName = Array.isArray(translatedName) ? translatedName[0] : translatedName;
+            // Use raw license data without translation
+            const displayName = license?.skuPartNumber || license?.skuId || "Unknown";
 
             uniqueLicensesMap.set(license.skuId, {
               skuId: license.skuId,

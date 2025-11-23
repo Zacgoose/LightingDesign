@@ -13,13 +13,11 @@ import {
 import { Chip, Link, SvgIcon, Popover } from "@mui/material";
 import { Box } from "@mui/system";
 import { CippCopyToClipBoard } from "../components/CippComponents/CippCopyToClipboard";
-import { getCippLicenseTranslation } from "./get-cipp-license-translation";
 import CippDataTableButton from "../components/CippTable/CippDataTableButton";
 import { LinearProgressWithLabel } from "../components/linearProgressWithLabel";
 import { CippLocationDialog } from "../components/CippComponents/CippLocationDialog";
 import { isoDuration, en } from "@musement/iso-duration";
 import { CippTimeAgo } from "../components/CippComponents/CippTimeAgo";
-import { getCippRoleTranslation } from "./get-cipp-role-translation";
 import {
   BuildingOfficeIcon,
   CogIcon,
@@ -29,7 +27,6 @@ import {
 } from "@heroicons/react/24/outline";
 import { getCippTranslation } from "./get-cipp-translation";
 import DOMPurify from "dompurify";
-import { getSignInErrorCodeTranslation } from "./get-cipp-signin-errorcode-translation";
 import { CollapsibleChipList } from "../components/CippComponents/CollapsibleChipList";
 import { useState } from "react";
 
@@ -681,19 +678,27 @@ export const getCippFormatting = (
 
   // Handle assigned licenses
   if (cellName === "assignedLicenses") {
-    var translatedLicenses = getCippLicenseTranslation(data);
-    return isText
-      ? Array.isArray(translatedLicenses)
-        ? translatedLicenses.join(", ")
-        : translatedLicenses
-      : Array.isArray(translatedLicenses)
-        ? renderChipList(translatedLicenses)
-        : translatedLicenses;
+    // Return raw license data without translation
+    if (!Array.isArray(data)) {
+      data = [data];
+    }
+
+    if (data.length === 0 || !data) {
+      return isText ? (
+        "No Licenses Assigned"
+      ) : (
+        <Chip variant="outlined" label="No Licenses Assigned" size="small" color="info" />
+      );
+    }
+
+    const licenses = data.map((license) => license?.skuPartNumber || license?.skuId || "Unknown");
+    return isText ? licenses.join(", ") : renderChipList(licenses);
   }
 
   if (cellName === "unifiedRoles") {
     if (Array.isArray(data)) {
-      const roles = data.map((role) => getCippRoleTranslation(role.roleDefinitionId));
+      // Return raw role data without translation
+      const roles = data.map((role) => role.roleDefinitionId || role);
       return isText ? roles.join(", ") : renderChipList(roles, 12);
     }
     return isText ? (
@@ -705,7 +710,8 @@ export const getCippFormatting = (
 
   // Handle roleDefinitionId
   if (cellName === "roleDefinitionId") {
-    return getCippRoleTranslation(data);
+    // Return raw role data without translation
+    return data;
   }
 
   // Handle CIPPAction property
@@ -792,7 +798,8 @@ export const getCippFormatting = (
   }
 
   if (cellName === "status.errorCode") {
-    return getSignInErrorCodeTranslation(data);
+    // Return raw error code without translation
+    return data;
   }
 
   if (cellName === "location" && data?.geoCoordinates) {

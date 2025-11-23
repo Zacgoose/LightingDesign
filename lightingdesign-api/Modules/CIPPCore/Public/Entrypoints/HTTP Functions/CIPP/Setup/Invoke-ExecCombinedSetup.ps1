@@ -20,44 +20,6 @@ function Invoke-ExecCombinedSetup {
             $SubscriptionId = $env:WEBSITE_OWNER_NAME -split '\+' | Select-Object -First 1
             $null = Set-AzContext -SubscriptionId $SubscriptionId
         }
-        if ($request.body.selectedBaselines -and $request.body.baselineOption -eq 'downloadBaselines') {
-            #do a single download of the selected baselines.
-            foreach ($template in $request.body.selectedBaselines) {
-                $object = @{
-                    TenantFilter  = 'No tenant'
-                    Name          = "Download Single Baseline: $($template.value)"
-                    Command       = @{
-                        value = 'New-CIPPTemplateRun'
-                    }
-                    Parameters    = @{
-                        TemplateSettings = @{
-                            ca                 = $false
-                            intuneconfig       = $false
-                            intunecompliance   = $false
-                            intuneprotection   = $false
-                            templateRepo       = @{
-                                label       = $Template.label
-                                value       = $template.value
-                                addedFields = @{
-                                    branch = 'main'
-                                }
-                            }
-                            templateRepoBranch = @{
-                                label = 'main'
-                                value = 'main'
-                            }
-                            standardsconfig    = $true
-                            groupTemplates     = $true
-                            policyTemplates    = $true
-                            caTemplates        = $true
-                        }
-                    }
-                    ScheduledTime = 0
-                }
-                $null = Add-CIPPScheduledTask -task $object -hidden $false -DisallowDuplicateName $true -Headers $Request.Headers
-                $Results.add("Scheduled download of baseline: $($template.value)")
-            }
-        }
         if ($Request.body.email -or $Request.body.webhook) {
             #create hashtable from pscustomobject
             $notificationConfig = $request.body | Select-Object email, webhook, onepertenant, logsToInclude, sendtoIntegration, sev | ConvertTo-Json | ConvertFrom-Json -AsHashtable

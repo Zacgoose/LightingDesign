@@ -6,9 +6,5 @@
   {
     "label": "Backend",
     "path": "/settings/settings/backend"
-  },
-  {
-    "label": "Backup",
-    "path": "/settings/settings/backup"
   }
 ]

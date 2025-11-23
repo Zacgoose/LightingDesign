@@ -13,13 +13,11 @@ import {
 import { Chip, Link, SvgIcon, Popover } from "@mui/material";
 import { Box } from "@mui/system";
 import { CippCopyToClipBoard } from "../components/CippComponents/CippCopyToClipboard";
-import { getCippLicenseTranslation } from "./get-cipp-license-translation";
 import CippDataTableButton from "../components/CippTable/CippDataTableButton";
 import { LinearProgressWithLabel } from "../components/linearProgressWithLabel";
 import { CippLocationDialog } from "../components/CippComponents/CippLocationDialog";
 import { isoDuration, en } from "@musement/iso-duration";
 import { CippTimeAgo } from "../components/CippComponents/CippTimeAgo";
-import { getCippRoleTranslation } from "./get-cipp-role-translation";
 import {
   BuildingOfficeIcon,
   CogIcon,
@@ -29,7 +27,6 @@ import {
 } from "@heroicons/react/24/outline";
 import { getCippTranslation } from "./get-cipp-translation";
 import DOMPurify from "dompurify";
-import { getSignInErrorCodeTranslation } from "./get-cipp-signin-errorcode-translation";
 import { CollapsibleChipList } from "../components/CippComponents/CollapsibleChipList";
 import { useState } from "react";
 
@@ -210,8 +207,13 @@ export const getCippFormatting = (
 
   if (cellName === "Severity" || cellName === "logsToInclude") {
     if (Array.isArray(data)) {
-      return isText ? data.join(", ") : renderChipList(data);
+      // Filter out undefined/null items
+      const validItems = data.filter((item) => item !== undefined && item !== null);
+      return isText ? validItems.join(", ") : renderChipList(validItems);
     } else {
+      if (data === undefined || data === null) {
+        return isText ? "No data" : <Chip variant="outlined" label="No data" size="small" color="info" />;
+      }
       return isText ? (
         data
       ) : (
@@ -681,19 +683,27 @@ export const getCippFormatting = (
 
   // Handle assigned licenses
   if (cellName === "assignedLicenses") {
-    var translatedLicenses = getCippLicenseTranslation(data);
-    return isText
-      ? Array.isArray(translatedLicenses)
-        ? translatedLicenses.join(", ")
-        : translatedLicenses
-      : Array.isArray(translatedLicenses)
-        ? renderChipList(translatedLicenses)
-        : translatedLicenses;
+    // Return raw license data without translation
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      return isText ? (
+        "No Licenses Assigned"
+      ) : (
+        <Chip variant="outlined" label="No Licenses Assigned" size="small" color="info" />
+      );
+    }
+
+    if (!Array.isArray(data)) {
+      data = [data];
+    }
+
+    const licenses = data.map((license) => license?.skuPartNumber || license?.skuId || "Unknown");
+    return isText ? licenses.join(", ") : renderChipList(licenses);
   }
 
   if (cellName === "unifiedRoles") {
     if (Array.isArray(data)) {
-      const roles = data.map((role) => getCippRoleTranslation(role.roleDefinitionId));
+      // Return raw role data without translation
+      const roles = data.map((role) => role.roleDefinitionId || role);
       return isText ? roles.join(", ") : renderChipList(roles, 12);
     }
     return isText ? (
@@ -705,7 +715,8 @@ export const getCippFormatting = (
 
   // Handle roleDefinitionId
   if (cellName === "roleDefinitionId") {
-    return getCippRoleTranslation(data);
+    // Return raw role data without translation
+    return data;
   }
 
   // Handle CIPPAction property
@@ -792,7 +803,8 @@ export const getCippFormatting = (
   }
 
   if (cellName === "status.errorCode") {
-    return getSignInErrorCodeTranslation(data);
+    // Return raw error code without translation
+    return data;
   }
 
   if (cellName === "location" && data?.geoCoordinates) {
@@ -902,22 +914,21 @@ export const getCippFormatting = (
     return isText ? data : <CippCopyToClipBoard text={data} />;
   }
 
-  // handle autocomplete labels
-  if (data?.label && data?.value) {
-    return isText ? data.label : <CippCopyToClipBoard text={data.label} type="chip" />;
+  // handle autocomplete labels (single object or array)
+  if (data === null || data === undefined) {
+    return isText ? "No data" : <Chip variant="outlined" label="No data" size="small" color="info" />;
   }
-
-  // handle array of autocomplete labels
-  if (Array.isArray(data) && data.length > 0 && data[0]?.label && data[0]?.value) {
+  if (Array.isArray(data)) {
+    const validItems = data.filter(item => item && typeof item === "object" && "label" in item && "value" in item);
+    if (validItems.length === 0) {
+      return isText ? "No data" : <Chip variant="outlined" label="No data" size="small" color="info" />;
+    }
     return isText
-      ? data.map((item) => item.label).join(", ")
-      : renderChipList(
-          data.map((item) => {
-            return {
-              label: item.label,
-            };
-          }),
-        );
+      ? validItems.map(item => item.label).join(", ")
+      : renderChipList(validItems.map(item => ({ label: item.label })));
+  }
+  if (typeof data === "object" && "label" in data && "value" in data) {
+    return isText ? data.label : <CippCopyToClipBoard text={data.label} type="chip" />;
   }
 
   // Handle arrays of strings

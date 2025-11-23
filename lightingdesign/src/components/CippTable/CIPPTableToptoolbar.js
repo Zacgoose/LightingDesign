@@ -49,7 +49,6 @@ import { CippOffCanvas } from "../CippComponents/CippOffCanvas";
 import { CippCodeBlock } from "../CippComponents/CippCodeBlock";
 import { ApiGetCall } from "../../api/ApiCall";
 import { useQueryClient } from "@tanstack/react-query";
-import GraphExplorerPresets from "/src/data/GraphExplorerPresets.json";
 import CippGraphExplorerFilter from "./CippGraphExplorerFilter";
 import { Stack } from "@mui/system";
 
@@ -543,18 +542,8 @@ export const CIPPTableToptoolbar = ({
     if (api?.url === "/api/ListGraphRequest" && presetList.isSuccess) {
       var endpoint = api?.data?.Endpoint?.replace(/^\//, "");
       var graphPresetList = [];
-      GraphExplorerPresets.map((preset) => {
-        var presetEndpoint = preset?.params?.endpoint?.replace(/^\//, "");
-        if (presetEndpoint === endpoint) {
-          graphPresetList.push({
-            id: preset?.id,
-            filterName: preset?.name,
-            value: preset?.params,
-            type: "graph",
-          });
-        }
-      });
-
+      
+      // Only use API-loaded presets, no longer using static GraphExplorerPresets
       presetList?.data?.Results?.map((preset) => {
         var customPresetEndpoint = preset?.params?.endpoint?.replace(/^\//, "");
         if (customPresetEndpoint === endpoint) {

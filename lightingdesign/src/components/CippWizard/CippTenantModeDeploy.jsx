@@ -75,18 +75,6 @@ export const CippTenantModeDeploy = (props) => {
         </Box>
       </Box>
 
-      <Box>
-        <CippTenantTable
-          title="Authenticated Tenants"
-          tenantInTitle={false}
-          customColumns={["displayName", "defaultDomainName", "delegatedPrivilegeStatus"]}
-          showExcludeButtons={false}
-          showCardButton={false}
-          showTenantSelector={false}
-          showAllTenantsSelector={false}
-        />
-      </Box>
-
       <CippWizardStepButtons
         currentStep={currentStep}
         onPreviousStep={onPreviousStep}

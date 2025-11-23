@@ -5,7 +5,6 @@ import CippWizardPage from "/src/components/CippWizard/CippWizardPage.jsx";
 import { CippWizardOptionsList } from "/src/components/CippWizard/CippWizardOptionsList.jsx";
 import { CippSAMDeploy } from "/src/components/CippWizard/CippSAMDeploy.jsx";
 import { CippTenantModeDeploy } from "/src/components/CippWizard/CippTenantModeDeploy.jsx";
-import { CippAlertsStep } from "/src/components/CippWizard/CippAlertsStep.jsx";
 import { BuildingOfficeIcon, CloudIcon, CpuChipIcon } from "@heroicons/react/24/outline";
 
 const Page = () => {
@@ -60,11 +59,6 @@ const Page = () => {
       showStepWhen: (values) =>
         values?.selectedOption === "CreateApp" ||
         values?.selectedOption === "FirstSetup",
-    },
-    {
-      description: "Next Steps",
-      component: CippAlertsStep,
-      showStepWhen: (values) => values?.selectedOption === "FirstSetup",
     },
     {
       description: "Refresh Tokens",

@@ -43,18 +43,18 @@ function Invoke-ExecNewCustomer {
     $Table = Get-CIPPTable -TableName 'Customers'
 
     # Extract values from autocomplete fields
-    $CustomerName      = $Request.Body.customerName
-    $Address           = $Request.Body.address
-    $City              = $Request.Body.city
-    $Email             = $Request.Body.email
-    $Notes             = $Request.Body.notes
-    $Phone             = $Request.Body.phone
-    $PostalCode        = $Request.Body.postalCode
-    $State             = $Request.Body.state
-    $Status            = Get-AutoCompleteValue -InputObject $Request.Body.status
-    $CustomerType      = Get-AutoCompleteValue -InputObject $Request.Body.customerType
-    $RelatedBuilders   = Get-AutoCompleteArrayValues -InputArray $Request.Body.relatedBuilders
-    $TradeAssociations = Get-AutoCompleteArrayValues -InputArray $Request.Body.tradeAssociations
+        $CustomerName      = if ($null -ne $Request.Body.customerName) { $Request.Body.customerName } else { "" }
+        $Address           = if ($null -ne $Request.Body.address) { $Request.Body.address } else { "" }
+        $City              = if ($null -ne $Request.Body.city) { $Request.Body.city } else { "" }
+        $Email             = if ($null -ne $Request.Body.email) { $Request.Body.email } else { "" }
+        $Notes             = if ($null -ne $Request.Body.notes) { $Request.Body.notes } else { "" }
+        $Phone             = if ($null -ne $Request.Body.phone) { $Request.Body.phone } else { "" }
+        $PostalCode        = if ($null -ne $Request.Body.postalCode) { $Request.Body.postalCode } else { "" }
+        $State             = if ($null -ne $Request.Body.state) { $Request.Body.state } else { "" }
+        $Status            = if ($null -ne $Request.Body.status) { Get-AutoCompleteValue -InputObject $Request.Body.status } else { "" }
+        $CustomerType      = if ($null -ne $Request.Body.customerType) { Get-AutoCompleteValue -InputObject $Request.Body.customerType } else { "" }
+        $RelatedBuilders   = if ($null -ne $Request.Body.relatedBuilders) { Get-AutoCompleteArrayValues -InputArray $Request.Body.relatedBuilders } else { @() }
+        $TradeAssociations = if ($null -ne $Request.Body.tradeAssociations) { Get-AutoCompleteArrayValues -InputArray $Request.Body.tradeAssociations } else { @() }
 
     $Entity = @{
         PartitionKey      = 'Customer'
@@ -69,8 +69,8 @@ function Invoke-ExecNewCustomer {
         State             = $State
         Status            = $Status
         CustomerType      = $CustomerType
-        RelatedBuilders   = if ($RelatedBuilders -and $RelatedBuilders.Count -gt 0) { ($RelatedBuilders | ConvertTo-Json -Compress) } else { $null }
-        TradeAssociations = if ($TradeAssociations -and $TradeAssociations.Count -gt 0) { ($TradeAssociations | ConvertTo-Json -Compress) } else { $null }
+        RelatedBuilders   = if ($RelatedBuilders -and $RelatedBuilders.Count -gt 0) { ($RelatedBuilders | ConvertTo-Json -Compress) } else { "" }
+        TradeAssociations = if ($TradeAssociations -and $TradeAssociations.Count -gt 0) { ($TradeAssociations | ConvertTo-Json -Compress) } else { "" }
     }
 
     Add-CIPPAzDataTableEntity -Context $Table.Context -Entity $Entity -Force

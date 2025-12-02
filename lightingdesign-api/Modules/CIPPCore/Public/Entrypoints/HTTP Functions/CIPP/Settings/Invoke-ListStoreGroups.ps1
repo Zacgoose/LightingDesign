@@ -17,6 +17,6 @@ function Invoke-ListStoreGroups {
 
     return ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
-            Body       = $Body
+            Body       = @($Body)
         })
 }

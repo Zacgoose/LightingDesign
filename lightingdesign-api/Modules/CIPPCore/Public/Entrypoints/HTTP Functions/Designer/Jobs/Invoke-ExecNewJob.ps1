@@ -98,6 +98,19 @@ function Invoke-ExecNewJob {
         $Status           = Get-AutoCompleteValue -InputObject $Request.Body.status
         $AssignedDesigner = Get-AutoCompleteValue -InputObject $Request.Body.assignedDesigner
 
+        # Validate required fields
+        if ([string]::IsNullOrWhiteSpace($JobName)) {
+            throw "Job Name is required"
+        }
+
+        if ([string]::IsNullOrWhiteSpace($CustomerId)) {
+            throw "Customer is required"
+        }
+
+        if ([string]::IsNullOrWhiteSpace($Status)) {
+            throw "Status is required"
+        }
+
         # Multi-select autocomplete fields - store array of VALUES only
         $RelatedTrades    = Get-AutoCompleteArrayValues -InputArray $Request.Body.relatedTrades
         $Builders         = Get-AutoCompleteArrayValues -InputArray $Request.Body.builders
@@ -113,8 +126,6 @@ function Invoke-ExecNewJob {
                 if ($null -ne $value) {
                     $cleanedMatrix[$key] = $value
                     $hasValues = $true
-                } else {
-                    $cleanedMatrix[$key] = $null
                 }
             }
 
@@ -132,21 +143,34 @@ function Invoke-ExecNewJob {
             CustomerId       = $CustomerId
             StoreId          = $StoreId
             Status           = $Status
-            Description      = $Description
-            Address          = $Address
-            City             = $City
-            State            = $State
-            PostalCode       = $PostalCode
-            ContactName      = $ContactName
-            ContactPhone     = $ContactPhone
-            ContactEmail     = $ContactEmail
-            EstimatedValue   = $EstimatedValue
-            Notes            = $Notes
-            RelatedTrades    = if ($RelatedTrades -and $RelatedTrades.Count -gt 0) { ($RelatedTrades | ConvertTo-Json -Compress -Depth 5) } else { $null }
-            Builders         = if ($Builders -and $Builders.Count -gt 0) { ($Builders | ConvertTo-Json -Compress -Depth 5) } else { $null }
-            AssignedDesigner = $AssignedDesigner
-            PricingMatrix    = if ($PricingMatrix) { ($PricingMatrix | ConvertTo-Json -Compress -Depth 5) } else { $null }
         }
+
+        # Only add non-null optional properties
+        if ($Description) { $Entity['Description'] = $Description }
+        if ($Address) { $Entity['Address'] = $Address }
+        if ($City) { $Entity['City'] = $City }
+        if ($State) { $Entity['State'] = $State }
+        if ($PostalCode) { $Entity['PostalCode'] = $PostalCode }
+        if ($ContactName) { $Entity['ContactName'] = $ContactName }
+        if ($ContactPhone) { $Entity['ContactPhone'] = $ContactPhone }
+        if ($ContactEmail) { $Entity['ContactEmail'] = $ContactEmail }
+        if ($EstimatedValue) { $Entity['EstimatedValue'] = $EstimatedValue }
+        if ($Notes) { $Entity['Notes'] = $Notes }
+        if ($AssignedDesigner) { $Entity['AssignedDesigner'] = $AssignedDesigner }
+
+        if ($RelatedTrades -and $RelatedTrades.Count -gt 0) {
+            $Entity['RelatedTrades'] = ($RelatedTrades | ConvertTo-Json -Compress -Depth 5)
+        }
+
+        if ($Builders -and $Builders.Count -gt 0) {
+            $Entity['Builders'] = ($Builders | ConvertTo-Json -Compress -Depth 5)
+        }
+
+        if ($PricingMatrix) {
+            $Entity['PricingMatrix'] = ($PricingMatrix | ConvertTo-Json -Compress -Depth 5)
+        }
+
+        Write-Host "DEBUG: About to add entity. Table is null: $($null -eq $Table). Entity keys: $($Entity.Keys.Count)"
 
         Add-CIPPAzDataTableEntity @Table -Entity $Entity -Force
 
@@ -162,6 +186,7 @@ function Invoke-ExecNewJob {
         }
     }
     catch {
+        Write-Host "ERROR CAUGHT: $($_.Exception.Message)"
         Write-Error "Error creating job: $_"
         Write-LogMessage -API 'NewJob' -message "Failed to create job: $($_.Exception.Message)" -Sev 'Error' -headers $Request.Headers -LogData $_
         return [HttpResponseContext]@{

@@ -10,7 +10,15 @@ function Invoke-ListCustomers {
 
     $Table = Get-CippTable -tablename 'Customers'
 
-    if ($Request.Query.customerentryid) {
+    if ($Request.Query.DropdownList) {
+        # Return only value-label pairs for dropdowns
+        $ReturnedCustomer = @(Get-CIPPAzDataTableEntity -Context $Table.Context | ForEach-Object {
+            [PSCustomObject]@{
+                value = $_.RowKey
+                label = $_.CustomerName
+            }
+        })
+    } elseif ($Request.Query.customerentryid) {
         # Lookup a single customer by RowKey
         $Filter = "RowKey eq '{0}'" -f $Request.Query.customerentryid
         $Row = Get-CIPPAzDataTableEntity -Context $Table.Context -Filter $Filter
@@ -73,8 +81,15 @@ function Invoke-ListCustomers {
         }
     }
 
-    return [HttpResponseContext]@{
-        StatusCode = [System.Net.HttpStatusCode]::OK
-        Body       = @($ReturnedCustomer | Sort-Object -Property DateTime -Descending)
+    if ($Request.Query.DropdownList) {
+        return [HttpResponseContext]@{
+            StatusCode = [System.Net.HttpStatusCode]::OK
+            Body       = @($ReturnedCustomer) | ConvertTo-Json -Depth 10 -AsArray
+        }
+    } else {
+        return [HttpResponseContext]@{
+            StatusCode = [System.Net.HttpStatusCode]::OK
+            Body       = @($ReturnedCustomer | Sort-Object -Property DateTime -Descending)
+        }
     }
 }

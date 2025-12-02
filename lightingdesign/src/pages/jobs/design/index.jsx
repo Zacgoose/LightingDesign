@@ -3209,34 +3209,36 @@ const Page = () => {
                     onStageDraggingChange={setIsStageDragging}
                     gridOpacity={settings.gridOpacity}
                     backgroundOpacity={settings.backgroundOpacity}
-                    markupLayer={
-                      isEditingImage ? (
-                        <ImageMarkupLayer
-                          backgroundImage={backgroundImage}
-                          backgroundImageNaturalSize={backgroundImageNaturalSize}
-                          imageScale={
-                            backgroundImageNaturalSize
-                              ? Math.min(
-                                  canvasWidth / backgroundImageNaturalSize.width,
-                                  canvasHeight / backgroundImageNaturalSize.height,
-                                )
-                              : 1
-                          }
-                          markupMode={markupMode}
-                          drawingColor={drawingColor}
-                          brushSize={brushSize}
-                          onImageUpdate={(handler) => {
-                            markupUpdateHandlerRef.current = handler;
-                          }}
-                          layerRef={markupLayerRef}
-                        />
-                      ) : null
-                    }
                     objectsChildren={
-                      !isEditingImage ? (
-                        <>
-                          {/* Unselected connectors only */}
-                          <ConnectorsLayer
+                      <>
+                        {/* Image Markup Layer - shown only when editing image */}
+                        {isEditingImage && (
+                          <ImageMarkupLayer
+                            backgroundImage={backgroundImage}
+                            backgroundImageNaturalSize={backgroundImageNaturalSize}
+                            imageScale={
+                              backgroundImageNaturalSize
+                                ? Math.min(
+                                    canvasWidth / backgroundImageNaturalSize.width,
+                                    canvasHeight / backgroundImageNaturalSize.height,
+                                  )
+                                : 1
+                            }
+                            markupMode={markupMode}
+                            drawingColor={drawingColor}
+                            brushSize={brushSize}
+                            onImageUpdate={(handler) => {
+                              markupUpdateHandlerRef.current = handler;
+                            }}
+                            layerRef={markupLayerRef}
+                          />
+                        )}
+
+                        {/* Normal layers - hidden when editing image */}
+                        {!isEditingImage && (
+                          <>
+                            {/* Unselected connectors only */}
+                            <ConnectorsLayer
                           connectors={filterConnectorsBySublayers(connectors, activeLayerId).filter(
                             (c) => !selectedConnectorIds.includes(c.id),
                           )}
@@ -3334,8 +3336,9 @@ const Page = () => {
                             });
                           }}
                         />
+                          </>
+                        )}
                       </>
-                      ) : null
                     }
                     textAndSelectionChildren={
                       !isEditingImage ? (

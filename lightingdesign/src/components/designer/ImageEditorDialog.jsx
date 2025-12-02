@@ -26,6 +26,7 @@ import {
 export const ImageEditorDialog = ({ open, onClose, imageData, onSave }) => {
   const [activeTab, setActiveTab] = useState(0);
   const [rotation, setRotation] = useState(0);
+  const [crop, setCrop] = useState({ x: 0, y: 0, width: 100, height: 100 });
   const [drawingMode, setDrawingMode] = useState(null); // 'draw' | 'erase' | null
   const [brushSize, setBrushSize] = useState(5);
   const [brushColor, setBrushColor] = useState("black");
@@ -35,19 +36,6 @@ export const ImageEditorDialog = ({ open, onClose, imageData, onSave }) => {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
-
-  const saveToHistory = useCallback(() => {
-    if (!canvasRef.current) return;
-    
-    const canvas = canvasRef.current;
-    const dataUrl = canvas.toDataURL();
-    
-    setHistory((prev) => {
-      const newHistory = prev.slice(0, historyStep + 1);
-      return [...newHistory, dataUrl];
-    });
-    setHistoryStep((prev) => prev + 1);
-  }, [historyStep]);
 
   // Load image when dialog opens
   useEffect(() => {
@@ -68,7 +56,20 @@ export const ImageEditorDialog = ({ open, onClose, imageData, onSave }) => {
 
       img.src = imageData;
     }
-  }, [open, imageData, saveToHistory]);
+  }, [open, imageData]);
+
+  const saveToHistory = useCallback(() => {
+    if (!canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const dataUrl = canvas.toDataURL();
+    
+    setHistory((prev) => {
+      const newHistory = prev.slice(0, historyStep + 1);
+      return [...newHistory, dataUrl];
+    });
+    setHistoryStep((prev) => prev + 1);
+  }, [historyStep]);
 
   const handleUndo = useCallback(() => {
     if (historyStep > 0) {
@@ -107,14 +108,10 @@ export const ImageEditorDialog = ({ open, onClose, imageData, onSave }) => {
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    const currentRotation = rotation;
     const newRotation = (rotation + 90) % 360;
 
-    // Determine if we need to swap dimensions based on the transition
-    const needsSwap = (currentRotation === 0 || currentRotation === 180) && 
-                      (newRotation === 90 || newRotation === 270);
-    
-    if (needsSwap) {
+    // Swap dimensions for 90 and 270 degree rotations
+    if (newRotation === 90 || newRotation === 270) {
       const temp = canvas.width;
       canvas.width = canvas.height;
       canvas.height = temp;
@@ -124,10 +121,7 @@ export const ImageEditorDialog = ({ open, onClose, imageData, onSave }) => {
     ctx.save();
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate((newRotation * Math.PI) / 180);
-    
-    // Draw the original image, not the current canvas content
-    const img = imageRef.current;
-    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    ctx.drawImage(imageRef.current, -imageRef.current.width / 2, -imageRef.current.height / 2);
     ctx.restore();
 
     setRotation(newRotation);
@@ -183,8 +177,8 @@ export const ImageEditorDialog = ({ open, onClose, imageData, onSave }) => {
   }, [onSave, onClose]);
 
   const handleCancel = useCallback(() => {
-    setActiveTab(0);
     setRotation(0);
+    setCrop({ x: 0, y: 0, width: 100, height: 100 });
     setDrawingMode(null);
     setHistory([]);
     setHistoryStep(-1);

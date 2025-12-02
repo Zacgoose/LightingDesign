@@ -70,7 +70,6 @@ function Receive-CippHttpTrigger {
                 try {
                     # Import required modules in the parallel thread
                     Import-Module CIPPCore -Force
-                    Import-Module CippExtensions -Force -ErrorAction SilentlyContinue
                     Import-Module DNSHealth -Force -ErrorAction SilentlyContinue
                     Import-Module AzBobbyTables -Force -ErrorAction SilentlyContinue
 

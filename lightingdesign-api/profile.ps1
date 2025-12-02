@@ -1,7 +1,7 @@
 Write-Information "CIPP-API Start - PS Version: $($PSVersionTable.PSVersion)"
 
 # Import modules
-@('CIPPCore', 'CippExtensions', 'Az.KeyVault', 'Az.Accounts', 'AzBobbyTables') | ForEach-Object {
+@('CIPPCore', 'Az.KeyVault', 'Az.Accounts', 'AzBobbyTables') | ForEach-Object {
     try {
         $Module = $_
         Import-Module -Name $_ -ErrorAction Stop

@@ -9,7 +9,7 @@ export const JobForm = ({ formControl, mode = "new" }) => {
   // Fetch customers for dropdown
   const customers = ApiGetCall({
     url: "/api/ListCustomers",
-    queryKey: "Customers",
+    queryKey: "ListCustomers",
   });
 
   // Ensure customers.data is always an array and map to autocomplete format

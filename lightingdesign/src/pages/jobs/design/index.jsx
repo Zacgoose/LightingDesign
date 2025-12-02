@@ -1691,7 +1691,7 @@ const Page = () => {
     setSelectedTextId(null);
   }, [backgroundImage, backgroundImageNaturalSize, setIsEditingImage, setMarkupMode, clearSelection]);
 
-  const handleApplyMarkup = useCallback(async () => {
+  const handleApplyMarkup = useCallback(() => {
     if (!markupUpdateHandlerRef.current) return;
 
     try {

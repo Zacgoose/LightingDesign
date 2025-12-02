@@ -14,7 +14,7 @@ import {
   Crop,
   Rotate90DegreesCcw,
   Brush,
-  Colorize,
+  HighlightOff,
   Check,
   Close,
   NearMe,
@@ -82,7 +82,7 @@ export const MarkupToolbar = memo(
               <Brush fontSize="small" />
             </ToggleButton>
             <ToggleButton value="erase" title="Erase">
-              <Colorize fontSize="small" />
+              <HighlightOff fontSize="small" />
             </ToggleButton>
           </ToggleButtonGroup>
 

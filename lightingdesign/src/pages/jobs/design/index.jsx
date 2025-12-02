@@ -34,6 +34,8 @@ import { TextLayer } from "/src/components/designer/TextLayer";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
 import { TextEntryDialog } from "/src/components/designer/TextEntryDialog";
 import { ConfirmDialog } from "/src/components/designer/ConfirmDialog";
+import { MarkupToolbar } from "/src/components/designer/MarkupToolbar";
+import { ImageMarkupLayer } from "/src/components/designer/ImageMarkupLayer";
 import { useHistory } from "/src/hooks/useHistory";
 import { useUnifiedHistory } from "/src/hooks/useUnifiedHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
@@ -137,6 +139,15 @@ const Page = () => {
     handleZoomIn,
     handleZoomOut,
     handleResetView,
+    // Image markup state
+    isEditingImage,
+    markupMode,
+    drawingColor,
+    brushSize,
+    setIsEditingImage,
+    setMarkupMode,
+    setDrawingColor,
+    setBrushSize,
   } = canvasState;
 
   // Use refs for frequently changing canvas state to avoid re-renders in callbacks
@@ -333,6 +344,13 @@ const Page = () => {
 
   // Upload state for better UX
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Image markup state
+  const markupLayerRef = useRef(null);
+  const [originalBackgroundImage, setOriginalBackgroundImage] = useState(null);
+  const [originalBackgroundImageNaturalSize, setOriginalBackgroundImageNaturalSize] =
+    useState(null);
+  const markupUpdateHandlerRef = useRef(null);
 
   // Calculate the product for the preview line in connect mode
   const previewLineProduct = useMemo(() => {
@@ -1656,6 +1674,96 @@ const Page = () => {
     contextMenus.handleCloseContextMenu();
   }, [products, selectedIds, applyGroupTransform, updateHistory, forceGroupUpdate, contextMenus]);
 
+  // Image markup handlers
+  const handleEditImage = useCallback(() => {
+    if (!backgroundImage) return;
+
+    // Save original image for cancel operation
+    setOriginalBackgroundImage(backgroundImage);
+    setOriginalBackgroundImageNaturalSize(backgroundImageNaturalSize);
+
+    // Enter editing mode
+    setIsEditingImage(true);
+    setMarkupMode("select");
+
+    // Clear any selections
+    clearSelection();
+    setSelectedTextId(null);
+  }, [backgroundImage, backgroundImageNaturalSize, setIsEditingImage, setMarkupMode, clearSelection]);
+
+  const handleApplyMarkup = useCallback(async () => {
+    if (!markupUpdateHandlerRef.current) return;
+
+    try {
+      // Get the flattened image from the markup layer
+      const flattenedImageData = markupUpdateHandlerRef.current.getFlattenedImage();
+
+      if (!flattenedImageData) {
+        console.error("Failed to get flattened image");
+        return;
+      }
+
+      // Update the background image with the flattened version
+      setBackgroundImage(flattenedImageData);
+
+      // Create a new Image to get natural dimensions
+      const img = new window.Image();
+      img.onload = () => {
+        const newNaturalSize = {
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+        };
+        setBackgroundImageNaturalSize(newNaturalSize);
+
+        // Update the layer with new image
+        updateLayer(activeLayerId, {
+          backgroundImage: flattenedImageData,
+          backgroundImageNaturalSize: newNaturalSize,
+        });
+
+        // Exit editing mode
+        setIsEditingImage(false);
+        setMarkupMode("select");
+        setOriginalBackgroundImage(null);
+        setOriginalBackgroundImageNaturalSize(null);
+
+        // Mark as having unsaved changes
+        setHasUnsavedChanges(true);
+      };
+      img.src = flattenedImageData;
+    } catch (error) {
+      console.error("Error applying markup:", error);
+    }
+  }, [
+    activeLayerId,
+    updateLayer,
+    setBackgroundImage,
+    setBackgroundImageNaturalSize,
+    setIsEditingImage,
+    setMarkupMode,
+  ]);
+
+  const handleCancelMarkup = useCallback(() => {
+    // Restore original image
+    if (originalBackgroundImage) {
+      setBackgroundImage(originalBackgroundImage);
+      setBackgroundImageNaturalSize(originalBackgroundImageNaturalSize);
+    }
+
+    // Exit editing mode
+    setIsEditingImage(false);
+    setMarkupMode("select");
+    setOriginalBackgroundImage(null);
+    setOriginalBackgroundImageNaturalSize(null);
+  }, [
+    originalBackgroundImage,
+    originalBackgroundImageNaturalSize,
+    setBackgroundImage,
+    setBackgroundImageNaturalSize,
+    setIsEditingImage,
+    setMarkupMode,
+  ]);
+
   const handleAssignToSublayer = useCallback(
     (sublayerId) => {
       // Handle connector assignment
@@ -2729,6 +2837,9 @@ const Page = () => {
       onLock: handleLockDesign,
       onUnlock: handleUnlockDesign,
       onRefreshLockStatus: handleRefreshLockStatus,
+      // Image markup props
+      onEditImage: handleEditImage,
+      hasBackgroundImage: !!backgroundImage,
     }),
     [
       handleUploadFloorPlan,
@@ -2745,6 +2856,8 @@ const Page = () => {
       handleLockDesign,
       handleUnlockDesign,
       handleRefreshLockStatus,
+      handleEditImage,
+      backgroundImage,
     ],
   );
 
@@ -2998,6 +3111,20 @@ const Page = () => {
               alignProps={toolbarAlignProps}
             />
 
+            {/* Image Markup Toolbar - show when editing image */}
+            {isEditingImage && (
+              <MarkupToolbar
+                markupMode={markupMode}
+                onMarkupModeChange={setMarkupMode}
+                drawingColor={drawingColor}
+                onDrawingColorChange={setDrawingColor}
+                brushSize={brushSize}
+                onBrushSizeChange={setBrushSize}
+                onApply={handleApplyMarkup}
+                onCancel={handleCancelMarkup}
+              />
+            )}
+
             {/* Display API response messages - only render when mutation is active */}
             {(saveDesignMutation.isPending ||
               saveDesignMutation.isFetching ||
@@ -3074,8 +3201,8 @@ const Page = () => {
                     onMouseMove={handleCanvasMouseMove}
                     onContextMenu={contextMenus.handleStageContextMenu}
                     selectedCount={selectedIds.length}
-                    backgroundImage={backgroundImage}
-                    backgroundImageNaturalSize={backgroundImageNaturalSize}
+                    backgroundImage={isEditingImage ? null : backgroundImage}
+                    backgroundImageNaturalSize={isEditingImage ? null : backgroundImageNaturalSize}
                     scaleFactor={scaleFactor}
                     onPan={handleCanvasPan}
                     onMiddlePanningChange={setIsMiddlePanning}
@@ -3084,8 +3211,34 @@ const Page = () => {
                     backgroundOpacity={settings.backgroundOpacity}
                     objectsChildren={
                       <>
-                        {/* Unselected connectors only */}
-                        <ConnectorsLayer
+                        {/* Image Markup Layer - shown only when editing image */}
+                        {isEditingImage && (
+                          <ImageMarkupLayer
+                            backgroundImage={backgroundImage}
+                            backgroundImageNaturalSize={backgroundImageNaturalSize}
+                            imageScale={
+                              backgroundImageNaturalSize
+                                ? Math.min(
+                                    canvasWidth / backgroundImageNaturalSize.width,
+                                    canvasHeight / backgroundImageNaturalSize.height,
+                                  )
+                                : 1
+                            }
+                            markupMode={markupMode}
+                            drawingColor={drawingColor}
+                            brushSize={brushSize}
+                            onImageUpdate={(handler) => {
+                              markupUpdateHandlerRef.current = handler;
+                            }}
+                            layerRef={markupLayerRef}
+                          />
+                        )}
+
+                        {/* Normal layers - hidden when editing image */}
+                        {!isEditingImage && (
+                          <>
+                            {/* Unselected connectors only */}
+                            <ConnectorsLayer
                           connectors={filterConnectorsBySublayers(connectors, activeLayerId).filter(
                             (c) => !selectedConnectorIds.includes(c.id),
                           )}
@@ -3183,12 +3336,15 @@ const Page = () => {
                             });
                           }}
                         />
+                          </>
+                        )}
                       </>
                     }
                     textAndSelectionChildren={
-                      <>
-                        {/* Text boxes layer */}
-                        <TextLayer
+                      !isEditingImage ? (
+                        <>
+                          {/* Text boxes layer */}
+                          <TextLayer
                           textBoxes={textBoxes}
                           selectedTextId={selectedTextId}
                           selectedIds={selectedIds}
@@ -3274,11 +3430,13 @@ const Page = () => {
                           renderTransformer={false}
                         />
                       </>
+                      ) : null
                     }
                     transformerChildren={
-                      <>
-                        {/* Transformer only (always on top) */}
-                        <ProductsLayer
+                      !isEditingImage ? (
+                        <>
+                          {/* Transformer only (always on top) */}
+                          <ProductsLayer
                           products={filterProductsBySublayers(products, activeLayerId)}
                           allProducts={allProductsFromAllLayers}
                           textBoxes={textBoxes}
@@ -3310,6 +3468,7 @@ const Page = () => {
                         {/* Selection rectangle for drag-to-select */}
                         <SelectionRectangle selectionRect={selectionRect} />
                       </>
+                      ) : null
                     }
                   />
 

@@ -73,18 +73,11 @@ export const ImageMarkupLayer = ({
     if (markupMode !== "draw" && markupMode !== "erase") return;
 
     setIsDrawing(true);
-    const stage = e.target.getStage();
-    const pos = stage.getPointerPosition();
-    
-    // Transform pointer position to layer coordinates
-    const transform = stage.getAbsoluteTransform().copy();
-    transform.invert();
-    const localPos = transform.point(pos);
-
+    const pos = e.target.getStage().getPointerPosition();
     const newLine = {
-      points: [localPos.x, localPos.y],
+      points: [pos.x, pos.y],
       stroke: markupMode === "erase" ? "white" : drawingColor,
-      strokeWidth: brushSize / stage.scaleX(), // Adjust brush size for zoom
+      strokeWidth: brushSize,
       globalCompositeOperation: markupMode === "erase" ? "destination-out" : "source-over",
       lineCap: "round",
       lineJoin: "round",
@@ -99,13 +92,8 @@ export const ImageMarkupLayer = ({
     const stage = e.target.getStage();
     const point = stage.getPointerPosition();
     
-    // Transform pointer position to layer coordinates
-    const transform = stage.getAbsoluteTransform().copy();
-    transform.invert();
-    const localPoint = transform.point(point);
-    
     const lastLine = lines[lines.length - 1];
-    lastLine.points = lastLine.points.concat([localPoint.x, localPoint.y]);
+    lastLine.points = lastLine.points.concat([point.x, point.y]);
 
     // Replace the last line with the updated version
     setLines([...lines.slice(0, -1), lastLine]);
@@ -136,23 +124,9 @@ export const ImageMarkupLayer = ({
   const getFlattenedImage = () => {
     if (!layerRef?.current) return null;
     
-    // For crop mode, we want to export just the visible area
-    if (markupMode === "crop" && imageRef?.current) {
-      const node = imageRef.current;
-      const clientRect = node.getClientRect();
-      
-      return layerRef.current.toDataURL({
-        pixelRatio: 2,
-        x: clientRect.x,
-        y: clientRect.y,
-        width: clientRect.width,
-        height: clientRect.height,
-      });
-    }
-    
-    // For other modes, export the entire layer
+    // Export layer as data URL
     return layerRef.current.toDataURL({
-      pixelRatio: 2,
+      pixelRatio: 2, // Higher quality export
     });
   };
 

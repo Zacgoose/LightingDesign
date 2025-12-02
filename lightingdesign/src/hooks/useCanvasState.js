@@ -45,6 +45,12 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
   const [selectedTool, setSelectedTool] = useState("select");
   const [rotationSnaps, setRotationSnaps] = useState(8);
 
+  // Image markup state
+  const [isEditingImage, setIsEditingImage] = useState(false);
+  const [markupMode, setMarkupMode] = useState("select"); // 'select' | 'crop' | 'rotate' | 'draw' | 'erase'
+  const [drawingColor, setDrawingColor] = useState("black");
+  const [brushSize, setBrushSize] = useState(5);
+
   // Resize handler function
   const handleResize = useCallback(() => {
     if (canvasContainerRef.current) {
@@ -193,6 +199,12 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
     selectedTool,
     rotationSnaps,
     canvasContainerRef: setCanvasContainerRef, // Use callback ref instead of regular ref
+    
+    // Image markup state
+    isEditingImage,
+    markupMode,
+    drawingColor,
+    brushSize,
 
     // Setters
     setStageScale,
@@ -202,6 +214,12 @@ export const useCanvasState = (initialWidth = 4200, initialHeight = 2970) => {
     setShowPreview,
     setSelectedTool,
     setRotationSnaps,
+    
+    // Image markup setters
+    setIsEditingImage,
+    setMarkupMode,
+    setDrawingColor,
+    setBrushSize,
 
     // Handlers
     handleWheel,

@@ -34,7 +34,8 @@ import { TextLayer } from "/src/components/designer/TextLayer";
 import { SelectionRectangle } from "/src/components/designer/SelectionRectangle";
 import { TextEntryDialog } from "/src/components/designer/TextEntryDialog";
 import { ConfirmDialog } from "/src/components/designer/ConfirmDialog";
-import { ImageEditorDialog } from "/src/components/designer/ImageEditorDialog";
+import { MarkupToolbar } from "/src/components/designer/MarkupToolbar";
+import { ImageMarkupLayer } from "/src/components/designer/ImageMarkupLayer";
 import { useHistory } from "/src/hooks/useHistory";
 import { useUnifiedHistory } from "/src/hooks/useUnifiedHistory";
 import { useKeyboardShortcuts } from "/src/hooks/useKeyboardShortcuts";
@@ -138,6 +139,15 @@ const Page = () => {
     handleZoomIn,
     handleZoomOut,
     handleResetView,
+    // Image markup state
+    isEditingImage,
+    markupMode,
+    drawingColor,
+    brushSize,
+    setIsEditingImage,
+    setMarkupMode,
+    setDrawingColor,
+    setBrushSize,
   } = canvasState;
 
   // Use refs for frequently changing canvas state to avoid re-renders in callbacks
@@ -335,9 +345,12 @@ const Page = () => {
   // Upload state for better UX
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  // Image editor dialog state
-  const [imageEditorOpen, setImageEditorOpen] = useState(false);
-  const [imageToEdit, setImageToEdit] = useState(null);
+  // Image markup state
+  const markupLayerRef = useRef(null);
+  const [originalBackgroundImage, setOriginalBackgroundImage] = useState(null);
+  const [originalBackgroundImageNaturalSize, setOriginalBackgroundImageNaturalSize] =
+    useState(null);
+  const markupUpdateHandlerRef = useRef(null);
 
   // Calculate the product for the preview line in connect mode
   const previewLineProduct = useMemo(() => {
@@ -1661,37 +1674,95 @@ const Page = () => {
     contextMenus.handleCloseContextMenu();
   }, [products, selectedIds, applyGroupTransform, updateHistory, forceGroupUpdate, contextMenus]);
 
-  // Image editor dialog handlers
+  // Image markup handlers
   const handleEditImage = useCallback(() => {
     if (!backgroundImage) return;
-    setImageToEdit(backgroundImage);
-    setImageEditorOpen(true);
-  }, [backgroundImage]);
 
-  const handleSaveEditedImage = useCallback((editedImageData) => {
-    // Update the background image with the edited version
-    setBackgroundImage(editedImageData);
+    // Save original image for cancel operation
+    setOriginalBackgroundImage(backgroundImage);
+    setOriginalBackgroundImageNaturalSize(backgroundImageNaturalSize);
 
-    // Create a new Image to get natural dimensions
-    const img = new window.Image();
-    img.onload = () => {
-      const newNaturalSize = {
-        width: img.naturalWidth,
-        height: img.naturalHeight,
+    // Enter editing mode
+    setIsEditingImage(true);
+    setMarkupMode("select");
+
+    // Clear any selections
+    clearSelection();
+    setSelectedTextId(null);
+  }, [backgroundImage, backgroundImageNaturalSize, setIsEditingImage, setMarkupMode, clearSelection]);
+
+  const handleApplyMarkup = useCallback(() => {
+    if (!markupUpdateHandlerRef.current) return;
+
+    try {
+      // Get the flattened image from the markup layer
+      const flattenedImageData = markupUpdateHandlerRef.current.getFlattenedImage();
+
+      if (!flattenedImageData) {
+        console.error("Failed to get flattened image");
+        return;
+      }
+
+      // Update the background image with the flattened version
+      setBackgroundImage(flattenedImageData);
+
+      // Create a new Image to get natural dimensions
+      const img = new window.Image();
+      img.onload = () => {
+        const newNaturalSize = {
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+        };
+        setBackgroundImageNaturalSize(newNaturalSize);
+
+        // Update the layer with new image
+        updateLayer(activeLayerId, {
+          backgroundImage: flattenedImageData,
+          backgroundImageNaturalSize: newNaturalSize,
+        });
+
+        // Exit editing mode
+        setIsEditingImage(false);
+        setMarkupMode("select");
+        setOriginalBackgroundImage(null);
+        setOriginalBackgroundImageNaturalSize(null);
+
+        // Mark as having unsaved changes
+        setHasUnsavedChanges(true);
       };
-      setBackgroundImageNaturalSize(newNaturalSize);
+      img.src = flattenedImageData;
+    } catch (error) {
+      console.error("Error applying markup:", error);
+    }
+  }, [
+    activeLayerId,
+    updateLayer,
+    setBackgroundImage,
+    setBackgroundImageNaturalSize,
+    setIsEditingImage,
+    setMarkupMode,
+  ]);
 
-      // Update the layer with new image
-      updateLayer(activeLayerId, {
-        backgroundImage: editedImageData,
-        backgroundImageNaturalSize: newNaturalSize,
-      });
+  const handleCancelMarkup = useCallback(() => {
+    // Restore original image
+    if (originalBackgroundImage) {
+      setBackgroundImage(originalBackgroundImage);
+      setBackgroundImageNaturalSize(originalBackgroundImageNaturalSize);
+    }
 
-      // Mark as having unsaved changes
-      setHasUnsavedChanges(true);
-    };
-    img.src = editedImageData;
-  }, [activeLayerId, updateLayer, setBackgroundImage, setBackgroundImageNaturalSize]);
+    // Exit editing mode
+    setIsEditingImage(false);
+    setMarkupMode("select");
+    setOriginalBackgroundImage(null);
+    setOriginalBackgroundImageNaturalSize(null);
+  }, [
+    originalBackgroundImage,
+    originalBackgroundImageNaturalSize,
+    setBackgroundImage,
+    setBackgroundImageNaturalSize,
+    setIsEditingImage,
+    setMarkupMode,
+  ]);
 
   const handleAssignToSublayer = useCallback(
     (sublayerId) => {
@@ -3040,6 +3111,20 @@ const Page = () => {
               alignProps={toolbarAlignProps}
             />
 
+            {/* Image Markup Toolbar - show when editing image */}
+            {isEditingImage && (
+              <MarkupToolbar
+                markupMode={markupMode}
+                onMarkupModeChange={setMarkupMode}
+                drawingColor={drawingColor}
+                onDrawingColorChange={setDrawingColor}
+                brushSize={brushSize}
+                onBrushSizeChange={setBrushSize}
+                onApply={handleApplyMarkup}
+                onCancel={handleCancelMarkup}
+              />
+            )}
+
             {/* Display API response messages - only render when mutation is active */}
             {(saveDesignMutation.isPending ||
               saveDesignMutation.isFetching ||
@@ -3116,18 +3201,42 @@ const Page = () => {
                     onMouseMove={handleCanvasMouseMove}
                     onContextMenu={contextMenus.handleStageContextMenu}
                     selectedCount={selectedIds.length}
-                    backgroundImage={backgroundImage}
-                    backgroundImageNaturalSize={backgroundImageNaturalSize}
+                    backgroundImage={isEditingImage ? null : backgroundImage}
+                    backgroundImageNaturalSize={isEditingImage ? null : backgroundImageNaturalSize}
                     scaleFactor={scaleFactor}
                     onPan={handleCanvasPan}
                     onMiddlePanningChange={setIsMiddlePanning}
                     onStageDraggingChange={setIsStageDragging}
                     gridOpacity={settings.gridOpacity}
                     backgroundOpacity={settings.backgroundOpacity}
+                    markupLayer={
+                      isEditingImage ? (
+                        <ImageMarkupLayer
+                          backgroundImage={backgroundImage}
+                          backgroundImageNaturalSize={backgroundImageNaturalSize}
+                          imageScale={
+                            backgroundImageNaturalSize
+                              ? Math.min(
+                                  canvasWidth / backgroundImageNaturalSize.width,
+                                  canvasHeight / backgroundImageNaturalSize.height,
+                                )
+                              : 1
+                          }
+                          markupMode={markupMode}
+                          drawingColor={drawingColor}
+                          brushSize={brushSize}
+                          onImageUpdate={(handler) => {
+                            markupUpdateHandlerRef.current = handler;
+                          }}
+                          layerRef={markupLayerRef}
+                        />
+                      ) : null
+                    }
                     objectsChildren={
-                      <>
-                        {/* Unselected connectors only */}
-                        <ConnectorsLayer
+                      !isEditingImage ? (
+                        <>
+                          {/* Unselected connectors only */}
+                          <ConnectorsLayer
                           connectors={filterConnectorsBySublayers(connectors, activeLayerId).filter(
                             (c) => !selectedConnectorIds.includes(c.id),
                           )}
@@ -3226,11 +3335,13 @@ const Page = () => {
                           }}
                         />
                       </>
+                      ) : null
                     }
                     textAndSelectionChildren={
-                      <>
-                        {/* Text boxes layer */}
-                        <TextLayer
+                      !isEditingImage ? (
+                        <>
+                          {/* Text boxes layer */}
+                          <TextLayer
                           textBoxes={textBoxes}
                           selectedTextId={selectedTextId}
                           selectedIds={selectedIds}
@@ -3316,11 +3427,13 @@ const Page = () => {
                           renderTransformer={false}
                         />
                       </>
+                      ) : null
                     }
                     transformerChildren={
-                      <>
-                        {/* Transformer only (always on top) */}
-                        <ProductsLayer
+                      !isEditingImage ? (
+                        <>
+                          {/* Transformer only (always on top) */}
+                          <ProductsLayer
                           products={filterProductsBySublayers(products, activeLayerId)}
                           allProducts={allProductsFromAllLayers}
                           textBoxes={textBoxes}
@@ -3352,6 +3465,7 @@ const Page = () => {
                         {/* Selection rectangle for drag-to-select */}
                         <SelectionRectangle selectionRect={selectionRect} />
                       </>
+                      ) : null
                     }
                   />
 
@@ -3544,14 +3658,6 @@ const Page = () => {
         onConfirm={() => setDeselectDialog({ open: false, action: null })}
         title="Items Selected"
         message={deselectDialog.message || "Please deselect all items before continuing."}
-      />
-
-      {/* Image Editor Dialog */}
-      <ImageEditorDialog
-        open={imageEditorOpen}
-        onClose={() => setImageEditorOpen(false)}
-        imageData={imageToEdit}
-        onSave={handleSaveEditedImage}
       />
     </>
   );

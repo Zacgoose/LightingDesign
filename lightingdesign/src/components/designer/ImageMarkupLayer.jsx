@@ -1,9 +1,6 @@
 import { Layer, Image as KonvaImage, Line, Transformer } from "react-konva";
 import { useRef, useEffect, useState } from "react";
 
-// Constants
-const MIN_CROP_DIMENSION = 10; // Minimum dimension for crop box in pixels
-
 export const ImageMarkupLayer = ({
   backgroundImage,
   backgroundImageNaturalSize,
@@ -87,7 +84,7 @@ export const ImageMarkupLayer = ({
     const newLine = {
       points: [localPos.x, localPos.y],
       stroke: markupMode === "erase" ? "white" : drawingColor,
-      strokeWidth: brushSize / Math.max(stage.scaleX(), 0.001), // Adjust brush size for zoom, prevent division by zero
+      strokeWidth: brushSize / stage.scaleX(), // Adjust brush size for zoom
       globalCompositeOperation: markupMode === "erase" ? "destination-out" : "source-over",
       lineCap: "round",
       lineJoin: "round",
@@ -164,6 +161,19 @@ export const ImageMarkupLayer = ({
     if (onImageUpdate) {
       onImageUpdate({
         getFlattenedImage,
+        getCropData: () => {
+          if (!imageRef.current) return null;
+          const node = imageRef.current;
+          return {
+            x: node.x(),
+            y: node.y(),
+            width: node.width() * node.scaleX(),
+            height: node.height() * node.scaleY(),
+            rotation: node.rotation(),
+            scaleX: node.scaleX(),
+            scaleY: node.scaleY(),
+          };
+        },
       });
     }
   }, [onImageUpdate]);
@@ -208,7 +218,7 @@ export const ImageMarkupLayer = ({
           ref={transformerRef}
           boundBoxFunc={(oldBox, newBox) => {
             // Limit resize to prevent negative dimensions
-            if (newBox.width < MIN_CROP_DIMENSION || newBox.height < MIN_CROP_DIMENSION) {
+            if (newBox.width < 10 || newBox.height < 10) {
               return oldBox;
             }
             return newBox;

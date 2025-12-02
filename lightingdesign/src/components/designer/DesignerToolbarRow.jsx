@@ -29,7 +29,6 @@ import {
   VerticalAlignTop,
   MultipleStop,
   Refresh,
-  Edit,
 } from "@mui/icons-material";
 import { DesignLockButton } from "/src/components/designer/DesignLockButton";
 
@@ -97,8 +96,6 @@ export const DesignerToolbarRow = memo(
       onLock,
       onUnlock,
       onRefreshLockStatus,
-      onEditImage,
-      hasBackgroundImage = false,
     } = mainProps || {};
 
     const { selectedTool, onToolChange, placementMode, onStopPlacement, onDisconnectCable } =
@@ -173,17 +170,6 @@ export const DesignerToolbarRow = memo(
             >
               Upload Floor Plan
             </Button>
-            {hasBackgroundImage && (
-              <Button
-                variant="outlined"
-                startIcon={<Edit />}
-                size="small"
-                onClick={onEditImage}
-                disabled={!isOwner}
-              >
-                Edit Image
-              </Button>
-            )}
             <DesignLockButton
               isLocked={isLocked}
               isOwner={isOwner}

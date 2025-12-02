@@ -30,6 +30,7 @@ export const DesignerCanvas = memo(
         objectsChildren, // Layer 1: Connectors and unselected products
         textAndSelectionChildren, // Layer 2: Text boxes and selection group
         transformerChildren, // Layer 3: Transformer (always on top)
+        markupLayer, // Optional: Markup layer component (already a Layer, not wrapped)
         onMouseMove,
         onPan,
         gridOpacity,
@@ -217,6 +218,9 @@ export const DesignerCanvas = memo(
             {/* Layer 1: Objects (Connectors and unselected products) */}
             {objectsChildren && <Layer>{objectsChildren}</Layer>}
 
+            {/* Markup Layer - rendered as its own layer when provided */}
+            {markupLayer}
+
             {/* Layer 2: Text and Selection (Text boxes and selection group) */}
             {textAndSelectionChildren && <Layer>{textAndSelectionChildren}</Layer>}
 
@@ -256,6 +260,7 @@ export const DesignerCanvas = memo(
       prevProps.objectsChildren === nextProps.objectsChildren &&
       prevProps.textAndSelectionChildren === nextProps.textAndSelectionChildren &&
       prevProps.transformerChildren === nextProps.transformerChildren &&
+      prevProps.markupLayer === nextProps.markupLayer &&
       prevProps.gridOpacity === nextProps.gridOpacity &&
       prevProps.backgroundOpacity === nextProps.backgroundOpacity
     );

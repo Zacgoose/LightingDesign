@@ -17,7 +17,7 @@ function Invoke-ExecStoreGroup {
         'AddEdit' {
             try {
                 $GroupId = if ($Request.Body.groupId) { $Request.Body.groupId } else { [guid]::NewGuid().ToString() }
-                
+
                 $StoreGroup = @{
                     'PartitionKey'     = 'StoreGroups'
                     'RowKey'           = $GroupId
@@ -25,7 +25,7 @@ function Invoke-ExecStoreGroup {
                     'groupDescription' = $Request.Body.groupDescription ?? ''
                     'members'          = "$($Request.Body.members | ConvertTo-Json -Compress)"
                 }
-                
+
                 Add-CIPPAzDataTableEntity @Table -Entity $StoreGroup -Force | Out-Null
                 $Body = @{Results = "Store group '$($Request.Body.groupName)' saved successfully" }
                 Write-LogMessage -headers $Request.Headers -API 'ExecStoreGroup' -message "Saved store group $($Request.Body.groupName)" -Sev 'Info'
@@ -56,6 +56,6 @@ function Invoke-ExecStoreGroup {
 
     return ([HttpResponseContext]@{
             StatusCode = [HttpStatusCode]::OK
-            Body       = $Body
+            Body       = @($Body)
         })
 }

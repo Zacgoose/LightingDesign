@@ -20,26 +20,40 @@ const Page = () => {
         title="New Job"
         backButtonTitle="Jobs"
         postUrl="/api/ExecNewJob"
-        customDataformatter={(values) => ({
-          jobName: values.jobName,
-          customerId: values.customerId?.value || values.customerId,
-          storeId: values.storeId?.value || values.storeId,
-          status: values.status?.value || values.status,
-          description: values.description,
-          address: values.address,
-          city: values.city,
-          state: values.state,
-          postalCode: values.postalCode,
-          contactName: values.contactName,
-          contactPhone: values.contactPhone,
-          contactEmail: values.contactEmail,
-          estimatedValue: values.estimatedValue,
-          notes: values.notes,
-          assignedDesigner: values.assignedDesigner?.value || values.assignedDesigner,
-          builders: values.builders?.map((b) => b.value || b) || [],
-          relatedTrades: values.relatedTrades?.map((t) => t.value || t) || [],
-          pricingMatrix: values.pricingMatrix,
-        })}
+        customDataformatter={(values) => {
+          // Helper to safely extract value
+          const extractValue = (obj) => {
+            if (!obj) return null;
+            if (typeof obj === 'string') return obj;
+            return obj.value || null;
+          };
+
+          const extractArrayValues = (arr) => {
+            if (!Array.isArray(arr) || arr.length === 0) return [];
+            return arr.map(extractValue).filter(v => v != null);
+          };
+
+          return {
+            jobName: values.jobName || null,
+            customerId: extractValue(values.customerId),
+            storeId: extractValue(values.storeId),
+            status: extractValue(values.status),
+            description: values.description || null,
+            address: values.address || null,
+            city: values.city || null,
+            state: values.state || null,
+            postalCode: values.postalCode || null,
+            contactName: values.contactName || null,
+            contactPhone: values.contactPhone || null,
+            contactEmail: values.contactEmail || null,
+            estimatedValue: values.estimatedValue || null,
+            notes: values.notes || null,
+            assignedDesigner: extractValue(values.assignedDesigner),
+            builders: extractArrayValues(values.builders),
+            relatedTrades: extractArrayValues(values.relatedTrades),
+            pricingMatrix: values.pricingMatrix || null,
+          };
+        }}
       >
         <JobForm formControl={formControl} mode="new" />
       </CippFormPage>

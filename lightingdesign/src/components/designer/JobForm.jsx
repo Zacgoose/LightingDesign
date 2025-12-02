@@ -3,26 +3,13 @@ import { Grid } from "@mui/system";
 import CippFormComponent from "../CippComponents/CippFormComponent";
 import { CippFormStoreSelector } from "../CippComponents/CippFormStoreSelector";
 import { ApiGetCall } from "../../api/ApiCall";
-import { useMemo } from "react";
 
 export const JobForm = ({ formControl, mode = "new" }) => {
   // Fetch customers for dropdown
   const customers = ApiGetCall({
-    url: "/api/ListCustomers",
-    queryKey: "Customers",
+    url: "/api/ListCustomers?DropdownList=true",
+    queryKey: "ListCustomers",
   });
-
-  // Ensure customers.data is always an array and map to autocomplete format
-  const customerOptions = useMemo(
-    () =>
-      Array.isArray(customers.data)
-        ? customers.data.map((customer) => ({
-            value: customer.id,
-            label: customer.customerName,
-          }))
-        : [],
-    [customers.data]
-  );
 
   // Job status options
   const statusOptions = [
@@ -31,20 +18,6 @@ export const JobForm = ({ formControl, mode = "new" }) => {
     { value: "on_hold", label: "On Hold" },
     { value: "completed", label: "Completed" },
   ];
-
-  // Builder options (customers marked as builders)
-  const builderOptions = useMemo(
-    () =>
-      Array.isArray(customers.data)
-        ? customers.data
-            .filter((c) => c.customerType === "builder" || !c.customerType)
-            .map((customer) => ({
-              value: customer.id,
-              label: customer.customerName,
-            }))
-        : [],
-    [customers.data]
-  );
 
   // Trade options
   const tradeOptions = [
@@ -87,9 +60,11 @@ export const JobForm = ({ formControl, mode = "new" }) => {
           label="Customer"
           name="customerId"
           formControl={formControl}
-          options={customerOptions}
+          options={customers.data || []}
+          creatable={false}
           validators={{ required: "Customer is required" }}
           isFetching={customers.isFetching}
+          multiple={false}
         />
       </Grid>
 
@@ -108,6 +83,8 @@ export const JobForm = ({ formControl, mode = "new" }) => {
           type="autoComplete"
           label="Status"
           name="status"
+          multiple={false}
+          creatable={false}
           formControl={formControl}
           options={statusOptions}
           validators={{ required: "Status is required" }}
@@ -129,7 +106,9 @@ export const JobForm = ({ formControl, mode = "new" }) => {
           label="Assigned Designer"
           name="assignedDesigner"
           formControl={formControl}
+          creatable={false}
           options={designerOptions}
+          multiple={false}
         />
       </Grid>
 
@@ -139,7 +118,8 @@ export const JobForm = ({ formControl, mode = "new" }) => {
           label="Builders"
           name="builders"
           formControl={formControl}
-          options={builderOptions}
+          options={customers.data || []}
+          creatable={false}
           isFetching={customers.isFetching}
           multiple
         />
@@ -151,6 +131,7 @@ export const JobForm = ({ formControl, mode = "new" }) => {
           label="Related Trades"
           name="relatedTrades"
           formControl={formControl}
+          creatable={false}
           options={tradeOptions}
           multiple
         />

@@ -19,7 +19,6 @@ function Invoke-ExecCippFunction {
     $BlockList = @(
         'Get-GraphToken'
         'Get-GraphTokenFromCert'
-        'Get-ClassicAPIToken'
     )
 
     $Function = $Request.Body.FunctionName
